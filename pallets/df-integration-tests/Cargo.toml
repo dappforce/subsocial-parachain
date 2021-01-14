@@ -1,0 +1,132 @@
+[package]
+name = "df-integration-tests"
+version = "0.4.0"
+authors = ["DappForce <dappforce@pm.me>"]
+edition = "2018"
+license = "GPL-3.0-only"
+homepage = "https://subsocial.network"
+repository = "https://github.com/dappforce/dappforce-subsocial-node"
+description = "Integration tests"
+keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
+categories = ["cryptography::cryptocurrencies"]
+
+[features]
+default = ['std']
+std = [
+    'sp-runtime/std',
+    'frame-support/std',
+    'frame-system/std',
+    'sp-io/std',
+    'sp-std/std',
+    'pallet-timestamp/std',
+    'pallet-permissions/std',
+    'pallet-posts/std',
+    'pallet-post-history/std',
+    'pallet-profiles/std',
+    'pallet-profile-history/std',
+    'pallet-profile-follows/std',
+    'pallet-reactions/std',
+    'pallet-roles/std',
+    'pallet-scores/std',
+    'pallet-spaces/std',
+    'pallet-space-follows/std',
+    'pallet-space-history/std',
+    'pallet-space-ownership/std',
+    'pallet-utils/std'
+]
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.pallet-timestamp]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dev-dependencies.pallet-permissions]
+default-features = false
+path = "../permissions"
+
+[dev-dependencies.pallet-posts]
+default-features = false
+path = "../posts"
+
+[dev-dependencies.pallet-post-history]
+default-features = false
+path = "../post-history"
+
+[dev-dependencies.pallet-profiles]
+default-features = false
+path = "../profiles"
+
+[dev-dependencies.pallet-profile-history]
+default-features = false
+path = "../profile-history"
+
+[dev-dependencies.pallet-profile-follows]
+default-features = false
+path = "../profile-follows"
+
+[dev-dependencies.pallet-reactions]
+default-features = false
+path = "../reactions"
+
+[dev-dependencies.pallet-roles]
+default-features = false
+path = "../roles"
+
+[dev-dependencies.pallet-scores]
+default-features = false
+path = "../scores"
+
+[dev-dependencies.pallet-spaces]
+default-features = false
+path = "../spaces"
+
+[dev-dependencies.pallet-space-follows]
+default-features = false
+path = "../space-follows"
+
+[dev-dependencies.pallet-space-history]
+default-features = false
+path = "../space-history"
+
+[dev-dependencies.pallet-space-ownership]
+default-features = false
+path = "../space-ownership"
+
+[dev-dependencies.pallet-utils]
+default-features = false
+path = "../utils"
+
+[dev-dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dev-dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'

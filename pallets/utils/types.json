@@ -1,0 +1,25 @@
+{
+  "SpaceId": "u64",
+
+  "WhoAndWhen": {
+    "account": "AccountId",
+    "block": "BlockNumber",
+    "time": "Moment"
+  },
+
+  "User": {
+    "_enum": {
+      "Account": "AccountId",
+      "Space": "SpaceId"
+    }
+  },
+
+  "Content": {
+    "_enum": {
+      "None": "Null",
+      "Raw": "Text",
+      "IPFS": "Text",
+      "Hyper": "Text"
+    }
+  }
+}

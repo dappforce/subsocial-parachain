@@ -1,0 +1,382 @@
+use frame_support::dispatch::DispatchResult;
+
+use pallet_utils::{SpaceId, vec_remove_on};
+
+use super::*;
+
+impl<T: Trait> Post<T> {
+
+    pub fn new(
+        id: PostId,
+        created_by: T::AccountId,
+        space_id_opt: Option<SpaceId>,
+        extension: PostExtension,
+        content: Content
+    ) -> Self {
+        Post {
+            id,
+            created: WhoAndWhen::<T>::new(created_by.clone()),
+            updated: None,
+            owner: created_by,
+            extension,
+            space_id: space_id_opt,
+            content,
+            hidden: false,
+            replies_count: 0,
+            hidden_replies_count: 0,
+            shares_count: 0,
+            upvotes_count: 0,
+            downvotes_count: 0,
+            score: 0
+        }
+    }
+
+    pub fn is_owner(&self, account: &T::AccountId) -> bool {
+        self.owner == *account
+    }
+
+    pub fn is_root_post(&self) -> bool {
+        !self.is_comment()
+    }
+
+    pub fn is_comment(&self) -> bool {
+        match self.extension {
+            PostExtension::Comment(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_sharing_post(&self) -> bool {
+        match self.extension {
+            PostExtension::SharedPost(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn get_comment_ext(&self) -> Result<Comment, DispatchError> {
+        match self.extension {
+            PostExtension::Comment(comment_ext) => Ok(comment_ext),
+            _ => Err(Error::<T>::NotComment.into())
+        }
+    }
+
+    pub fn get_root_post(&self) -> Result<Post<T>, DispatchError> {
+        match self.extension {
+            PostExtension::RegularPost | PostExtension::SharedPost(_) =>
+                Ok(self.clone()),
+            PostExtension::Comment(comment) =>
+                Module::require_post(comment.root_post_id),
+        }
+    }
+
+    pub fn get_space(&self) -> Result<Space<T>, DispatchError> {
+        let root_post = self.get_root_post()?;
+        let space_id = root_post.space_id.ok_or(Error::<T>::PostHasNoSpaceId)?;
+        Spaces::require_space(space_id)
+    }
+
+    pub fn try_get_space(&self) -> Option<Space<T>> {
+        if self.is_comment() {
+            return None
+        }
+
+        if let Some(space_id) = self.space_id {
+            return Spaces::require_space(space_id).ok()
+        }
+
+        None
+    }
+
+    // TODO use macros to generate inc/dec fns for Space, Post.
+
+    pub fn inc_replies(&mut self) {
+        self.replies_count = self.replies_count.saturating_add(1);
+    }
+
+    pub fn dec_replies(&mut self) {
+        self.replies_count = self.replies_count.saturating_sub(1);
+    }
+
+    pub fn inc_hidden_replies(&mut self) {
+        self.hidden_replies_count = self.hidden_replies_count.saturating_add(1);
+    }
+
+    pub fn dec_hidden_replies(&mut self) {
+        self.hidden_replies_count = self.hidden_replies_count.saturating_sub(1);
+    }
+
+    pub fn inc_shares(&mut self) {
+        self.shares_count = self.shares_count.saturating_add(1);
+    }
+
+    pub fn dec_shares(&mut self) {
+        self.shares_count = self.shares_count.saturating_sub(1);
+    }
+
+    pub fn inc_upvotes(&mut self) {
+        self.upvotes_count = self.upvotes_count.saturating_add(1);
+    }
+
+    pub fn dec_upvotes(&mut self) {
+        self.upvotes_count = self.upvotes_count.saturating_sub(1);
+    }
+
+    pub fn inc_downvotes(&mut self) {
+        self.downvotes_count = self.downvotes_count.saturating_add(1);
+    }
+
+    pub fn dec_downvotes(&mut self) {
+        self.downvotes_count = self.downvotes_count.saturating_sub(1);
+    }
+
+    #[allow(clippy::comparison_chain)]
+    pub fn change_score(&mut self, diff: i16) {
+        if diff > 0 {
+            self.score = self.score.saturating_add(diff.abs() as i32);
+        } else if diff < 0 {
+            self.score = self.score.saturating_sub(diff.abs() as i32);
+        }
+    }
+}
+
+impl Default for PostUpdate {
+    fn default() -> Self {
+        PostUpdate {
+            space_id: None,
+            content: None,
+            hidden: None
+        }
+    }
+}
+
+impl<T: Trait> Module<T> {
+
+    /// Check that there is a `Post` with such `post_id` in the storage
+    /// or return`PostNotFound` error.
+    pub fn ensure_post_exists(post_id: PostId) -> DispatchResult {
+        ensure!(<PostById<T>>::contains_key(post_id), Error::<T>::PostNotFound);
+        Ok(())
+    }
+
+    /// Get `Post` by id from the storage or return `PostNotFound` error.
+    pub fn require_post(post_id: SpaceId) -> Result<Post<T>, DispatchError> {
+        Ok(Self::post_by_id(post_id).ok_or(Error::<T>::PostNotFound)?)
+    }
+
+    fn share_post(
+        account: T::AccountId,
+        original_post: &mut Post<T>,
+        shared_post_id: PostId
+    ) -> DispatchResult {
+        original_post.inc_shares();
+
+        T::PostScores::score_post_on_new_share(account.clone(), original_post)?;
+
+        let original_post_id = original_post.id;
+        PostById::insert(original_post_id, original_post.clone());
+        SharedPostIdsByOriginalPostId::mutate(original_post_id, |ids| ids.push(shared_post_id));
+
+        Self::deposit_event(RawEvent::PostShared(account, original_post_id));
+
+        Ok(())
+    }
+
+    pub fn is_root_post_hidden(post_id: PostId) -> Result<bool, DispatchError> {
+        let post = Self::require_post(post_id)?;
+        let root_post = post.get_root_post()?;
+        Ok(root_post.hidden)
+    }
+
+    pub fn is_root_post_visible(post_id: PostId) -> Result<bool, DispatchError> {
+        Self::is_root_post_hidden(post_id).map(|v| !v)
+    }
+
+    pub fn mutate_post_by_id<F: FnOnce(&mut Post<T>)> (
+        post_id: PostId,
+        f: F
+    ) -> Result<Post<T>, DispatchError> {
+        <PostById<T>>::mutate(post_id, |post_opt| {
+            if let Some(ref mut post) = post_opt.clone() {
+                f(post);
+                *post_opt = Some(post.clone());
+
+                return Ok(post.clone());
+            }
+
+            Err(Error::<T>::PostNotFound.into())
+        })
+    }
+
+    // TODO refactor to a tail recursion
+    /// Get all post ancestors (parent_id) including this post
+    pub fn get_post_ancestors(post_id: PostId) -> Vec<Post<T>> {
+        let mut ancestors: Vec<Post<T>> = Vec::new();
+
+        if let Some(post) = Self::post_by_id(post_id) {
+            ancestors.push(post.clone());
+            if let Some(parent_id) = post.get_comment_ext().ok().unwrap().parent_id {
+                ancestors.extend(Self::get_post_ancestors(parent_id).iter().cloned());
+            }
+        }
+
+        ancestors
+    }
+
+    /// Applies function to all post ancestors (parent_id) including this post
+    pub fn for_each_post_ancestor<F: FnMut(&mut Post<T>) + Copy> (
+        post_id: PostId,
+        f: F
+    ) -> DispatchResult {
+        let post = Self::mutate_post_by_id(post_id, f)?;
+
+        if let PostExtension::Comment(comment_ext) = post.extension {
+            if let Some(parent_id) = comment_ext.parent_id {
+                Self::for_each_post_ancestor(parent_id, f)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn try_get_post_replies(post_id: PostId) -> Vec<Post<T>> {
+        let mut replies: Vec<Post<T>> = Vec::new();
+
+        if let Some(post) = Self::post_by_id(post_id) {
+            replies.push(post);
+            for reply_id in Self::reply_ids_by_post_id(post_id).iter() {
+                replies.extend(Self::try_get_post_replies(*reply_id).iter().cloned());
+            }
+        }
+
+        replies
+    }
+
+    /// Recursively et all nested post replies (reply_ids_by_post_id)
+    pub fn get_post_replies(post_id: PostId) -> Result<Vec<Post<T>>, DispatchError> {
+        let reply_ids = Self::reply_ids_by_post_id(post_id);
+        ensure!(!reply_ids.is_empty(), Error::<T>::NoRepliesOnPost);
+
+        let mut replies: Vec<Post<T>> = Vec::new();
+        for reply_id in reply_ids.iter() {
+            replies.extend(Self::try_get_post_replies(*reply_id));
+        }
+        Ok(replies)
+    }
+    // TODO: maybe add for_each_reply?
+
+    pub(crate) fn create_comment(
+        creator: &T::AccountId,
+        new_post_id: PostId,
+        comment_ext: Comment,
+        root_post: &mut Post<T>
+    ) -> DispatchResult {
+        let mut commented_post_id = root_post.id;
+
+        if let Some(parent_id) = comment_ext.parent_id {
+            let parent_comment = Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
+            ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
+
+            let ancestors = Self::get_post_ancestors(parent_id);
+            ensure!(ancestors.len() < T::MaxCommentDepth::get() as usize, Error::<T>::MaxCommentDepthReached);
+
+            commented_post_id = parent_id;
+        }
+
+        root_post.inc_replies();
+        T::PostScores::score_root_post_on_new_comment(creator.clone(), root_post)?;
+
+        Self::for_each_post_ancestor(commented_post_id, |post| post.inc_replies())?;
+        PostById::insert(root_post.id, root_post);
+        ReplyIdsByPostId::mutate(commented_post_id, |ids| ids.push(new_post_id));
+
+        Ok(())
+    }
+
+    pub(crate) fn create_sharing_post(
+        creator: &T::AccountId,
+        new_post_id: PostId,
+        original_post_id: PostId,
+        space: &mut Space<T>
+    ) -> DispatchResult {
+        let original_post = &mut Self::post_by_id(original_post_id)
+            .ok_or(Error::<T>::OriginalPostNotFound)?;
+
+        ensure!(!original_post.is_sharing_post(), Error::<T>::CannotShareSharingPost);
+
+        // Check if it's allowed to share a post from the space of original post.
+        Spaces::ensure_account_has_space_permission(
+            creator.clone(),
+            &original_post.get_space()?,
+            SpacePermission::Share,
+            Error::<T>::NoPermissionToShare.into()
+        )?;
+
+        space.inc_posts();
+
+        Self::share_post(creator.clone(), original_post, new_post_id)
+    }
+
+    pub fn delete_post_from_space(post_id: PostId) -> DispatchResult {
+        let mut post = Self::require_post(post_id)?;
+
+        if let PostExtension::Comment(comment_ext) = post.extension {
+            post.extension = PostExtension::RegularPost;
+
+            let root_post = &mut Self::require_post(comment_ext.root_post_id)?;
+            let parent_id = comment_ext.parent_id.unwrap_or(root_post.id);
+
+            // Choose desired counter change whether comment was hidden or not
+            let mut update_replies_change: fn(&mut Post<T>) = Post::dec_replies;
+            if post.hidden {
+                update_replies_change = Post::dec_hidden_replies;
+            }
+
+            update_replies_change(root_post);
+            PostById::<T>::insert(root_post.id, root_post.clone());
+            Self::for_each_post_ancestor(parent_id, |p| update_replies_change(p))?;
+
+            // Subtract CreateComment score weight on root post and its space
+            T::PostScores::score_root_post_on_new_comment(post.created.account, root_post)?;
+            let replies = Self::get_post_replies(post_id)?;
+            for reply in replies.iter() {
+                T::PostScores::score_root_post_on_new_comment(reply.created.account.clone(), root_post)?;
+            }
+        } else {
+            let mut space = post.get_space()?;
+            post.space_id = None;
+            if post.hidden {
+                space.hidden_posts_count = space.hidden_posts_count.saturating_sub(1);
+            } else {
+                space.posts_count = space.posts_count.saturating_sub(1);
+            }
+
+            space.score = space.score.saturating_sub(post.score);
+
+            PostIdsBySpaceId::mutate(space.id, |post_ids| vec_remove_on(post_ids, post_id));
+        }
+
+        Ok(())
+    }
+
+    /// Rewrite ancestor counters when Post hidden status changes
+    /// Warning: This will affect storage state!
+    pub(crate) fn update_counters_on_comment_hidden_change(
+        comment_ext: &Comment,
+        becomes_hidden: bool
+    ) -> DispatchResult {
+        let root_post = &mut Self::require_post(comment_ext.root_post_id)?;
+        let commented_post_id = comment_ext.parent_id.unwrap_or(root_post.id);
+
+        let mut update_hidden_replies: fn(&mut Post<T>) = Post::inc_hidden_replies;
+        if !becomes_hidden {
+            update_hidden_replies = Post::dec_hidden_replies;
+        }
+
+        Self::for_each_post_ancestor(commented_post_id, |post| update_hidden_replies(post))?;
+
+        update_hidden_replies(root_post);
+        PostById::insert(root_post.id, root_post);
+
+        Ok(())
+    }
+}

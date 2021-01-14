@@ -1,0 +1,65 @@
+[package]
+name = 'pallet-space-follows'
+version = '0.4.0'
+authors = ['DappForce <dappforce@pm.me>']
+edition = '2018'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+repository = 'https://github.com/dappforce/dappforce-subsocial-node'
+description = 'Pallet that allows to follow/unfollow spaces'
+keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'sp-std/std',
+    'pallet-utils/std',
+    'df-traits/std',
+    'pallet-profiles/std',
+    'pallet-spaces/std'
+]
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '1.3.0'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+
+[dependencies.pallet-utils]
+default-features = false
+path = '../utils'
+version = '0.4.0'
+
+[dependencies.df-traits]
+default-features = false
+path = '../traits'
+version = '0.4.0'
+
+[dependencies.pallet-profiles]
+default-features = false
+path = '../profiles'
+version = '0.4.0'
+
+[dependencies.pallet-spaces]
+default-features = false
+path = '../spaces'
+version = '0.4.0'
