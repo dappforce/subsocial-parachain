@@ -4,7 +4,7 @@ use pallet_utils::{SpaceId, vec_remove_on};
 
 use super::*;
 
-impl<T: Trait> Post<T> {
+impl<T: Config> Post<T> {
 
     pub fn new(
         id: PostId,
@@ -149,7 +149,7 @@ impl Default for PostUpdate {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
 
     /// Check that there is a `Post` with such `post_id` in the storage
     /// or return`PostNotFound` error.

@@ -14,7 +14,7 @@ pub mod functions;
 // mod tests;
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub struct SpaceOwners<T: Trait> {
+pub struct SpaceOwners<T: Config> {
   pub created: WhoAndWhen<T>,
   pub space_id: SpaceId,
   pub owners: Vec<T::AccountId>,
@@ -23,7 +23,7 @@ pub struct SpaceOwners<T: Trait> {
 }
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub struct Change<T: Trait> {
+pub struct Change<T: Config> {
   pub created: WhoAndWhen<T>,
   pub id: ChangeId,
   pub space_id: SpaceId,
@@ -38,11 +38,11 @@ pub struct Change<T: Trait> {
 type ChangeId = u64;
 
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait
-  + pallet_timestamp::Trait
+pub trait Config: system::Config
+  + pallet_timestamp::Config
 {
   /// The overarching event type.
-  type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+  type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 
   /// Minimum space owners allowed.
   type MinSpaceOwners: Get<u16>;
@@ -61,7 +61,7 @@ pub trait Trait: system::Trait
 }
 
 decl_error! {
-  pub enum Error for Module<T: Trait> {
+  pub enum Error for Module<T: Config> {
     /// Space owners was not found by id
     SpaceOwnersNotFound,
     /// Change was not found by id
@@ -112,7 +112,7 @@ decl_error! {
 
 // This pallet's storage items.
 decl_storage! {
-  trait Store for Module<T: Trait> as SpaceOwnersModule {
+  trait Store for Module<T: Config> as SpaceOwnersModule {
     SpaceOwnersBySpaceById get(space_owners_by_space_id): map SpaceId => Option<SpaceOwners<T>>;
     SpaceIdsOwnedByAccountId get(space_ids_owned_by_account_id): map T::AccountId => BTreeSet<SpaceId> = BTreeSet::new();
 
@@ -126,7 +126,7 @@ decl_storage! {
 
 // The pallet's dispatchable functions.
 decl_module! {
-  pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+  pub struct Module<T: Config> for enum Call where origin: T::Origin {
     /// Minimum space owners allowed.
     const MinSpaceOwners: u16 = T::MinSpaceOwners::get();
 
@@ -319,7 +319,7 @@ decl_module! {
 
 decl_event!(
   pub enum Event<T> where
-    <T as system::Trait>::AccountId,
+    <T as system::Config>::AccountId,
    {
     SpaceOwnersCreated(AccountId, SpaceId),
     ChangeProposed(AccountId, SpaceId, ChangeId),

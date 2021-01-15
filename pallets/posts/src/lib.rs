@@ -18,7 +18,7 @@ pub mod functions;
 pub type PostId = u64;
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub struct Post<T: Trait> {
+pub struct Post<T: Config> {
     pub id: PostId,
     pub created: WhoAndWhen<T>,
     pub updated: Option<WhoAndWhen<T>>,
@@ -68,12 +68,12 @@ impl Default for PostExtension {
 }
 
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait
-    + pallet_utils::Trait
-    + pallet_spaces::Trait
+pub trait Config: system::Config
+    + pallet_utils::Config
+    + pallet_spaces::Config
 {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 
     /// Max comments depth
     type MaxCommentDepth: Get<u32>;
@@ -83,12 +83,12 @@ pub trait Trait: system::Trait
     type AfterPostUpdated: AfterPostUpdated<Self>;
 }
 
-pub trait PostScores<T: Trait> {
+pub trait PostScores<T: Config> {
     fn score_post_on_new_share(account: T::AccountId, original_post: &mut Post<T>) -> DispatchResult;
     fn score_root_post_on_new_comment(account: T::AccountId, root_post: &mut Post<T>) -> DispatchResult;
 }
 
-impl<T: Trait> PostScores<T> for () {
+impl<T: Config> PostScores<T> for () {
     fn score_post_on_new_share(_account: T::AccountId, _original_post: &mut Post<T>) -> DispatchResult {
         Ok(())
     }
@@ -98,13 +98,13 @@ impl<T: Trait> PostScores<T> for () {
 }
 
 #[impl_trait_for_tuples::impl_for_tuples(10)]
-pub trait AfterPostUpdated<T: Trait> {
+pub trait AfterPostUpdated<T: Config> {
     fn after_post_updated(account: T::AccountId, post: &Post<T>, old_data: PostUpdate);
 }
 
 // This pallet's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as PostsModule {
+    trait Store for Module<T: Config> as PostsModule {
         pub NextPostId get(fn next_post_id): PostId = 1;
 
         pub PostById get(fn post_by_id): map hasher(twox_64_concat) PostId => Option<Post<T>>;
@@ -123,7 +123,7 @@ decl_storage! {
 
 decl_event!(
     pub enum Event<T> where
-        <T as system::Trait>::AccountId,
+        <T as system::Config>::AccountId,
     {
         PostCreated(AccountId, PostId),
         PostUpdated(AccountId, PostId),
@@ -133,7 +133,7 @@ decl_event!(
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
 
         // Post related errors:
 
@@ -188,7 +188,7 @@ decl_error! {
 }
 
 decl_module! {
-  pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+  pub struct Module<T: Config> for enum Call where origin: T::Origin {
 
     const MaxCommentDepth: u32 = T::MaxCommentDepth::get();
 

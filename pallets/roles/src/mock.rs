@@ -1,4 +1,4 @@
-use crate::{Module, Trait, RoleId, RoleUpdate};
+use crate::{Module, Config, RoleId, RoleUpdate};
 
 use sp_core::H256;
 use sp_std::{
@@ -40,7 +40,7 @@ parameter_types! {
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
-impl system::Trait for Test {
+impl system::Config for Test {
     type BaseCallFilter = ();
     type Origin = Origin;
     type Call = ();
@@ -71,7 +71,7 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
-impl pallet_timestamp::Trait for Test {
+impl pallet_timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
@@ -81,7 +81,7 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 1;
 }
 
-impl pallet_balances::Trait for Test {
+impl pallet_balances::Config for Test {
     type Balance = u64;
     type DustRemoval = ();
     type Event = ();
@@ -94,7 +94,7 @@ parameter_types! {
     pub const MaxHandleLen: u32 = 50;
 }
 
-impl pallet_utils::Trait for Test {
+impl pallet_utils::Config for Test {
     type Event = ();
     type Currency = Balances;
     type MinHandleLen = MinHandleLen;
@@ -156,7 +156,7 @@ parameter_types! {
   };
 }
 
-impl pallet_permissions::Trait for Test {
+impl pallet_permissions::Config for Test {
     type DefaultSpacePermissions = DefaultSpacePermissions;
 }
 
@@ -164,7 +164,7 @@ parameter_types! {
   pub const MaxUsersToProcessPerDeleteRole: u16 = 20;
 }
 
-impl Trait for Test {
+impl Config for Test {
     type Event = ();
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type Spaces = Roles;
@@ -178,7 +178,7 @@ pub(crate) type Roles = Module<Test>;
 pub type AccountId = u64;
 pub type BlockNumber = u64;
 
-impl<T: Trait> SpaceForRolesProvider for Module<T> {
+impl<T: Config> SpaceForRolesProvider for Module<T> {
     type AccountId = AccountId;
 
     // This function should return an error every time Space doesn't exist by SpaceId
@@ -192,7 +192,7 @@ impl<T: Trait> SpaceForRolesProvider for Module<T> {
     }
 }
 
-impl<T: Trait> SpaceFollowsProvider for Module<T> {
+impl<T: Config> SpaceFollowsProvider for Module<T> {
     type AccountId = AccountId;
 
     fn is_space_follower(_account: Self::AccountId, _space_id: u64) -> bool {

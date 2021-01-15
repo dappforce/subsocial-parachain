@@ -1,4 +1,4 @@
-use crate::{Module, Trait, User};
+use crate::{Module, Config, User};
 
 use sp_core::H256;
 use sp_std::collections::btree_set::BTreeSet;
@@ -23,7 +23,7 @@ parameter_types! {
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
-impl system::Trait for Test {
+impl system::Config for Test {
     type BaseCallFilter = ();
     type Origin = Origin;
     type Call = ();
@@ -54,7 +54,7 @@ parameter_types! {
   pub const MinimumPeriod: u64 = 5;
 }
 
-impl pallet_timestamp::Trait for Test {
+impl pallet_timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
@@ -64,7 +64,7 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 1;
 }
 
-impl pallet_balances::Trait for Test {
+impl pallet_balances::Config for Test {
     type Balance = u64;
     type DustRemoval = ();
     type Event = ();
@@ -77,7 +77,7 @@ parameter_types! {
   pub const MaxHandleLen: u32 = 50;
 }
 
-impl Trait for Test {
+impl Config for Test {
     type Event = ();
     type Currency = Balances;
     type MinHandleLen = MinHandleLen;

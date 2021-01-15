@@ -1,4 +1,4 @@
-use crate::{Module, Trait};
+use crate::{Module, Config};
 use sp_core::H256;
 use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
 use sp_runtime::{
@@ -20,7 +20,7 @@ parameter_types! {
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
 
-impl system::Trait for Test {
+impl system::Config for Test {
 	type BaseCallFilter = ();
 	type Origin = Origin;
 	type Call = ();
@@ -51,7 +51,7 @@ parameter_types! {
   pub const MinimumPeriod: u64 = 5;
 }
 
-impl pallet_timestamp::Trait for Test {
+impl pallet_timestamp::Config for Test {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
@@ -62,12 +62,12 @@ parameter_types! {
   pub const MaxHandleLen: u32 = 50;
 }
 
-impl pallet_utils::Trait for Test {
+impl pallet_utils::Config for Test {
 	type MinHandleLen = MinHandleLen;
 	type MaxHandleLen = MaxHandleLen;
 }
 
-impl Trait for Test {
+impl Config for Test {
 	type Event = ();
 }
 

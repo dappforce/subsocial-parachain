@@ -21,7 +21,7 @@ parameter_types! {
   pub const MaximumBlockLength: u32 = 2 * 1024;
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
-impl system::Trait for Test {
+impl system::Config for Test {
   type Origin = Origin;
   type Call = ();
   type Index = u64;
@@ -43,7 +43,7 @@ impl system::Trait for Test {
 parameter_types! {
   pub const MinimumPeriod: u64 = 5;
 }
-impl pallet_timestamp::Trait for Test {
+impl pallet_timestamp::Config for Test {
   type Moment = u64;
   type OnTimestampSet = ();
   type MinimumPeriod = MinimumPeriod;
@@ -57,7 +57,7 @@ parameter_types! {
 	pub const DeleteExpiredChangesPeriod: u64 = 1800;
 }
 
-impl Trait for Test {
+impl Config for Test {
   type Event = ();
   type MinSpaceOwners = MinSpaceOwners;
   type MaxSpaceOwners = MaxSpaceOwners;

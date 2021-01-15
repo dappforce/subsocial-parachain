@@ -14,7 +14,7 @@ use frame_support::{
     dispatch::{DispatchError, DispatchResult, PostDispatchInfo},
     traits::{
         Currency, Get, ExistenceRequirement,
-        OriginTrait, IsType, Filter,
+        OriginConfig, IsType, Filter,
     },
     Parameter,
 };
@@ -22,9 +22,9 @@ use frame_system::{self as system, ensure_signed};
 
 use pallet_utils::WhoAndWhen;
 
-struct CalculateProxyWeight<T: Trait>(Box<<T as Trait>::Call>);
-impl<T: Trait> WeighData<(&Box<<T as Trait>::Call>,)> for CalculateProxyWeight<T> {
-    fn weigh_data(&self, target: (&Box<<T as Trait>::Call>,)) -> Weight {
+struct CalculateProxyWeight<T: Config>(Box<<T as Config>::Call>);
+impl<T: Config> WeighData<(&Box<<T as Config>::Call>,)> for CalculateProxyWeight<T> {
+    fn weigh_data(&self, target: (&Box<<T as Config>::Call>,)) -> Weight {
         let call_dispatch_info = target.0.get_dispatch_info();
         let db_weight = T::DbWeight::get();
         let mut weight = call_dispatch_info.weight;
@@ -38,24 +38,24 @@ impl<T: Trait> WeighData<(&Box<<T as Trait>::Call>,)> for CalculateProxyWeight<T
     }
 }
 
-impl<T: Trait> ClassifyDispatch<(&Box<<T as Trait>::Call>,)> for CalculateProxyWeight<T> {
-    fn classify_dispatch(&self, _target: (&Box<<T as Trait>::Call>,)) -> DispatchClass {
+impl<T: Config> ClassifyDispatch<(&Box<<T as Config>::Call>,)> for CalculateProxyWeight<T> {
+    fn classify_dispatch(&self, _target: (&Box<<T as Config>::Call>,)) -> DispatchClass {
         DispatchClass::Normal
     }
 }
 
-impl<T: Trait> PaysFee<(&Box<<T as Trait>::Call>,)> for CalculateProxyWeight<T> {
-    fn pays_fee(&self, _target: (&Box<<T as Trait>::Call>,)) -> Pays {
+impl<T: Config> PaysFee<(&Box<<T as Config>::Call>,)> for CalculateProxyWeight<T> {
+    fn pays_fee(&self, _target: (&Box<<T as Config>::Call>,)) -> Pays {
         Pays::Yes
     }
 }
 
-type BalanceOf<T> = <<T as pallet_utils::Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+type BalanceOf<T> = <<T as pallet_utils::Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
 
 // TODO define session key permissions
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub struct SessionKey<T: Trait> {
+pub struct SessionKey<T: Config> {
     /// Who and when created this session key.
     pub created: WhoAndWhen<T>,
 
@@ -75,26 +75,26 @@ pub struct SessionKey<T: Trait> {
 }
 
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait + pallet_utils::Trait {
+pub trait Config: system::Config + pallet_utils::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 
     /// The overarching call type.
     type Call: Parameter
         + Dispatchable<Origin=Self::Origin, PostInfo=PostDispatchInfo>
         + GetDispatchInfo + From<frame_system::Call<Self>>
-        + IsType<<Self as frame_system::Trait>::Call>;
+        + IsType<<Self as frame_system::Config>::Call>;
 
     /// The maximum amount of session keys allowed for a single account.
     type MaxSessionKeysPerAccount: Get<u16>;
 
     /// Base Call filter for the session keys' proxy
-    type BaseFilter: Filter<<Self as Trait>::Call>;
+    type BaseFilter: Filter<<Self as Config>::Call>;
 }
 
 decl_event!(
     pub enum Event<T> where
-        <T as system::Trait>::AccountId
+        <T as system::Config>::AccountId
     {
         SessionKeyAdded(/* owner */ AccountId, /* session key */ AccountId),
         SessionKeyRemoved(/* session key */ AccountId),
@@ -105,7 +105,7 @@ decl_event!(
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// Session key details was not found by its account id.
         SessionKeyNotFound,
         /// Account already added as a session key.
@@ -127,7 +127,7 @@ decl_error! {
 
 // This pallet's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as SessionKeysModule {
+    trait Store for Module<T: Config> as SessionKeysModule {
 
         /// Session key details by its account id (key).
         pub KeyDetails get(fn key_details):
@@ -149,7 +149,7 @@ decl_storage! {
 
 // The pallet's dispatchable functions.
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
 
         const MaxSessionKeysPerAccount: u16 = T::MaxSessionKeysPerAccount::get();
 
@@ -225,7 +225,7 @@ decl_module! {
 
         /// `origin` is a session key
         #[weight = CalculateProxyWeight::<T>(call.clone())]
-        fn proxy(origin, call: Box<<T as Trait>::Call>) -> DispatchResult {
+        fn proxy(origin, call: Box<<T as Config>::Call>) -> DispatchResult {
             let key = ensure_signed(origin)?;
 
             let mut details = Self::require_key(key.clone())?;
@@ -260,8 +260,8 @@ decl_module! {
 
             // TODO check that this call is among allowed calls per this account/session key.
             let mut origin: T::Origin = frame_system::RawOrigin::Signed(real).into();
-			origin.add_filter(move |c: &<T as frame_system::Trait>::Call| {
-				let c = <T as Trait>::Call::from_ref(c);
+			origin.add_filter(move |c: &<T as frame_system::Config>::Call| {
+				let c = <T as Config>::Call::from_ref(c);
 				T::BaseFilter::filter(c)
 			});
 
@@ -281,7 +281,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait> SessionKey<T> {
+impl<T: Config> SessionKey<T> {
     pub fn new(
         created_by: T::AccountId,
         time_to_live: T::BlockNumber,
@@ -317,7 +317,7 @@ impl<T: Trait> SessionKey<T> {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     /// Get `SessionKey` details by `key_account` from the storage
     /// or return `SessionKeyNotFound` error.
     pub fn require_key(key_account: T::AccountId) -> Result<SessionKey<T>, DispatchError> {

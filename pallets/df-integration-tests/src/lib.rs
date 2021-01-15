@@ -49,7 +49,7 @@ mod tests {
         pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     }
 
-    impl system::Trait for TestRuntime {
+    impl system::Config for TestRuntime {
         type BaseCallFilter = ();
         type Origin = Origin;
         type Call = ();
@@ -80,7 +80,7 @@ mod tests {
         pub const MinimumPeriod: u64 = 5;
     }
 
-    impl pallet_timestamp::Trait for TestRuntime {
+    impl pallet_timestamp::Config for TestRuntime {
         type Moment = u64;
         type OnTimestampSet = ();
         type MinimumPeriod = MinimumPeriod;
@@ -90,7 +90,7 @@ mod tests {
         pub const ExistentialDeposit: u64 = 1;
     }
 
-    impl pallet_balances::Trait for TestRuntime {
+    impl pallet_balances::Config for TestRuntime {
         type Balance = u64;
         type DustRemoval = ();
         type Event = ();
@@ -103,7 +103,7 @@ mod tests {
       pub const MaxHandleLen: u32 = 50;
     }
 
-    impl pallet_utils::Trait for TestRuntime {
+    impl pallet_utils::Config for TestRuntime {
         type Event = ();
         type Currency = Balances;
         type MinHandleLen = MinHandleLen;
@@ -167,7 +167,7 @@ mod tests {
       };
     }
 
-    impl pallet_permissions::Trait for TestRuntime {
+    impl pallet_permissions::Config for TestRuntime {
         type DefaultSpacePermissions = DefaultSpacePermissions;
     }
 
@@ -175,7 +175,7 @@ mod tests {
         pub const MaxCommentDepth: u32 = 10;
     }
 
-    impl pallet_posts::Trait for TestRuntime {
+    impl pallet_posts::Config for TestRuntime {
         type Event = ();
         type MaxCommentDepth = MaxCommentDepth;
         type PostScores = Scores;
@@ -184,11 +184,11 @@ mod tests {
 
     parameter_types! {}
 
-    impl pallet_post_history::Trait for TestRuntime {}
+    impl pallet_post_history::Config for TestRuntime {}
 
     parameter_types! {}
 
-    impl pallet_profile_follows::Trait for TestRuntime {
+    impl pallet_profile_follows::Config for TestRuntime {
         type Event = ();
         type BeforeAccountFollowed = Scores;
         type BeforeAccountUnfollowed = Scores;
@@ -196,18 +196,18 @@ mod tests {
 
     parameter_types! {}
 
-    impl pallet_profiles::Trait for TestRuntime {
+    impl pallet_profiles::Config for TestRuntime {
         type Event = ();
         type AfterProfileUpdated = ProfileHistory;
     }
 
     parameter_types! {}
 
-    impl pallet_profile_history::Trait for TestRuntime {}
+    impl pallet_profile_history::Config for TestRuntime {}
 
     parameter_types! {}
 
-    impl pallet_reactions::Trait for TestRuntime {
+    impl pallet_reactions::Config for TestRuntime {
         type Event = ();
         type PostReactionScores = Scores;
     }
@@ -216,7 +216,7 @@ mod tests {
         pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
     }
 
-    impl pallet_roles::Trait for TestRuntime {
+    impl pallet_roles::Config for TestRuntime {
         type Event = ();
         type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
         type Spaces = Spaces;
@@ -237,7 +237,7 @@ mod tests {
         pub const DownvoteCommentActionWeight: i16 = -2;
     }
 
-    impl pallet_scores::Trait for TestRuntime {
+    impl pallet_scores::Config for TestRuntime {
         type Event = ();
 
         type FollowSpaceActionWeight = FollowSpaceActionWeight;
@@ -255,7 +255,7 @@ mod tests {
 
     parameter_types! {}
 
-    impl pallet_space_follows::Trait for TestRuntime {
+    impl pallet_space_follows::Config for TestRuntime {
         type Event = ();
         type BeforeSpaceFollowed = Scores;
         type BeforeSpaceUnfollowed = Scores;
@@ -263,13 +263,13 @@ mod tests {
 
     parameter_types! {}
 
-    impl pallet_space_ownership::Trait for TestRuntime {
+    impl pallet_space_ownership::Config for TestRuntime {
         type Event = ();
     }
 
     parameter_types! {}
 
-    impl pallet_spaces::Trait for TestRuntime {
+    impl pallet_spaces::Config for TestRuntime {
         type Event = ();
         type Roles = Roles;
         type SpaceFollows = SpaceFollows;
@@ -280,7 +280,7 @@ mod tests {
 
     parameter_types! {}
 
-    impl pallet_space_history::Trait for TestRuntime {}
+    impl pallet_space_history::Config for TestRuntime {}
 
     type System = system::Module<TestRuntime>;
     type Balances = pallet_balances::Module<TestRuntime>;
