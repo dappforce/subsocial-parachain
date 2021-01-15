@@ -1,8 +1,14 @@
 [package]
-name = 'cumulus-test-parachain-runtime'
+name = 'subsocial-parachain-runtime'
 version = '0.1.0'
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ['DappForce <dappforce@pm.me>']
 edition = '2018'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+#repository = 'https://github.com/dappforce/dappforce-subsocial-node'
+description = 'Subsocial PC runtime'
+keywords = ['blockchain', 'parachain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
 
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
@@ -46,6 +52,21 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 
+# Subsocial dependencies
+pallet-permissions = { path = "../pallets/permissions", default-features = false }
+pallet-post-history = { path = "../pallets/post-history", default-features = false }
+pallet-posts = { path = "../pallets/posts", default-features = false }
+pallet-profile-follows = { path = "../pallets/profile-follows", default-features = false }
+pallet-profile-history = { path = "../pallets/profile-history", default-features = false }
+pallet-profiles = { path = "../pallets/profiles", default-features = false }
+pallet-reactions = { path = "../pallets/reactions", default-features = false }
+pallet-roles = { path = "../pallets/roles", default-features = false }
+pallet-scores = { path = "../pallets/scores", default-features = false }
+pallet-space-follows = { path = "../pallets/space-follows", default-features = false }
+pallet-space-history = { path = "../pallets/space-history", default-features = false }
+pallet-spaces = { path = "../pallets/spaces", default-features = false }
+pallet-utils = { path = "../pallets/utils", default-features = false }
+
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
 
@@ -83,4 +104,17 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm-handler/std",
+	"pallet-permissions/std",
+	"pallet-post-history/std",
+	"pallet-posts/std",
+	"pallet-profile-follows/std",
+	"pallet-profile-history/std",
+	"pallet-profiles/std",
+	"pallet-reactions/std",
+	"pallet-roles/std",
+	"pallet-scores/std",
+	"pallet-space-follows/std",
+	"pallet-space-history/std",
+	"pallet-spaces/std",
+	"pallet-utils/std",
 ]
