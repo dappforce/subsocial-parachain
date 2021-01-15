@@ -31,7 +31,10 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-use sp_std::prelude::*;
+use sp_std::{
+	prelude::*,
+	iter::FromIterator,
+};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -293,6 +296,186 @@ impl xcm_handler::Config for Runtime {
 	type HrmpMessageSender = MessageBroker;
 }
 
+// Subsocial custom pallets go below:
+// ------------------------------------------------------------------------------------------------
+
+pub mod constants;
+use constants::currency::*;
+
+use pallet_permissions::{
+	SpacePermission as SP,
+	SpacePermissions,
+	SpacePermissionSet
+};
+
+parameter_types! {
+  pub const MinHandleLen: u32 = 5;
+  pub const MaxHandleLen: u32 = 50;
+}
+
+impl pallet_utils::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type MinHandleLen = MinHandleLen;
+	type MaxHandleLen = MaxHandleLen;
+}
+
+parameter_types! {
+  pub DefaultSpacePermissions: SpacePermissions = SpacePermissions {
+
+    // No permissions disabled by default
+    none: None,
+
+    everyone: Some(SpacePermissionSet::from_iter(vec![
+			SP::UpdateOwnSubspaces,
+			SP::DeleteOwnSubspaces,
+			SP::HideOwnSubspaces,
+
+			SP::UpdateOwnPosts,
+			SP::DeleteOwnPosts,
+			SP::HideOwnPosts,
+
+			SP::CreateComments,
+			SP::UpdateOwnComments,
+			SP::DeleteOwnComments,
+			SP::HideOwnComments,
+
+			SP::Upvote,
+			SP::Downvote,
+			SP::Share,
+    ].into_iter())),
+
+    // Followers can do everything that everyone else can.
+    follower: None,
+
+    space_owner: Some(SpacePermissionSet::from_iter(vec![
+      SP::ManageRoles,
+      SP::RepresentSpaceInternally,
+      SP::RepresentSpaceExternally,
+      SP::OverrideSubspacePermissions,
+      SP::OverridePostPermissions,
+
+      SP::CreateSubspaces,
+      SP::CreatePosts,
+
+      SP::UpdateSpace,
+      SP::UpdateAnySubspace,
+      SP::UpdateAnyPost,
+
+      SP::DeleteAnySubspace,
+      SP::DeleteAnyPost,
+
+      SP::HideAnySubspace,
+      SP::HideAnyPost,
+      SP::HideAnyComment,
+
+      SP::SuggestEntityStatus,
+      SP::UpdateEntityStatus,
+
+      SP::UpdateSpaceSettings,
+    ].into_iter())),
+  };
+}
+
+impl pallet_permissions::Config for Runtime {
+	type DefaultSpacePermissions = DefaultSpacePermissions;
+}
+
+parameter_types! {
+  pub const MaxCommentDepth: u32 = 10;
+}
+
+impl pallet_posts::Config for Runtime {
+	type Event = Event;
+	type MaxCommentDepth = MaxCommentDepth;
+	type PostScores = Scores;
+	type AfterPostUpdated = PostHistory;
+}
+
+impl pallet_post_history::Config for Runtime {}
+
+impl pallet_profile_follows::Config for Runtime {
+	type Event = Event;
+	type BeforeAccountFollowed = Scores;
+	type BeforeAccountUnfollowed = Scores;
+}
+
+impl pallet_profiles::Config for Runtime {
+	type Event = Event;
+	type AfterProfileUpdated = ProfileHistory;
+}
+
+impl pallet_profile_history::Config for Runtime {}
+
+impl pallet_reactions::Config for Runtime {
+	type Event = Event;
+	type PostReactionScores = Scores;
+}
+
+parameter_types! {
+  pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
+}
+
+impl pallet_roles::Config for Runtime {
+	type Event = Event;
+	type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
+	type Spaces = Spaces;
+	type SpaceFollows = SpaceFollows;
+}
+
+parameter_types! {
+  pub const FollowSpaceActionWeight: i16 = 7;
+  pub const FollowAccountActionWeight: i16 = 3;
+
+  pub const SharePostActionWeight: i16 = 7;
+  pub const UpvotePostActionWeight: i16 = 5;
+  pub const DownvotePostActionWeight: i16 = -3;
+
+  pub const CreateCommentActionWeight: i16 = 5;
+  pub const ShareCommentActionWeight: i16 = 5;
+  pub const UpvoteCommentActionWeight: i16 = 4;
+  pub const DownvoteCommentActionWeight: i16 = -2;
+}
+
+impl pallet_scores::Config for Runtime {
+	type Event = Event;
+
+	type FollowSpaceActionWeight = FollowSpaceActionWeight;
+	type FollowAccountActionWeight = FollowAccountActionWeight;
+
+	type SharePostActionWeight = SharePostActionWeight;
+	type UpvotePostActionWeight = UpvotePostActionWeight;
+	type DownvotePostActionWeight = DownvotePostActionWeight;
+
+	type CreateCommentActionWeight = CreateCommentActionWeight;
+	type ShareCommentActionWeight = ShareCommentActionWeight;
+	type UpvoteCommentActionWeight = UpvoteCommentActionWeight;
+	type DownvoteCommentActionWeight = DownvoteCommentActionWeight;
+}
+
+impl pallet_space_follows::Config for Runtime {
+	type Event = Event;
+	type BeforeSpaceFollowed = Scores;
+	type BeforeSpaceUnfollowed = Scores;
+}
+
+parameter_types! {
+	pub SpaceCreationFee: Balance = 50 * CENTS;
+}
+
+impl pallet_spaces::Config for Runtime {
+	type Event = Event;
+	type Roles = Roles;
+	type SpaceFollows = SpaceFollows;
+	type BeforeSpaceCreated = SpaceFollows;
+	type AfterSpaceUpdated = SpaceHistory;
+	type SpaceCreationFee = SpaceCreationFee;
+}
+
+parameter_types! {}
+
+impl pallet_space_history::Config for Runtime {}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -309,6 +492,22 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: xcm_handler::{Module, Event<T>, Origin},
+
+		// Subsocial custom pallets:
+		Permissions: pallet_permissions::{Module, Call},
+		Posts: pallet_posts::{Module, Call, Storage, Event<T>},
+		PostHistory: pallet_post_history::{Module, Storage},
+		ProfileFollows: pallet_profile_follows::{Module, Call, Storage, Event<T>},
+		Profiles: pallet_profiles::{Module, Call, Storage, Event<T>},
+		ProfileHistory: pallet_profile_history::{Module, Storage},
+		Reactions: pallet_reactions::{Module, Call, Storage, Event<T>},
+		Roles: pallet_roles::{Module, Call, Storage, Event<T>},
+		Scores: pallet_scores::{Module, Call, Storage, Event<T>},
+		SpaceFollows: pallet_space_follows::{Module, Call, Storage, Event<T>},
+		SpaceHistory: pallet_space_history::{Module, Storage},
+		// SpaceOwnership: pallet_space_ownership::{Module, Call, Storage, Event<T>},
+		Spaces: pallet_spaces::{Module, Call, Storage, Event<T>, Config<T>},
+		Utils: pallet_utils::{Module, Storage, Event<T>, Config<T>},
 	}
 }
 
