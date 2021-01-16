@@ -45,13 +45,13 @@ RUN rm -rf /usr/lib/python* && \
 	rm -rf /usr/bin /usr/sbin /usr/share/man
 
 ## Copy chainspecs into the image
-COPY rococo-local.json .
+COPY res/rococo-local.json /
+COPY res/rococo.json /
 
 RUN mkdir /data
+VOLUME ["/data"]
 
 USER subsocial
 EXPOSE 30333 9933 9944
-
-VOLUME ["/data"]
 
 ENTRYPOINT ["/usr/local/bin/subsocial-collator"]
