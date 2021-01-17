@@ -1,0 +1,24 @@
+version: "3.2"
+services:
+  node_collator:
+    image: dappforce/subsocial-node:rococo-v1
+    container_name: subsocial-collator
+    restart: always
+    command:
+      --db-cache 1024
+      --database ParityDb
+      --wasm-execution Compiled
+      --collator
+      --name "Local Subsocial Collator"
+      --parachain-id 881
+      --ws-port 9845
+      --port 40335
+      --rpc-port 9836
+      --no-prometheus
+      --no-telemetry
+      --
+      --execution wasm
+      --chain /rococo-local.json
+      --port 30344
+      --ws-port 9978
+    network_mode: "host"

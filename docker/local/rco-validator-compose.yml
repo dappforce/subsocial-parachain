@@ -1,0 +1,43 @@
+version: "3.2"
+services:
+  node_validator_alice:
+    image: parity/rococo:rococo-v1
+    container_name: rco-validator-alice
+    restart: always
+    command:
+      --chain rococo-local
+      --database ParityDb
+      --wasm-execution Compiled
+      --alice
+      --name "DappForce Rococo Alice"
+      --ws-port 9944
+      --port 30333
+      --rpc-port 9933
+      --rpc-methods Unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --no-prometheus
+      --no-telemetry
+    ports:
+      - "127.0.0.1:9933:9933"
+      - "9944:9944"
+      - "30333:30333"
+
+  node_validator_bob:
+    image: parity/rococo:rococo-v1
+    container_name: rco-validator-bob
+    restart: always
+    command:
+      --chain rococo-local
+      --database ParityDb
+      --wasm-execution Compiled
+      --bob
+      --name "DappForce Rococo Bob"
+      --ws-port 9945
+      --port 30334
+      --unsafe-ws-external
+      --no-prometheus
+      --no-telemetry
+    ports:
+      - "9945:9945"
+      - "30334:30334"
