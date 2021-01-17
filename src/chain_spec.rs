@@ -10,7 +10,7 @@ use sc_telemetry::TelemetryEndpoints;
 
 use parachain_runtime::constants::currency::SUBS;
 
-pub const SUBSOCIAL_PARACHAIN_ID: u32 = 881;
+pub const SUBSOCIAL_PARACHAIN_ID: u32 = 888;
 // Note this is the URL for the telemetry server
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const DEFAULT_PROTOCOL_ID: &str = "sub";
