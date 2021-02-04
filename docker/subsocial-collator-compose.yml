@@ -10,11 +10,12 @@ services:
       --wasm-execution Compiled
       --collator
       --name "DappForce Subsocial Collator"
-      --parachain-id 881
+      --parachain-id 888
       --ws-port 9845
       --port 40335
       --rpc-port 9836
       --no-prometheus
+      --no-telemetry
       --
       --execution wasm
       --chain /rococo.json
