@@ -10,7 +10,7 @@ services:
       --wasm-execution Compiled
       --collator
       --name "Local Subsocial Collator"
-      --parachain-id 881
+      --parachain-id 888
       --ws-port 9845
       --port 40335
       --rpc-port 9836
