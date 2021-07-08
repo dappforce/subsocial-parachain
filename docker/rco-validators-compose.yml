@@ -1,0 +1,47 @@
+version: "3.2"
+services:
+  validator_01:
+    image: parity/rococo:rococo-v1
+    container_name: rco-validator-01
+    restart: always
+    command:
+      --chain rococo
+      --db-cache 1024
+      --database paritydb-experimental
+      --wasm-execution Compiled
+      --validator
+      --name "DappForce Rococo 01"
+      --ws-port 9744
+      --port 20333
+      --rpc-port 9733
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --no-prometheus
+      $UNSAFE_RPC_METHODS
+    ports:
+      - "127.0.0.1:9733:9733"
+      - "9744:9744"
+      - "20333:20333"
+
+  validator_02:
+    image: parity/rococo:rococo-v1
+    container_name: rco-validator-02
+    restart: always
+    command:
+      --chain rococo
+      --db-cache 1024
+      --database paritydb-experimental
+      --wasm-execution Compiled
+      --validator
+      --name "DappForce Rococo 02"
+      --ws-port 9745
+      --port 20334
+      --rpc-port 9734
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --no-prometheus
+      $UNSAFE_RPC_METHODS
+    ports:
+      - "127.0.0.1:9734:9734"
+      - "9745:9745"
+      - "20334:20334"

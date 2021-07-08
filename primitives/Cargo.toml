@@ -1,0 +1,37 @@
+[package]
+name = "subsocial-parachain-primitives"
+version = "0.1.0"
+authors = ['DappForce <dappforce@pm.me>']
+edition = "2018"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
+
+# Substrate dependencies
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.7" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+
+[dev-dependencies]
+sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+pretty_assertions = "0.6.1"
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"serde",
+	"sp-application-crypto/std",
+	"sp-consensus-aura/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"frame-system/std",
+]
