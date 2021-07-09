@@ -1,15 +1,15 @@
 FROM rust:buster as builder
 
 RUN apt-get update && apt-get install time clang libclang-dev llvm -y
-RUN rustup toolchain install nightly
-RUN rustup target add wasm32-unknown-unknown --toolchain nightly
-RUN command -v wasm-gc || cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+RUN rustup toolchain install nightly-2021-06-01
+RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2021-06-01
+RUN command -v wasm-gc || cargo +nightly-2021-06-01 install --git https://github.com/alexcrichton/wasm-gc --force
 
 WORKDIR /dappforce/subsocial
 
-COPY .. .
+COPY . .
 
-RUN cargo build --release -p subsocial-collator
+RUN cargo build --release
 
 # the collator stage is normally built once, cached, and then ignored, but can
 # be specified with the --target build flag. This adds some extra tooling to the
@@ -29,9 +29,9 @@ RUN apt-get update && apt-get install jq curl bash -y && \
     yarn global add @polkadot/api-cli@0.10.0-beta.14
 COPY --from=builder \
     /dappforce/subsocial/target/release/subsocial-collator /usr/bin
-COPY scripts/inject_bootnodes.sh /usr/bin
+COPY docker/scripts/inject_bootnodes.sh /usr/bin
 CMD ["/usr/bin/inject_bootnodes.sh"]
-COPY scripts/healthcheck.sh /usr/bin/
+COPY docker/scripts/healthcheck.sh /usr/bin/
 HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
     CMD ["/usr/bin/healthcheck.sh"]
 
