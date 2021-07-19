@@ -2,3 +2,5 @@
 **/target/*
 .cargo-remote.toml
 **/pallets/*
+*.wasm
+para-*-genesis
