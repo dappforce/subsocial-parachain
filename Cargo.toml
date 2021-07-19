@@ -25,6 +25,7 @@ async-trait = "0.1.42"
 # Parachain runtimes
 rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
 westsocial-runtime = { path = "runtime/westsocial-runtime" }
+kusocial-runtime = { path = "runtime/kusocial-runtime" }
 subsocial-common = { path = "runtime/subsocial-common" }
 
 # Substrate dependencies
@@ -94,4 +95,5 @@ default = []
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'westsocial-runtime/runtime-benchmarks',
+	'kusocial-runtime/runtime-benchmarks',
 ]
