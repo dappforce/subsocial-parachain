@@ -2,7 +2,7 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		WestsocialRuntimeExecutor, new_partial,
+		KusocialRuntimeExecutor, WestsocialRuntimeExecutor, new_partial,
 		RococoParachainRuntimeExecutor, Block,
 	},
 };
@@ -20,20 +20,27 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-// default to the WestSocial id
+// default to the KuSocial/WestSocial id
 const DEFAULT_PARA_ID: u32 = 1000;
 
 trait IdentifyChain {
+	fn is_kusocial(&self) -> bool;
 	fn is_westsocial(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
+	fn is_kusocial(&self) -> bool {
+		self.id().starts_with("kusocial")
+	}
 	fn is_westsocial(&self) -> bool {
 		self.id().starts_with("westsocial")
 	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+	fn is_kusocial(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_kusocial(self)
+	}
 	fn is_westsocial(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_westsocial(self)
 	}
@@ -45,18 +52,22 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net(para_id)),
+		"kusocial-dev" => Box::new(chain_spec::kusocial_development_config(para_id)),
+		"kusocial-local" => Box::new(chain_spec::kusocial_local_config(para_id)),
+		// the chain spec as used for generating the upgrade genesis values
+		"kusocial-genesis" => Box::new(chain_spec::kusocial_config(para_id)),
+		// TODO: the kusocial chain spec as used for syncing
 		"westsocial-dev" => Box::new(chain_spec::westsocial_development_config(para_id)),
 		"westsocial-local" => Box::new(chain_spec::westsocial_local_config(para_id)),
 		// the chain spec as used for generating the upgrade genesis values
 		"westsocial-genesis" => Box::new(chain_spec::westsocial_config(para_id)),
-		// the chain spec as used for syncing
-		/*"westsocial" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/westsocial.json")[..],
-		)?),*/
+		// TODO: the westsocial chain spec as used for syncing
 		"" => Box::new(chain_spec::get_chain_spec(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
-			if chain_spec.is_westsocial() {
+			if chain_spec.is_kusocial() {
+				Box::new(chain_spec::KusocialChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_westsocial() {
 				Box::new(chain_spec::WestsocialChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
@@ -102,6 +113,8 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if chain_spec.is_westsocial() {
+			&kusocial_runtime::VERSION
+		} else if chain_spec.is_westsocial() {
 			&westsocial_runtime::VERSION
 		} else {
 			&rococo_parachain_runtime::VERSION
@@ -162,7 +175,16 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		if runner.config().chain_spec.is_westsocial() {
+		if runner.config().chain_spec.is_kusocial() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<kusocial_runtime::RuntimeApi, KusocialRuntimeExecutor, _>(
+					&$config,
+					crate::service::subsocial_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if runner.config().chain_spec.is_westsocial() {
 			runner.async_run(|$config| {
 				let $components = new_partial::<westsocial_runtime::RuntimeApi, WestsocialRuntimeExecutor, _>(
 					&$config,
@@ -289,7 +311,9 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-				if runner.config().chain_spec.is_westsocial() {
+				if runner.config().chain_spec.is_kusocial() {
+					runner.sync_run(|config| cmd.run::<Block, KusocialRuntimeExecutor>(config))
+				} else if runner.config().chain_spec.is_westsocial() {
 					runner.sync_run(|config| cmd.run::<Block, WestsocialRuntimeExecutor>(config))
 				} else {
 					Err("Chain doesn't support benchmarking".into())
@@ -340,7 +364,16 @@ pub fn run() -> Result<()> {
 					}
 				);
 
-				if config.chain_spec.is_westsocial() {
+				if config.chain_spec.is_kusocial() {
+					crate::service::start_subsocial_node::<kusocial_runtime::RuntimeApi, KusocialRuntimeExecutor>(
+						config,
+						polkadot_config,
+						id,
+					)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else if config.chain_spec.is_westsocial() {
 					crate::service::start_subsocial_node::<westsocial_runtime::RuntimeApi, WestsocialRuntimeExecutor>(
 						config,
 						polkadot_config,

@@ -149,8 +149,10 @@ fn testnet_genesis(
 use subsocial_common::Balance as SubsocialBalance;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
+pub type KusocialChainSpec = sc_service::GenericChainSpec<kusocial_runtime::GenesisConfig, Extensions>;
 pub type WestsocialChainSpec = sc_service::GenericChainSpec<westsocial_runtime::GenesisConfig, Extensions>;
 
+const KUSOCIAL_ED: SubsocialBalance = kusocial_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const WESTSOCIAL_ED: SubsocialBalance = westsocial_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
@@ -170,8 +172,199 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn kusocial_session_keys(keys: AuraId) -> kusocial_runtime::opaque::SessionKeys {
+	kusocial_runtime::opaque::SessionKeys { aura: keys }
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn westsocial_session_keys(keys: AuraId) -> westsocial_runtime::opaque::SessionKeys {
 	westsocial_runtime::opaque::SessionKeys { aura: keys }
+}
+
+pub fn kusocial_development_config(id: ParaId) -> KusocialChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	KusocialChainSpec::from_genesis(
+		// Name
+		"Kusocial Development",
+		// ID
+		"kusocial_dev",
+		ChainType::Local,
+		move || {
+			kusocial_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					)
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "kusama-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn kusocial_local_config(id: ParaId) -> KusocialChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	KusocialChainSpec::from_genesis(
+		// Name
+		"Kusocial Local",
+		// ID
+		"kusocial_local",
+		ChainType::Local,
+		move || {
+			kusocial_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "kusama-local".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn kusocial_config(id: ParaId) -> KusocialChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	KusocialChainSpec::from_genesis(
+		// Name
+		"Kusocial",
+		// ID
+		"kusocial",
+		ChainType::Live,
+		move || {
+			kusocial_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Charlie"),
+						get_collator_keys_from_seed("Charlie")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Dave"),
+						get_collator_keys_from_seed("Dave")
+					),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				vec![],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "kusama".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+fn kusocial_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> kusocial_runtime::GenesisConfig {
+	kusocial_runtime::GenesisConfig {
+		system: kusocial_runtime::SystemConfig {
+			code: kusocial_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: kusocial_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, KUSOCIAL_ED * 4096))
+				.collect(),
+		},
+		parachain_info: kusocial_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: kusocial_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: KUSOCIAL_ED * 16,
+			..Default::default()
+		},
+		session: kusocial_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				kusocial_session_keys(aura), // session keys
+			)).collect()
+		},
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+		spaces: kusocial_runtime::SpacesConfig {
+			endowed_account: root_key,
+		},
+	}
 }
 
 pub fn westsocial_development_config(id: ParaId) -> WestsocialChainSpec {
@@ -229,14 +422,15 @@ pub fn westsocial_local_config(id: ParaId) -> WestsocialChainSpec {
 		move || {
 			westsocial_genesis(
 				// initial collators.
-				vec![(
-						 get_account_id_from_seed::<sr25519::Public>("Alice"),
-						 get_collator_keys_from_seed("Alice")
-					 ),
-					 (
-						 get_account_id_from_seed::<sr25519::Public>("Bob"),
-						 get_collator_keys_from_seed("Bob")
-					 ),
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
 				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -281,22 +475,23 @@ pub fn westsocial_config(id: ParaId) -> WestsocialChainSpec {
 		move || {
 			westsocial_genesis(
 				// initial collators.
-				vec![(
-						 hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325").into(),
-						 hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325").unchecked_into()
-					 ),
-					 (
-						 hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876").into(),
-						 hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876").unchecked_into()
-					 ),
-					 (
-						 hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f").into(),
-						 hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f").unchecked_into()
-					 ),
-					 (
-						 hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322").into(),
-						 hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322").unchecked_into()
-					 ),
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Charlie"),
+						get_collator_keys_from_seed("Charlie")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Dave"),
+						get_collator_keys_from_seed("Dave")
+					),
 				],
 				vec![],
 				// re-use the Westend sudo key

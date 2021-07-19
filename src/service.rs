@@ -44,6 +44,14 @@ native_executor_instance!(
 	rococo_parachain_runtime::native_version,
 );
 
+// Native Kusocial executor instance.
+native_executor_instance!(
+	pub KusocialRuntimeExecutor,
+	kusocial_runtime::api::dispatch,
+	kusocial_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
+);
+
 // Native WestSocial executor instance.
 native_executor_instance!(
 	pub WestsocialRuntimeExecutor,
