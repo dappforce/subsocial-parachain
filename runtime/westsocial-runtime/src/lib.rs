@@ -577,6 +577,133 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
+// Subsocial custom pallets go below:
+// ------------------------------------------------------------------------------------------------
+
+parameter_types! {
+  pub const MinHandleLen: u32 = 5;
+  pub const MaxHandleLen: u32 = 50;
+}
+
+impl pallet_utils::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type MinHandleLen = MinHandleLen;
+	type MaxHandleLen = MaxHandleLen;
+}
+
+use pallet_permissions::default_permissions::DefaultSpacePermissions;
+
+impl pallet_permissions::Config for Runtime {
+	type DefaultSpacePermissions = DefaultSpacePermissions;
+}
+
+parameter_types! {
+  pub const MaxCommentDepth: u32 = 10;
+}
+
+impl pallet_posts::Config for Runtime {
+	type Event = Event;
+	type MaxCommentDepth = MaxCommentDepth;
+	type AfterPostUpdated = PostHistory;
+	type IsPostBlocked = ();
+}
+
+parameter_types! {}
+
+impl pallet_post_history::Config for Runtime {}
+
+parameter_types! {}
+
+impl pallet_profile_follows::Config for Runtime {
+	type Event = Event;
+	type BeforeAccountFollowed = ();
+	type BeforeAccountUnfollowed = ();
+}
+
+parameter_types! {}
+
+impl pallet_profiles::Config for Runtime {
+	type Event = Event;
+	type AfterProfileUpdated = ProfileHistory;
+}
+
+parameter_types! {}
+
+impl pallet_profile_history::Config for Runtime {}
+
+parameter_types! {}
+
+impl pallet_reactions::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+  pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
+}
+
+impl pallet_roles::Config for Runtime {
+	type Event = Event;
+	type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
+	type Spaces = Spaces;
+	type SpaceFollows = SpaceFollows;
+	type IsAccountBlocked = ();
+	type IsContentBlocked = ();
+}
+
+parameter_types! {
+  pub const FollowSpaceActionWeight: i16 = 7;
+  pub const FollowAccountActionWeight: i16 = 3;
+
+  pub const SharePostActionWeight: i16 = 7;
+  pub const UpvotePostActionWeight: i16 = 5;
+  pub const DownvotePostActionWeight: i16 = -3;
+
+  pub const CreateCommentActionWeight: i16 = 5;
+  pub const ShareCommentActionWeight: i16 = 5;
+  pub const UpvoteCommentActionWeight: i16 = 4;
+  pub const DownvoteCommentActionWeight: i16 = -2;
+}
+
+parameter_types! {}
+
+impl pallet_space_follows::Config for Runtime {
+	type Event = Event;
+	type BeforeSpaceFollowed = ();
+	type BeforeSpaceUnfollowed = ();
+}
+
+parameter_types! {}
+
+impl pallet_space_ownership::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+	pub HandleDeposit: Balance = 5 * UNITS;
+}
+
+impl pallet_spaces::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Roles = Roles;
+	type SpaceFollows = SpaceFollows;
+	type BeforeSpaceCreated = SpaceFollows;
+	type AfterSpaceUpdated = SpaceHistory;
+	type IsAccountBlocked = ();
+	type IsContentBlocked = ();
+	type HandleDeposit = HandleDeposit;
+}
+
+parameter_types! {}
+
+impl pallet_space_history::Config for Runtime {}
+
+impl pallet_faucets::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -614,6 +741,25 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
+
+		// Subsocial pallets.
+		Permissions: pallet_permissions::{Pallet, Call},
+		Posts: pallet_posts::{Pallet, Call, Storage, Event<T>},
+		PostHistory: pallet_post_history::{Pallet, Storage},
+		ProfileFollows: pallet_profile_follows::{Pallet, Call, Storage, Event<T>},
+		Profiles: pallet_profiles::{Pallet, Call, Storage, Event<T>},
+		ProfileHistory: pallet_profile_history::{Pallet, Storage},
+		Reactions: pallet_reactions::{Pallet, Call, Storage, Event<T>},
+		Roles: pallet_roles::{Pallet, Call, Storage, Event<T>},
+		SpaceFollows: pallet_space_follows::{Pallet, Call, Storage, Event<T>},
+		SpaceHistory: pallet_space_history::{Pallet, Storage},
+		SpaceOwnership: pallet_space_ownership::{Pallet, Call, Storage, Event<T>},
+		Spaces: pallet_spaces::{Pallet, Call, Storage, Event<T>, Config<T>},
+		Utils: pallet_utils::{Pallet, Event<T>},
+
+		// New experimental pallets. Not recommended to use in production yet.
+
+		Faucets: pallet_faucets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

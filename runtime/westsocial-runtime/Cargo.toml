@@ -72,6 +72,27 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 
+# Subsocial local dependencies
+pallet-faucets = { default-features = false, path = '../../pallets/faucets' }
+pallet-permissions = { default-features = false, path = '../../pallets/permissions' }
+
+pallet-post-history = { default-features = false, path = '../../pallets/post-history' }
+pallet-posts = { default-features = false, path = '../../pallets/posts' }
+
+pallet-profile-follows = { default-features = false, path = '../../pallets/profile-follows' }
+pallet-profile-history = { default-features = false, path = '../../pallets/profile-history' }
+pallet-profiles = { default-features = false, path = '../../pallets/profiles' }
+
+pallet-reactions = { default-features = false, path = '../../pallets/reactions' }
+pallet-roles = { default-features = false, path = '../../pallets/roles' }
+
+pallet-space-follows = { default-features = false, path = '../../pallets/space-follows' }
+pallet-space-history = { default-features = false, path = '../../pallets/space-history' }
+pallet-space-ownership = { default-features = false, path = '../../pallets/space-ownership' }
+pallet-spaces = { default-features = false, path = '../../pallets/spaces' }
+
+pallet-utils = { default-features = false, path = '../../pallets/utils' }
+
 [dev-dependencies]
 hex-literal = "0.3.1"
 hex = "0.4.3"
@@ -148,4 +169,18 @@ std = [
 	"sp-consensus-aura/std",
 	"node-primitives/std",
 	"subsocial-common/std",
+	'pallet-faucets/std',
+	'pallet-permissions/std',
+	'pallet-post-history/std',
+	'pallet-posts/std',
+	'pallet-profile-follows/std',
+	'pallet-profile-history/std',
+	'pallet-profiles/std',
+	'pallet-reactions/std',
+	'pallet-roles/std',
+	'pallet-space-follows/std',
+	'pallet-space-history/std',
+	'pallet-space-ownership/std',
+	'pallet-spaces/std',
+	'pallet-utils/std',
 ]

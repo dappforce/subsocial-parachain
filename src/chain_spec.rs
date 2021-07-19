@@ -335,7 +335,7 @@ fn westsocial_genesis(
 				.map(|k| (k, WESTSOCIAL_ED * 4096))
 				.collect(),
 		},
-		sudo: westsocial_runtime::SudoConfig { key: root_key },
+		sudo: westsocial_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: westsocial_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: westsocial_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -354,5 +354,8 @@ fn westsocial_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		spaces: westsocial_runtime::SpacesConfig {
+			endowed_account: root_key,
+		},
 	}
 }
