@@ -1,6 +1,6 @@
 [package]
 name = "subsocial-collator"
-version = '0.7.0'
+version = '0.1.0'
 build = 'build.rs'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2018'
