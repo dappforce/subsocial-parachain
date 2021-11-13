@@ -192,10 +192,11 @@ pub fn staging_testnet_config() -> ChainSpec {
 			//	FIXME: Alice now
 			let root_key: AccountId = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
 
+			const EXISTENTIAL_DEPOSIT_VALUE: Balance = EXISTENTIAL_DEPOSIT / UNIT;
 			let unique_allocation_accounts = initial_allocation
 				.iter()
 				.map(|(account_id, amount)| {
-					assert!(*amount >= EXISTENTIAL_DEPOSIT, "allocation amount must gte ED");
+					assert!(*amount >= EXISTENTIAL_DEPOSIT_VALUE, "allocation amount must gte ED");
 					total_allocated = total_allocated
 						.checked_add(*amount)
 						.expect("shouldn't overflow when building genesis");
@@ -212,7 +213,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 
 			assert_eq!(
 				total_allocated,
-				100_000_000 * UNIT, // 100 million SUB
+				100_000_000, // 100 million SUB
 				"total allocation must be equal to 100 million SUB"
 			);
 
@@ -264,8 +265,8 @@ fn parachain_genesis(
 				.cloned()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),                       // account id
+						acc,                 	        			 // validator id
 						subsocial_session_keys(aura), // session keys
 					)
 				})
