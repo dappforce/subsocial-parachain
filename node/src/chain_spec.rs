@@ -3,16 +3,17 @@ use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public, sr25519};
+use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
 use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
 
-use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance};
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
 use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const DEFAULT_PROTOCOL_ID: &str = "subx";
-const SUB: Balance = 100_000_000_000; // 11 decimals
+
+const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -87,12 +88,12 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					),
 				],
 				vec![
-					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
 				id,
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -130,12 +131,12 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 					),
 				],
 				vec![
-					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
-					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
 				id,
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -211,7 +212,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 
 			assert_eq!(
 				total_allocated,
-				100_000_000 * SUB, // 100 million SUB
+				100_000_000 * UNIT, // 100 million SUB
 				"total allocation must be equal to 100 million SUB"
 			);
 
@@ -247,8 +248,8 @@ fn parachain_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| {
-				(k.0, k.1.saturating_mul(SUB))
+			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
+				(account, balance.saturating_mul(UNIT))
 			}).collect(),
 		},
 		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
