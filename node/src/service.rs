@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 // Local Runtime Types
-use parachain_template_runtime::{
+use subsocial_parachain_runtime::{
 	opaque::Block, AccountId, Balance, Hash, Index as Nonce, RuntimeApi,
 };
 
@@ -32,17 +32,17 @@ use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor instance.
-pub struct TemplateRuntimeExecutor;
+pub struct SubsocialRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for SubsocialRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		parachain_template_runtime::api::dispatch(method, data)
+		subsocial_parachain_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		parachain_template_runtime::native_version()
+		subsocial_parachain_runtime::native_version()
 	}
 }
 
@@ -353,14 +353,14 @@ where
 /// Build the import queue for the parachain runtime.
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<SubsocialRuntimeExecutor>>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<SubsocialRuntimeExecutor>>,
 	>,
 	sc_service::Error,
 > {
@@ -403,9 +403,9 @@ pub async fn start_parachain_node(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<SubsocialRuntimeExecutor>>>,
 )> {
-	start_node_impl::<RuntimeApi, TemplateRuntimeExecutor, _, _, _>(
+	start_node_impl::<RuntimeApi, SubsocialRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
