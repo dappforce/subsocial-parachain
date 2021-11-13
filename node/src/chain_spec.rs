@@ -1,14 +1,22 @@
 use cumulus_primitives_core::ParaId;
-use parachain_template_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::{Pair, Public, sr25519};
+use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
+use hex_literal::hex;
+
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance};
+use crate::command::DEFAULT_PARA_ID;
+
+pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const DEFAULT_PROTOCOL_ID: &str = "subx";
+const SUB: Balance = 100_000_000_000; // 11 decimals
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<parachain_template_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<subsocial_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -54,17 +62,11 @@ where
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> parachain_template_runtime::SessionKeys {
-	parachain_template_runtime::SessionKeys { aura: keys }
+pub fn subsocial_session_keys(keys: AuraId) -> subsocial_parachain_runtime::SessionKeys {
+	subsocial_parachain_runtime::SessionKeys { aura: keys }
 }
 
 pub fn development_config(id: ParaId) -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "ROC".into());
-	properties.insert("tokenDecimals".into(), 12.into());
-	properties.insert("ss58Format".into(), 42.into());
-
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -72,7 +74,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		"dev",
 		ChainType::Development,
 		move || {
-			testnet_genesis(
+			parachain_genesis(
 				// initial collators.
 				vec![
 					(
@@ -85,26 +87,21 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
 				],
 				id,
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		vec![],
 		None,
 		None,
-		None,
+		Some(subsocial_properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: id.into(),
@@ -112,21 +109,15 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "ROC".into());
-	properties.insert("tokenDecimals".into(), 12.into());
-	properties.insert("ss58Format".into(), 42.into());
-
+pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Local Subsocial Testnet",
 		// ID
 		"local_testnet",
 		ChainType::Local,
 		move || {
-			testnet_genesis(
+			parachain_genesis(
 				// initial collators.
 				vec![
 					(
@@ -139,20 +130,15 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
 				],
 				id,
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -160,39 +146,118 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("template-local"),
+		Some(DEFAULT_PROTOCOL_ID),
 		// Properties
-		Some(properties),
+		Some(subsocial_properties()),
 		// Extensions
 		Extensions {
-			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			relay_chain,
 			para_id: id.into(),
 		},
 	)
 }
 
-fn testnet_genesis(
+pub fn rococo_local_testnet_config(id: ParaId) -> ChainSpec {
+	local_testnet_config(id, "rococo-local".into())
+}
+
+pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
+	local_testnet_config(id, "kusama-local".into())
+}
+
+pub fn subsocial_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
+}
+
+pub fn staging_testnet_config() -> ChainSpec {
+	ChainSpec::from_genesis(
+		// TODO: make it different from a Standalone chain
+		"Subsocial",
+		// TODO: make it different from a Standalone chain
+		"subsocial",
+		ChainType::Live,
+		move || {
+			let mut total_allocated: Balance = Zero::zero();
+
+			let initial_authorities: Vec<(AccountId, AuraId)> = vec![
+				// TODO: fill with `(AccountId, AuraId)`
+			];
+
+			let initial_allocation = vec![
+				// TODO: fill with `(who, how_much)`
+			];
+
+			// TODO: put expected `Sudo` account here
+			//	FIXME: Alice now
+			let root_key: AccountId = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+
+			let unique_allocation_accounts = initial_allocation
+				.iter()
+				.map(|(account_id, amount)| {
+					assert!(*amount >= EXISTENTIAL_DEPOSIT, "allocation amount must gte ED");
+					total_allocated = total_allocated
+						.checked_add(*amount)
+						.expect("shouldn't overflow when building genesis");
+
+					account_id
+				})
+				.cloned()
+				.collect::<std::collections::BTreeSet<_>>();
+
+			assert!(
+				unique_allocation_accounts.len() == initial_allocation.len(),
+				"duplicate allocation accounts in genesis."
+			);
+
+			assert_eq!(
+				total_allocated,
+				100_000_000 * SUB, // 100 million SUB
+				"total allocation must be equal to 100 million SUB"
+			);
+
+			parachain_genesis(
+				initial_authorities,
+				initial_allocation,
+				DEFAULT_PARA_ID.into(),
+				root_key,
+			)
+		},
+		vec![],
+		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+		Some(DEFAULT_PROTOCOL_ID),
+		Some(subsocial_properties()),
+		Extensions {
+			relay_chain: "kusama".into(),
+			para_id: DEFAULT_PARA_ID,
+		},
+	)
+}
+
+fn parachain_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<AccountId>,
+	endowed_accounts: Vec<(AccountId, Balance)>,
 	id: ParaId,
-) -> parachain_template_runtime::GenesisConfig {
-	parachain_template_runtime::GenesisConfig {
-		system: parachain_template_runtime::SystemConfig {
-			code: parachain_template_runtime::WASM_BINARY
+	root_key: AccountId,
+) -> subsocial_parachain_runtime::GenesisConfig {
+	subsocial_parachain_runtime::GenesisConfig {
+		system: subsocial_parachain_runtime::SystemConfig {
+			code: subsocial_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		balances: parachain_template_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+		balances: subsocial_parachain_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| {
+				(k.0, k.1.saturating_mul(SUB))
+			}).collect(),
 		},
-		parachain_info: parachain_template_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: parachain_template_runtime::CollatorSelectionConfig {
+		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: subsocial_parachain_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: parachain_template_runtime::SessionConfig {
+		session: subsocial_parachain_runtime::SessionConfig {
 			keys: invulnerables
 				.iter()
 				.cloned()
@@ -200,7 +265,7 @@ fn testnet_genesis(
 					(
 						acc.clone(),                 // account id
 						acc,                         // validator id
-						template_session_keys(aura), // session keys
+						subsocial_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -210,5 +275,18 @@ fn testnet_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		sudo: subsocial_parachain_runtime::SudoConfig {
+			key: root_key,
+		},
 	}
+}
+
+pub fn subsocial_properties() -> Properties {
+	let mut properties = Properties::new();
+
+	properties.insert("ss58Format".into(), 28.into());
+	properties.insert("tokenDecimals".into(), 11.into());
+	properties.insert("tokenSymbol".into(), "SUB".into());
+
+	properties
 }

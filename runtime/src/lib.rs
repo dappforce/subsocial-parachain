@@ -56,9 +56,6 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-/// Import the template pallet.
-pub use pallet_template;
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
 
@@ -144,7 +141,7 @@ impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
+		// in the Subsocial node, we map to 1/10 of that, or 1/10 MILLIUNIT
 		let p = MILLIUNIT / 10;
 		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 		smallvec![WeightToFeeCoefficient {
@@ -181,8 +178,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("template-parachain"),
-	impl_name: create_runtime_str!("template-parachain"),
+	spec_name: create_runtime_str!("subsocial-parachain"),
+	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 0,
@@ -599,9 +596,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
-/// Configure the pallet template in pallets/template.
-impl pallet_template::Config for Runtime {
+impl pallet_sudo::Config for Runtime {
 	type Event = Event;
+	type Call = Call;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -637,8 +634,11 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// Template
-		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>}  = 40,
+		// Subsocial Pallets
+		// TBD.
+
+		// Temporary
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
 
