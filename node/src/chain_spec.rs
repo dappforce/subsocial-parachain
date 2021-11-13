@@ -1,12 +1,18 @@
 use cumulus_primitives_core::ParaId;
-use subsocial_parachain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::{Pair, Public, sr25519};
+use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
+use hex_literal::hex;
 
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance};
+use crate::command::DEFAULT_PARA_ID;
+
+pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const DEFAULT_PROTOCOL_ID: &str = "subx";
+const SUB: Balance = 100_000_000_000; // 11 decimals
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -68,7 +74,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		"dev",
 		ChainType::Development,
 		move || {
-			testnet_genesis(
+			parachain_genesis(
 				// initial collators.
 				vec![
 					(
@@ -81,18 +87,12 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
 				],
 				id,
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -117,7 +117,7 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 		"local_testnet",
 		ChainType::Local,
 		move || {
-			testnet_genesis(
+			parachain_genesis(
 				// initial collators.
 				vec![
 					(
@@ -130,18 +130,12 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					(get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Charlie"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Dave"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Eve"), 1_000_000),
+					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), 1_000_000),
 				],
 				id,
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -171,9 +165,77 @@ pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
 	local_testnet_config(id, "kusama-local".into())
 }
 
-fn testnet_genesis(
+pub fn subsocial_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
+}
+
+pub fn staging_testnet_config() -> ChainSpec {
+	ChainSpec::from_genesis(
+		// TODO: make it different from a Standalone chain
+		"Subsocial",
+		// TODO: make it different from a Standalone chain
+		"subsocial",
+		ChainType::Live,
+		move || {
+			let mut total_allocated: Balance = Zero::zero();
+
+			let initial_authorities: Vec<(AccountId, AuraId)> = vec![
+				// TODO: fill with `(AccountId, AuraId)`
+			];
+
+			let initial_allocation = vec![
+				// TODO: fill with `(who, how_much)`
+			];
+
+			// TODO: put expected `Sudo` account here
+			//	FIXME: Alice now
+			let root_key: AccountId = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+
+			let unique_allocation_accounts = initial_allocation
+				.iter()
+				.map(|(account_id, amount)| {
+					assert!(*amount >= EXISTENTIAL_DEPOSIT, "allocation amount must gte ED");
+					total_allocated = total_allocated
+						.checked_add(*amount)
+						.expect("shouldn't overflow when building genesis");
+
+					account_id
+				})
+				.cloned()
+				.collect::<std::collections::BTreeSet<_>>();
+
+			assert!(
+				unique_allocation_accounts.len() == initial_allocation.len(),
+				"duplicate allocation accounts in genesis."
+			);
+
+			assert_eq!(
+				total_allocated,
+				100_000_000 * SUB, // 100 million SUB
+				"total allocation must be equal to 100 million SUB"
+			);
+
+			parachain_genesis(
+				initial_authorities,
+				initial_allocation,
+				DEFAULT_PARA_ID.into(),
+				root_key,
+			)
+		},
+		vec![],
+		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+		Some(DEFAULT_PROTOCOL_ID),
+		Some(subsocial_properties()),
+		Extensions {
+			relay_chain: "kusama".into(),
+			para_id: DEFAULT_PARA_ID,
+		},
+	)
+}
+
+fn parachain_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<AccountId>,
+	endowed_accounts: Vec<(AccountId, Balance)>,
 	id: ParaId,
 	root_key: AccountId,
 ) -> subsocial_parachain_runtime::GenesisConfig {
@@ -185,7 +247,9 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| {
+				(k.0, k.1.saturating_mul(SUB))
+			}).collect(),
 		},
 		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: subsocial_parachain_runtime::CollatorSelectionConfig {

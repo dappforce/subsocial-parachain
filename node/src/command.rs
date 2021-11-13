@@ -18,7 +18,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-const DEFAULT_PARA_ID: u32 = 2100;
+pub(crate) const DEFAULT_PARA_ID: u32 = 2100;
 
 fn load_spec(
 	id: &str,
@@ -26,9 +26,10 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config(para_id)),
-		"local-rococo" => Box::new(chain_spec::local_testnet_config(para_id)),
+		"local-rococo" => Box::new(chain_spec::rococo_local_testnet_config(para_id)),
 		"local-kusama" => Box::new(chain_spec::kusama_local_testnet_config(para_id)),
-		"" | "local" => Box::new(chain_spec::kusama_local_testnet_config(para_id)),
+		"staging" => Box::new(chain_spec::staging_testnet_config()),
+		"" => Box::new(chain_spec::subsocial_config()?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
 }
