@@ -109,61 +109,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-	ChainSpec::from_genesis(
-		// Name
-		"Local Testnet",
-		// ID
-		"local_testnet",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				id,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some(DEFAULT_PROTOCOL_ID),
-		// Properties
-		Some(subsocial_properties()),
-		// Extensions
-		Extensions {
-			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: id.into(),
-		},
-	)
-}
-
-pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
+pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Local Subsocial Testnet",
@@ -211,10 +157,18 @@ pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
 		Some(subsocial_properties()),
 		// Extensions
 		Extensions {
-			relay_chain: "kusama-local".into(), // You MUST set this to the correct network!
+			relay_chain,
 			para_id: id.into(),
 		},
 	)
+}
+
+pub fn rococo_local_testnet_config(id: ParaId) -> ChainSpec {
+	local_testnet_config(id, "rococo-local".into())
+}
+
+pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
+	local_testnet_config(id, "kusama-local".into())
 }
 
 fn testnet_genesis(
