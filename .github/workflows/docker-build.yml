@@ -1,0 +1,82 @@
+name: node
+on:
+  push:
+          #    branches:
+          #      - main
+          #      - master        
+          #  pull_request:
+          #    branches:
+          #      - main
+          #      - master        
+
+
+jobs:
+  staging_build:
+    name: Create & push Docker image 
+    runs-on: [self-hosted, linux, x64, node]
+    
+    steps:
+
+      - uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          IMAGE="oap75/node"
+          echo ::set-output name=tagged_image::${IMAGE}:${TAG}
+          echo ::set-output name=tag::${TAG}          
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}  
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-single-buildx
+
+
+      - name: Build production image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          file: docker/Dockerfile
+          push: true 
+          tags: |
+                  ${{ steps.prep.outputs.tagged_image }}
+                  oap75/node:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+
+          #  staging_deploy:
+          #    name: deploy
+          #    needs: staging_build
+          #    runs-on: ubuntu-latest
+          #    steps:
+          #    - name: executing remote ssh commands using password
+          #      uses: appleboy/ssh-action@master
+          #      with:
+          #        host: ${{ secrets.HOST }}
+          #        username: ${{ secrets.USERNAME }}
+          #        password: ${{ secrets.PASSWORD }}
+          #        port: ${{ secrets.PORT }}
+        #        script: nodes.sh  ### for Alice & Bob network
+        #        script: |
+        #          cd /home/ops/nodes/validator/internal
+        #          ./keys.sh                ### for custom keys
