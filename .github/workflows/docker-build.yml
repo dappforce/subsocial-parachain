@@ -22,7 +22,7 @@ jobs:
         id: prep
         run: |
           TAG=$(echo $GITHUB_SHA | head -c7)
-          IMAGE="oap75/node"
+          IMAGE="oap75/para"
           echo ::set-output name=tagged_image::${IMAGE}:${TAG}
           echo ::set-output name=tag::${TAG}          
 
@@ -54,7 +54,7 @@ jobs:
           push: true 
           tags: |
                   ${{ steps.prep.outputs.tagged_image }}
-                  oap75/node:latest
+                  oap75/para:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
