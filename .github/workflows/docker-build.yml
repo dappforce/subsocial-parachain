@@ -13,7 +13,7 @@ on:
 jobs:
   staging_build:
     name: Create & push Docker image 
-    runs-on: [self-hosted, linux, x64, node]
+    runs-on: [self-hosted, linux, x64, para]
     
     steps:
 
