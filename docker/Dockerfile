@@ -11,19 +11,18 @@ COPY --from=planner /subsocial/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --release && \
-    ls -la /subsocial/target/release
+RUN cargo build --release 
 
 
 FROM debian:buster-slim
-COPY --from=builder /subsocial/target/release/subsocial-node /usr/local/bin
+COPY --from=builder /subsocial/target/release/subsocial-collator /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial && \
         apt update && apt install curl -y && \
 	mkdir -p /subsocial/.local/share && \
 	mkdir /data && \
 	chown -R subsocial:subsocial /data && \
-	ln -s /data /subsocial/.local/share/subsocial-node 
+	ln -s /data /subsocial/.local/share/subsocial-node
 #&& \
 #	rm -rf /usr/bin /usr/sbin
        
@@ -32,4 +31,4 @@ USER subsocial
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/subsocial-node"]
+CMD ["/usr/local/bin/subsocial-collator"]
