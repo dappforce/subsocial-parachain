@@ -64,19 +64,18 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
 
-          #  staging_deploy:
-          #    name: deploy
-          #    needs: staging_build
-          #    runs-on: ubuntu-latest
-          #    steps:
-          #    - name: executing remote ssh commands using password
-          #      uses: appleboy/ssh-action@master
-          #      with:
-          #        host: ${{ secrets.HOST }}
-          #        username: ${{ secrets.USERNAME }}
-          #        password: ${{ secrets.PASSWORD }}
-          #        port: ${{ secrets.PORT }}
-        #        script: nodes.sh  ### for Alice & Bob network
-        #        script: |
-        #          cd /home/ops/nodes/validator/internal
-        #          ./keys.sh                ### for custom keys
+  staging_deploy:
+    name: deploy
+    needs: staging_build
+    runs-on: ubuntu-latest
+    steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/ops/nodes/para
+          ./para.sh                ### for custom keys
