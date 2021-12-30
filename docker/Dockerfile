@@ -24,8 +24,6 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial && \
 	chown -R subsocial:subsocial /data && \
         chown -R subsocial:subsocial /bin && \
 	ln -s /data /subsocial/.local/share/subsocial-node
-#&& \
-#	rm -rf /usr/bin /usr/sbin
        
 
 USER subsocial
