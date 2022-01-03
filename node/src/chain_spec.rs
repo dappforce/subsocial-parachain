@@ -172,25 +172,30 @@ pub fn subsocial_config() -> Result<ChainSpec, String> {
 
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		// TODO: make it different from a Standalone chain
-		"Subsocial",
-		// TODO: make it different from a Standalone chain
-		"subsocial",
+		"SubsocialX",
+		"subsocialx",
 		ChainType::Live,
 		move || {
 			let mut total_allocated: Balance = Zero::zero();
 
 			let initial_authorities: Vec<(AccountId, AuraId)> = vec![
-				// TODO: fill with `(AccountId, AuraId)`
+				(
+					// Collator 1
+					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].into(),
+					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].unchecked_into()
+				),
+				(
+					// Collator 2
+					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].into(),
+					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].unchecked_into()
+				)
 			];
 
 			let initial_allocation = vec![
-				// TODO: fill with `(who, how_much)`
+				(hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into(), 100_000_000)
 			];
 
-			// TODO: put expected `Sudo` account here
-			//	FIXME: Alice now
-			let root_key: AccountId = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+			let root_key: AccountId = hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into();
 
 			const EXISTENTIAL_DEPOSIT_VALUE: Balance = EXISTENTIAL_DEPOSIT / UNIT;
 			let unique_allocation_accounts = initial_allocation
