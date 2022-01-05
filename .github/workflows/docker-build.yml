@@ -66,7 +66,7 @@ jobs:
 
   staging_deploy1:
     name: deploy1
-    #    needs: staging_build
+    needs: staging_build
     runs-on: ubuntu-latest
     steps:
     - name: executing remote ssh commands
