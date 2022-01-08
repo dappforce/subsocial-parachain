@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  staging_build:
+  build:
     name: Create & push Docker image
     runs-on: [ self-hosted, linux, x64, parachain ]
 
@@ -58,7 +58,7 @@ jobs:
 
   deploy_1:
     name: deploy-collator-1
-    needs: staging_build
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands
@@ -75,14 +75,14 @@ jobs:
 
   deploy_2:
     name: deploy-collator-2
-    needs: staging_deploy_1
+    needs: deploy_1
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST2 }}
-          username: ${{ secrets.USERNAME2 }}
+          host: ${{ secrets.HOST_2 }}
+          username: ${{ secrets.USERNAME_2 }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           script: |
