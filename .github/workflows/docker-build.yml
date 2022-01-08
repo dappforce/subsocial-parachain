@@ -5,12 +5,11 @@ on:
       - main
 
 jobs:
-  staging_build:
+  build:
     name: Create & push Docker image
-    runs-on: [self-hosted, linux, x64, parachain]
+    runs-on: [ self-hosted, linux, x64, parachain ]
 
     steps:
-
       - uses: actions/checkout@v2
       - name: Prepare
         id: prep
@@ -18,7 +17,7 @@ jobs:
           TAG=$(echo $GITHUB_SHA | head -c7)
           IMAGE="dappforce/subsocial-parachain"
           echo ::set-output name=tagged_image::${IMAGE}:${TAG}
-          echo ::set-output name=tag::${TAG}          
+          echo ::set-output name=tag::${TAG}
 
       - name: Set up Docker Buildx
         id: buildx
@@ -37,7 +36,6 @@ jobs:
           key: ${{ runner.os }}-single-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-single-buildx
-
 
       - name: Build production image
         uses: docker/build-push-action@v2
@@ -58,18 +56,35 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
 
-  staging_deploy:
-    name: deploy
-    needs: staging_build
+  deploy_1:
+    name: deploy-collator-1
+    needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: executing remote ssh commands
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.KEY }}
-        port: ${{ secrets.PORT }}
-        script: |
-          cd /home/ops/
-          ./collator.sh
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/ops/
+            ./para-one.sh
+
+
+  deploy_2:
+    name: deploy-collator-2
+    needs: deploy_1
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_2 }}
+          username: ${{ secrets.USERNAME_2 }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/ops/
+            ./para-two.sh
