@@ -251,7 +251,6 @@ fn parachain_genesis(
 			code: subsocial_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
