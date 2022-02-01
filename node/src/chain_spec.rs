@@ -67,7 +67,7 @@ pub fn subsocial_session_keys(keys: AuraId) -> subsocial_parachain_runtime::Sess
 	subsocial_parachain_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config(id: ParaId) -> ChainSpec {
+pub fn development_config() -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -95,7 +95,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
 					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
-				id,
+				DEFAULT_PARA_ID.into(),
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -105,12 +105,12 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		Some(subsocial_properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: id.into(),
+			para_id: DEFAULT_PARA_ID,
 		},
 	)
 }
 
-pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
+pub fn local_testnet_config(relay_chain: String) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Local Subsocial Testnet",
@@ -138,7 +138,7 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
 					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
-				id,
+				DEFAULT_PARA_ID.into(),
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -153,17 +153,17 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain,
-			para_id: id.into(),
+			para_id: DEFAULT_PARA_ID,
 		},
 	)
 }
 
-pub fn rococo_local_testnet_config(id: ParaId) -> ChainSpec {
-	local_testnet_config(id, "rococo-local".into())
+pub fn rococo_local_testnet_config() -> ChainSpec {
+	local_testnet_config("rococo-local".into())
 }
 
-pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
-	local_testnet_config(id, "kusama-local".into())
+pub fn kusama_local_testnet_config() -> ChainSpec {
+	local_testnet_config("kusama-local".into())
 }
 
 pub fn subsocial_config() -> Result<ChainSpec, String> {
@@ -251,7 +251,6 @@ fn parachain_genesis(
 			code: subsocial_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
