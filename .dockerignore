@@ -1,6 +1,9 @@
-docker
-.github
-README.md
 .git
-LICENSE
-.dockerignore
+**/target/
+**/*.txt
+**/*.md
+/docker/
+!/target/release/subsocial-collator
+
+# dotfiles in the repo root
+/.*
