@@ -67,7 +67,7 @@ pub fn subsocial_session_keys(keys: AuraId) -> subsocial_parachain_runtime::Sess
 	subsocial_parachain_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config(id: ParaId) -> ChainSpec {
+pub fn development_config() -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -95,7 +95,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
 					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
-				id,
+				DEFAULT_PARA_ID.into(),
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -105,12 +105,12 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		Some(subsocial_properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: id.into(),
+			para_id: DEFAULT_PARA_ID,
 		},
 	)
 }
 
-pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
+pub fn local_testnet_config(relay_chain: String) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Local Subsocial Testnet",
@@ -138,7 +138,7 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 					(get_account_id_from_seed::<sr25519::Public>("Eve"), TESTNET_DEFAULT_ENDOWMENT),
 					(get_account_id_from_seed::<sr25519::Public>("Ferdie"), TESTNET_DEFAULT_ENDOWMENT),
 				],
-				id,
+				DEFAULT_PARA_ID.into(),
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -153,17 +153,17 @@ pub fn local_testnet_config(id: ParaId, relay_chain: String) -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain,
-			para_id: id.into(),
+			para_id: DEFAULT_PARA_ID,
 		},
 	)
 }
 
-pub fn rococo_local_testnet_config(id: ParaId) -> ChainSpec {
-	local_testnet_config(id, "rococo-local".into())
+pub fn rococo_local_testnet_config() -> ChainSpec {
+	local_testnet_config("rococo-local".into())
 }
 
-pub fn kusama_local_testnet_config(id: ParaId) -> ChainSpec {
-	local_testnet_config(id, "kusama-local".into())
+pub fn kusama_local_testnet_config() -> ChainSpec {
+	local_testnet_config("kusama-local".into())
 }
 
 pub fn subsocial_config() -> Result<ChainSpec, String> {
@@ -172,25 +172,30 @@ pub fn subsocial_config() -> Result<ChainSpec, String> {
 
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		// TODO: make it different from a Standalone chain
-		"Subsocial",
-		// TODO: make it different from a Standalone chain
-		"subsocial",
+		"SubsocialX",
+		"subsocialx",
 		ChainType::Live,
 		move || {
 			let mut total_allocated: Balance = Zero::zero();
 
 			let initial_authorities: Vec<(AccountId, AuraId)> = vec![
-				// TODO: fill with `(AccountId, AuraId)`
+				(
+					// Collator 1
+					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].into(),
+					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].unchecked_into()
+				),
+				(
+					// Collator 2
+					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].into(),
+					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].unchecked_into()
+				)
 			];
 
 			let initial_allocation = vec![
-				// TODO: fill with `(who, how_much)`
+				(hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into(), 100_000_000)
 			];
 
-			// TODO: put expected `Sudo` account here
-			//	FIXME: Alice now
-			let root_key: AccountId = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+			let root_key: AccountId = hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into();
 
 			const EXISTENTIAL_DEPOSIT_VALUE: Balance = EXISTENTIAL_DEPOSIT / UNIT;
 			let unique_allocation_accounts = initial_allocation
@@ -246,7 +251,6 @@ fn parachain_genesis(
 			code: subsocial_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
