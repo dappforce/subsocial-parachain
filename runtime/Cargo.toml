@@ -1,4 +1,5 @@
 [package]
+
 name = 'subsocial-parachain-runtime'
 version = '0.1.2'
 authors = ['DappForce <dappforce@pm.me>']
