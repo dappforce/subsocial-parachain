@@ -9370,7 +9370,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-collator"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cumulus-client-cli",
  "cumulus-client-collator",
@@ -9430,7 +9430,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-parachain-runtime"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
