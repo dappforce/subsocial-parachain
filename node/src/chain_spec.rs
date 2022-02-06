@@ -19,6 +19,9 @@ const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 pub type ChainSpec =
 	sc_service::GenericChainSpec<subsocial_parachain_runtime::GenesisConfig, Extensions>;
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -102,6 +105,7 @@ pub fn development_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
+		None,
 		Some(subsocial_properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
@@ -148,6 +152,8 @@ pub fn local_testnet_config(relay_chain: String) -> ChainSpec {
 		None,
 		// Protocol ID
 		Some(DEFAULT_PROTOCOL_ID),
+		// Fork ID
+		None,
 		// Properties
 		Some(subsocial_properties()),
 		// Extensions
@@ -232,6 +238,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 		vec![],
 		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
 		Some(DEFAULT_PROTOCOL_ID),
+		None,
 		Some(subsocial_properties()),
 		Extensions {
 			relay_chain: "kusama".into(),
@@ -281,8 +288,11 @@ fn parachain_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: subsocial_parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 		sudo: subsocial_parachain_runtime::SudoConfig {
-			key: root_key,
+			key: Some(root_key),
 		},
 	}
 }
