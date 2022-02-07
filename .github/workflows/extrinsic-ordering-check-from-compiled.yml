@@ -1,0 +1,129 @@
+# This workflow performs the Extrinsic Ordering Check on demand using a docker image
+
+name: Extrinsic Ordering Check from compiled image
+on:
+  workflow_dispatch:
+    inputs:
+      reference_url:
+        description: The WebSocket url of the reference node
+        default: wss://para.subsocial.network
+        required: true
+      chain:
+        description: The name of the chain under test. Usually, you would pass a local chain
+        default: dev
+        required: true
+
+jobs:
+  build:
+    name: Build parachain binary
+    runs-on: [ self-hosted, linux, x64, parachain ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout sources
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-single-buildx
+
+      - name: Build production image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          file: docker/Dockerfile
+          tags: dappforce/subsocial-parachain:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          outputs: type=docker,dest=/tmp/docker-image.tar
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docker-image
+          path: /tmp/docker-image.tar
+          retention-days: 1
+
+  check:
+    name: Run check
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      CHAIN: ${{github.event.inputs.chain}}
+      REF_URL: ${{github.event.inputs.reference_url}}
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Fetch Docker image
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/docker-image.tar
+
+      - name: Start local node
+        run: |
+          echo Running on spec $CHAIN
+          docker run --rm -d --network host --name para-test dappforce/subsocial-parachain:latest \
+            subsocial-collator --chain=$CHAIN --ws-port 8844 -- --dev
+          sleep 5
+          docker logs para-test
+
+      - name: Prepare output
+        run: |
+          VERSION=$(docker exec para-test subsocial-collator --version)
+          echo "Metadata comparison:" >> output.txt
+          echo "Date: $(date)" >> output.txt
+          echo "Reference: $REF_URL" >> output.txt
+          echo "Target version: $VERSION" >> output.txt
+          echo "Chain: $CHAIN" >> output.txt
+          echo "----------------------------------------------------------------------" >> output.txt
+      - name: Pull polkadot-js-tools image
+        run: docker pull jacogr/polkadot-js-tools
+
+      - name: Compare the metadata
+        run: |
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $REF_URL ws://localhost:8844"
+          echo -e "Running:\n$CMD"
+          $CMD >> output.txt
+          sed -z -i 's/\n\n/\n/g' output.txt
+          cat output.txt | egrep -n -i ''
+          SUMMARY=$(./scripts/github/extrinsic-ordering-filter.sh output.txt)
+          echo -e $SUMMARY
+          echo -e $SUMMARY >> output.txt
+      - name: Show result
+        run: |
+          cat output.txt
+
+      - name: Stop local node and do a clean-up
+        run: |
+          docker stop para-test
+          docker system prune -f
+
+      - name: Save output as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: output-${{ env.CHAIN }}
+          path: |
+            output.txt
