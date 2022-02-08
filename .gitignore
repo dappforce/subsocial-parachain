@@ -6,6 +6,8 @@
 
 .cargo-remote.toml
 
+polkadot-launch/bin
+
 # IDE's config
 **/.idea
 **/.vscode
