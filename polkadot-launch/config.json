@@ -13,28 +13,36 @@
 				"wsPort": 9955,
 				"port": 30334
 			}
-		]
+		],
+		"genesis": {
+			"runtime": {
+				"runtime_genesis_config": {
+					"configuration": {
+						"config": {
+							"validation_upgrade_frequency": 10,
+							"validation_upgrade_delay": 10
+						}
+					}
+				}
+			}
+		}
 	},
 	"parachains": [
 		{
-			"bin": "../target/release/parachain-collator",
+			"bin": "../target/release/subsocial-collator",
 			"id": "2100",
-			"balance": "1000000000000000000000",
+			"balance": "10000000000000000000",
+			"chain": "dev",
 			"nodes": [
 				{
-					"chain": "local-rococo",
 					"wsPort": 8844,
 					"name": "alice",
 					"port": 40333,
-					"flags": [
-						"--force-authoring",
-						"--",
-						"--execution=wasm"
-					]
+					"flags": [ "--", "--execution=wasm" ]
 				}
 			]
 		}
 	],
-	"types": {
-	}
+	"types": {},
+	"finalization": false
 }
