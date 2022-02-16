@@ -25,7 +25,7 @@ serde = { version = "1.0.132", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
 
 # Local Dependencies
-# TBD.
+pallet-token-locker = { path = '../pallets/token-locker', default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
@@ -137,6 +137,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"pallet-token-locker/std",
 ]
 
 runtime-benchmarks = [
@@ -149,6 +150,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+#	"pallet-token-locker/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",

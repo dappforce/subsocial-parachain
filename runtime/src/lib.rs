@@ -633,6 +633,20 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const UnlockPeriod: BlockNumber = 1 * DAYS;
+	pub const MinLockAmount: Balance = 10 * UNIT;
+	pub const MaxLockAmount: Balance = 300 * UNIT;
+}
+
+impl pallet_token_locker::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UnlockPeriod = UnlockPeriod;
+	type MinLockAmount = MinLockAmount;
+	type MaxLockAmount = MaxLockAmount;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -670,7 +684,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Subsocial Pallets
-		// TBD.
+		TokenLocker: pallet_token_locker = 50,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

@@ -1,4 +1,6 @@
 .git
+.dockerignore
+LICENSE
 **/target/
 **/*.txt
 **/*.md

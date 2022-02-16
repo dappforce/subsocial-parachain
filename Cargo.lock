@@ -5528,6 +5528,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-token-locker"
+version = "0.1.3"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.16#4aeb95f7f38fcd519e2628f32f79044a8fef99d5"
@@ -10165,6 +10180,7 @@ dependencies = [
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-token-locker",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
