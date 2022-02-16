@@ -10,6 +10,7 @@ mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -20,6 +21,7 @@ pub mod pallet {
     use frame_system::Pallet as System;
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{Saturating, StaticLookup};
+    use crate::weights::WeightInfo;
 
     const PALLET_ID: LockIdentifier = *b"brdglck ";
 
@@ -40,6 +42,9 @@ pub mod pallet {
 
         #[pallet::constant]
         type MaxLockAmount: Get<BalanceOf<Self>>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -89,7 +94,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::WeightInfo::lock_sub())]
         pub fn lock_sub(
             origin: OriginFor<T>,
             #[pallet::compact] amount: BalanceOf<T>,
@@ -114,7 +119,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(T::WeightInfo::request_unlock())]
         pub fn request_unlock(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
@@ -128,7 +133,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::WeightInfo::try_refund())]
         pub fn try_refund(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 

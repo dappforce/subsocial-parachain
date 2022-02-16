@@ -83,6 +83,7 @@ impl pallet_token_locker::Config for Test {
 	type UnlockPeriod = UnlockPeriod;
 	type MinLockAmount = MinLockAmount;
 	type MaxLockAmount = MaxLockAmount;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
