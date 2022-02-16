@@ -1,39 +1,47 @@
 {
 	"relaychain": {
-		"bin": "../../polkadot/target/release/polkadot",
+		"bin": "./bin/polkadot",
 		"chain": "rococo-local",
 		"nodes": [
 			{
 				"name": "alice",
 				"wsPort": 9944,
-				"port": 30444
+				"port": 30333
 			},
 			{
 				"name": "bob",
 				"wsPort": 9955,
-				"port": 30555
+				"port": 30334
 			}
-		]
+		],
+		"genesis": {
+			"runtime": {
+				"runtime_genesis_config": {
+					"configuration": {
+						"config": {
+							"validation_upgrade_frequency": 10,
+							"validation_upgrade_delay": 10
+						}
+					}
+				}
+			}
+		}
 	},
 	"parachains": [
 		{
-			"bin": "../target/release/parachain-collator",
-			"id": "200",
-			"balance": "1000000000000000000000",
+			"bin": "../target/release/subsocial-collator",
+			"id": "2100",
+			"chain": "dev",
 			"nodes": [
 				{
-					"wsPort": 9988,
+					"wsPort": 8844,
 					"name": "alice",
-					"port": 31200,
-					"flags": [
-						"--force-authoring",
-						"--",
-						"--execution=wasm"
-					]
+					"port": 40333,
+					"flags": [ "--", "--execution=wasm" ]
 				}
 			]
 		}
 	],
-	"types": {
-	}
+	"types": {},
+	"finalization": false
 }
