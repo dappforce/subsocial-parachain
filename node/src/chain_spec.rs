@@ -284,6 +284,7 @@ fn parachain_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		vesting: subsocial_parachain_runtime::VestingConfig { vesting: vec![] },
 		polkadot_xcm: subsocial_parachain_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
