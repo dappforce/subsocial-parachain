@@ -645,6 +645,7 @@ impl pallet_token_locker::Config for Runtime {
 	type UnlockPeriod = UnlockPeriod;
 	type MinLockAmount = MinLockAmount;
 	type MaxLockAmount = MaxLockAmount;
+	type WeightInfo = pallet_token_locker::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -705,6 +706,7 @@ mod benches {
 		[pallet_vesting, Vesting]
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
+		[pallet_token_locker, TokenLocker]
 	);
 }
 

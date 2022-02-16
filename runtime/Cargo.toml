@@ -150,7 +150,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-#	"pallet-token-locker/runtime-benchmarks",
+	"pallet-token-locker/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",

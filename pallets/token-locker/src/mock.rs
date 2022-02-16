@@ -1,4 +1,4 @@
-use crate as pallet_template;
+use crate as pallet_token_locker;
 use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
@@ -17,10 +17,15 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances exclude_parts { Config },
+		Locker: pallet_token_locker,
 	}
 );
+
+type AccountId = u64;
+type BlockNumber = u64;
+type Balance = u64;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -31,21 +36,21 @@ impl system::Config for Test {
 	type BaseCallFilter = Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type DbWeight = ();
 	type Origin = Origin;
 	type Call = Call;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
 	type BlockHashCount = BlockHashCount;
+	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -54,8 +59,30 @@ impl system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl pallet_template::Config for Test {
+impl pallet_balances::Config for Test {
+	type Balance = Balance;
+	type DustRemoval = ();
 	type Event = Event;
+	type ExistentialDeposit = ();
+	type AccountStore = System;
+	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
+}
+
+parameter_types! {
+	pub const UnlockPeriod: BlockNumber = 10;
+	pub const MinLockAmount: Balance = 1;
+	pub const MaxLockAmount: Balance = 10_000;
+}
+
+impl pallet_token_locker::Config for Test {
+	type Event = Event;
+	type Currency = Balances;
+	type UnlockPeriod = UnlockPeriod;
+	type MinLockAmount = MinLockAmount;
+	type MaxLockAmount = MaxLockAmount;
 }
 
 // Build genesis storage according to the mock runtime.
