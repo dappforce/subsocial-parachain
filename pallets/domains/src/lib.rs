@@ -6,8 +6,8 @@
 
 pub use pallet::*;
 
-#[cfg(test)]
-mod mock;
+// #[cfg(test)]
+// mod mock;
 
 // #[cfg(test)]
 // mod tests;
@@ -16,115 +16,25 @@ mod mock;
 // mod benchmarking;
 // pub mod weights;
 
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
+// pub use crate::weights::WeightInfo;
+pub mod types;
 
-use frame_system::Pallet as System;
-use pallet_timestamp::Pallet as Timestamp;
-
-use frame_support::{
-    dispatch::DispatchResult, traits::{Currency, ReservableCurrency},
-};
-use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-#[cfg(feature = "std")]
-use sp_runtime::RuntimeDebug;
-use sp_std::{convert::TryInto, vec::Vec};
-
-use pallet_parachain_utils::{SpaceId, PostId, WhoAndWhen, Content};
+pub use pallet_parachain_utils::{SpaceId, PostId, Content};
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use types::*;
+
+    use frame_system::Pallet as System;
 
     use frame_support::pallet_prelude::*;
+    use frame_support::traits::ReservableCurrency;
+
     use frame_system::pallet_prelude::*;
 
-    // pub use crate::weights::WeightInfo;
-
-    pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
-    pub(crate) type DomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::MaxDomainsPerAccount>;
-    // type InnerValue<T> = Option<DomainInnerLink<<T as frame_system::pallet::Config>::AccountId>>;
-    pub(crate) type OuterValue = Option<Vec<u8>>;
-
-    pub(crate) type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
-
-    pub(crate) type WhoAndWhenOf<T> =
-        WhoAndWhen<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            <T as pallet_timestamp::Config>::Moment,
-        >;
-
-    pub fn new_who_and_when<T>(
-        account: T::AccountId
-    ) -> WhoAndWhen<T::AccountId, T::BlockNumber, T::Moment>
-    where
-        T: frame_system::Config + pallet_timestamp::Config
-    {
-        WhoAndWhen {
-            account,
-            block: System::<T>::block_number(),
-            time: Timestamp::<T>::now(),
-        }
-    }
-
-    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-    pub enum DomainInnerLink<AccountId> {
-        Account(AccountId),
-        Space(SpaceId),
-        Post(PostId),
-    }
-
-    // A domain metadata.
-    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-    #[scale_info(skip_type_params(T))]
-    pub struct DomainMeta<T: Config> {
-        // When the domain was created.
-        created: WhoAndWhenOf<T>,
-        // When the domain was updated.
-        updated: Option<WhoAndWhenOf<T>>,
-
-        // Specific block, when the domain will become unavailable.
-        pub(super) expires_at: T::BlockNumber,
-
-        // The domain owner.
-        pub(super) owner: T::AccountId,
-
-        // Some additional (custom) domain metadata.
-        pub(super) content: Content,
-
-        // The inner domain link (some Subsocial entity).
-        // pub(super) inner_value: InnerValue<T>,
-        // The outer domain link (any string).
-        pub(super) outer_value: OuterValue,
-
-        // The amount was held as a deposit for storing this structure.
-        pub(super) domain_deposit: BalanceOf<T>,
-        // The amount was held as a deposit for storing outer value.
-        pub(super) outer_value_deposit: BalanceOf<T>,
-    }
-
-    impl<T: Config> DomainMeta<T> {
-        fn new(
-            expires_at: T::BlockNumber,
-            owner: T::AccountId,
-            content: Content,
-            domain_deposit: BalanceOf<T>,
-        ) -> Self {
-            Self {
-                created: new_who_and_when::<T>(owner.clone()),
-                updated: None,
-                expires_at,
-                owner,
-                content,
-                // inner_value: None,
-                outer_value: None,
-                domain_deposit,
-                outer_value_deposit: Zero::zero(),
-            }
-        }
-    }
+    use sp_runtime::traits::{Saturating, StaticLookup, Zero};
+    use sp_std::{convert::TryInto, vec::Vec};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -133,9 +43,6 @@ pub mod pallet {
 
         /// The currency trait.
         type Currency: ReservableCurrency<<Self as frame_system::Config>::AccountId>;
-
-        /// The loose coupled provider to get a space.
-        // type SpacesProvider: SpacesProvider;
 
         /// Domains minimum length.
         #[pallet::constant]
@@ -175,7 +82,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
-    pub struct Pallet<T>(PhantomData<T>);
+    pub struct Pallet<T>(_);
 
     #[pallet::storage]
     #[pallet::getter(fn reserved_domain)]
