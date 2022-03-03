@@ -22,7 +22,10 @@ name = "subsocial-collator"
 path = "src/main.rs"
 
 [features]
-runtime-benchmarks = ["subsocial-parachain-runtime/runtime-benchmarks"]
+runtime-benchmarks = [
+    "subsocial-parachain-runtime/runtime-benchmarks",
+    "polkadot-cli/runtime-benchmarks",
+]
 try-runtime = [ "subsocial-parachain-runtime/try-runtime" ]
 
 [dependencies]
