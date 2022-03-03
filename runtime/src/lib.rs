@@ -173,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 5,
+	spec_version: 6,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -259,12 +259,16 @@ impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
 		let is_force_transfer =
 			matches!(c, Call::Balances(pallet_balances::Call::force_transfer { .. }));
-		let is_vested_transfer =
-			matches!(c, Call::Vesting(pallet_vesting::Call::vested_transfer { .. }));
+		let disallowed_vesting_calls =
+			matches!(c,
+				Call::Vesting(pallet_vesting::Call::vested_transfer { .. }) |
+				Call::Vesting(pallet_vesting::Call::vest { .. }) |
+				Call::Vesting(pallet_vesting::Call::vest_other { .. })
+			);
 
 		match *c {
 			Call::Balances(..) => is_force_transfer,
-			Call::Vesting(..) => !is_vested_transfer,
+			Call::Vesting(..) => !disallowed_vesting_calls,
 			_ => true,
 		}
 	}
