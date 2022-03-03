@@ -384,11 +384,11 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TreasuryPalletId: PalletId = PalletId(*b"subtrsry");
+	pub const TreasuryPalletId: PalletId = PalletId(*b"sub/trsy");
 
 	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub ProposalBondMinimum: Balance = 400 * UNIT;
-	pub ProposalBondMaximum: Balance = 40_000 * UNIT;
+	pub ProposalBondMinimum: Balance = 100 * UNIT;
+	pub ProposalBondMaximum: Balance = 500 * UNIT;
 	pub const SpendPeriod: BlockNumber = 7 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(0);
 
@@ -666,7 +666,7 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
-		Treasury: pallet_treasury = 17,
+		Treasury: pallet_treasury = 15,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
