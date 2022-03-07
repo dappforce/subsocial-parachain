@@ -36,6 +36,8 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{convert::TryInto, vec::Vec};
 
+    use pallet_parachain_utils::ensure_content_is_valid;
+
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
@@ -112,7 +114,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// The domain name was successfully registered and stored.
-        DomainRegistered(<T as frame_system::pallet::Config>::AccountId, DomainName<T>, BalanceOf<T>),
+        DomainRegistered(<T as frame_system::pallet::Config>::AccountId, DomainName<T>/*, BalanceOf<T>*/),
         /// The domain meta was successfully updated.
         DomainUpdated(<T as frame_system::pallet::Config>::AccountId, DomainName<T>),
         /// The domains list was successfully added to the reserved list.
@@ -163,14 +165,13 @@ pub mod pallet {
         #[pallet::weight(10000)]
         pub fn register_domain(
             origin: OriginFor<T>,
-            owner: <<T as frame_system::pallet::Config>::Lookup as StaticLookup>::Source,
+            target: <<T as frame_system::pallet::Config>::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: <T as frame_system::pallet::Config>::BlockNumber,
-            #[pallet::compact] price: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            let owner = <T as frame_system::pallet::Config>::Lookup::lookup(owner)?;
+            let owner = <T as frame_system::pallet::Config>::Lookup::lookup(target)?;
 
             ensure!(!expires_in.is_zero(), Error::<T>::InvalidReservationPeriod);
             ensure!(
@@ -186,7 +187,7 @@ pub mod pallet {
 
             ensure!(!Self::reserved_domain(&domain_lc), Error::<T>::DomainIsReserved);
 
-            // Utils::<T>::is_valid_content(content.clone())?;
+            let _ = ensure_content_is_valid(content.clone());
 
             Self::ensure_valid_domain(&domain_lc)?;
 
@@ -207,36 +208,37 @@ pub mod pallet {
 
             <T as Config>::Currency::reserve(&owner, deposit)?;
 
+            // TODO: withdraw balance
+
             RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
             RegisteredDomainsByOwner::<T>::mutate(&owner, |domains| domains.push(domain_lc));
 
-            Self::deposit_event(Event::DomainRegistered(owner, full_domain, price));
+            Self::deposit_event(Event::DomainRegistered(owner, full_domain));
             Ok(Pays::No.into())
         }
 
         // #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
-        // #[pallet::weight(10000)]
-        // pub fn set_inner_value(
-        //     origin: OriginFor<T>,
-        //     domain: DomainName<T>,
-        //     value: InnerValue<T>,
-        // ) -> DispatchResult {
-        //     let sender = ensure_signed(origin)?;
-        //
-        //     let domain_lc = domain.to_ascii_lowercase();
-        //     let mut meta = Self::require_domain(&domain_lc)?;
-        //
-        //     Self::ensure_allowed_to_update_domain(&meta, &sender)?;
-        //
-        //     ensure!(meta.inner_value != value, Error::<T>::InnerValueNotChanged);
-        //     Self::ensure_valid_inner_value(&value)?;
-        //
-        //     meta.inner_value = value;
-        //     RegisteredDomains::<T>::insert(&domain_lc, meta);
-        //
-        //     Self::deposit_event(Event::DomainUpdated(sender, domain));
-        //     Ok(())
-        // }
+        #[pallet::weight(10000)]
+        pub fn set_inner_value(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+            value: InnerValue<T>,
+        ) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+
+            let domain_lc = Self::lower_domain_then_bound(domain.clone());
+            let mut meta = Self::require_domain(domain_lc.clone())?;
+
+            Self::ensure_allowed_to_update_domain(&meta, &sender)?;
+
+            ensure!(meta.inner_value != value, Error::<T>::InnerValueNotChanged);
+
+            meta.inner_value = value;
+            RegisteredDomains::<T>::insert(&domain_lc, meta);
+
+            Self::deposit_event(Event::DomainUpdated(sender, domain));
+            Ok(())
+        }
 
         // #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         #[pallet::weight(10000)]
@@ -248,7 +250,7 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
 
             let domain_lc = Self::lower_domain_then_bound(domain.clone());
-            let mut meta = Self::require_domain(&domain_lc)?;
+            let mut meta = Self::require_domain(domain_lc.clone())?;
 
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
@@ -284,12 +286,12 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
 
             let domain_lc = Self::lower_domain_then_bound(domain.clone());
-            let mut meta = Self::require_domain(&domain_lc)?;
+            let mut meta = Self::require_domain(domain_lc.clone())?;
 
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
             ensure!(meta.content != new_content, Error::<T>::DomainContentNotChanged);
-            // Utils::<T>::is_valid_content(new_content.clone())?;
+            ensure_content_is_valid(new_content.clone())?;
 
             meta.content = new_content;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
@@ -425,7 +427,7 @@ pub mod pallet {
         }
 
         /// Try to get domain meta by it's custom and top level domain names.
-        pub fn require_domain(domain: &DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
+        pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
             Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
