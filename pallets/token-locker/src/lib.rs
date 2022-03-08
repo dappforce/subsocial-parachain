@@ -5,8 +5,8 @@ pub use pallet::*;
 #[cfg(test)]
 mod mock;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -23,7 +23,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup};
     use crate::weights::WeightInfo;
 
-    const PALLET_ID: LockIdentifier = *b"brdglck ";
+    pub const PALLET_ID: LockIdentifier = *b"brdglck ";
 
     pub(crate) type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -109,9 +109,9 @@ pub mod pallet {
             ensure!(amount <= T::MaxLockAmount::get(), Error::<T>::LockAmountGreaterThanMaxLock);
 
             let free = T::Currency::free_balance(&who);
-            ensure!(free > amount, Error::<T>::BalanceIsTooLowToLock);
+            ensure!(free >= amount, Error::<T>::BalanceIsTooLowToLock);
 
-            T::Currency::set_lock(PALLET_ID, &who, amount, WithdrawReasons::empty());
+            T::Currency::set_lock(PALLET_ID, &who, amount, WithdrawReasons::FEE);
 
             LockDetails::<T>::insert(&who, amount);
 
