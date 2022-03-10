@@ -23,7 +23,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup};
     use crate::weights::WeightInfo;
 
-    pub const PALLET_ID: LockIdentifier = *b"brdglck ";
+    pub const BRIDGE_LOCK_ID: LockIdentifier = *b"brdglck ";
 
     pub(crate) type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -111,7 +111,7 @@ pub mod pallet {
             let free = T::Currency::free_balance(&who);
             ensure!(free >= amount, Error::<T>::BalanceIsTooLowToLock);
 
-            T::Currency::set_lock(PALLET_ID, &who, amount, WithdrawReasons::FEE);
+            T::Currency::set_lock(BRIDGE_LOCK_ID, &who, amount, WithdrawReasons::FEE);
 
             LockDetails::<T>::insert(&who, amount);
 
@@ -142,7 +142,7 @@ pub mod pallet {
 
             ensure!(System::<T>::block_number() >= unlock_at, Error::<T>::TooEarlyToRefund);
 
-            T::Currency::remove_lock(PALLET_ID, &who);
+            T::Currency::remove_lock(BRIDGE_LOCK_ID, &who);
             LockDetails::<T>::remove(&who);
             UnlockAt::<T>::remove(&who);
 

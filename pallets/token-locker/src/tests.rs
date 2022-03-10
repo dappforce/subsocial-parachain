@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, Config, Pallet, LockDetails, Event, PALLET_ID, UnlockAt};
+use crate::{mock::*, Error, Config, Pallet, LockDetails, Event, BRIDGE_LOCK_ID, UnlockAt};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::traits::{Currency, Len, LockableCurrency, WithdrawReasons};
 use pallet_balances::BalanceLock;
@@ -146,7 +146,7 @@ fn lock_details_is_added_and_event_is_emitted_and_tokens_locked_when_everything_
             assert_eq!(
                 lock,
                 pallet_balances::BalanceLock::<Balance> {
-                    id: PALLET_ID,
+                    id: BRIDGE_LOCK_ID,
                     amount: amount_to_lock,
                     reasons: WithdrawReasons::empty().into(),
                 }
@@ -329,7 +329,7 @@ fn try_refund_will_unlock_funds_and_emit_event() {
             assert_eq!(
                 pallet_balances::Locks::<Test>::get(caller).to_vec().pop().unwrap(),
                 BalanceLock::<Balance> {
-                    id: PALLET_ID,
+                    id: BRIDGE_LOCK_ID,
                     amount: amount_to_lock,
                     reasons: WithdrawReasons::FEE.into(),
                 },
