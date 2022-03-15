@@ -659,6 +659,7 @@ impl pallet_domains::Config for Runtime {
 	type OuterValueLimit = OuterValueLimit;
 	type DomainDeposit = DomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
+	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -720,6 +721,7 @@ mod benches {
 		[pallet_vesting, Vesting]
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
+		[pallet_domains, Domains]
 	);
 }
 
