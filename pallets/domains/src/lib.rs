@@ -314,7 +314,7 @@ pub mod pallet {
             let domains_len = domains.len();
             Self::ensure_domains_insert_limit_not_reached(domains_len)?;
 
-            let _inserted_domains_count = Self::insert_domains(
+            let inserted_domains_count = Self::insert_domains(
                 domains,
                 Self::ensure_valid_domain,
                 |domain| ReservedDomains::<T>::insert(domain, true),
@@ -322,8 +322,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::DomainsReserved(domains_len as u16));
             Ok((
-                // Some(<T as Config>::WeightInfo::reserve_domains(inserted_domains_count)),
-                Some(10000),
+                Some(<T as Config>::WeightInfo::reserve_domains(inserted_domains_count)),
                 Pays::No,
             ).into())
         }
