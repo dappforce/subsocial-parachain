@@ -1,18 +1,18 @@
 use frame_support::{
-    assert_ok, parameter_types, dispatch::DispatchResultWithPostInfo,
-    traits::Everything,
+    parameter_types, dispatch::DispatchResultWithPostInfo,
+    traits::{Currency, Everything},
 };
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    Storage, testing::Header, traits::{BlakeTwo256, IdentityLookup}, traits::Zero,
+    testing::Header, traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_std::convert::TryInto;
 
 use pallet_parachain_utils::Content;
 use pallet_parachain_utils::mock_functions::valid_content_ipfs;
 
-use crate as pallet_domains;
+pub(crate) use crate as pallet_domains;
 use crate::types::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -98,14 +98,14 @@ parameter_types! {
     pub const MinDomainLength: u32 = 3;
     pub const MaxDomainLength: u32 = 63;
 
-    pub const MaxDomainsPerAccount: u32 = 10;
+    pub static MaxDomainsPerAccount: u32 = 0;
 
     pub const DomainsInsertLimit: u32 = 100;
-    pub const ReservationPeriodLimit: BlockNumber = 100;
+    pub static ReservationPeriodLimit: BlockNumber = 0;
     pub const OuterValueLimit: u16 = 256;
 
-    pub const DomainDeposit: Balance = 10;
-    pub const OuterValueByteDeposit: Balance = 1;
+    pub static DomainDeposit: Balance = 0;
+    pub static OuterValueByteDeposit: Balance = 0;
 }
 
 impl pallet_domains::Config for Test {
@@ -124,8 +124,12 @@ impl pallet_domains::Config for Test {
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 
-fn default_domain() -> DomainName<Test> {
+pub(crate) fn default_domain() -> DomainName<Test> {
     vec![b'A'; MaxDomainLength::get() as usize].try_into().expect("domain exceeds max length")
+}
+
+pub(crate) fn domain_from(string: Vec<u8>) -> DomainName<Test> {
+    string.try_into().expect("domain exceeds max length")
 }
 
 pub(crate) fn default_domain_lc() -> DomainName<Test> {
@@ -142,6 +146,18 @@ pub(crate) fn _register_default_domain() -> DispatchResultWithPostInfo {
     _register_domain(None, None, None, None, None)
 }
 
+pub(crate) fn _register_domain_with_origin(origin: Origin) -> DispatchResultWithPostInfo {
+    _register_domain(Some(origin), None, None, None, None)
+}
+
+pub(crate) fn _register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResultWithPostInfo {
+    _register_domain(None, None, None, None, Some(expires_in))
+}
+
+pub(crate) fn _register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResultWithPostInfo {
+    _register_domain(None, None, Some(domain_name), None, None)
+}
+
 fn _register_domain(
     origin: Option<Origin>,
     owner: Option<AccountId>,
@@ -154,39 +170,96 @@ fn _register_domain(
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
-        expires_in.unwrap_or_else(ReservationPeriodLimit::get),
+        expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
-pub struct ExtBuilder;
+pub(crate) fn _reserve_default_domain() -> DispatchResultWithPostInfo {
+    _reserve_domains(None, Vec::new())
+}
 
-impl ExtBuilder {
-    fn set_domain_owner_balance(balance: Balance) -> impl Fn(&mut Storage) {
-        move |storage: &mut Storage| {
-            let _ = pallet_balances::GenesisConfig::<Test> {
-                balances: [DOMAIN_OWNER].iter().cloned().map(|acc| (acc, balance)).collect(),
-            }.assimilate_storage(storage);
+pub fn _reserve_domains(
+    origin: Option<Origin>,
+    domains: Vec<DomainName<Test>>,
+) -> DispatchResultWithPostInfo {
+    Domains::reserve_domains(
+        origin.unwrap_or_else(Origin::root),
+        {
+            if domains.is_empty() { vec![default_domain_lc()] } else { domains }
+        },
+    )
+}
+
+pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
+    let account = account(id);
+    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(&account, balance);
+    account
+}
+
+pub(crate) fn account(id: AccountId) -> AccountId {
+    id
+}
+
+pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
+    <Test as pallet_domains::Config>::Currency::reserved_balance(who)
+}
+
+pub struct ExtBuilder {
+    max_domains_per_account: u32,
+    domain_deposit: Balance,
+    outer_value_byte_deposit: Balance,
+    reservation_period_limit: BlockNumber,
+}
+
+impl Default for ExtBuilder {
+    fn default() -> Self {
+        ExtBuilder {
+            max_domains_per_account: 10,
+            domain_deposit: 10,
+            outer_value_byte_deposit: 1,
+            reservation_period_limit: 1000,
         }
     }
+}
 
-    fn build_with_custom_balance_for_domain_owner(balance: Balance) -> TestExternalities {
+impl ExtBuilder {
+    pub(crate) fn max_domains_per_account(mut self, max_domains_per_account: u32) -> Self {
+        self.max_domains_per_account = max_domains_per_account;
+        self
+    }
+
+    pub(crate) fn domain_deposit(mut self, domain_deposit: Balance) -> Self {
+        self.domain_deposit = domain_deposit;
+        self
+    }
+
+    pub(crate) fn outer_value_byte_deposit(mut self, outer_value_byte_deposit: Balance) -> Self {
+        self.outer_value_byte_deposit = outer_value_byte_deposit;
+        self
+    }
+
+    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
+        self.reservation_period_limit = reservation_period_limit;
+        self
+    }
+
+    fn set_configs(&self) {
+        MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
+        DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.domain_deposit);
+        OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
+        RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+    }
+
+    pub(crate) fn build(self) -> TestExternalities {
+        self.set_configs();
+
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
-
-        Self::set_domain_owner_balance(balance)(storage);
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| System::set_block_number(1));
 
         ext
-    }
-
-    pub(crate) fn build() -> TestExternalities {
-        Self::build_with_custom_balance_for_domain_owner(BalanceOf::<Test>::MAX)
-    }
-
-    pub(crate) fn build_with_no_balance() -> TestExternalities {
-        Self::build_with_custom_balance_for_domain_owner(Zero::zero())
     }
 }

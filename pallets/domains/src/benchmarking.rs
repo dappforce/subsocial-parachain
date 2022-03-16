@@ -147,5 +147,5 @@ benchmarks! {
 		ensure!(ReservedDomains::<T>::iter().count() as u32 == s, "Domains were not reserved.");
 	}
 
-	impl_benchmark_test_suite!(Pallet, crate::mock::ExtBuilder::build(), crate::mock::Test);
+	impl_benchmark_test_suite!(Pallet, crate::mock::ExtBuilder::default().build(), crate::mock::Test);
 }
