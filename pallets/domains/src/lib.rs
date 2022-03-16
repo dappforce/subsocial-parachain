@@ -9,8 +9,8 @@ pub use pallet::*;
 #[cfg(test)]
 mod mock;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -153,7 +153,7 @@ pub mod pallet {
         /// A new outer value is the same as the old one.
         OuterValueNotChanged,
         /// Reservation period cannot be a zero value.
-        InvalidReservationPeriod,
+        ZeroReservationPeriod,
         /// Cannot store a domain for that long period of time.
         TooBigReservationPeriod,
     }
@@ -171,7 +171,7 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = <T as frame_system::pallet::Config>::Lookup::lookup(target)?;
 
-            ensure!(!expires_in.is_zero(), Error::<T>::InvalidReservationPeriod);
+            ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
                 expires_in <= T::ReservationPeriodLimit::get(),
                 Error::<T>::TooBigReservationPeriod,
@@ -195,7 +195,7 @@ pub mod pallet {
 
             let domains_per_account = Self::registered_domains_by_owner(&owner).len();
             ensure!(
-                domains_per_account <= T::MaxDomainsPerAccount::get() as usize,
+                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
