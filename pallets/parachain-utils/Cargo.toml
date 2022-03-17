@@ -17,6 +17,7 @@ std = [
     'scale-info/std',
     'frame-support/std',
     'frame-system/std',
+    'pallet-timestamp/std',
     'sp-std/std',
 ]
 
@@ -29,4 +30,5 @@ jsonrpc-core = '18.0.0'
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
