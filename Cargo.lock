@@ -5332,6 +5332,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "jsonrpc-core",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-std",
