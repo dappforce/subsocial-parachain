@@ -63,7 +63,7 @@ pub mod pallet {
 
         /// The maximum amount of time the domain may be held for.
         #[pallet::constant]
-        type ReservationPeriodLimit: Get<<Self as frame_system::pallet::Config>::BlockNumber>;
+        type RegistrationPeriodLimit: Get<<Self as frame_system::pallet::Config>::BlockNumber>;
 
         /// The length limit for the domains meta outer value.
         #[pallet::constant]
@@ -91,7 +91,6 @@ pub mod pallet {
     pub(super) type ReservedDomains<T: Config> =
         StorageMap<_, Twox64Concat, DomainName<T>, bool, ValueQuery>;
 
-    // TODO: how to clean this when domain has expired?
     #[pallet::storage]
     #[pallet::getter(fn registered_domain)]
     pub(super) type RegisteredDomains<T: Config> =
@@ -155,7 +154,7 @@ pub mod pallet {
         /// Reservation period cannot be a zero value.
         ZeroReservationPeriod,
         /// Cannot store a domain for that long period of time.
-        TooBigReservationPeriod,
+        TooBigRegistrationPeriod,
     }
 
     #[pallet::call]
@@ -175,8 +174,8 @@ pub mod pallet {
 
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
-                expires_in <= T::ReservationPeriodLimit::get(),
-                Error::<T>::TooBigReservationPeriod,
+                expires_in <= T::RegistrationPeriodLimit::get(),
+                Error::<T>::TooBigRegistrationPeriod,
             );
 
             // Note that while upper and lower case letters are allowed in domain
