@@ -101,7 +101,7 @@ parameter_types! {
     pub static ReservationPeriodLimit: BlockNumber = 0;
     pub static OuterValueLimit: u16 = 0;
 
-    pub static DomainDeposit: Balance = 0;
+    pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
 }
 
@@ -114,7 +114,7 @@ impl pallet_domains::Config for Test {
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type OuterValueLimit = OuterValueLimit;
-    type DomainDeposit = DomainDeposit;
+    type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type WeightInfo = ();
 }
