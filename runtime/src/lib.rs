@@ -643,9 +643,8 @@ parameter_types! {
     pub const RegistrationPeriodLimit: BlockNumber = 365 * DAYS;
     pub const OuterValueLimit: u32 = 261;
 
-	// TODO: change this values
-    pub const BaseDomainDeposit: Balance = 10 * UNIT;
-    pub const OuterValueByteDeposit: Balance = 10 * MICROUNIT;
+    pub const BaseDomainDeposit: Balance = 1 * UNIT;
+    pub const OuterValueByteDeposit: Balance = 1 * MILLIUNIT;
 }
 
 impl pallet_domains::Config for Runtime {
