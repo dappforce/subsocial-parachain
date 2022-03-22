@@ -112,7 +112,7 @@ impl pallet_domains::Config for Test {
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
-    type ReservationPeriodLimit = ReservationPeriodLimit;
+    type RegistrationPeriodLimit = ReservationPeriodLimit;
     type OuterValueLimit = OuterValueLimit;
     type DomainDeposit = DomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
