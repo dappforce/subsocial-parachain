@@ -25,7 +25,7 @@ fn register_domain_should_work() {
 
             assert_ok!(_register_default_domain());
 
-            assert_eq!(Domains::registered_domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
+            assert_eq!(Domains::domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
 
             let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
             assert_eq!(domain_meta.expires_at, System::block_number() + ReservationPeriodLimit::get());
@@ -395,7 +395,7 @@ fn reserve_domains_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(_reserve_default_domain());
 
-        assert!(Domains::reserved_domain(default_domain_lc()));
+        assert!(Domains::is_domain_reserved(default_domain_lc()));
 
         System::assert_last_event(Event::<Test>::DomainsReserved(1).into());
     });
