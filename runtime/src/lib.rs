@@ -641,7 +641,7 @@ parameter_types! {
 
     pub const DomainsInsertLimit: u32 = 100;
     pub const RegistrationPeriodLimit: BlockNumber = 365 * DAYS;
-    pub const OuterValueLimit: u32 = 261;
+    pub const MaxOuterValueLength: u32 = 261;
 
     pub const BaseDomainDeposit: Balance = 1 * UNIT;
     pub const OuterValueByteDeposit: Balance = 1 * MILLIUNIT;
@@ -655,7 +655,7 @@ impl pallet_domains::Config for Runtime {
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
-	type OuterValueLimit = OuterValueLimit;
+	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
