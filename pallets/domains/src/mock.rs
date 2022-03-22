@@ -312,7 +312,7 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 #[derive(Clone)]
 pub struct ExtBuilder {
     pub(crate) max_domains_per_account: u32,
-    pub(crate) domain_deposit: Balance,
+    pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) domains_insert_limit: u32,
@@ -323,7 +323,7 @@ impl Default for ExtBuilder {
     fn default() -> Self {
         ExtBuilder {
             max_domains_per_account: 10,
-            domain_deposit: 10,
+            base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
             reservation_period_limit: 1000,
             domains_insert_limit: 100,
@@ -339,7 +339,7 @@ impl ExtBuilder {
     }
 
     pub(crate) fn domain_deposit(mut self, domain_deposit: Balance) -> Self {
-        self.domain_deposit = domain_deposit;
+        self.base_domain_deposit = domain_deposit;
         self
     }
 
@@ -365,7 +365,7 @@ impl ExtBuilder {
 
     fn set_configs(&self) {
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
-        DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.domain_deposit);
+        BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
         DOMAINS_INSERT_LIMIT.with(|x| *x.borrow_mut() = self.domains_insert_limit);
@@ -388,7 +388,7 @@ impl ExtBuilder {
     pub(crate) fn build_with_domain(self) -> TestExternalities {
         let mut ext = self.clone().build();
         ext.execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, self.domain_deposit);
+            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit);
             assert_ok!(_register_default_domain());
         });
         ext
