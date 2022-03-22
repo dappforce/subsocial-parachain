@@ -634,10 +634,10 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 3;
+    pub const MinDomainLength: u32 = 7;
     pub const MaxDomainLength: u32 = 63;
 
-    pub const MaxDomainsPerAccount: u32 = 10;
+    pub const MaxDomainsPerAccount: u32 = 3;
 
     pub const DomainsInsertLimit: u32 = 100;
     pub const RegistrationPeriodLimit: BlockNumber = 365 * DAYS;
