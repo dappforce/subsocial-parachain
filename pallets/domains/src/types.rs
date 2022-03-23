@@ -7,9 +7,8 @@ use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
 use super::*;
 
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
-pub(crate) type DomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::MaxDomainsPerAccount>;
-pub(crate) type InnerValue<T> = Option<DomainInnerLink<<T as frame_system::pallet::Config>::AccountId>>;
-pub(crate) type OuterValue<T> = Option<BoundedVec<u8, <T as Config>::MaxOuterValueLength>>;
+pub(crate) type InnerValue<T> = DomainInnerLink<<T as frame_system::pallet::Config>::AccountId>;
+pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
@@ -40,9 +39,9 @@ pub struct DomainMeta<T: Config> {
     pub(super) content: Content,
 
     // The inner domain link (some Subsocial entity).
-    pub(super) inner_value: InnerValue<T>,
+    pub(super) inner_value: Option<InnerValue<T>>,
     // The outer domain link (any string).
-    pub(super) outer_value: OuterValue<T>,
+    pub(super) outer_value: Option<OuterValue<T>>,
 
     // The amount was held as a deposit for storing this structure.
     pub(super) domain_deposit: BalanceOf<T>,
