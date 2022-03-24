@@ -35,7 +35,7 @@ fn lookup_source_from_account<T: Config>(
 fn create_domain_names<T: Config>(num: usize) -> Vec<DomainName<T>> {
 	let mut domains = Vec::new();
 
-	let max_domain_length = T::MaxDomainLength::get() as usize;
+	let max_domain_length = T::MaxDomainLength::get() as usize - TOP_LEVEL_DOMAIN.len() - 1;
 	let mut domain = mock_domain::<T>();
 
 	for i in 0..num {
@@ -52,7 +52,12 @@ fn create_domain_names<T: Config>(num: usize) -> Vec<DomainName<T>> {
 }
 
 fn mock_domain<T: Config>() -> DomainName<T> {
-	vec![b'A'; T::MaxDomainLength::get() as usize].try_into().expect("domain exceeds max length")
+	let tld = &mut TOP_LEVEL_DOMAIN.to_vec();
+	let mut domain_vec = vec![b'A'; T::MaxDomainLength::get() as usize - tld.len() - 1];
+
+	domain_vec.push(b'.');
+	domain_vec.append(tld);
+	domain_vec.try_into().expect("domain exceeds max length")
 }
 
 fn add_domain<T: Config>(
