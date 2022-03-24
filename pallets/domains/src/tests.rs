@@ -2,8 +2,9 @@ use frame_support::{assert_noop, assert_ok};
 use sp_runtime::{DispatchError, DispatchError::BadOrigin, traits::Zero};
 
 use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
+use pallet_parachain_utils::new_who_and_when;
 
-use crate::{Event, mock::*};
+use crate::{DomainByInnerValue, Event, mock::*};
 use crate::Error;
 use crate::types::*;
 
@@ -28,12 +29,20 @@ fn register_domain_should_work() {
             assert_eq!(Domains::domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
 
             let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
-            assert_eq!(domain_meta.expires_at, System::block_number() + ReservationPeriodLimit::get());
-            assert_eq!(domain_meta.owner, owner);
-            assert_eq!(domain_meta.content, valid_content_ipfs());
-            assert_eq!(domain_meta.domain_deposit, LOCAL_DOMAIN_DEPOSIT);
+            assert_eq!(domain_meta, DomainMeta {
+                created: new_who_and_when::<Test>(DOMAIN_OWNER),
+                updated: None,
+                expires_at: ExtBuilder::default().reservation_period_limit + 1,
+                owner: DOMAIN_OWNER,
+                screen_domain: expected_domain.clone(),
+                content: valid_content_ipfs(),
+                inner_value: None,
+                outer_value: None,
+                domain_deposit: LOCAL_DOMAIN_DEPOSIT,
+                outer_value_deposit: Zero::zero()
+            });
 
-            assert_eq!(get_reserved_balance(&owner), 10);
+            assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
 
             System::assert_last_event(Event::<Test>::DomainRegistered(
                 owner,
@@ -150,6 +159,11 @@ fn set_inner_value_should_work() {
 
         let expected_value = Some(inner_value_account_domain_owner());
         assert_eq!(expected_value, result_value);
+
+        assert_eq!(
+            DomainByInnerValue::<Test>::get(&expected_value.unwrap()),
+            Some(default_domain()),
+        );
 
         System::assert_last_event(Event::<Test>::DomainUpdated(
             owner,
