@@ -237,6 +237,28 @@ fn set_outer_value_should_work() {
 }
 
 #[test]
+fn set_outer_value_should_work_when_deposit_changed() {
+    const LOCAL_BYTE_DEPOSIT_INIT: Balance = 1;
+    let domain_deposit = ExtBuilder::default().base_domain_deposit;
+
+    ExtBuilder::default()
+        .outer_value_byte_deposit(LOCAL_BYTE_DEPOSIT_INIT)
+        .build_with_domain()
+        .execute_with(|| {
+            let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+            let calc_deposit = |value| value as Balance * LOCAL_BYTE_DEPOSIT_INIT + domain_deposit;
+
+            let initial_value = Some(default_outer_value(Some(10)));
+            assert_ok!(_set_outer_value_with_value(initial_value.clone()));
+            assert_eq!(get_reserved_balance(&owner), calc_deposit(initial_value.unwrap().len()));
+
+            let new_value = Some(default_outer_value(Some(20)));
+            assert_ok!(_set_outer_value_with_value(new_value.clone()));
+            assert_eq!(get_reserved_balance(&owner), calc_deposit(new_value.unwrap().len()));
+        });
+}
+
+#[test]
 fn set_outer_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
         let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
