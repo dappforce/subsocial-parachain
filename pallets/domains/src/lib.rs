@@ -17,6 +17,7 @@ mod benchmarking;
 pub mod weights;
 
 pub use crate::weights::WeightInfo;
+
 pub mod types;
 
 pub use pallet_parachain_utils::{SpaceId, PostId, Content};
@@ -28,8 +29,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::ReservableCurrency;
+    use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
 
     use frame_system::pallet_prelude::*;
 
@@ -228,8 +228,8 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
+        #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -251,8 +251,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         /// Sets the domain outer_value to be a custom string.
+        #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         pub fn set_outer_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -286,8 +286,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         /// Sets the domain content to be an outside link.
+        #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         pub fn set_domain_content(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -310,8 +310,8 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Mark set of domains as not reservable by users.
         #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
-	/// Mark set of domains as not reservable by users.
         pub fn reserve_domains(
             origin: OriginFor<T>,
             domains: Vec<DomainName<T>>,
@@ -399,9 +399,9 @@ pub mod pallet {
             check_fn: F,
             insert_storage_fn: S,
         ) -> Result<u32, DispatchError>
-            where
-                F: Fn(&[u8]) -> DispatchResult,
-                S: FnMut(&DomainName<T>),
+        where
+            F: Fn(&[u8]) -> DispatchResult,
+            S: FnMut(&DomainName<T>),
         {
             for domain in domains.iter() {
                 check_fn(domain)?;
@@ -445,7 +445,7 @@ pub mod pallet {
 
             match old_deposit.cmp(&new_deposit) {
                 Ordering::Less =>
-                        <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
+                    <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
                 Ordering::Greater => {
                     let err_amount = <T as Config>::Currency::unreserve(
                         depositor, new_deposit - old_deposit,
