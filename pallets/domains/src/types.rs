@@ -27,9 +27,9 @@ pub enum DomainInnerLink<AccountId> {
 #[scale_info(skip_type_params(T))]
 pub struct DomainMeta<T: Config> {
     // When the domain was created.
-    created: WhoAndWhenOf<T>,
+    pub(super) created: WhoAndWhenOf<T>,
     // When the domain was updated.
-    updated: Option<WhoAndWhenOf<T>>,
+    pub(super) updated: Option<WhoAndWhenOf<T>>,
 
     // Specific block, when the domain will become unavailable.
     pub(super) expires_at: T::BlockNumber,
@@ -37,6 +37,8 @@ pub struct DomainMeta<T: Config> {
     // The domain owner.
     pub(super) owner: T::AccountId,
 
+    // Domain original view
+    pub(super) screen_domain: DomainName<T>,
     // Some additional (custom) domain metadata.
     pub(super) content: Content,
 
@@ -53,9 +55,10 @@ pub struct DomainMeta<T: Config> {
 
 impl<T: Config> DomainMeta<T> {
     pub fn new(
-        expires_at: T::BlockNumber,
+        screen_domain: DomainName<T>,
         owner: T::AccountId,
         content: Content,
+        expires_at: T::BlockNumber,
         domain_deposit: BalanceOf<T>,
     ) -> Self {
         Self {
@@ -63,6 +66,7 @@ impl<T: Config> DomainMeta<T> {
             updated: None,
             expires_at,
             owner,
+            screen_domain,
             content,
             inner_value: None,
             outer_value: None,
