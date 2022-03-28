@@ -90,7 +90,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn is_domain_reserved)]
     pub(super) type ReservedDomains<T: Config> =
-        StorageMap<_, Twox64Concat, DomainName<T>, bool, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn registered_domain)]
@@ -105,7 +105,7 @@ pub mod pallet {
     #[pallet::getter(fn domains_by_owner)]
     pub(super) type DomainsByOwner<T: Config> =
         StorageMap<_,
-            Blake2_128Concat,
+            Twox64Concat,
             T::AccountId,
             BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
             ValueQuery,
@@ -170,10 +170,26 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Registers a domain ([full_domain]) using root in behalf of a [target] with [content],
+        /// Registers a domain ([full_domain]) using origin with [content],
         /// and set the domain to expire in [expires_in].
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
+            origin: OriginFor<T>,
+            full_domain: DomainName<T>,
+            content: Content,
+            expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+        ) -> DispatchResult {
+            let owner = ensure_signed(origin)?;
+
+            Self::do_register_domain(owner, full_domain, content, expires_in)?;
+
+            Ok(())
+        }
+
+        /// Registers a domain ([full_domain]) using root in behalf of a [target] with [content],
+        /// and set the domain to expire in [expires_in].
+        #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
+        pub fn force_register_domain(
             origin: OriginFor<T>,
             target: <<T as frame_system::pallet::Config>::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
@@ -183,57 +199,8 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = <T as frame_system::pallet::Config>::Lookup::lookup(target)?;
 
-            ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
-            ensure!(
-                expires_in <= T::RegistrationPeriodLimit::get(),
-                Error::<T>::TooBigRegistrationPeriod,
-            );
+            Self::do_register_domain(owner, full_domain, content, expires_in)?;
 
-            // Note that while upper and lower case letters are allowed in domain
-            // names, domain names are not case-sensitive. That is, two names with
-            // the same spelling but different case are to be treated as if identical.
-            let domain_lc = Self::lower_domain_then_bound(full_domain.clone());
-
-            ensure!(!Self::is_domain_reserved(&domain_lc), Error::<T>::DomainIsReserved);
-
-            ensure_content_is_valid(content.clone())?;
-
-            Self::ensure_valid_domain(&domain_lc)?;
-
-            ensure!(
-                Self::registered_domain(&domain_lc).is_none(),
-                Error::<T>::DomainAlreadyOwned,
-            );
-
-            let domains_per_account = Self::domains_by_owner(&owner).len();
-            ensure!(
-                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
-            );
-
-            let expires_at = expires_in.saturating_add(System::<T>::block_number());
-
-            let deposit = T::BaseDomainDeposit::get();
-            let domain_meta = DomainMeta::new(
-                full_domain.clone(),
-                owner.clone(),
-                content,
-                expires_at,
-                deposit,
-            );
-
-            <T as Config>::Currency::reserve(&owner, deposit)?;
-
-            // TODO: withdraw balance
-
-            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
-            DomainsByOwner::<T>::mutate(
-                &owner, |domains| {
-                    domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
-                }
-            );
-
-            Self::deposit_event(Event::DomainRegistered(owner, full_domain));
             Ok(Pays::No.into())
         }
 
@@ -353,6 +320,66 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        fn do_register_domain(
+            owner: T::AccountId,
+            full_domain: DomainName<T>,
+            content: Content,
+            expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+        ) -> DispatchResult {
+            ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
+            ensure!(
+                expires_in <= T::RegistrationPeriodLimit::get(),
+                Error::<T>::TooBigRegistrationPeriod,
+            );
+
+            // Note that while upper and lower case letters are allowed in domain
+            // names, domain names are not case-sensitive. That is, two names with
+            // the same spelling but different case are to be treated as if identical.
+            let domain_lc = Self::lower_domain_then_bound(full_domain.clone());
+
+            ensure!(!Self::is_domain_reserved(&domain_lc), Error::<T>::DomainIsReserved);
+
+            ensure_content_is_valid(content.clone())?;
+
+            Self::ensure_valid_domain(&domain_lc)?;
+
+            ensure!(
+                Self::registered_domain(&domain_lc).is_none(),
+                Error::<T>::DomainAlreadyOwned,
+            );
+
+            let domains_per_account = Self::domains_by_owner(&owner).len();
+            ensure!(
+                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+
+            let expires_at = expires_in.saturating_add(System::<T>::block_number());
+
+            let deposit = T::BaseDomainDeposit::get();
+            let domain_meta = DomainMeta::new(
+                full_domain.clone(),
+                owner.clone(),
+                content,
+                expires_at,
+                deposit,
+            );
+
+            <T as Config>::Currency::reserve(&owner, deposit)?;
+
+            // TODO: withdraw balance
+
+            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
+            DomainsByOwner::<T>::mutate(
+                &owner, |domains| {
+                    domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+                }
+            );
+
+            Self::deposit_event(Event::DomainRegistered(owner, full_domain));
+            Ok(())
+        }
+
         /// Throws an error if domain contains invalid character.
         fn ensure_domain_contains_valid_chars(domain: &[u8], error: Error<T>) -> DispatchResult {
             let is_char_alphanumeric = |c: &&u8| (**c).is_ascii_alphanumeric();
