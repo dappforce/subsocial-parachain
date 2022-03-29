@@ -67,7 +67,7 @@ fn add_domain<T: Config>(
 
 	let expires_in = T::RegistrationPeriodLimit::get();
 
-	Pallet::<T>::register_domain(
+	Pallet::<T>::force_register_domain(
 		RawOrigin::Root.into(), owner, domain.clone(), valid_content_ipfs(), expires_in,
 	)?;
 
@@ -88,6 +88,20 @@ fn valid_content_ipfs_2() -> Content {
 
 benchmarks! {
 	register_domain {
+		let owner = account_with_balance::<T>();
+
+		let full_domain = mock_domain::<T>();
+
+		let expires_in = T::RegistrationPeriodLimit::get();
+		let price = BalanceOf::<T>::max_value();
+
+	}: _(RawOrigin::Signed(owner), full_domain.clone(), valid_content_ipfs(), expires_in)
+	verify {
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
+	}
+
+	force_register_domain {
 		let account_with_balance = account_with_balance::<T>();
 		let owner = lookup_source_from_account::<T>(&account_with_balance);
 
