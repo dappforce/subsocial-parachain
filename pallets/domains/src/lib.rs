@@ -95,11 +95,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_domain)]
     pub(super) type RegisteredDomains<T: Config> =
-        StorageMap<_,
-            Blake2_128Concat,
-            DomainName<T>, /* Domain */
-            DomainMeta<T>,
-        >;
+        StorageMap<_, Blake2_128Concat, DomainName<T>, DomainMeta<T>>;
 
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
@@ -113,11 +109,11 @@ pub mod pallet {
 
     #[pallet::storage]
     pub(super) type DomainByInnerValue<T: Config> =
-        StorageMap<_,
-            Blake2_128Concat,
-            DomainInnerLink<T::AccountId>,
-            DomainName<T>
-        >;
+        StorageMap<_, Blake2_128Concat, DomainInnerLink<T::AccountId>, DomainName<T>>;
+
+    #[pallet::storage]
+    pub(super) type AllowedTlds<T: Config> =
+        StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -181,7 +177,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in)?;
+            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::Yes)?;
 
             Ok(())
         }
@@ -199,7 +195,7 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = <T as frame_system::pallet::Config>::Lookup::lookup(target)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in)?;
+            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::No)?;
 
             Ok(Pays::No.into())
         }
@@ -325,6 +321,7 @@ pub mod pallet {
             full_domain: DomainName<T>,
             content: Content,
             expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+            reserve_deposit: ReserveDeposit,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
@@ -365,7 +362,9 @@ pub mod pallet {
                 deposit,
             );
 
-            <T as Config>::Currency::reserve(&owner, deposit)?;
+            if let ReserveDeposit::Yes = reserve_deposit {
+                <T as Config>::Currency::reserve(&owner, deposit)?;
+            }
 
             // TODO: withdraw balance
 
