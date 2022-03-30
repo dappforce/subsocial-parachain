@@ -640,6 +640,7 @@ parameter_types! {
     pub const MinDomainLength: u32 = 7;
     pub const MaxDomainLength: u32 = 63;
 
+    // TODO This value should be increased or even removed later, once it will be possible to purchase domains.
     pub const MaxDomainsPerAccount: u32 = 3;
 
     pub const DomainsInsertLimit: u32 = 100;
