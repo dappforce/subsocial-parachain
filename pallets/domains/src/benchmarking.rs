@@ -3,7 +3,6 @@
 use super::*;
 use types::*;
 
-#[allow(unused)]
 use crate::Pallet as Pallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{
@@ -120,7 +119,7 @@ benchmarks! {
 		let owner = account_with_balance::<T>();
 		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
 
-		let value = Some(DomainInnerLink::Account(owner.clone()));
+		let value = Some(InnerValue::Account(owner.clone()));
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
 	verify {
 		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
