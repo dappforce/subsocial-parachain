@@ -1,4 +1,7 @@
-use frame_support::{assert_ok, dispatch::{DispatchResult, DispatchResultWithPostInfo}, parameter_types, traits::{Currency, Everything}};
+use frame_support::{
+    assert_ok, dispatch::{DispatchResult, DispatchResultWithPostInfo}, parameter_types,
+    traits::{Currency, Everything},
+};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -28,8 +31,8 @@ frame_support::construct_runtime!(
 	}
 );
 
-pub(crate) type AccountId = u64;
-pub(crate) type Balance = u64;
+pub(super) type AccountId = u64;
+pub(super) type Balance = u64;
 type BlockNumber = u64;
 
 parameter_types! {
@@ -121,20 +124,25 @@ impl pallet_domains::Config for Test {
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
+const DEFAULT_TLD: [u8; 3] = *b"sub";
+
+pub(crate) fn default_tld() -> DomainName<Test> {
+    DEFAULT_TLD.to_vec().try_into().expect("qed; domain exceeds max length")
+}
 
 pub(crate) fn default_domain() -> DomainName<Test> {
-    let tld = &mut TOP_LEVEL_DOMAIN.to_vec();
+    let tld = default_tld();
     let mut domain_vec = vec![b'A'; MaxDomainLength::get() as usize - tld.len() - 1];
 
     domain_vec.push(b'.');
-    domain_vec.append(tld);
-    domain_vec.try_into().expect("domain exceeds max length")
+    domain_vec.append(&mut tld.to_vec());
+    domain_vec.try_into().expect("qed; domain exceeds max length")
 }
 
 pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
     string.push(b'.');
-    string.append(&mut TOP_LEVEL_DOMAIN.to_vec());
-    string.try_into().expect("domain exceeds max length")
+    string.append(&mut default_tld().to_vec());
+    string.try_into().expect("qed; domain exceeds max length")
 }
 
 pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
@@ -150,7 +158,11 @@ pub(crate) fn get_domain_content(domain: &DomainName<Test>) -> Content {
 }
 
 pub(crate) fn default_domain_lc() -> DomainName<Test> {
-    Domains::lower_domain_then_bound(default_domain())
+    Domains::lower_domain_then_bound(&default_domain())
+}
+
+pub(crate) fn default_word_lc() -> DomainName<Test> {
+    Domains::lower_domain_then_bound(default_domain().split(IS_DOT_CHAR).next().unwrap())
 }
 
 pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
@@ -159,32 +171,32 @@ pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
 
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
     vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
-        .try_into().expect("outer value exceeds max length")
+        .try_into().expect("qed; outer value exceeds max length")
 }
 
-pub(crate) fn _register_domain_with_full_domain(
+pub(crate) fn _force_register_domain_with_full_domain(
     domain: DomainName<Test>,
 ) -> DispatchResultWithPostInfo {
-    _register_domain(None, None, Some(domain), None, None)
+    _force_register_domain(None, None, Some(domain), None, None)
 }
 
-pub(crate) fn _register_default_domain() -> DispatchResultWithPostInfo {
-    _register_domain(None, None, None, None, None)
+pub(crate) fn _force_register_default_domain() -> DispatchResultWithPostInfo {
+    _force_register_domain(None, None, None, None, None)
 }
 
-pub(crate) fn _register_domain_with_origin(origin: Origin) -> DispatchResultWithPostInfo {
-    _register_domain(Some(origin), None, None, None, None)
+pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResultWithPostInfo {
+    _force_register_domain(Some(origin), None, None, None, None)
 }
 
-pub(crate) fn _register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResultWithPostInfo {
-    _register_domain(None, None, None, None, Some(expires_in))
+pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResultWithPostInfo {
+    _force_register_domain(None, None, None, None, Some(expires_in))
 }
 
-pub(crate) fn _register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResultWithPostInfo {
-    _register_domain(None, None, Some(domain_name), None, None)
+pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResultWithPostInfo {
+    _force_register_domain(None, None, Some(domain_name), None, None)
 }
 
-fn _register_domain(
+fn _force_register_domain(
     origin: Option<Origin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
@@ -194,6 +206,24 @@ fn _register_domain(
     Domains::force_register_domain(
         origin.unwrap_or_else(Origin::root),
         owner.unwrap_or(DOMAIN_OWNER),
+        domain.unwrap_or_else(default_domain),
+        content.unwrap_or_else(valid_content_ipfs),
+        expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
+    )
+}
+
+pub(crate) fn _register_default_domain() -> DispatchResult {
+    _register_domain(None, None, None, None)
+}
+
+fn _register_domain(
+    origin: Option<Origin>,
+    domain: Option<DomainName<Test>>,
+    content: Option<Content>,
+    expires_in: Option<BlockNumber>,
+) -> DispatchResult {
+    Domains::register_domain(
+        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
@@ -226,7 +256,7 @@ fn _set_inner_value(
     Domains::set_inner_value(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or(Some(inner_value_account_domain_owner())),
+        value.unwrap_or_else(|| Some(inner_value_account_domain_owner())),
     )
 }
 
@@ -250,29 +280,27 @@ fn _set_outer_value(
     Domains::set_outer_value(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or(Some(default_outer_value(None))),
+        value.unwrap_or_else(|| Some(default_outer_value(None))),
     )
 }
 
-pub(crate) fn _reserve_domains_with_list(
+pub(crate) fn _reserve_words_with_list(
     domains: Vec<DomainName<Test>>,
 ) -> DispatchResultWithPostInfo {
-    _reserve_domains(None, domains)
+    _reserve_words(None, Some(domains))
 }
 
-pub(crate) fn _reserve_default_domain() -> DispatchResultWithPostInfo {
-    _reserve_domains(None, Vec::new())
+pub(crate) fn _reserve_default_word() -> DispatchResultWithPostInfo {
+    _reserve_words(None, None)
 }
 
-pub fn _reserve_domains(
+pub fn _reserve_words(
     origin: Option<Origin>,
-    domains: Vec<DomainName<Test>>,
+    words: Option<Vec<DomainName<Test>>>,
 ) -> DispatchResultWithPostInfo {
-    Domains::reserve_domains(
+    Domains::reserve_words(
         origin.unwrap_or_else(Origin::root),
-        {
-            if domains.is_empty() { vec![default_domain_lc()] } else { domains }
-        },
+        words.unwrap_or_else(|| vec![default_word_lc()]),
     )
 }
 
@@ -385,7 +413,10 @@ impl ExtBuilder {
             .unwrap();
 
         let mut ext = TestExternalities::from(storage.clone());
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            System::set_block_number(1);
+            assert_ok!(Domains::add_tld(Origin::root(), vec![default_tld()]));
+        });
 
         ext
     }

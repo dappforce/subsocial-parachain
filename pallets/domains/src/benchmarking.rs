@@ -14,9 +14,8 @@ use frame_system::RawOrigin;
 
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_std::{convert::TryInto, vec, vec::Vec};
-use pallet_parachain_utils::Content;
 
-use pallet_parachain_utils::mock_functions::valid_content_ipfs;
+use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
 
 fn account_with_balance<T: Config>() -> T::AccountId {
 	let owner: T::AccountId = whitelisted_caller();
@@ -31,37 +30,53 @@ fn lookup_source_from_account<T: Config>(
 	T::Lookup::unlookup(account.clone())
 }
 
-fn create_domain_names<T: Config>(num: usize) -> Vec<DomainName<T>> {
-	let mut domains = Vec::new();
+fn mock_words_array<T: Config>(length: usize) -> Vec<DomainName<T>> {
+	let mut words = Vec::new();
 
-	let max_domain_length = T::MaxDomainLength::get() as usize - TOP_LEVEL_DOMAIN.len() - 1;
-	let mut domain = mock_domain::<T>();
+	let max_domain_length = T::MaxDomainLength::get() as usize;
+	let mut word: DomainName<T> = mock_word::<T>(T::MaxDomainLength::get() as usize);
 
-	for i in 0..num {
+	for i in 0..length {
 		let idx = i % max_domain_length;
 
-		let next_char = (domain[idx] + 1).clamp(65, 90);
-		let _ = sp_std::mem::replace(&mut domain[idx], next_char);
-		domains.push(domain.clone());
+		let next_char = (word[idx] + 1).clamp(65, 90);
+		let _ = sp_std::mem::replace(&mut word[idx], next_char);
+		words.push(word.clone());
 	}
 
-	assert_eq!(num, domains.len());
+	assert_eq!(length, words.len());
 
-	domains
+	words
+}
+
+fn mock_tld<T: Config>() -> DomainName<T> {
+	b"tld".to_vec().try_into().expect("qed; domain exceeds max length")
+}
+
+fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
+	let tld = mock_tld::<T>();
+	Pallet::<T>::add_tld(RawOrigin::Root.into(), vec![tld.clone()])?;
+	Ok(tld)
+}
+
+fn mock_word<T: Config>(length: usize) -> DomainName<T> {
+	vec![b'A'; length].try_into().expect("qed; word exceeds max domain length")
 }
 
 fn mock_domain<T: Config>() -> DomainName<T> {
-	let tld = &mut TOP_LEVEL_DOMAIN.to_vec();
-	let mut domain_vec = vec![b'A'; T::MaxDomainLength::get() as usize - tld.len() - 1];
+	let tld = &mut mock_tld::<T>().to_vec();
+	let domain_name = mock_word::<T>(T::MaxDomainLength::get() as usize - tld.len() - 1);
 
-	domain_vec.push(b'.');
-	domain_vec.append(tld);
-	domain_vec.try_into().expect("domain exceeds max length")
+	domain_name.try_mutate(|vec| {
+		vec.push(b'.');
+		vec.append(tld);
+	}).unwrap()
 }
 
 fn add_domain<T: Config>(
 	owner: <T::Lookup as StaticLookup>::Source,
 ) -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
+	add_default_tld::<T>()?;
 	let domain = mock_domain::<T>();
 
 	let expires_in = T::RegistrationPeriodLimit::get();
@@ -73,20 +88,10 @@ fn add_domain<T: Config>(
 	Ok(domain)
 }
 
-// TODO: replace with mock function when merged with other benchmarks.
-fn valid_content_ipfs_2() -> Content {
-	let mut new_content = Vec::new();
-	if let Content::IPFS(mut content) = valid_content_ipfs() {
-		content.swap_remove(0);
-		content.push(b'a');
-		new_content = content;
-	}
-
-	Content::IPFS(new_content)
-}
-
 benchmarks! {
 	register_domain {
+		add_default_tld::<T>()?;
+
 		let owner = account_with_balance::<T>();
 
 		let full_domain = mock_domain::<T>();
@@ -96,11 +101,13 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
 	}
 
 	force_register_domain {
+		add_default_tld::<T>()?;
+
 		let account_with_balance = account_with_balance::<T>();
 		let owner = lookup_source_from_account::<T>(&account_with_balance);
 
@@ -111,7 +118,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Root, owner, full_domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
 	}
 
@@ -122,7 +129,7 @@ benchmarks! {
 		let value = Some(InnerValue::Account(owner.clone()));
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
 		ensure!(value == inner_value, "Inner value was not updated.")
 	}
@@ -134,12 +141,12 @@ benchmarks! {
 		let value = Some(
 			vec![b'A'; T::MaxOuterValueLength::get() as usize]
 				.try_into()
-				.expect("outer value out of bounds")
+				.expect("qed; outer value exceeds max length")
 		);
 
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		let DomainMeta { outer_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
 		ensure!(value == outer_value, "Outer value was not updated.")
 	}
@@ -149,20 +156,20 @@ benchmarks! {
 
 		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
 
-		let new_content = valid_content_ipfs_2();
+		let new_content = another_valid_content_ipfs();
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), new_content.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		let DomainMeta { content, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
 		ensure!(new_content == content, "Content was not updated.")
 	}
 
-	reserve_domains {
+	reserve_words {
 		let s in 1 .. T::DomainsInsertLimit::get() => ();
-		let domains = create_domain_names::<T>(s as usize);
-	}: _(RawOrigin::Root, domains)
+		let words = mock_words_array::<T>(s as usize);
+	}: _(RawOrigin::Root, words)
 	verify {
-		ensure!(ReservedDomains::<T>::iter().count() as u32 == s, "Domains were not reserved.");
+		ensure!(ReservedWords::<T>::iter().count() as u32 == s, "Domains were not reserved.");
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::ExtBuilder::default().build(), crate::mock::Test);
