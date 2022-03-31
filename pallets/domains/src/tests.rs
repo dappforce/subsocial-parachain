@@ -34,7 +34,7 @@ fn register_domain_should_work() {
                 updated: None,
                 expires_at: ExtBuilder::default().reservation_period_limit + 1,
                 owner: DOMAIN_OWNER,
-                screen_domain: expected_domain.clone(),
+                screen_name: expected_domain.clone(),
                 content: valid_content_ipfs(),
                 inner_value: None,
                 outer_value: None,
