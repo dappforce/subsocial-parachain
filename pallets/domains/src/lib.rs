@@ -120,13 +120,13 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// The domain name was successfully registered and stored.
-        DomainRegistered(T::AccountId, DomainName<T>/*, BalanceOf<T>*/),
+        DomainRegistered { who: T::AccountId, domain_name: DomainName<T>/*, payed: BalanceOf<T>*/ },
         /// The domain meta was successfully updated.
-        DomainUpdated(T::AccountId, DomainName<T>),
+        DomainUpdated { who: T::AccountId, domain_name: DomainName<T> },
         /// The domains list was successfully added to the reserved list.
-        DomainsReserved(u32),
+        DomainsReserved { count: u32 },
         /// The top level domains list was successfully added to the allowed list.
-        NewTldsSupported(u32),
+        NewTldsSupported { count: u32 },
     }
 
     #[pallet::error]
@@ -272,7 +272,7 @@ pub mod pallet {
             meta.outer_value = value_opt;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
-            Self::deposit_event(Event::DomainUpdated(sender, domain));
+            Self::deposit_event(Event::DomainUpdated { who: sender, domain_name: domain });
             Ok(())
         }
 
@@ -296,7 +296,7 @@ pub mod pallet {
             meta.content = new_content;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
-            Self::deposit_event(Event::DomainUpdated(sender, domain));
+            Self::deposit_event(Event::DomainUpdated { who: sender, domain_name: domain });
             Ok(())
         }
 
@@ -317,7 +317,7 @@ pub mod pallet {
                 |domain| ReservedWords::<T>::insert(domain, true),
             )?;
 
-            Self::deposit_event(Event::DomainsReserved(inserted_words_count));
+            Self::deposit_event(Event::DomainsReserved { count: inserted_words_count });
             Ok((
                 Some(<T as Config>::WeightInfo::reserve_domains(inserted_words_count)),
                 Pays::No,
@@ -342,7 +342,7 @@ pub mod pallet {
                 |domain| SupportedTlds::<T>::insert(domain, true),
             )?;
 
-            Self::deposit_event(Event::NewTldsSupported(inserted_domains_count));
+            Self::deposit_event(Event::NewTldsSupported { count: inserted_domains_count });
             Ok((
                 Some(<T as Config>::WeightInfo::reserve_domains(inserted_domains_count)),
                 Pays::No,
@@ -412,7 +412,7 @@ pub mod pallet {
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered(owner, full_domain));
+            Self::deposit_event(Event::DomainRegistered { who: owner, domain_name: full_domain });
             Ok(())
         }
 
@@ -437,7 +437,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::DomainUpdated(meta.owner, domain));
+            Self::deposit_event(Event::DomainUpdated { who: meta.owner, domain_name: domain });
             Ok(())
         }
 
