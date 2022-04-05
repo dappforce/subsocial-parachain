@@ -285,7 +285,7 @@ fn _set_outer_value(
 }
 
 pub(crate) fn _reserve_words_with_list(
-    domains: Vec<DomainName<Test>>,
+    domains: BoundedDomainsVec<Test>,
 ) -> DispatchResultWithPostInfo {
     _reserve_words(None, Some(domains))
 }
@@ -296,11 +296,13 @@ pub(crate) fn _reserve_default_word() -> DispatchResultWithPostInfo {
 
 pub fn _reserve_words(
     origin: Option<Origin>,
-    words: Option<Vec<DomainName<Test>>>,
+    words: Option<BoundedDomainsVec<Test>>,
 ) -> DispatchResultWithPostInfo {
     Domains::reserve_words(
         origin.unwrap_or_else(Origin::root),
-        words.unwrap_or_else(|| vec![default_word_lc()]),
+        words.unwrap_or_else(||
+            vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit")
+        ),
     )
 }
 
@@ -415,7 +417,12 @@ impl ExtBuilder {
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
             System::set_block_number(1);
-            assert_ok!(Domains::add_tld(Origin::root(), vec![default_tld()]));
+            assert_ok!(
+                Domains::add_tld(
+                    Origin::root(),
+                    vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
+                )
+            );
         });
 
         ext
