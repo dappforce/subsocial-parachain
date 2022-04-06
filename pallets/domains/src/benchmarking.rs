@@ -55,7 +55,7 @@ fn mock_tld<T: Config>() -> DomainName<T> {
 
 fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
 	let tld = mock_tld::<T>();
-	Pallet::<T>::add_tld(
+	Pallet::<T>::support_tlds(
 		RawOrigin::Root.into(),
 		vec![tld.clone()].try_into().expect("qed; domains vector exceeds the limit"),
 	)?;
