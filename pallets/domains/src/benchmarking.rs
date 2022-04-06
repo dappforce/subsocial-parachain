@@ -7,7 +7,7 @@ use crate::Pallet as Pallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure, assert_ok,
-	dispatch::DispatchErrorWithPostInfo,
+	dispatch::{DispatchError, DispatchErrorWithPostInfo},
 	traits::{Currency, Get},
 };
 use frame_system::RawOrigin;
@@ -24,13 +24,17 @@ fn account_with_balance<T: Config>() -> T::AccountId {
 	owner
 }
 
+fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
 fn lookup_source_from_account<T: Config>(
 	account: &T::AccountId,
 ) -> <T::Lookup as StaticLookup>::Source {
 	T::Lookup::unlookup(account.clone())
 }
 
-fn mock_words_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
+fn mock_bounded_string_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
 	let mut words = BoundedDomainsVec::<T>::default();
 
 	let max_domain_length = T::MaxDomainLength::get() as usize;
@@ -76,70 +80,103 @@ fn mock_domain<T: Config>() -> DomainName<T> {
 	}).unwrap()
 }
 
-fn add_domain<T: Config>(
-	owner: <T::Lookup as StaticLookup>::Source,
-) -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
-	add_default_tld::<T>()?;
+fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, DispatchError> {
+	add_default_tld::<T>().map_err(|e| e.error)?;
 	let domain = mock_domain::<T>();
-
 	let expires_in = T::RegistrationPeriodLimit::get();
+	let owner_lookup = lookup_source_from_account::<T>(owner);
 
 	Pallet::<T>::force_register_domain(
-		RawOrigin::Root.into(), owner, domain.clone(), valid_content_ipfs(), expires_in,
+		RawOrigin::Root.into(), owner_lookup, domain.clone(), valid_content_ipfs(), expires_in,
 	)?;
 
 	Ok(domain)
+}
+
+fn inner_value_owner_account<T: Config>(account: T::AccountId) -> Option<InnerValueOf<T>> {
+	Some(InnerValue::Account(account))
+}
+
+ fn inner_value_space_id<T: Config>() -> Option<InnerValueOf<T>> {
+	Some(InnerValue::Space(1))
 }
 
 benchmarks! {
 	register_domain {
 		add_default_tld::<T>()?;
 
-		let owner = account_with_balance::<T>();
-
-		let full_domain = mock_domain::<T>();
+		let who = account_with_balance::<T>();
+		let domain_name = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(owner), full_domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), valid_content_ipfs(), expires_in)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
+		assert_last_event::<T>(
+			Event::DomainRegistered { who, domain_name }.into()
+		);
 	}
 
 	force_register_domain {
 		add_default_tld::<T>()?;
 
-		let account_with_balance = account_with_balance::<T>();
-		let owner = lookup_source_from_account::<T>(&account_with_balance);
+		let who = account_with_balance::<T>();
+		let owner_lookup = lookup_source_from_account::<T>(&who);
 
-		let full_domain = mock_domain::<T>();
+		let domain_name = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner, full_domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Root, owner_lookup, domain_name.clone(), valid_content_ipfs(), expires_in)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
+		assert_last_event::<T>(
+			Event::DomainRegistered { who, domain_name }.into()
+		);
 	}
 
 	set_inner_value {
-		let owner = account_with_balance::<T>();
-		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
+		let who = account_with_balance::<T>();
+		let owner_origin = RawOrigin::Signed(who.clone());
 
-		let value = Some(InnerValue::Account(owner.clone()));
-	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
+		let full_domain = add_domain::<T>(&who)?;
+
+		let initial_value = inner_value_owner_account::<T>(who);
+		Pallet::<T>::set_inner_value(
+			owner_origin.clone().into(), full_domain.clone(), initial_value
+		)?;
+
+		let updated_value = inner_value_space_id::<T>();
+
+	}: _(owner_origin, full_domain.clone(), updated_value.clone())
 	verify {
 		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
 		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
-		ensure!(value == inner_value, "Inner value was not updated.")
+		ensure!(updated_value == inner_value, "Inner value was not updated")
+	}
+
+	force_set_inner_value {
+		let who = account_with_balance::<T>();
+		let owner_origin = RawOrigin::Signed(who.clone());
+
+		let full_domain = add_domain::<T>(&who)?;
+
+		let initial_value = inner_value_owner_account::<T>(who);
+		Pallet::<T>::set_inner_value(owner_origin.into(), full_domain.clone(), initial_value)?;
+
+		let updated_value = inner_value_space_id::<T>();
+
+	}: _(RawOrigin::Root, full_domain.clone(), updated_value.clone())
+	verify {
+		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
+		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
+		ensure!(updated_value == inner_value, "Inner value was not updated")
 	}
 
 	set_outer_value {
-		let owner = account_with_balance::<T>();
-		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
+		let who = account_with_balance::<T>();
+		let domain_name = add_domain::<T>(&who)?;
 
 		let value = Some(
 			vec![b'A'; T::MaxOuterValueLength::get() as usize]
@@ -147,32 +184,34 @@ benchmarks! {
 				.expect("qed; outer value exceeds max length")
 		);
 
-	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
+	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), value)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		let DomainMeta { outer_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
-		ensure!(value == outer_value, "Outer value was not updated.")
+		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain_name }.into());
 	}
 
 	set_domain_content {
-		let owner = account_with_balance::<T>();
-
-		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
-
+		let who = account_with_balance::<T>();
+		let domain_name = add_domain::<T>(&who)?;
 		let new_content = another_valid_content_ipfs();
-	}: _(RawOrigin::Signed(owner), full_domain.clone(), new_content.clone())
+	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), new_content)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		let DomainMeta { content, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
-		ensure!(new_content == content, "Content was not updated.")
+		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain_name }.into());
 	}
 
 	reserve_words {
 		let s in 1 .. T::DomainsInsertLimit::get() => ();
-		let words = mock_words_array::<T>(s as usize);
+		let words = mock_bounded_string_array::<T>(s as usize);
 	}: _(RawOrigin::Root, words)
 	verify {
-		ensure!(ReservedWords::<T>::iter().count() as u32 == s, "Domains were not reserved.");
+		assert_last_event::<T>(Event::NewWordsReserved { count: s }.into());
+	}
+
+	support_tlds {
+		let s in 1 .. T::DomainsInsertLimit::get() => ();
+		let tlds = mock_bounded_string_array::<T>(s as usize);
+	}: _(RawOrigin::Root, tlds)
+	verify {
+		assert_last_event::<T>(Event::NewTldsSupported { count: s }.into());
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::ExtBuilder::default().build(), crate::mock::Test);
