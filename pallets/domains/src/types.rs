@@ -45,9 +45,6 @@ pub struct DomainMeta<T: Config> {
     /// The domain owner.
     pub(super) owner: T::AccountId,
 
-    /// This is how the domain should be rendered on the screen.
-    pub(super) screen_name: DomainName<T>,
-
     /// Some additional domain metadata. For example avatar and description for this domain.
     pub(super) content: Content,
 
@@ -65,7 +62,6 @@ pub struct DomainMeta<T: Config> {
 
 impl<T: Config> DomainMeta<T> {
     pub fn new(
-        screen_name: DomainName<T>,
         expires_at: T::BlockNumber,
         owner: T::AccountId,
         content: Content,
@@ -76,7 +72,6 @@ impl<T: Config> DomainMeta<T> {
             updated: None,
             expires_at,
             owner,
-            screen_name,
             content,
             inner_value: None,
             outer_value: None,

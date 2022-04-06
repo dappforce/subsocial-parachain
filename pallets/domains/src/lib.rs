@@ -373,7 +373,6 @@ pub mod pallet {
 
             let deposit = T::BaseDomainDeposit::get();
             let domain_meta = DomainMeta::new(
-                full_domain.clone(),
                 expires_at,
                 owner.clone(),
                 content,
@@ -417,7 +416,7 @@ pub mod pallet {
             }
 
             if let Some(new_value) = &new_value_opt {
-                DomainByInnerValue::<T>::insert(new_value, meta.screen_name.clone());
+                DomainByInnerValue::<T>::insert(new_value, domain_lc.clone());
             }
 
             RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {
