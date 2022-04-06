@@ -1,6 +1,4 @@
-//! # Module for storing registered domains.
-//!
-//! Pallet that allows a trusted bridge account to store the user's registered domains.
+//! # Module for registering decentralized domain names
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -58,23 +56,23 @@ pub mod pallet {
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
-        /// The maximum domains amount can be inserted to a storage at once.
+        /// The maximum number of domains that can be inserted into a storage at once.
         #[pallet::constant]
         type DomainsInsertLimit: Get<u32>;
 
-        /// The maximum amount of time the domain may be held for.
+        /// The maximum period of time the domain may be held for.
         #[pallet::constant]
         type RegistrationPeriodLimit: Get<<Self as frame_system::pallet::Config>::BlockNumber>;
 
-        /// The length limit for the domains meta outer value.
+        /// The maximum length of the domain's outer value.
         #[pallet::constant]
         type MaxOuterValueLength: Get<u32>;
 
-        /// The amount held on deposit for storing the domains structure.
+        /// The amount held on deposit for storing the domain's structure.
         #[pallet::constant]
         type BaseDomainDeposit: Get<BalanceOf<Self>>;
 
-        /// The amount held on deposit per byte within the domains outer value.
+        /// The amount held on deposit per byte of the domain's outer value.
         #[pallet::constant]
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
@@ -122,10 +120,10 @@ pub mod pallet {
         /// The domain name was successfully registered and stored.
         DomainRegistered { who: T::AccountId, domain_name: DomainName<T>/*, payed: BalanceOf<T>*/ },
         /// The domain meta was successfully updated.
-        DomainUpdated { who: T::AccountId, domain_name: DomainName<T> },
-        /// The domains list was successfully added to the reserved list.
-        DomainsReserved { count: u32 },
-        /// The top level domains list was successfully added to the allowed list.
+        DomainMetaUpdated { who: T::AccountId, domain_name: DomainName<T> },
+        /// New words have been reserved.
+        NewWordsReserved { count: u32 },
+        /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
     }
 
@@ -135,15 +133,15 @@ pub mod pallet {
         DomainContentNotChanged,
         /// Cannot register more than `MaxDomainsPerAccount` domains.
         TooManyDomainsPerAccount,
-        /// This domain label may contain only A-Z, 0-9 and hyphen characters.
+        /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between 7 and 63 characters, inclusive.
+        /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
         DomainNameIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
-        /// Domain was not found by either custom domain name or top level domain.
+        /// Domain was not found by the domain name.
         DomainNotFound,
-        /// This domain cannot be registered yet, because a word used in it is reserved.
+        /// This domain cannot be registered yet, because this word is reserved.
         DomainIsReserved,
         /// This domain is already held by another account.
         DomainAlreadyOwned,
@@ -157,10 +155,10 @@ pub mod pallet {
         OuterValueNotChanged,
         /// Reservation period cannot be a zero value.
         ZeroReservationPeriod,
-        /// Cannot store a domain for that long period of time.
+        /// Cannot store a domain for such a long period of time.
         TooBigRegistrationPeriod,
-        /// Top level domain must be specified.
-        TopLevelDomainNotSpecified,
+        /// Top-level domain must be specified.
+        TldNotSpecified,
         /// Top-level domain is not supported.
         TldNotSupported,
     }
@@ -176,7 +174,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             full_domain: DomainName<T>,
             content: Content,
-            expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+            expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
@@ -186,17 +184,17 @@ pub mod pallet {
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
-        /// and set the domain to expire in [expires_in].
+        /// and set the domain to expire in [expires_in] number of blocks.
         #[pallet::weight(<T as Config>::WeightInfo::force_register_domain())]
         pub fn force_register_domain(
             origin: OriginFor<T>,
-            target: <<T as frame_system::pallet::Config>::Lookup as StaticLookup>::Source,
+            target: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
             content: Content,
-            expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+            expires_in: T::BlockNumber,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            let owner = <T as frame_system::pallet::Config>::Lookup::lookup(target)?;
+            let owner = T::Lookup::lookup(target)?;
 
             Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::No)?;
 
@@ -212,12 +210,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let meta = Self::require_domain(domain_lc.clone())?;
-
-            Self::ensure_allowed_to_update_domain(&meta, &sender)?;
-
-            Self::do_set_inner_value(domain_lc, meta, value_opt)?;
+            Self::do_set_inner_value(domain, value_opt, Some(sender))?;
 
             Ok(())
         }
@@ -231,10 +224,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let meta = Self::require_domain(domain_lc.clone())?;
-
-            Self::do_set_inner_value(domain_lc, meta, value_opt)?;
+            Self::do_set_inner_value(domain, value_opt, None)?;
 
             Ok(())
         }
@@ -270,7 +260,7 @@ pub mod pallet {
             meta.outer_value = value_opt;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
-            Self::deposit_event(Event::DomainUpdated { who: sender, domain_name: domain });
+            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain_name: domain });
             Ok(())
         }
 
@@ -294,7 +284,7 @@ pub mod pallet {
             meta.content = new_content;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
-            Self::deposit_event(Event::DomainUpdated { who: sender, domain_name: domain });
+            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain_name: domain });
             Ok(())
         }
 
@@ -312,31 +302,30 @@ pub mod pallet {
                 |domain| ReservedWords::<T>::insert(domain, true),
             )?;
 
-            Self::deposit_event(Event::DomainsReserved { count: inserted_words_count });
+            Self::deposit_event(Event::NewWordsReserved { count: inserted_words_count });
             Ok((
                 Some(<T as Config>::WeightInfo::reserve_domains(inserted_words_count)),
                 Pays::No,
             ).into())
         }
 
-        /// Add a set of top level domains to allowed list.
+        /// Add support for a set of top-level domains.
         #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
-        pub fn add_tld(
+        pub fn support_tlds(
             origin: OriginFor<T>,
-            domains: BoundedDomainsVec<T>,
+            tlds: BoundedDomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let inserted_domains_count = Self::insert_domains(
-                &domains,
-                // TODO: maybe add specific check for TLDs
-                |_| Ok(()),
+            let inserted_tlds_count = Self::insert_domains(
+                &tlds,
+                Self::ensure_ascii_alphanumeric,
                 |domain| SupportedTlds::<T>::insert(domain, true),
             )?;
 
-            Self::deposit_event(Event::NewTldsSupported { count: inserted_domains_count });
+            Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
             Ok((
-                Some(<T as Config>::WeightInfo::reserve_domains(inserted_domains_count)),
+                Some(<T as Config>::WeightInfo::reserve_domains(inserted_tlds_count)),
                 Pays::No,
             ).into())
         }
@@ -347,7 +336,7 @@ pub mod pallet {
             owner: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
-            expires_in: <T as frame_system::pallet::Config>::BlockNumber,
+            expires_in: T::BlockNumber,
             reserve_deposit: ReserveDeposit,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
@@ -392,6 +381,7 @@ pub mod pallet {
             );
 
             if let ReserveDeposit::Yes = reserve_deposit {
+                // TODO Do unreserve the balance for expired or sold domains
                 <T as Config>::Currency::reserve(&owner, deposit)?;
             }
 
@@ -409,27 +399,42 @@ pub mod pallet {
         }
 
         fn do_set_inner_value(
-            domain: DomainName<T>,
-            meta: DomainMeta<T>,
+            full_domain: DomainName<T>,
             new_value_opt: Option<InnerValueOf<T>>,
+            check_ownership: Option<T::AccountId>,
         ) -> DispatchResult {
+            let domain_lc = Self::lower_domain_then_bound(&full_domain);
+            let meta = Self::require_domain(domain_lc.clone())?;
+
+            if let Some(should_be_owner) = check_ownership {
+                Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
+            }
+
             ensure!(meta.inner_value != new_value_opt, Error::<T>::InnerValueNotChanged);
 
-            if let Some(inner_value) = &meta.inner_value {
-                DomainByInnerValue::<T>::remove(inner_value);
+            if let Some(old_value) = &meta.inner_value {
+                DomainByInnerValue::<T>::remove(old_value);
             }
 
             if let Some(new_value) = &new_value_opt {
                 DomainByInnerValue::<T>::insert(new_value, meta.screen_name.clone());
             }
 
-            RegisteredDomains::<T>::mutate(&domain, |meta_opt| {
+            RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {
                 if let Some(stored_meta) = meta_opt {
                     stored_meta.inner_value = new_value_opt;
                 }
             });
 
-            Self::deposit_event(Event::DomainUpdated { who: meta.owner, domain_name: domain });
+            Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain_name: domain_lc });
+            Ok(())
+        }
+
+        fn ensure_ascii_alphanumeric(domain: &[u8]) -> DispatchResult {
+            ensure!(
+                !domain.iter().any(|c| !(*c).is_ascii_alphanumeric()),
+                Error::<T>::DomainContainsInvalidChar
+            );
             Ok(())
         }
 
@@ -446,7 +451,7 @@ pub mod pallet {
             let domain_correct = domain.iter().all(|c| {
                 let curr_char_hyphen = *c == b'-';
 
-                // It is not allowed to have two or more sequential hyphen in a domain name.
+                // It is not allowed to have two or more sequential hyphens in a domain name.
                 // Valid example: a-b-c.ksm
                 // Invalid example: a--b.ksm
                 if prev_char_hyphen && curr_char_hyphen {
@@ -474,7 +479,7 @@ pub mod pallet {
             let dots = split.clone().count().saturating_sub(1);
 
             ensure!(dots <= 1, Error::<T>::SubdomainsNotAllowed);
-            ensure!(!dots.is_zero(), Error::<T>::TopLevelDomainNotSpecified);
+            ensure!(!dots.is_zero(), Error::<T>::TldNotSpecified);
 
             let domain = split.next().unwrap();
             let tld_bounded = Self::lower_domain_then_bound(split.next().unwrap());
@@ -495,9 +500,10 @@ pub mod pallet {
             domain.to_ascii_lowercase().try_into().expect("qed; domain exceeds max length")
         }
 
+        /// A generic function to insert a list of reserved words or supported TLDs.
         pub fn insert_domains<F, S>(
             domains: &[DomainName<T>],
-            check_fn: F,
+            validate_fn: F,
             insert_storage_fn: S,
         ) -> Result<u32, DispatchError>
         where
@@ -505,21 +511,22 @@ pub mod pallet {
             S: FnMut(&DomainName<T>),
         {
             for domain in domains.iter() {
-                check_fn(domain)?;
+                validate_fn(domain)?;
             }
 
             domains.iter().for_each(insert_storage_fn);
             Ok(domains.len() as u32)
         }
 
-        /// Try to get domain meta by it's custom and top level domain names.
+        /// Try to get domain meta by it's custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
             Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
+        /// Check that the domain is not expired and [sender] is the current owner.
         pub fn ensure_allowed_to_update_domain(
             domain_meta: &DomainMeta<T>,
-            sender: &<T as frame_system::pallet::Config>::AccountId,
+            sender: &T::AccountId,
         ) -> DispatchResult {
             let DomainMeta { owner, expires_at, .. } = domain_meta;
 
@@ -529,7 +536,7 @@ pub mod pallet {
         }
 
         pub fn try_reserve_deposit(
-            depositor: &<T as frame_system::pallet::Config>::AccountId,
+            depositor: &T::AccountId,
             stored_value: &mut BalanceOf<T>,
             new_deposit: BalanceOf<T>,
         ) -> DispatchResult {
@@ -552,7 +559,7 @@ pub mod pallet {
         }
 
         pub fn try_unreserve_deposit(
-            depositor: &<T as frame_system::pallet::Config>::AccountId,
+            depositor: &T::AccountId,
             stored_value: &mut BalanceOf<T>,
         ) -> DispatchResult {
             let old_deposit = *stored_value;
