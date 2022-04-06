@@ -169,6 +169,10 @@ pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
     InnerValue::Account(DOMAIN_OWNER)
 }
 
+pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
+    InnerValue::Space(1)
+}
+
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
     vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
         .try_into().expect("qed; outer value exceeds max length")
@@ -284,25 +288,10 @@ fn _set_outer_value(
     )
 }
 
-pub(crate) fn _reserve_words_with_list(
-    domains: BoundedDomainsVec<Test>,
-) -> DispatchResultWithPostInfo {
-    _reserve_words(None, Some(domains))
-}
-
 pub(crate) fn _reserve_default_word() -> DispatchResultWithPostInfo {
-    _reserve_words(None, None)
-}
-
-pub fn _reserve_words(
-    origin: Option<Origin>,
-    words: Option<BoundedDomainsVec<Test>>,
-) -> DispatchResultWithPostInfo {
     Domains::reserve_words(
-        origin.unwrap_or_else(Origin::root),
-        words.unwrap_or_else(||
-            vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit")
-        ),
+        Origin::root(),
+        vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit"),
     )
 }
 
