@@ -27,7 +27,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
+    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
@@ -42,7 +42,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency trait.
-        type Currency: ReservableCurrency<<Self as frame_system::Config>::AccountId>;
+        type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Domain's minimum length.
         #[pallet::constant]
@@ -178,27 +178,26 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::Yes)?;
-
-            Ok(())
+            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::Yes)
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
         /// and set the domain to expire in [expires_in] number of blocks.
-        #[pallet::weight(<T as Config>::WeightInfo::force_register_domain())]
+        #[pallet::weight((
+            <T as Config>::WeightInfo::force_register_domain(),
+            DispatchClass::Operational,
+        ))]
         pub fn force_register_domain(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             ensure_root(origin)?;
             let owner = T::Lookup::lookup(target)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::No)?;
-
-            Ok(Pays::No.into())
+            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::No)
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
@@ -216,7 +215,10 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
-        #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
+        #[pallet::weight((
+            <T as Config>::WeightInfo::force_set_inner_value(),
+            DispatchClass::Operational,
+        ))]
         pub fn force_set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -289,7 +291,10 @@ pub mod pallet {
         }
 
         /// Mark set of domains as not reservable by users.
-        #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
+        #[pallet::weight((
+            <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
+            DispatchClass::Operational,
+        ))]
         pub fn reserve_words(
             origin: OriginFor<T>,
             words: BoundedDomainsVec<T>,
@@ -303,14 +308,14 @@ pub mod pallet {
             )?;
 
             Self::deposit_event(Event::NewWordsReserved { count: inserted_words_count });
-            Ok((
-                Some(<T as Config>::WeightInfo::reserve_domains(inserted_words_count)),
-                Pays::No,
-            ).into())
+            Ok(Some(<T as Config>::WeightInfo::reserve_words(inserted_words_count)).into())
         }
 
         /// Add support for a set of top-level domains.
-        #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
+        #[pallet::weight((
+            <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
+            DispatchClass::Operational,
+        ))]
         pub fn support_tlds(
             origin: OriginFor<T>,
             tlds: BoundedDomainsVec<T>,
@@ -324,10 +329,7 @@ pub mod pallet {
             )?;
 
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
-            Ok((
-                Some(<T as Config>::WeightInfo::reserve_domains(inserted_tlds_count)),
-                Pays::No,
-            ).into())
+            Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
         }
     }
 

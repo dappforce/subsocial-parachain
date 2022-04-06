@@ -176,23 +176,23 @@ pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
 
 pub(crate) fn _force_register_domain_with_full_domain(
     domain: DomainName<Test>,
-) -> DispatchResultWithPostInfo {
+) -> DispatchResult {
     _force_register_domain(None, None, Some(domain), None, None)
 }
 
-pub(crate) fn _force_register_default_domain() -> DispatchResultWithPostInfo {
+pub(crate) fn _force_register_default_domain() -> DispatchResult {
     _force_register_domain(None, None, None, None, None)
 }
 
-pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResultWithPostInfo {
+pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
     _force_register_domain(Some(origin), None, None, None, None)
 }
 
-pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResultWithPostInfo {
+pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
     _force_register_domain(None, None, None, None, Some(expires_in))
 }
 
-pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResultWithPostInfo {
+pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
     _force_register_domain(None, None, Some(domain_name), None, None)
 }
 
@@ -202,7 +202,7 @@ fn _force_register_domain(
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
-) -> DispatchResultWithPostInfo {
+) -> DispatchResult {
     Domains::force_register_domain(
         origin.unwrap_or_else(Origin::root),
         owner.unwrap_or(DOMAIN_OWNER),
