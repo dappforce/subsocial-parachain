@@ -241,7 +241,7 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
 
             let domain_lc = Self::lower_domain_then_bound(&domain);
-            let mut meta = Self::require_domain(domain_lc.clone())?;
+            let meta = Self::require_domain(domain_lc.clone())?;
 
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
@@ -257,12 +257,15 @@ pub mod pallet {
                 <T as Config>::Currency::unreserve(&sender, meta.outer_value_deposit);
             }
 
-            if meta.outer_value_deposit != new_deposit {
-                meta.outer_value_deposit = new_deposit;
-            }
+            RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {
+                if let Some(stored_meta) = meta_opt {
+                    if stored_meta.outer_value_deposit != new_deposit {
+                        stored_meta.outer_value_deposit = new_deposit;
+                    }
 
-            meta.outer_value = value_opt;
-            RegisteredDomains::<T>::insert(&domain_lc, meta);
+                    stored_meta.outer_value = value_opt;
+                }
+            });
 
             Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain_name: domain });
             Ok(())
