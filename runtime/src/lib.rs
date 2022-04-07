@@ -192,12 +192,12 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
 // Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 100_000_000_000;
+pub const UNIT: Balance = 10_000_000_000;
 pub const MILLIUNIT: Balance = UNIT / 1000;
 pub const MICROUNIT: Balance = MILLIUNIT / 1000;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+pub const EXISTENTIAL_DEPOSIT: Balance = 10 * MILLIUNIT;
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
@@ -362,8 +362,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+	pub const TransactionByteFee: Balance = 100 * MICROUNIT;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
@@ -474,7 +473,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 100 * MILLIUNIT;
+	pub const MinVestedTransfer: Balance = 1 * UNIT;
 }
 
 impl pallet_vesting::Config for Runtime {
