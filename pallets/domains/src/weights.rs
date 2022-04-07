@@ -56,7 +56,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
-        (44_166_000 as Weight)
+        (49_572_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(5 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
         }
@@ -66,48 +66,50 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn force_register_domain() -> Weight {
-        (32_806_000 as Weight)
+        (36_292_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(5 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn set_inner_value() -> Weight {
-        (25_249_000 as Weight)
+        (28_450_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn force_set_inner_value() -> Weight {
-        (24_413_000 as Weight)
+        (27_848_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_outer_value() -> Weight {
-        (32_353_000 as Weight)
+        (37_989_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_domain_content() -> Weight {
-        (20_776_000 as Weight)
+        (24_654_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
         fn reserve_words(s: u32, ) -> Weight {
-        (12_241_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((1_637_000 as Weight).saturating_mul(s as Weight))
+        (44_875_000 as Weight)
+            // Standard Error: 4_000
+            .saturating_add((1_702_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add(T::DbWeight::get().writes(311 as Weight))
             .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
         }
             // Storage: Domains SupportedTlds (r:0 w:1)
         fn support_tlds(s: u32, ) -> Weight {
-        (12_742_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((1_561_000 as Weight).saturating_mul(s as Weight))
+        (16_854_000 as Weight)
+            // Standard Error: 5_000
+            .saturating_add((1_732_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add(T::DbWeight::get().writes(311 as Weight))
             .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
         }
     }
@@ -120,7 +122,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
-        (44_166_000 as Weight)
+        (49_572_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
         }
@@ -130,48 +132,50 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn force_register_domain() -> Weight {
-        (32_806_000 as Weight)
+        (36_292_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn set_inner_value() -> Weight {
-        (25_249_000 as Weight)
+        (28_450_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn force_set_inner_value() -> Weight {
-        (24_413_000 as Weight)
+        (27_848_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_outer_value() -> Weight {
-        (32_353_000 as Weight)
+        (37_989_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_domain_content() -> Weight {
-        (20_776_000 as Weight)
+        (24_654_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
         fn reserve_words(s: u32, ) -> Weight {
-        (12_241_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((1_637_000 as Weight).saturating_mul(s as Weight))
+        (44_875_000 as Weight)
+            // Standard Error: 4_000
+            .saturating_add((1_702_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add(RocksDbWeight::get().writes(311 as Weight))
             .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
         }
             // Storage: Domains SupportedTlds (r:0 w:1)
         fn support_tlds(s: u32, ) -> Weight {
-        (12_742_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((1_561_000 as Weight).saturating_mul(s as Weight))
+        (16_854_000 as Weight)
+            // Standard Error: 5_000
+            .saturating_add((1_732_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add(RocksDbWeight::get().writes(311 as Weight))
             .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
         }
     }
