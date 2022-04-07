@@ -356,7 +356,7 @@ impl Default for ExtBuilder {
         ExtBuilder {
             min_domain_length: 3,
             max_domains_per_account: 10,
-            domains_insert_limit: 100,
+            domains_insert_limit: 2860,
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
