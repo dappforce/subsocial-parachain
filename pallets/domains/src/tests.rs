@@ -542,24 +542,24 @@ fn ensure_valid_domain_should_work() {
         .min_domain_length(3)
         .build()
         .execute_with(|| {
-            assert_ok!(Domains::ensure_valid_domain(b"abcde.sub"));
-            assert_ok!(Domains::ensure_valid_domain(b"a-b-c.sub"));
-            assert_ok!(Domains::ensure_valid_domain(b"12345.sub"));
+            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"abcde.sub")));
+            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"a-b-c.sub")));
+            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"12345.sub")));
 
             assert_noop!(
-                Domains::ensure_valid_domain(b"a.sub"),
+                Domains::ensure_valid_domain(&split_domain_from(b"a.sub")),
                 Error::<Test>::DomainNameIsTooShort,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"-ab.sub"),
+                Domains::ensure_valid_domain(&split_domain_from(b"-ab.sub")),
                 Error::<Test>::DomainContainsInvalidChar,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"ab-.sub"),
+                Domains::ensure_valid_domain(&split_domain_from(b"ab-.sub")),
                 Error::<Test>::DomainContainsInvalidChar,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"a--b.sub"),
+                Domains::ensure_valid_domain(&split_domain_from(b"a--b.sub")),
                 Error::<Test>::DomainContainsInvalidChar,
             );
         });
