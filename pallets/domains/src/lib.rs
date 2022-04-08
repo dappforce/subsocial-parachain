@@ -503,8 +503,12 @@ pub mod pallet {
             Ok(())
         }
 
+        pub(crate) fn bound_domain(domain: Vec<u8>) -> DomainName<T> {
+            domain.try_into().expect("qed; domain exceeds max length")
+        }
+
         pub fn lower_domain_then_bound(domain: &[u8]) -> DomainName<T> {
-            domain.to_ascii_lowercase().try_into().expect("qed; domain exceeds max length")
+            Self::bound_domain(domain.to_ascii_lowercase())
         }
 
         /// A generic function to insert a list of reserved words or supported TLDs.
