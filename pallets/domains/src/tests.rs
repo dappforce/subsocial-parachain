@@ -521,7 +521,7 @@ fn ensure_valid_domain_should_work() {
 
             assert_noop!(
                 Domains::ensure_valid_domain(&split_domain_from(b"a.sub")),
-                Error::<Test>::DomainNameIsTooShort,
+                Error::<Test>::DomainIsTooShort,
             );
             assert_noop!(
                 Domains::ensure_valid_domain(&split_domain_from(b"-ab.sub")),
