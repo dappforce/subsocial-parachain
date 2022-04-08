@@ -62,7 +62,7 @@ pub mod pallet {
 
         /// The maximum period of time the domain may be held for.
         #[pallet::constant]
-        type RegistrationPeriodLimit: Get<<Self as frame_system::pallet::Config>::BlockNumber>;
+        type RegistrationPeriodLimit: Get<Self::BlockNumber>;
 
         /// The maximum length of the domain's outer value.
         #[pallet::constant]
@@ -136,7 +136,7 @@ pub mod pallet {
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
         /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
-        DomainNameIsTooShort,
+        DomainIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
         /// Domain was not found by the domain name.
@@ -495,7 +495,7 @@ pub mod pallet {
             // No need to check max length, because we use BoundedVec as input value.
             ensure!(
                 domain.len() >= T::MinDomainLength::get() as usize,
-                Error::<T>::DomainNameIsTooShort,
+                Error::<T>::DomainIsTooShort,
             );
 
             Self::ensure_domain_contains_valid_chars(domain)?;
