@@ -425,7 +425,7 @@ impl ExtBuilder {
         ext
     }
 
-    pub(crate) fn build_with_domain(self) -> TestExternalities {
+    pub(crate) fn build_with_default_domain_registered(self) -> TestExternalities {
         let mut ext = self.clone().build();
         ext.execute_with(|| {
             let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit);
