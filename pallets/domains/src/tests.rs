@@ -181,35 +181,35 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .build()
         .execute_with(|| {
             assert_ok!(Domains::register_domain(
-                Origin::signed(1), domain_one.clone(), valid_content_ipfs(), 1
+                origin_a(), domain_one.clone(), valid_content_ipfs(), 1
             ));
             assert_ok!(Domains::register_domain(
-                Origin::signed(2), domain_two.clone(), valid_content_ipfs(), 1
+                origin_b(), domain_two.clone(), valid_content_ipfs(), 1
             ));
 
             assert_ok!(Domains::set_inner_value(
-                Origin::signed(1), domain_one.clone(), Some(inner_value_space_id())
+                origin_a(), domain_one.clone(), Some(inner_value_space_id())
             ));
             assert_ok!(Domains::set_inner_value(
-                Origin::signed(2), domain_two.clone(), Some(inner_value_space_id())
+                origin_b(), domain_two.clone(), Some(inner_value_space_id())
             ));
 
             assert_eq!(
-                DomainByInnerValue::<Test>::get(1, inner_value_space_id()),
+                DomainByInnerValue::<Test>::get(ACCOUNT_A, inner_value_space_id()),
                 Some(domain_one.clone()),
             );
             assert_eq!(
-                DomainByInnerValue::<Test>::get(2, inner_value_space_id()),
+                DomainByInnerValue::<Test>::get(ACCOUNT_B, inner_value_space_id()),
                 Some(domain_two.clone()),
             );
 
             System::assert_has_event(Event::<Test>::DomainMetaUpdated {
-                who: 1,
+                who: ACCOUNT_A,
                 domain_name: domain_one,
             }.into());
 
             System::assert_has_event(Event::<Test>::DomainMetaUpdated {
-                who: 2,
+                who: ACCOUNT_B,
                 domain_name: domain_two,
             }.into());
         });
