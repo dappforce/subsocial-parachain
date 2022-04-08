@@ -107,7 +107,13 @@ pub mod pallet {
 
     #[pallet::storage]
     pub(super) type DomainByInnerValue<T: Config> =
-        StorageMap<_, Blake2_128Concat, InnerValue<T::AccountId>, DomainName<T>>;
+        StorageDoubleMap<_,
+            Twox64Concat,
+            T::AccountId,
+            Blake2_128Concat,
+            InnerValue<T::AccountId>,
+            DomainName<T>,
+        >;
 
     #[pallet::storage]
     #[pallet::getter(fn is_tld_supported)]
@@ -423,11 +429,11 @@ pub mod pallet {
             ensure!(meta.inner_value != new_value_opt, Error::<T>::InnerValueNotChanged);
 
             if let Some(old_value) = &meta.inner_value {
-                DomainByInnerValue::<T>::remove(old_value);
+                DomainByInnerValue::<T>::remove(&meta.owner, old_value);
             }
 
             if let Some(new_value) = &new_value_opt {
-                DomainByInnerValue::<T>::insert(new_value, domain_lc.clone());
+                DomainByInnerValue::<T>::insert(&meta.owner, new_value, domain_lc.clone());
             }
 
             RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {

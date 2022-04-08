@@ -371,7 +371,7 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn domain_deposit(mut self, domain_deposit: Balance) -> Self {
+    pub(crate) fn base_domain_deposit(mut self, domain_deposit: Balance) -> Self {
         self.base_domain_deposit = domain_deposit;
         self
     }
