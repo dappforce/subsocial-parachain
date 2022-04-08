@@ -16,11 +16,11 @@ on:
 jobs:
   build:
     name: Build parachain binary
-    runs-on: [ self-hosted, linux, x64, parachain ]
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
       - name: Checkout sources
+        uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
         id: buildx
@@ -99,6 +99,7 @@ jobs:
           echo "Target version: $VERSION" >> output.txt
           echo "Chain: $CHAIN" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
+
       - name: Pull polkadot-js-tools image
         run: docker pull jacogr/polkadot-js-tools
 
@@ -112,6 +113,7 @@ jobs:
           SUMMARY=$(./scripts/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
+
       - name: Show result
         run: |
           cat output.txt
