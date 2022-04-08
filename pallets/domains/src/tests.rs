@@ -16,7 +16,7 @@ fn register_domain_should_work() {
     const LOCAL_DOMAIN_DEPOSIT: Balance = 10;
 
     ExtBuilder::default()
-        .domain_deposit(LOCAL_DOMAIN_DEPOSIT)
+        .base_domain_deposit(LOCAL_DOMAIN_DEPOSIT)
         .build()
         .execute_with(|| {
             let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
@@ -84,7 +84,7 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
 #[test]
 fn register_domain_should_fail_when_balance_is_insufficient() {
     ExtBuilder::default()
-        .domain_deposit(10)
+        .base_domain_deposit(10)
         .build()
         .execute_with(|| {
             let _ = account_with_balance(DOMAIN_OWNER, 9);
@@ -160,7 +160,7 @@ fn set_inner_value_should_work() {
         assert_eq!(expected_value, result_value);
 
         assert_eq!(
-            DomainByInnerValue::<Test>::get(&expected_value.unwrap()),
+            DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &expected_value.unwrap()),
             Some(default_domain_lc()),
         );
 
@@ -169,6 +169,50 @@ fn set_inner_value_should_work() {
             domain_name: domain_lc,
         }.into());
     });
+}
+
+#[test]
+fn set_inner_value_should_work_when_same_for_different_domains() {
+    let domain_one = domain_from(b"domain-one".to_vec());
+    let domain_two = domain_from(b"domain-two".to_vec());
+
+    ExtBuilder::default()
+        .base_domain_deposit(0)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Domains::register_domain(
+                Origin::signed(1), domain_one.clone(), valid_content_ipfs(), 1
+            ));
+            assert_ok!(Domains::register_domain(
+                Origin::signed(2), domain_two.clone(), valid_content_ipfs(), 1
+            ));
+
+            assert_ok!(Domains::set_inner_value(
+                Origin::signed(1), domain_one.clone(), Some(inner_value_space_id())
+            ));
+            assert_ok!(Domains::set_inner_value(
+                Origin::signed(2), domain_two.clone(), Some(inner_value_space_id())
+            ));
+
+            assert_eq!(
+                DomainByInnerValue::<Test>::get(1, inner_value_space_id()),
+                Some(domain_one.clone()),
+            );
+            assert_eq!(
+                DomainByInnerValue::<Test>::get(2, inner_value_space_id()),
+                Some(domain_two.clone()),
+            );
+
+            System::assert_has_event(Event::<Test>::DomainMetaUpdated {
+                who: 1,
+                domain_name: domain_one,
+            }.into());
+
+            System::assert_has_event(Event::<Test>::DomainMetaUpdated {
+                who: 2,
+                domain_name: domain_two,
+            }.into());
+        });
 }
 
 #[test]
@@ -182,8 +226,8 @@ fn set_inner_value_should_work_when_value_changes() {
 
         assert_ok!(_set_inner_value_with_value(new_value.clone()));
 
-        assert_eq!(DomainByInnerValue::<Test>::get(&initial_value), None);
-        assert_eq!(DomainByInnerValue::<Test>::get(&new_value), Some(default_domain_lc()));
+        assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &initial_value), None);
+        assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value), Some(default_domain_lc()));
 
         assert_eq!(Some(new_value), get_inner_value(&domain_lc));
     });
@@ -258,7 +302,7 @@ fn set_outer_value_should_work() {
     const LOCAL_BYTE_DEPOSIT: Balance = 1;
 
     ExtBuilder::default()
-        .domain_deposit(LOCAL_DOMAIN_DEPOSIT)
+        .base_domain_deposit(LOCAL_DOMAIN_DEPOSIT)
         .outer_value_byte_deposit(LOCAL_BYTE_DEPOSIT)
         .build_with_default_domain_registered()
         .execute_with(|| {
