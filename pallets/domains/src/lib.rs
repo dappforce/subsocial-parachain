@@ -229,7 +229,7 @@ pub mod pallet {
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: Option<InnerValue<T>>,
+            value: Option<InnerValue<T>>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -238,9 +238,9 @@ pub mod pallet {
 
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
-            ensure!(meta.inner_value != value_opt, Error::<T>::InnerValueNotChanged);
+            ensure!(meta.inner_value != value, Error::<T>::InnerValueNotChanged);
 
-            meta.inner_value = value_opt;
+            meta.inner_value = value;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
             Self::deposit_event(Event::DomainUpdated(sender, domain));
@@ -433,21 +433,19 @@ pub mod pallet {
             stored_value: &mut BalanceOf<T>,
             new_deposit: BalanceOf<T>,
         ) -> DispatchResult {
-            let old_deposit = stored_value.clone();
+            let old_deposit = &mut stored_value.clone();
+            *stored_value = new_deposit;
 
-            match old_deposit.cmp(&new_deposit) {
-                Ordering::Less =>
-                        <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
-                Ordering::Greater => {
+            match stored_value.cmp(&old_deposit) {
+                Ordering::Greater => <T as Config>::Currency::reserve(depositor, *stored_value - *old_deposit)?,
+                Ordering::Less => {
                     let err_amount = <T as Config>::Currency::unreserve(
-                        depositor, new_deposit - old_deposit,
+                        depositor, *old_deposit - *stored_value,
                     );
                     debug_assert!(err_amount.is_zero());
                 },
                 _ => (),
             }
-
-            *stored_value = new_deposit;
             Ok(())
         }
 
