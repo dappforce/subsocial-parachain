@@ -95,6 +95,7 @@ pub mod pallet {
     pub(super) type RegisteredDomains<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, DomainMeta<T>>;
 
+    /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
     pub(super) type DomainsByOwner<T: Config> =
@@ -105,6 +106,7 @@ pub mod pallet {
             ValueQuery,
         >;
 
+    /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     pub(super) type DomainByInnerValue<T: Config> =
         StorageDoubleMap<_,
