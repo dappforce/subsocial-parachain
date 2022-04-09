@@ -1,11 +1,25 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use sp_runtime::RuntimeDebug;
+use sp_std::prelude::*;
+
+pub use pallet::*;
+
+#[cfg(test)]
+mod mock;
+pub mod mock_functions;
+
+#[cfg(test)]
+mod tests;
 
 pub type SpaceId = u64;
 pub type PostId = u64;
+
+pub const DEFAULT_MIN_HANDLE_LEN: u32 = 5;
+pub const DEFAULT_MAX_HANDLE_LEN: u32 = 50;
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct WhoAndWhen<AccountId, BlockNumber, Moment> {
@@ -58,52 +72,52 @@ impl Content {
     }
 }
 
-#[derive(Encode, Decode, RuntimeDebug)]
-pub enum Error {
-    /// IPFS CID is invalid.
-    InvalidIpfsCid,
-    /// `Raw` content type is not yet supported.
-    RawContentTypeNotSupported,
-    /// `Hyper` content type is not yet supported.
-    HypercoreContentTypeNotSupported,
-    /// Content type is `None`.
-    ContentIsEmpty,
-}
+#[frame_support::pallet]
+pub mod pallet {
+    use frame_support::pallet_prelude::*;
 
-impl From<Error> for &'static str {
-    fn from(e: Error) -> &'static str {
-        match e {
-            Error::InvalidIpfsCid => "InvalidIpfsCid",
-            Error::RawContentTypeNotSupported => "RawContentTypeNotSupported",
-            Error::HypercoreContentTypeNotSupported => "HypercoreContentTypeNotSupported",
-            Error::ContentIsEmpty => "ContentIsEmpty",
-        }
+    use super::*;
+
+    #[pallet::config]
+    pub trait Config: frame_system::Config {}
+
+    #[pallet::pallet]
+    pub struct Pallet<T>(PhantomData<T>);
+
+    #[pallet::error]
+    pub enum Error<T> {
+        /// IPFS CID is invalid.
+        InvalidIpfsCid,
+        /// `Raw` content type is not yet supported.
+        RawContentTypeNotSupported,
+        /// `Hyper` content type is not yet supported.
+        HypercoreContentTypeNotSupported,
+        /// Content type is `None`.
+        ContentIsEmpty,
     }
-}
 
-pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
-    match content {
-        Content::None => Ok(()),
-        Content::Raw(_) => Err(
-            DispatchError::Other(Error::RawContentTypeNotSupported.into())
-        ),
-        Content::IPFS(ipfs_cid) => {
-            let len = ipfs_cid.len();
-            // IPFS CID v0 is 46 bytes.
-            // IPFS CID v1 is 59 bytes.
-            ensure!(len == 46 || len == 59, DispatchError::Other(Error::InvalidIpfsCid.into()));
+    impl<T: Config> Pallet<T> {
+        pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
+            match content {
+                Content::None => Ok(()),
+                Content::Raw(_) => Err(Error::<T>::RawContentTypeNotSupported.into()),
+                Content::IPFS(ipfs_cid) => {
+                    let len = ipfs_cid.len();
+                    // IPFS CID v0 is 46 bytes.
+                    // IPFS CID v1 is 59 bytes.df-integration-tests/src/lib.rs:272:5
+                    ensure!(len == 46 || len == 59, Error::<T>::InvalidIpfsCid);
+                    Ok(())
+                }
+                Content::Hyper(_) => Err(Error::<T>::HypercoreContentTypeNotSupported.into()),
+            }
+        }
+
+        /// Ensure that a given content is not `None`.
+        pub fn ensure_content_is_some(content: &Content) -> DispatchResult {
+            ensure!(content.is_some(), Error::<T>::ContentIsEmpty);
             Ok(())
         }
-        Content::Hyper(_) => Err(
-            DispatchError::Other(Error::HypercoreContentTypeNotSupported.into())
-        ),
     }
-}
-
-/// Ensure that a given content is not `None`.
-pub fn ensure_content_is_some(content: &Content) -> DispatchResult {
-    ensure!(content.is_some(), DispatchError::Other(Error::ContentIsEmpty.into()));
-    Ok(())
 }
 
 pub fn remove_from_vec<F: PartialEq>(vector: &mut Vec<F>, element: F) {
@@ -117,55 +131,5 @@ pub fn bool_to_option(value: bool) -> Option<bool> {
         Some(value)
     } else {
         None
-    }
-}
-
-pub mod mock_functions {
-    use super::Content;
-
-    pub fn valid_content_ipfs() -> Content {
-        Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD4".to_vec())
-    }
-
-    pub fn invalid_content_ipfs() -> Content {
-        Content::IPFS(b"QmRAQB6DaazhR8".to_vec())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::remove_from_vec;
-
-    #[test]
-    fn remove_from_vec_should_work_with_zero_elements() {
-        let element: u16 = 2;
-        let vector: &mut Vec<u16> = &mut vec![];
-
-        remove_from_vec(vector, element);
-        assert!(vector.is_empty());
-    }
-
-    #[test]
-    fn remove_from_vec_should_work_with_last_element() {
-        let element: u16 = 2;
-        let vector: &mut Vec<u16> = &mut vec![6, 2];
-
-        vector.remove(0);
-        assert_eq!(vector, &mut vec![2]);
-
-        remove_from_vec(vector, element);
-        assert!(vector.is_empty());
-    }
-
-    #[test]
-    fn remove_from_vec_should_work_with_two_elements() {
-        let element: u16 = 2;
-        let vector: &mut Vec<u16> = &mut vec![6, 2, 7];
-
-        vector.remove(0);
-        assert_eq!(vector, &mut vec![2, 7]);
-
-        remove_from_vec(vector, element);
-        assert_eq!(vector, &mut vec![7]);
     }
 }

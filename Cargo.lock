@@ -5477,6 +5477,10 @@ dependencies = [
  "jsonrpc-core",
  "parity-scale-codec",
  "scale-info",
+ "sp-core 4.0.0-dev",
+ "sp-io 4.0.0-dev",
+ "sp-runtime 4.0.0-dev",
+ "sp-std 4.0.0-dev",
 ]
 
 [[package]]
