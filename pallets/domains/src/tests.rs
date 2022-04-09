@@ -44,10 +44,10 @@ fn register_domain_should_work() {
 
             assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
 
-            System::assert_last_event(Event::<Test>::DomainRegistered {
-                who: owner,
-                domain_name: expected_domain,
-            }.into());
+            System::assert_last_event(Event::<Test>::DomainRegistered(
+                owner,
+                expected_domain,
+            ).into());
         });
 }
 
@@ -165,10 +165,10 @@ fn set_inner_value_should_work() {
             Some(default_domain()),
         );
 
-        System::assert_last_event(Event::<Test>::DomainUpdated {
-            who: owner,
-            domain_name: domain_lc,
-        }.into());
+        System::assert_last_event(Event::<Test>::DomainUpdated(
+            owner,
+            domain_lc,
+        ).into());
     });
 }
 
@@ -243,10 +243,10 @@ fn set_outer_value_should_work() {
                 expected_value.unwrap().len() as u64 * LOCAL_BYTE_DEPOSIT + LOCAL_DOMAIN_DEPOSIT
             );
 
-            System::assert_last_event(Event::<Test>::DomainUpdated {
-                who: owner,
-                domain_name: domain_lc,
-            }.into());
+            System::assert_last_event(Event::<Test>::DomainUpdated(
+                owner,
+                domain_lc,
+            ).into());
         });
 }
 
@@ -348,10 +348,10 @@ fn set_domain_content_should_work() {
         assert!(old_content != result_content);
         assert_eq!(another_valid_content_ipfs(), result_content);
 
-        System::assert_last_event(Event::<Test>::DomainUpdated {
-            who: owner,
-            domain_name: domain_lc,
-        }.into());
+        System::assert_last_event(Event::<Test>::DomainUpdated(
+            owner,
+            domain_lc,
+        ).into());
     });
 }
 
@@ -416,7 +416,7 @@ fn reserve_domains_should_work() {
 
         assert!(Domains::is_word_reserved(default_word_lc()));
 
-        System::assert_last_event(Event::<Test>::DomainsReserved { count: 1 }.into());
+        System::assert_last_event(Event::<Test>::DomainsReserved(1).into());
     });
 }
 
