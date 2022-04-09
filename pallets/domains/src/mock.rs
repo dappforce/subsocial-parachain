@@ -124,19 +124,7 @@ impl pallet_domains::Config for Test {
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
-
-pub(crate) const ACCOUNT_A: u64 = 10;
-pub(crate) const ACCOUNT_B: u64 = 20;
-
 const DEFAULT_TLD: [u8; 3] = *b"sub";
-
-pub(crate) fn origin_a() -> Origin {
-    Origin::signed(ACCOUNT_A)
-}
-
-pub(crate) fn origin_b() -> Origin {
-    Origin::signed(ACCOUNT_B)
-}
 
 pub(crate) fn default_tld() -> DomainName<Test> {
     Domains::bound_domain(DEFAULT_TLD.to_vec())
