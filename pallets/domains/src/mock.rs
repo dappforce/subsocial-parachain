@@ -92,14 +92,14 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-    pub static MinDomainLength: u32 = 0;
+    pub const MinDomainLength: u32 = 3;
     pub const MaxDomainLength: u32 = 63;
 
     pub static MaxDomainsPerAccount: u32 = 0;
 
     pub static DomainsInsertLimit: u32 = 0;
     pub static ReservationPeriodLimit: BlockNumber = 0;
-    pub const MaxOuterValueLength: u16 = 256;
+    pub static MaxOuterValueLength: u16 = 0;
 
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
@@ -311,45 +311,30 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 
 #[derive(Clone)]
 pub struct ExtBuilder {
-    pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
-    pub(crate) domains_insert_limit: u32,
-    pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
+    pub(crate) reservation_period_limit: BlockNumber,
+    pub(crate) domains_insert_limit: u32,
+    pub(crate) outer_value_limit: u16,
 }
 
 impl Default for ExtBuilder {
     fn default() -> Self {
         ExtBuilder {
-            min_domain_length: 3,
             max_domains_per_account: 10,
-            domains_insert_limit: 100,
-            reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
+            reservation_period_limit: 1000,
+            domains_insert_limit: 100,
+            outer_value_limit: 256,
         }
     }
 }
 
 impl ExtBuilder {
-    pub(crate) fn min_domain_length(mut self, min_domain_length: u32) -> Self {
-        self.min_domain_length = min_domain_length;
-        self
-    }
-
     pub(crate) fn max_domains_per_account(mut self, max_domains_per_account: u32) -> Self {
         self.max_domains_per_account = max_domains_per_account;
-        self
-    }
-
-    pub(crate) fn domains_insert_limit(mut self, domains_insert_limit: u32) -> Self {
-        self.domains_insert_limit = domains_insert_limit;
-        self
-    }
-
-    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
-        self.reservation_period_limit = reservation_period_limit;
         self
     }
 
@@ -363,13 +348,28 @@ impl ExtBuilder {
         self
     }
 
+    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
+        self.reservation_period_limit = reservation_period_limit;
+        self
+    }
+
+    pub(crate) fn domains_insert_limit(mut self, domains_insert_limit: u32) -> Self {
+        self.domains_insert_limit = domains_insert_limit;
+        self
+    }
+
+    pub(crate) fn outer_value_limit(mut self, outer_value_limit: u16) -> Self {
+        self.outer_value_limit = outer_value_limit;
+        self
+    }
+
     fn set_configs(&self) {
-        MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
         DOMAINS_INSERT_LIMIT.with(|x| *x.borrow_mut() = self.domains_insert_limit);
+        OUTER_VALUE_LIMIT.with(|x| *x.borrow_mut() = self.outer_value_limit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {
