@@ -102,7 +102,6 @@ pub mod pallet {
         >;
 
     #[pallet::storage]
-    #[pallet::getter(fn registered_domains_by_owner)]
     pub(super) type RegisteredDomainsByOwner<T: Config> =
         StorageMap<_,
             Blake2_128Concat,
@@ -128,12 +127,6 @@ pub mod pallet {
         DomainContentNotChanged,
         /// Cannot insert that many domains to a storage at once.
         DomainsInsertLimitReached,
-        /// Cannot register more than `MaxDomainsPerAccount` domains.
-        TooManyDomainsPerAccount,
-        /// The domain label may contain only A-Z, 0-9 and hyphen characters.
-        DomainContainsInvalidChar,
-        /// The domain label length must be between 3 and 63 characters, inclusive.
-        DomainIsOffLengthLimits,
         /// The domain has expired.
         DomainHasExpired,
         /// Domain was not found by either custom domain name or top level domain.
@@ -156,6 +149,14 @@ pub mod pallet {
         InvalidReservationPeriod,
         /// Cannot store a domain for that long period of time.
         TooBigReservationPeriod,
+        /// The top level domain may contain only A-Z, 0-9 and hyphen characters.
+        TopLevelDomainContainsInvalidChar,
+        /// The top level domain length must be between 3 and 63 characters, inclusive.
+        TopLevelDomainIsOffLengthLimits,
+        /// This top level domain is not supported.
+        TopLevelDomainNotSupported,
+        /// This inner value is not supported yet.
+        InnerValueNotSupported,
     }
 
     #[pallet::call]
@@ -183,21 +184,16 @@ pub mod pallet {
             // the same spelling but different case are to be treated as if identical.
             let domain_lc = Self::lower_domain_then_bound(full_domain.clone());
 
+
             ensure!(!Self::reserved_domain(&domain_lc), Error::<T>::DomainIsReserved);
 
-            ensure_content_is_valid(content.clone())?;
+            let _ = ensure_content_is_valid(content.clone());
 
             Self::ensure_valid_domain(&domain_lc)?;
 
             ensure!(
                 Self::registered_domain(&domain_lc).is_none(),
                 Error::<T>::DomainAlreadyOwned,
-            );
-
-            let domains_per_account = Self::registered_domains_by_owner(&owner).len();
-            ensure!(
-                domains_per_account <= T::MaxDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
             );
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
@@ -372,7 +368,7 @@ pub mod pallet {
                 domain,
                 T::MinDomainLength::get(),
                 T::MaxDomainLength::get(),
-                Error::<T>::DomainIsOffLengthLimits,
+                Error::<T>::TopLevelDomainIsOffLengthLimits,
             )?;
 
             ensure!(
@@ -381,7 +377,7 @@ pub mod pallet {
             );
 
             Self::ensure_domain_contains_valid_chars(
-                domain, Error::<T>::DomainContainsInvalidChar
+                domain, Error::<T>::TopLevelDomainContainsInvalidChar
             )?;
 
             Ok(())
@@ -390,6 +386,18 @@ pub mod pallet {
         pub fn lower_domain_then_bound(domain: DomainName<T>) -> DomainName<T> {
             domain.to_ascii_lowercase().try_into().expect("domain exceeds max length")
         }
+
+        // pub fn ensure_valid_inner_value(inner_value: &InnerValue<T>) -> DispatchResult {
+        //     if inner_value.is_none() { return Ok(()) }
+        //
+        //     match inner_value.clone().unwrap() {
+        //         // DomainInnerLink::Space(space_id) => T::SpacesProvider::ensure_space_exists(space_id),
+        //         DomainInnerLink::Space(_) => Ok(()),
+        //         DomainInnerLink::Account(_) => Ok(()),
+        //         // TODO: support all inner values
+        //         _ => Err(Error::<T>::InnerValueNotSupported.into()),
+        //     }
+        // }
 
         pub fn ensure_valid_outer_value(outer_value: &OuterValue<T>) -> DispatchResult {
             if let Some(outer) = &outer_value {
