@@ -418,7 +418,7 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
             assert_ok!(
-                Domains::support_tlds(
+                Domains::add_tld(
                     Origin::root(),
                     vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
                 )
