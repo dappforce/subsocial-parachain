@@ -34,7 +34,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-    use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+    use sp_std::{convert::TryInto, vec::Vec};
 
     use pallet_parachain_utils::ensure_content_is_valid;
 
@@ -67,7 +67,7 @@ pub mod pallet {
 
         /// The length limit for the domains meta outer value.
         #[pallet::constant]
-        type OuterValueLimit: Get<u32>;
+        type OuterValueLimit: Get<u16>;
 
         /// The amount held on deposit for storing the domains structure.
         #[pallet::constant]
@@ -245,7 +245,7 @@ pub mod pallet {
         pub fn set_outer_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: OuterValue<T>,
+            value_opt: OuterValue,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -399,10 +399,10 @@ pub mod pallet {
         //     }
         // }
 
-        pub fn ensure_valid_outer_value(outer_value: &OuterValue<T>) -> DispatchResult {
+        pub fn ensure_valid_outer_value(outer_value: &OuterValue) -> DispatchResult {
             if let Some(outer) = &outer_value {
                 ensure!(
-                    outer.len() <= T::OuterValueLimit::get() as usize,
+                    outer.len() <= T::OuterValueLimit::get().into(),
                     Error::<T>::OuterValueOffLengthLimit
                 );
             }
@@ -458,6 +458,8 @@ pub mod pallet {
         ) -> DispatchResult {
             let old_deposit = &mut stored_value.clone();
             *stored_value = new_deposit;
+
+            use sp_std::cmp::Ordering;
 
             match stored_value.cmp(&old_deposit) {
                 Ordering::Greater => <T as Config>::Currency::reserve(depositor, *stored_value - *old_deposit)?,

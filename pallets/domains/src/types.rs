@@ -1,6 +1,7 @@
 use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
 use sp_runtime::traits::Zero;
+use sp_std::vec::Vec;
 
 use pallet_parachain_utils::WhoAndWhen;
 
@@ -9,7 +10,7 @@ use super::*;
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type DomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::MaxDomainsPerAccount>;
 pub(crate) type InnerValue<T> = Option<DomainInnerLink<<T as frame_system::pallet::Config>::AccountId>>;
-pub(crate) type OuterValue<T> = Option<BoundedVec<u8, <T as Config>::OuterValueLimit>>;
+pub(crate) type OuterValue = Option<Vec<u8>>;
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
@@ -62,7 +63,7 @@ pub struct DomainMeta<T: Config> {
     // The inner domain link (some Subsocial entity).
     pub(super) inner_value: InnerValue<T>,
     // The outer domain link (any string).
-    pub(super) outer_value: OuterValue<T>,
+    pub(super) outer_value: OuterValue,
 
     // The amount was held as a deposit for storing this structure.
     pub(super) domain_deposit: BalanceOf<T>,

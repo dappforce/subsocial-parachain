@@ -640,12 +640,11 @@ parameter_types! {
     pub const MaxDomainsPerAccount: u32 = 10;
 
     pub const DomainsInsertLimit: u32 = 100;
-    pub const ReservationPeriodLimit: BlockNumber = 365 * DAYS;
-    pub const OuterValueLimit: u32 = 261;
+    pub const ReservationPeriodLimit: BlockNumber = 100;
+    pub const OuterValueLimit: u16 = 256;
 
-	// TODO: change this values
-    pub const DomainDeposit: Balance = 10 * UNIT;
-    pub const OuterValueByteDeposit: Balance = 10 * MICROUNIT;
+    pub const DomainDeposit: Balance = 10;
+    pub const OuterValueByteDeposit: Balance = 1;
 }
 
 impl pallet_domains::Config for Runtime {
