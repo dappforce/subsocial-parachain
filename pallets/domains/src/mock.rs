@@ -137,7 +137,7 @@ pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
     string.try_into().expect("domain exceeds max length")
 }
 
-pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
+pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValue<Test>> {
     Domains::registered_domain(domain).unwrap().inner_value
 }
 
@@ -153,8 +153,8 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(default_domain())
 }
 
-pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
-    InnerValue::Account(DOMAIN_OWNER)
+pub(crate) fn inner_value_account_domain_owner() -> InnerValue<Test> {
+    DomainInnerLink::Account(DOMAIN_OWNER)
 }
 
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
@@ -210,7 +210,7 @@ pub(crate) fn _set_inner_value_with_domain_name(domain_name: DomainName<Test>) -
 }
 
 // TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_value(value: InnerValue<AccountId>) -> DispatchResult {
+pub(crate) fn _set_inner_value_with_value(value: DomainInnerLink<AccountId>) -> DispatchResult {
     _set_inner_value(None, None, Some(Some(value)))
 }
 
@@ -221,7 +221,7 @@ pub(crate) fn _set_default_inner_value() -> DispatchResult {
 fn _set_inner_value(
     origin: Option<Origin>,
     domain: Option<DomainName<Test>>,
-    value: Option<Option<InnerValueOf<Test>>>,
+    value: Option<Option<InnerValue<Test>>>,
 ) -> DispatchResult {
     Domains::set_inner_value(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),

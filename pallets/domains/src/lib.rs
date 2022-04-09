@@ -109,7 +109,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub(super) type DomainByInnerValue<T: Config> =
-        StorageMap<_, Blake2_128Concat, InnerValue<T::AccountId>, DomainName<T>>;
+        StorageMap<_, Blake2_128Concat, DomainInnerLink<T::AccountId>, DomainName<T>>;
 
     #[pallet::storage]
     pub(super) type SupportedTlds<T: Config> =
@@ -128,17 +128,17 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The content stored in a domain metadata was not changed.
+        /// The content stored in domain metadata was not changed.
         DomainContentNotChanged,
         /// Cannot insert that many domains to a storage at once.
         DomainsInsertLimitReached,
         /// Cannot register more than `MaxDomainsPerAccount` domains.
         TooManyDomainsPerAccount,
-        /// This domain label may contain only A-Z, 0-9 and hyphen characters.
+        /// The domain label may contain only A-Z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between 7 and 63 characters, inclusive.
+        /// The domain label length must be between 7 and 63 characters, inclusive.
         DomainNameIsTooShort,
-        /// This domain has expired.
+        /// The domain has expired.
         DomainHasExpired,
         /// Domain was not found by either custom domain name or top level domain.
         DomainNotFound,
@@ -207,7 +207,7 @@ pub mod pallet {
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: Option<InnerValueOf<T>>,
+            value_opt: Option<InnerValue<T>>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -223,7 +223,7 @@ pub mod pallet {
             }
 
             if let Some(new_value) = &value_opt {
-                DomainByInnerValue::<T>::insert(new_value, meta.screen_name.clone());
+                DomainByInnerValue::<T>::insert(new_value, meta.screen_domain.clone());
             }
 
             meta.inner_value = value_opt;
@@ -358,9 +358,9 @@ pub mod pallet {
             let deposit = T::BaseDomainDeposit::get();
             let domain_meta = DomainMeta::new(
                 full_domain.clone(),
-                expires_at,
                 owner.clone(),
                 content,
+                expires_at,
                 deposit,
             );
 
@@ -388,8 +388,6 @@ pub mod pallet {
             let first_char_alphanumeric = domain.first().filter(is_char_alphanumeric).is_some();
             let last_char_alphanumeric = domain.last().filter(is_char_alphanumeric).is_some();
 
-            ensure!(first_char_alphanumeric && last_char_alphanumeric, error);
-
             let mut prev_char_hyphen = false;
             let domain_correct = domain.iter().all(|c| {
                 let curr_char_hyphen = *c == b'-';
@@ -405,7 +403,7 @@ pub mod pallet {
                 c.is_ascii_alphanumeric() || curr_char_hyphen
             });
 
-            ensure!(domain_correct, error);
+            ensure!(first_char_alphanumeric && last_char_alphanumeric && domain_correct, error);
 
             Ok(())
         }
