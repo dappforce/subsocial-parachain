@@ -31,6 +31,8 @@ pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'p
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.16', default-features = false }
 
+#[dev-dependencies]
+
 [features]
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking']

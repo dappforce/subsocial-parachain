@@ -2,7 +2,7 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
 use sp_runtime::traits::Zero;
 
-use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
+use pallet_parachain_utils::WhoAndWhen;
 
 use super::*;
 
@@ -13,6 +13,26 @@ pub(crate) type OuterValue<T> = Option<BoundedVec<u8, <T as Config>::OuterValueL
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
+
+pub type WhoAndWhenOf<T> =
+    WhoAndWhen<
+        <T as frame_system::Config>::AccountId,
+        <T as frame_system::Config>::BlockNumber,
+        <T as pallet_timestamp::Config>::Moment,
+    >;
+
+pub fn new_who_and_when<T>(
+    account: T::AccountId
+) -> WhoAndWhen<T::AccountId, T::BlockNumber, T::Moment>
+where
+    T: frame_system::Config + pallet_timestamp::Config
+{
+    WhoAndWhen {
+        account,
+        block: frame_system::Pallet::<T>::block_number(),
+        time: pallet_timestamp::Pallet::<T>::now(),
+    }
+}
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum DomainInnerLink<AccountId> {

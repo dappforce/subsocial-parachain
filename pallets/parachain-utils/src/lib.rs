@@ -16,26 +16,6 @@ pub struct WhoAndWhen<AccountId, BlockNumber, Moment> {
     pub time: Moment,
 }
 
-pub type WhoAndWhenOf<T> =
-    WhoAndWhen<
-        <T as frame_system::Config>::AccountId,
-        <T as frame_system::Config>::BlockNumber,
-        <T as pallet_timestamp::Config>::Moment,
-    >;
-
-pub fn new_who_and_when<T>(
-    account: T::AccountId
-) -> WhoAndWhen<T::AccountId, T::BlockNumber, T::Moment>
-where
-    T: frame_system::Config + pallet_timestamp::Config
-{
-    WhoAndWhen {
-        account,
-        block: frame_system::Pallet::<T>::block_number(),
-        time: pallet_timestamp::Pallet::<T>::now(),
-    }
-}
-
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum Content {
     /// No content.
