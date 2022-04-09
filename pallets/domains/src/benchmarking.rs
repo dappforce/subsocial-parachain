@@ -60,7 +60,7 @@ fn add_domain<T: Config>(
 ) -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
 	let domain = mock_domain::<T>();
 
-	let expires_in = T::RegistrationPeriodLimit::get();
+	let expires_in = T::ReservationPeriodLimit::get();
 
 	Pallet::<T>::register_domain(
 		RawOrigin::Root.into(), owner, domain.clone(), valid_content_ipfs(), expires_in,
@@ -88,7 +88,7 @@ benchmarks! {
 
 		let full_domain = mock_domain::<T>();
 
-		let expires_in = T::RegistrationPeriodLimit::get();
+		let expires_in = T::ReservationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
 	}: _(RawOrigin::Root, owner, full_domain.clone(), valid_content_ipfs(), expires_in)

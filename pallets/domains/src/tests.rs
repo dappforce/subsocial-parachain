@@ -70,7 +70,7 @@ fn register_domain_should_fail_when_reservation_above_limit() {
         .execute_with(|| {
             assert_noop!(
                 _register_domain_with_expires_in(1001),
-                Error::<Test>::TooBigRegistrationPeriod,
+                Error::<Test>::TooBigReservationPeriod,
             );
         });
 }
