@@ -32,7 +32,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-    use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+    use sp_std::{cmp::Ordering, convert::TryInto};
 
     use pallet_parachain_utils::ensure_content_is_valid;
 
@@ -354,15 +354,11 @@ pub mod pallet {
             // the same spelling but different cases will be treated as identical.
             let domain_lc = Self::lower_domain_then_bound(&full_domain);
 
-            let domain_parts = Self::split_domain_by_dot(&domain_lc);
+            Self::ensure_valid_domain(&domain_lc)?;
 
-            Self::ensure_valid_domain(&domain_parts)?;
-
-            let subdomain = domain_parts.first().unwrap();
-            let tld = domain_parts.last().unwrap();
-
-            ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
-            ensure!(!Self::is_word_reserved(subdomain), Error::<T>::DomainIsReserved);
+            let domain_part = domain_lc.split(IS_DOT_CHAR).next().unwrap();
+            let domain_part_bounded = Self::lower_domain_then_bound(domain_part);
+            ensure!(!Self::is_word_reserved(domain_part_bounded), Error::<T>::DomainIsReserved);
 
             ensure_content_is_valid(content.clone())?;
 
@@ -481,13 +477,16 @@ pub mod pallet {
         /// and have as interior characters only letters, digits, and/or hyphens.
         /// There are also some restrictions on the length:
         /// Domains length must be between 3 and 63 characters.
-        pub fn ensure_valid_domain(domain: &[DomainName<T>]) -> DispatchResult {
-            let dots = domain.len().saturating_sub(1);
+        pub fn ensure_valid_domain(domain: &[u8]) -> DispatchResult {
+            let mut split = domain.split(IS_DOT_CHAR);
+            let dots = split.clone().count().saturating_sub(1);
 
             ensure!(dots <= 1, Error::<T>::SubdomainsNotAllowed);
             ensure!(!dots.is_zero(), Error::<T>::TldNotSpecified);
 
-            let domain = domain.first().unwrap();
+            let domain = split.next().unwrap();
+            let tld_bounded = Self::lower_domain_then_bound(split.next().unwrap());
+            ensure!(Self::is_tld_supported(tld_bounded), Error::<T>::TldNotSupported);
 
             // No need to check max length, because we use BoundedVec as input value.
             ensure!(
@@ -557,10 +556,6 @@ pub mod pallet {
             }
 
             Ok(())
-        }
-
-        pub(crate) fn split_domain_by_dot(full_domain: &DomainName<T>) -> Vec<DomainName<T>> {
-            full_domain.split(|c| *c == b'.').map(Self::lower_domain_then_bound).collect()
         }
     }
 }

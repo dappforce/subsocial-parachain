@@ -145,12 +145,6 @@ pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
     string.try_into().expect("qed; domain exceeds max length")
 }
 
-pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
-    Domains::split_domain_by_dot(
-        &string.to_vec().try_into().expect("qed; domain exceeds max length")
-    )
-}
-
 pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
     Domains::registered_domain(domain).unwrap().inner_value
 }
@@ -168,9 +162,7 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
 }
 
 pub(crate) fn default_word_lc() -> DomainName<Test> {
-    Domains::lower_domain_then_bound(
-        &Domains::split_domain_by_dot(&default_domain()).first().unwrap()
-    )
+    Domains::lower_domain_then_bound(default_domain().split(IS_DOT_CHAR).next().unwrap())
 }
 
 pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
