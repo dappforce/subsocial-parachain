@@ -111,14 +111,6 @@ pub mod pallet {
             ValueQuery,
         >;
 
-    #[pallet::storage]
-    pub(super) type DomainByInnerValue<T: Config> =
-        StorageMap<_,
-            Blake2_128Concat,
-            DomainInnerLink<T::AccountId>,
-            DomainName<T>
-        >;
-
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -215,10 +207,9 @@ pub mod pallet {
 
             let deposit = T::BaseDomainDeposit::get();
             let domain_meta = DomainMeta::new(
-                full_domain.clone(),
+                expires_at,
                 owner.clone(),
                 content,
-                expires_at,
                 deposit,
             );
 
@@ -252,14 +243,6 @@ pub mod pallet {
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
             ensure!(meta.inner_value != value_opt, Error::<T>::InnerValueNotChanged);
-
-            if let Some(inner_value) = &meta.inner_value {
-                DomainByInnerValue::<T>::remove(inner_value);
-            }
-
-            if let Some(new_value) = &value_opt {
-                DomainByInnerValue::<T>::insert(new_value, meta.screen_domain.clone());
-            }
 
             meta.inner_value = value_opt;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
