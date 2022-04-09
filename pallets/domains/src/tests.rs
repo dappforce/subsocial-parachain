@@ -147,9 +147,7 @@ fn set_inner_value_should_work() {
 
         let result_value = get_inner_value(&domain_lc);
         assert!(old_value != result_value);
-
-        let expected_value = Some(inner_value_account_domain_owner());
-        assert_eq!(expected_value, result_value);
+        assert_eq!(inner_value_account_domain_owner(), result_value);
 
         System::assert_last_event(Event::<Test>::DomainUpdated(
             owner,
@@ -217,7 +215,7 @@ fn set_outer_value_should_work() {
 
             assert_ok!(_set_default_outer_value());
 
-            let expected_value = Some(default_outer_value(None));
+            let expected_value = default_outer_value(None);
             let result_value = get_outer_value(&domain_lc);
 
             assert!(old_value != result_value);
@@ -274,6 +272,25 @@ fn set_outer_value_should_fail_when_value_not_differ() {
             Error::<Test>::OuterValueNotChanged,
         );
     });
+}
+
+// FIXME: Panics before the check :(
+#[test]
+fn set_outer_value_should_fail_when_value_exceeds_limit() {
+    const LOCAL_OUTER_VALUE_LIMIT: u16 = 10;
+
+    ExtBuilder::default()
+        .outer_value_limit(LOCAL_OUTER_VALUE_LIMIT)
+        .build_with_domain()
+        .execute_with(|| {
+            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+            let outer_value_length = Some(LOCAL_OUTER_VALUE_LIMIT as usize + 1);
+
+            assert_noop!(
+                _set_outer_value_with_value(default_outer_value(outer_value_length)),
+                Error::<Test>::OuterValueOffLengthLimit,
+            );
+        });
 }
 
 #[test]

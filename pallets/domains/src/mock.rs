@@ -130,11 +130,11 @@ pub(crate) fn domain_from(string: Vec<u8>) -> DomainName<Test> {
     string.try_into().expect("domain exceeds max length")
 }
 
-pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValue<Test>> {
+pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> InnerValue<Test> {
     Domains::registered_domain(domain).unwrap().inner_value
 }
 
-pub(crate) fn get_outer_value(domain: &DomainName<Test>) -> Option<OuterValue<Test>> {
+pub(crate) fn get_outer_value(domain: &DomainName<Test>) -> OuterValue<Test> {
     Domains::registered_domain(domain).unwrap().outer_value
 }
 
@@ -147,12 +147,14 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
 }
 
 pub(crate) fn inner_value_account_domain_owner() -> InnerValue<Test> {
-    DomainInnerLink::Account(DOMAIN_OWNER)
+    Some(DomainInnerLink::Account(DOMAIN_OWNER))
 }
 
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
-    vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
-        .try_into().expect("outer value exceeds max length")
+    Some(
+        vec![b'A'; length.unwrap_or(ExtBuilder::default().outer_value_limit as usize)]
+            .try_into().expect("outer value exceeds max length")
+    )
 }
 
 pub(crate) fn _register_domain_with_full_domain(
@@ -214,12 +216,12 @@ pub(crate) fn _set_default_inner_value() -> DispatchResult {
 fn _set_inner_value(
     origin: Option<Origin>,
     domain: Option<DomainName<Test>>,
-    value: Option<Option<InnerValue<Test>>>,
+    value: Option<InnerValue<Test>>,
 ) -> DispatchResult {
     Domains::set_inner_value(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or(Some(inner_value_account_domain_owner())),
+        value.unwrap_or_else(inner_value_account_domain_owner),
     )
 }
 
@@ -227,7 +229,7 @@ pub(crate) fn _set_outer_value_with_origin(origin: Origin) -> DispatchResult {
     _set_outer_value(Some(origin), None, None)
 }
 
-pub(crate) fn _set_outer_value_with_value(value_opt: Option<OuterValue<Test>>) -> DispatchResult {
+pub(crate) fn _set_outer_value_with_value(value_opt: OuterValue<Test>) -> DispatchResult {
     _set_outer_value(None, None, Some(value_opt))
 }
 
@@ -238,12 +240,12 @@ pub(crate) fn _set_default_outer_value() -> DispatchResult {
 fn _set_outer_value(
     origin: Option<Origin>,
     domain: Option<DomainName<Test>>,
-    value: Option<Option<OuterValue<Test>>>,
+    value: Option<OuterValue<Test>>,
 ) -> DispatchResult {
     Domains::set_outer_value(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or(Some(default_outer_value(None))),
+        value.unwrap_or(default_outer_value(None)),
     )
 }
 

@@ -107,7 +107,7 @@ pub mod pallet {
         StorageMap<_,
             Blake2_128Concat,
             T::AccountId,
-            BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
+            DomainsVec<T>,
             ValueQuery,
         >;
 
@@ -148,6 +148,8 @@ pub mod pallet {
         LowerLevelDomainsNotAllowed,
         /// This account is not allowed to update the domain metadata.
         NotDomainOwner,
+        /// Outer value exceeds its length limit.
+        OuterValueOffLengthLimit,
         /// A new outer value is the same as the old one.
         OuterValueNotChanged,
         /// Reservation period cannot be a zero value.
@@ -229,7 +231,7 @@ pub mod pallet {
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value: Option<InnerValue<T>>,
+            value: InnerValue<T>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -252,7 +254,7 @@ pub mod pallet {
         pub fn set_outer_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: Option<OuterValue<T>>,
+            value_opt: OuterValue<T>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -262,6 +264,7 @@ pub mod pallet {
             Self::ensure_allowed_to_update_domain(&meta, &sender)?;
 
             ensure!(meta.outer_value != value_opt, Error::<T>::OuterValueNotChanged);
+            Self::ensure_valid_outer_value(&value_opt)?;
 
             let mut new_deposit = Zero::zero();
             if let Some(value) = &value_opt {
@@ -390,6 +393,16 @@ pub mod pallet {
 
         pub fn lower_domain_then_bound(domain: DomainName<T>) -> DomainName<T> {
             domain.to_ascii_lowercase().try_into().expect("domain exceeds max length")
+        }
+
+        pub fn ensure_valid_outer_value(outer_value: &OuterValue<T>) -> DispatchResult {
+            if let Some(outer) = &outer_value {
+                ensure!(
+                    outer.len() <= T::MaxOuterValueLength::get() as usize,
+                    Error::<T>::OuterValueOffLengthLimit
+                );
+            }
+            Ok(())
         }
 
         pub fn insert_domains<F, S>(
