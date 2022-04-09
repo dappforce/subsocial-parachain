@@ -265,13 +265,10 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest { .. }) |
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
-		let is_domains_registration =
-			matches!(c, Call::Domains(pallet_domains::Call::register_domain { .. }));
 
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
-			Call::Domains(..) => !is_domains_registration,
 			_ => true,
 		}
 	}
