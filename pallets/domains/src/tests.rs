@@ -47,7 +47,7 @@ fn register_domain_should_work() {
 
             System::assert_last_event(Event::<Test>::DomainRegistered {
                 who: owner,
-                domain: expected_domain,
+                domain_name: expected_domain,
             }.into());
         });
 }
@@ -166,7 +166,7 @@ fn set_inner_value_should_work() {
 
         System::assert_last_event(Event::<Test>::DomainMetaUpdated {
             who: DOMAIN_OWNER,
-            domain: domain_lc,
+            domain_name: domain_lc,
         }.into());
     });
 }
@@ -205,12 +205,12 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
 
             System::assert_has_event(Event::<Test>::DomainMetaUpdated {
                 who: ACCOUNT_A,
-                domain: domain_one,
+                domain_name: domain_one,
             }.into());
 
             System::assert_has_event(Event::<Test>::DomainMetaUpdated {
                 who: ACCOUNT_B,
-                domain: domain_two,
+                domain_name: domain_two,
             }.into());
         });
 }
@@ -327,7 +327,7 @@ fn set_outer_value_should_work() {
 
             System::assert_last_event(Event::<Test>::DomainMetaUpdated {
                 who: owner,
-                domain: domain_lc,
+                domain_name: domain_lc,
             }.into());
         });
 }
@@ -436,7 +436,7 @@ fn set_domain_content_should_work() {
 
         System::assert_last_event(Event::<Test>::DomainMetaUpdated {
             who: owner,
-            domain: domain_lc,
+            domain_name: domain_lc,
         }.into());
     });
 }
