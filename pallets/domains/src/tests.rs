@@ -132,10 +132,7 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
 #[test]
 fn force_register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(Domains::reserve_words(
-            Origin::root(),
-            vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit"),
-        ));
+        assert_ok!(_reserve_default_word());
         assert_noop!(
             _force_register_default_domain(),
             Error::<Test>::DomainIsReserved,
@@ -446,19 +443,9 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
 #[test]
 fn reserve_words_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let domains_list: BoundedDomainsVec<Test> = vec![
-            Domains::bound_domain(b"word-one".to_vec()),
-            Domains::bound_domain(b"word-two".to_vec()),
-            Domains::bound_domain(b"word-three".to_vec()),
-        ].try_into().expect("qed; domains vector exceeds the limit");
-
-        assert_ok!(Domains::reserve_words(Origin::root(), domains_list.clone()));
-
-        assert!(Domains::is_word_reserved(&domains_list[0]));
-        assert!(Domains::is_word_reserved(&domains_list[1]));
-        assert!(Domains::is_word_reserved(&domains_list[2]));
-
-        System::assert_last_event(Event::<Test>::NewWordsReserved { count: 3 }.into());
+        assert_ok!(_reserve_default_word());
+        assert!(Domains::is_word_reserved(default_word_lc()));
+        System::assert_last_event(Event::<Test>::NewWordsReserved { count: 1 }.into());
     });
 }
 

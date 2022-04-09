@@ -1,5 +1,5 @@
 use frame_support::{
-    assert_ok, dispatch::DispatchResult, parameter_types,
+    assert_ok, dispatch::{DispatchResult, DispatchResultWithPostInfo}, parameter_types,
     traits::{Currency, Everything},
 };
 use sp_core::H256;
@@ -100,7 +100,7 @@ parameter_types! {
 
     pub static MaxDomainsPerAccount: u32 = 0;
 
-    pub const DomainsInsertLimit: u32 = 2860;
+    pub static DomainsInsertLimit: u32 = 0;
     pub static ReservationPeriodLimit: BlockNumber = 0;
     pub const MaxOuterValueLength: u16 = 256;
 
@@ -127,7 +127,7 @@ pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 const DEFAULT_TLD: [u8; 3] = *b"sub";
 
 pub(crate) fn default_tld() -> DomainName<Test> {
-    Domains::bound_domain(DEFAULT_TLD.to_vec())
+    DEFAULT_TLD.to_vec().try_into().expect("qed; domain exceeds max length")
 }
 
 pub(crate) fn default_domain() -> DomainName<Test> {
@@ -136,18 +136,18 @@ pub(crate) fn default_domain() -> DomainName<Test> {
 
     domain_vec.push(b'.');
     domain_vec.append(&mut tld.to_vec());
-    Domains::bound_domain(domain_vec)
+    domain_vec.try_into().expect("qed; domain exceeds max length")
 }
 
 pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
     string.push(b'.');
     string.append(&mut default_tld().to_vec());
-    Domains::bound_domain(string)
+    string.try_into().expect("qed; domain exceeds max length")
 }
 
 pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
     Domains::split_domain_by_dot(
-        &Domains::bound_domain(string.to_vec())
+        &string.to_vec().try_into().expect("qed; domain exceeds max length")
     )
 }
 
@@ -296,6 +296,13 @@ fn _set_outer_value(
     )
 }
 
+pub(crate) fn _reserve_default_word() -> DispatchResultWithPostInfo {
+    Domains::reserve_words(
+        Origin::root(),
+        vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit"),
+    )
+}
+
 pub(crate) fn _set_domain_content_with_origin(origin: Origin) -> DispatchResult {
     _set_domain_content(Some(origin), None, None)
 }
@@ -338,6 +345,7 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
+    pub(crate) domains_insert_limit: u32,
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
@@ -348,6 +356,7 @@ impl Default for ExtBuilder {
         ExtBuilder {
             min_domain_length: 3,
             max_domains_per_account: 10,
+            domains_insert_limit: 2860,
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
@@ -363,6 +372,11 @@ impl ExtBuilder {
 
     pub(crate) fn max_domains_per_account(mut self, max_domains_per_account: u32) -> Self {
         self.max_domains_per_account = max_domains_per_account;
+        self
+    }
+
+    pub(crate) fn domains_insert_limit(mut self, domains_insert_limit: u32) -> Self {
+        self.domains_insert_limit = domains_insert_limit;
         self
     }
 
@@ -387,6 +401,7 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+        DOMAINS_INSERT_LIMIT.with(|x| *x.borrow_mut() = self.domains_insert_limit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {

@@ -54,7 +54,7 @@ fn mock_bounded_string_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
 }
 
 fn mock_tld<T: Config>() -> DomainName<T> {
-	Pallet::<T>::bound_domain(b"tld".to_vec())
+	b"tld".to_vec().try_into().expect("qed; domain exceeds max length")
 }
 
 fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
