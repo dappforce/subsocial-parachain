@@ -71,7 +71,7 @@ pub mod pallet {
 
         /// The amount held on deposit for storing the domains structure.
         #[pallet::constant]
-        type BaseDomainDeposit: Get<BalanceOf<Self>>;
+        type DomainDeposit: Get<BalanceOf<Self>>;
 
         /// The amount held on deposit per byte within the domains outer value.
         #[pallet::constant]
@@ -87,7 +87,7 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
-    #[pallet::getter(fn is_domain_reserved)]
+    #[pallet::getter(fn reserved_domain)]
     pub(super) type ReservedDomains<T: Config> =
         StorageMap<_, Twox64Concat, DomainName<T>, bool, ValueQuery>;
 
@@ -101,8 +101,8 @@ pub mod pallet {
         >;
 
     #[pallet::storage]
-    #[pallet::getter(fn domains_by_owner)]
-    pub(super) type DomainsByOwner<T: Config> =
+    #[pallet::getter(fn registered_domains_by_owner)]
+    pub(super) type RegisteredDomainsByOwner<T: Config> =
         StorageMap<_,
             Blake2_128Concat,
             T::AccountId,
@@ -183,7 +183,7 @@ pub mod pallet {
             // the same spelling but different case are to be treated as if identical.
             let domain_lc = Self::lower_domain_then_bound(full_domain.clone());
 
-            ensure!(!Self::is_domain_reserved(&domain_lc), Error::<T>::DomainIsReserved);
+            ensure!(!Self::reserved_domain(&domain_lc), Error::<T>::DomainIsReserved);
 
             ensure_content_is_valid(content.clone())?;
 
@@ -194,7 +194,7 @@ pub mod pallet {
                 Error::<T>::DomainAlreadyOwned,
             );
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
+            let domains_per_account = Self::registered_domains_by_owner(&owner).len();
             ensure!(
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
@@ -202,7 +202,7 @@ pub mod pallet {
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
 
-            let deposit = T::BaseDomainDeposit::get();
+            let deposit = T::DomainDeposit::get();
             let domain_meta = DomainMeta::new(
                 expires_at,
                 owner.clone(),
@@ -215,7 +215,7 @@ pub mod pallet {
             // TODO: withdraw balance
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
-            DomainsByOwner::<T>::mutate(
+            RegisteredDomainsByOwner::<T>::mutate(
                 &owner, |domains| {
                     domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
                 }

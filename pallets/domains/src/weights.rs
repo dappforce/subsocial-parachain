@@ -49,7 +49,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
         impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             // Storage: Domains ReservedDomains (r:1 w:0)
             // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainsByOwner (r:1 w:1)
+            // Storage: Domains RegisteredDomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
         (40_915_000 as Weight)
@@ -87,7 +87,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
     impl WeightInfo for () {
             // Storage: Domains ReservedDomains (r:1 w:0)
             // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainsByOwner (r:1 w:1)
+            // Storage: Domains RegisteredDomainsByOwner (r:1 w:1)
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
         (40_915_000 as Weight)
