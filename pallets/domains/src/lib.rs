@@ -160,8 +160,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Registers a domain ([full_domain]) using root in behalf of a [target] with [content],
-        /// and set the domain to expire in [expires_in].
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
@@ -227,7 +225,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
-        /// Sets the domain inner_value to be one of subsocial account, space, or post.
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -250,7 +247,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
-        /// Sets the domain outer_value to be a custom string.
         pub fn set_outer_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -286,7 +282,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
-        /// Sets the domain content to be an outside link.
         pub fn set_domain_content(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -310,7 +305,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
-	/// Mark set of domains as not reservable by users.
         pub fn reserve_domains(
             origin: OriginFor<T>,
             domains: Vec<DomainName<T>>,
@@ -442,7 +436,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let DomainMeta { owner, expires_at, .. } = domain_meta;
 
-            ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
+            ensure!(expires_at > &System::<T>::block_number(), Error::<T>::DomainHasExpired);
             ensure!(sender == owner, Error::<T>::NotDomainOwner);
             Ok(())
         }
