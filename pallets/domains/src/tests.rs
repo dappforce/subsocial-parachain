@@ -35,6 +35,7 @@ fn register_domain_should_work() {
                 updated: None,
                 expires_at: ExtBuilder::default().reservation_period_limit + 1,
                 owner: DOMAIN_OWNER,
+                screen_name: expected_domain.clone(),
                 content: valid_content_ipfs(),
                 inner_value: None,
                 outer_value: None,
@@ -162,7 +163,7 @@ fn set_inner_value_should_work() {
 
         assert_eq!(
             DomainByInnerValue::<Test>::get(&expected_value.unwrap()),
-            Some(default_domain_lc()),
+            Some(default_domain()),
         );
 
         System::assert_last_event(Event::<Test>::DomainMetaUpdated {
