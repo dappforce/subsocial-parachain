@@ -6,14 +6,14 @@ use types::*;
 use crate::Pallet as Pallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{
-	ensure, assert_ok,
+	ensure,
 	dispatch::DispatchErrorWithPostInfo,
 	traits::{Currency, Get},
 };
 use frame_system::RawOrigin;
 
 use sp_runtime::traits::{Bounded, StaticLookup};
-use sp_std::{convert::TryInto, vec};
+use sp_std::{convert::TryInto, vec, vec::Vec};
 
 use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
 
@@ -30,8 +30,8 @@ fn lookup_source_from_account<T: Config>(
 	T::Lookup::unlookup(account.clone())
 }
 
-fn mock_words_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
-	let mut words = BoundedDomainsVec::<T>::default();
+fn mock_words_array<T: Config>(length: usize) -> Vec<DomainName<T>> {
+	let mut words = Vec::new();
 
 	let max_domain_length = T::MaxDomainLength::get() as usize;
 	let mut word: DomainName<T> = mock_word::<T>(T::MaxDomainLength::get() as usize);
@@ -41,7 +41,7 @@ fn mock_words_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
 
 		let next_char = (word[idx] + 1).clamp(65, 90);
 		let _ = sp_std::mem::replace(&mut word[idx], next_char);
-		assert_ok!(words.try_push(word.clone()));
+		words.push(word.clone());
 	}
 
 	assert_eq!(length, words.len());
@@ -55,10 +55,7 @@ fn mock_tld<T: Config>() -> DomainName<T> {
 
 fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
 	let tld = mock_tld::<T>();
-	Pallet::<T>::add_tld(
-		RawOrigin::Root.into(),
-		vec![tld.clone()].try_into().expect("qed; domains vector exceeds the limit"),
-	)?;
+	Pallet::<T>::add_tld(RawOrigin::Root.into(), vec![tld.clone()])?;
 	Ok(tld)
 }
 

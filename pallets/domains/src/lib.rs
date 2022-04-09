@@ -34,7 +34,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-    use sp_std::{cmp::Ordering, convert::TryInto};
+    use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
     use pallet_parachain_utils::ensure_content_is_valid;
 
@@ -133,6 +133,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// The content stored in a domain metadata was not changed.
         DomainContentNotChanged,
+        /// Cannot insert that many domains to a storage at once.
+        DomainsInsertLimitReached,
         /// Cannot register more than `MaxDomainsPerAccount` domains.
         TooManyDomainsPerAccount,
         /// This domain label may contain only A-Z, 0-9 and hyphen characters.
@@ -302,12 +304,15 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
         pub fn reserve_words(
             origin: OriginFor<T>,
-            words: BoundedDomainsVec<T>,
+            words: Vec<DomainName<T>>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
+            let words_len = words.len();
+            Self::ensure_insert_limit_not_reached(words_len)?;
+
             let inserted_words_count = Self::insert_domains(
-                &words,
+                words,
                 Self::ensure_domain_contains_valid_chars,
                 |domain| ReservedWords::<T>::insert(domain, true),
             )?;
@@ -323,12 +328,15 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
         pub fn add_tld(
             origin: OriginFor<T>,
-            domains: BoundedDomainsVec<T>,
+            domains: Vec<DomainName<T>>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
+            let domains_len = domains.len();
+            Self::ensure_insert_limit_not_reached(domains_len)?;
+
             let inserted_domains_count = Self::insert_domains(
-                &domains,
+                domains,
                 // TODO: maybe add specific check for TLDs
                 |_| Ok(()),
                 |domain| SupportedTlds::<T>::insert(domain, true),
@@ -496,7 +504,7 @@ pub mod pallet {
         }
 
         pub fn insert_domains<F, S>(
-            domains: &[DomainName<T>],
+            domains: Vec<DomainName<T>>,
             check_fn: F,
             insert_storage_fn: S,
         ) -> Result<u32, DispatchError>
@@ -515,6 +523,15 @@ pub mod pallet {
         /// Try to get domain meta by it's custom and top level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
             Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
+        }
+
+        pub fn ensure_insert_limit_not_reached(
+            domains_len: usize,
+        ) -> DispatchResultWithPostInfo {
+            let domains_insert_limit = T::DomainsInsertLimit::get() as usize;
+            ensure!(domains_len <= domains_insert_limit, Error::<T>::DomainsInsertLimitReached);
+
+            Ok(Default::default())
         }
 
         pub fn ensure_allowed_to_update_domain(

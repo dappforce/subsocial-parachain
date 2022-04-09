@@ -1,6 +1,5 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::{DispatchError, DispatchError::BadOrigin, traits::Zero};
-use sp_std::convert::TryInto;
 
 use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
 use pallet_parachain_utils::new_who_and_when;
@@ -422,8 +421,7 @@ fn reserve_domains_should_work() {
 }
 
 #[test]
-#[should_panic]
-fn reserve_domains_should_panic_when_tried_to_insert_too_many_domains() {
+fn reserve_domains_should_fail_when_tried_to_insert_too_many_domains() {
     ExtBuilder::default()
         // When limit is 2
         .domains_insert_limit(2)
@@ -434,9 +432,12 @@ fn reserve_domains_should_panic_when_tried_to_insert_too_many_domains() {
                 domain_from(b"domain-one".to_vec()),
                 domain_from(b"domain-two".to_vec()),
                 domain_from(b"domain-three".to_vec()),
-            ].try_into().expect("qed; domains vector exceeds the limit");
+            ];
 
-            let _ = _reserve_words_with_list(domains_list);
+            assert_noop!(
+                _reserve_words_with_list(domains_list),
+                Error::<Test>::DomainsInsertLimitReached,
+            );
         });
 }
 
