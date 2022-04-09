@@ -633,33 +633,6 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const MinDomainLength: u32 = 3;
-    pub const MaxDomainLength: u32 = 63;
-
-    pub const MaxDomainsPerAccount: u32 = 10;
-
-    pub const DomainsInsertLimit: u32 = 100;
-    pub const ReservationPeriodLimit: BlockNumber = 100;
-    pub const OuterValueLimit: u16 = 256;
-
-    pub const DomainDeposit: Balance = 10;
-    pub const OuterValueByteDeposit: Balance = 1;
-}
-
-impl pallet_domains::Config for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type MinDomainLength = MinDomainLength;
-	type MaxDomainLength = MaxDomainLength;
-	type MaxDomainsPerAccount = MaxDomainsPerAccount;
-	type DomainsInsertLimit = DomainsInsertLimit;
-	type ReservationPeriodLimit = ReservationPeriodLimit;
-	type OuterValueLimit = OuterValueLimit;
-	type DomainDeposit = DomainDeposit;
-	type OuterValueByteDeposit = OuterValueByteDeposit;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -698,7 +671,6 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		// TBD.
-		Domains: pallet_domains = 40,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

@@ -1,10 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
 use frame_support::pallet_prelude::*;
-use sp_std::{vec, vec::Vec};
+use scale_info::TypeInfo;
 
 pub type SpaceId = u64;
 pub type PostId = u64;
