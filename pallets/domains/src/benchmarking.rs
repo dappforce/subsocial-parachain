@@ -1,23 +1,22 @@
 //! Benchmarking for pallet-domains
 
 use super::*;
-use types::*;
 
 #[allow(unused)]
-use crate::Pallet as Pallet;
+use crate::{Pallet as Pallet, BalanceOf};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure,
-	dispatch::DispatchErrorWithPostInfo,
+	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo},
 	traits::{Currency, Get},
 };
 use frame_system::RawOrigin;
 
 use sp_runtime::traits::{Bounded, StaticLookup};
-use sp_std::{convert::TryInto, vec, vec::Vec};
-use pallet_parachain_utils::Content;
+use sp_std::{vec, vec::Vec};
+use pallet_utils::Content;
 
-use pallet_parachain_utils::mock_functions::valid_content_ipfs;
+use pallet_utils::mock_functions::valid_content_ipfs;
 
 fn account_with_balance<T: Config>() -> T::AccountId {
 	let owner: T::AccountId = whitelisted_caller();
@@ -32,11 +31,11 @@ fn lookup_source_from_account<T: Config>(
 	T::Lookup::unlookup(account.clone())
 }
 
-fn create_domain_names<T: Config>(num: usize) -> Vec<DomainName<T>> {
-	let mut domains = Vec::new();
+fn create_domain_names<T: Config>(num: usize) -> DomainsVec {
+	let mut domains: DomainsVec = Vec::new();
 
 	let max_domain_length = T::MaxDomainLength::get() as usize;
-	let mut domain = mock_domain::<T>();
+	let mut domain = vec![b'A'; max_domain_length];
 
 	for i in 0..num {
 		let idx = i % max_domain_length;
@@ -51,19 +50,32 @@ fn create_domain_names<T: Config>(num: usize) -> Vec<DomainName<T>> {
 	domains
 }
 
-fn mock_domain<T: Config>() -> DomainName<T> {
-	vec![b'A'; T::MaxDomainLength::get() as usize].try_into().expect("domain exceeds max length")
+fn mock_domain<T: Config>() -> Domain {
+	let max_length_domain = vec![b'A'; T::MaxDomainLength::get().into()];
+
+	Domain {
+		tld: max_length_domain.clone(),
+		domain: max_length_domain,
+	}
 }
 
-fn add_domain<T: Config>(
-	owner: <T::Lookup as StaticLookup>::Source,
-) -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
+fn add_tld<T: Config>(tld: Vec<u8>) -> DispatchResultWithPostInfo {
+	Pallet::<T>::add_tlds(
+		RawOrigin::Root.into(),
+		vec![tld],
+	)
+}
+
+fn add_domain<T: Config>(owner: <T::Lookup as StaticLookup>::Source) -> Result<Domain, DispatchErrorWithPostInfo> {
 	let domain = mock_domain::<T>();
 
+	add_tld::<T>(domain.tld.clone())?;
+
 	let expires_in = T::ReservationPeriodLimit::get();
+	let sold_for = BalanceOf::<T>::max_value();
 
 	Pallet::<T>::register_domain(
-		RawOrigin::Root.into(), owner, domain.clone(), valid_content_ipfs(), expires_in,
+		RawOrigin::Root.into(), owner, domain.clone(), valid_content_ipfs(), expires_in, sold_for,
 	)?;
 
 	Ok(domain)
@@ -87,14 +99,15 @@ benchmarks! {
 		let owner = lookup_source_from_account::<T>(&account_with_balance);
 
 		let full_domain = mock_domain::<T>();
+		add_tld::<T>(full_domain.tld.clone())?;
 
 		let expires_in = T::ReservationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner, full_domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Root, owner, full_domain.clone(), valid_content_ipfs(), expires_in, price)
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
-		ensure!(RegisteredDomains::<T>::get(&domain_lc).is_some(), "Domain was not purchased");
+		let Domain { tld, domain } = Pallet::<T>::lower_domain(&full_domain);
+		ensure!(RegisteredDomains::<T>::get(&tld, &domain).is_some(), "Domain was not purchased");
 	}
 
 	set_inner_value {
@@ -104,8 +117,8 @@ benchmarks! {
 		let value = Some(DomainInnerLink::Account(owner.clone()));
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
-		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
+		let Domain { tld, domain } = Pallet::<T>::lower_domain(&full_domain);
+		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&tld, &domain).unwrap();
 		ensure!(value == inner_value, "Inner value was not updated.")
 	}
 
@@ -113,16 +126,11 @@ benchmarks! {
 		let owner = account_with_balance::<T>();
 		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
 
-		let value = Some(
-			vec![b'A'; T::OuterValueLimit::get() as usize]
-				.try_into()
-				.expect("outer value out of bounds")
-		);
-
+		let value = Some(vec![b'A'; T::OuterValueLimit::get() as usize]);
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), value.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
-		let DomainMeta { outer_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
+		let Domain { tld, domain } = Pallet::<T>::lower_domain(&full_domain);
+		let DomainMeta { outer_value, .. } = RegisteredDomains::<T>::get(&tld, &domain).unwrap();
 		ensure!(value == outer_value, "Outer value was not updated.")
 	}
 
@@ -134,8 +142,8 @@ benchmarks! {
 		let new_content = valid_content_ipfs_2();
 	}: _(RawOrigin::Signed(owner), full_domain.clone(), new_content.clone())
 	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(full_domain);
-		let DomainMeta { content, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
+		let Domain { tld, domain } = Pallet::<T>::lower_domain(&full_domain);
+		let DomainMeta { content, .. } = RegisteredDomains::<T>::get(&tld, &domain).unwrap();
 		ensure!(new_content == content, "Content was not updated.")
 	}
 
@@ -145,6 +153,14 @@ benchmarks! {
 	}: _(RawOrigin::Root, domains)
 	verify {
 		ensure!(ReservedDomains::<T>::iter().count() as u32 == s, "Domains were not reserved.");
+	}
+
+	add_tlds {
+		let s in 1 .. T::DomainsInsertLimit::get() => ();
+		let domains = create_domain_names::<T>(s as usize);
+	}: _(RawOrigin::Root, domains)
+	verify {
+		ensure!(SupportedTlds::<T>::iter().count() as u32 == s, "TLDs were not added.");
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::ExtBuilder::build(), crate::mock::Test);

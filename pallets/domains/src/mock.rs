@@ -9,11 +9,11 @@ use sp_runtime::{
 };
 use sp_std::convert::TryInto;
 
-use pallet_parachain_utils::Content;
+use pallet_parachain_utils::{Content, DEFAULT_MAX_HANDLE_LEN, DEFAULT_MIN_HANDLE_LEN};
 use pallet_parachain_utils::mock_functions::valid_content_ipfs;
 
 use crate as pallet_domains;
-use crate::types::*;
+use crate::{BalanceOf, DomainName, DomainsVec};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -95,6 +95,11 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
+    pub const MinHandleLen: u32 = DEFAULT_MIN_HANDLE_LEN;
+    pub const MaxHandleLen: u32 = DEFAULT_MAX_HANDLE_LEN;
+}
+
+parameter_types! {
     pub const MinDomainLength: u32 = 3;
     pub const MaxDomainLength: u32 = 63;
 
@@ -119,7 +124,7 @@ impl pallet_domains::Config for Test {
     type OuterValueLimit = OuterValueLimit;
     type DomainDeposit = DomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
-    type WeightInfo = ();
+    // type WeightInfo = ();
 }
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
@@ -135,11 +140,11 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
 pub(crate) fn _register_domain_with_full_domain(
     domain: DomainName<Test>,
 ) -> DispatchResultWithPostInfo {
-    _register_domain(None, None, Some(domain), None, None)
+    _register_domain(None, None, Some(domain), None, None, None)
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResultWithPostInfo {
-    _register_domain(None, None, None, None, None)
+    _register_domain(None, None, None, None, None, None)
 }
 
 fn _register_domain(
@@ -148,6 +153,7 @@ fn _register_domain(
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
+    price: Option<Balance>,
 ) -> DispatchResultWithPostInfo {
     Domains::register_domain(
         origin.unwrap_or_else(Origin::root),
@@ -155,6 +161,7 @@ fn _register_domain(
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or_else(ReservationPeriodLimit::get),
+        price.unwrap_or(Balance::MAX),
     )
 }
 

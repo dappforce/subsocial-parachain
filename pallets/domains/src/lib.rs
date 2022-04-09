@@ -6,17 +6,17 @@
 
 pub use pallet::*;
 
-#[cfg(test)]
-mod mock;
+// #[cfg(test)]
+// mod mock;
 
 // #[cfg(test)]
 // mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-pub mod weights;
+// #[cfg(feature = "runtime-benchmarks")]
+// mod benchmarking;
+// pub mod weights;
 
-pub use crate::weights::WeightInfo;
+// pub use crate::weights::WeightInfo;
 pub mod types;
 
 pub use pallet_parachain_utils::{SpaceId, PostId, Content};
@@ -77,8 +77,8 @@ pub mod pallet {
         #[pallet::constant]
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
-        /// Weight information for extrinsics in this pallet.
-        type WeightInfo: WeightInfo;
+        // /// Weight information for extrinsics in this pallet.
+        // type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -107,7 +107,7 @@ pub mod pallet {
         StorageMap<_,
             Blake2_128Concat,
             T::AccountId,
-            DomainsVec<T>,
+            Vec<DomainName<T>>,
             ValueQuery,
         >;
 
@@ -160,7 +160,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
+        // #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
+        #[pallet::weight(10000)]
         pub fn register_domain(
             origin: OriginFor<T>,
             target: <<T as frame_system::pallet::Config>::Lookup as StaticLookup>::Source,
@@ -213,18 +214,15 @@ pub mod pallet {
 
             // TODO: withdraw balance
 
-            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
-            RegisteredDomainsByOwner::<T>::mutate(
-                &owner, |domains| {
-                    domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
-                }
-            );
+            RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
+            RegisteredDomainsByOwner::<T>::mutate(&owner, |domains| domains.push(domain_lc));
 
             Self::deposit_event(Event::DomainRegistered(owner, full_domain));
             Ok(Pays::No.into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
+        // #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
+        #[pallet::weight(10000)]
         pub fn set_inner_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -246,7 +244,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
+        // #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
+        #[pallet::weight(10000)]
         pub fn set_outer_value(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -281,7 +280,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
+        // #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
+        #[pallet::weight(10000)]
         pub fn set_domain_content(
             origin: OriginFor<T>,
             domain: DomainName<T>,
@@ -304,10 +304,11 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
+        // #[pallet::weight(<T as Config>::WeightInfo::reserve_domains(T::DomainsInsertLimit::get()))]
+        #[pallet::weight(10000)]
         pub fn reserve_domains(
             origin: OriginFor<T>,
-            domains: Vec<DomainName<T>>,
+            domains: DomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -401,7 +402,7 @@ pub mod pallet {
         }
 
         pub fn insert_domains<F, S>(
-            domains: Vec<DomainName<T>>,
+            domains: DomainsVec<T>,
             check_fn: F,
             insert_storage_fn: S,
         ) -> Result<u32, DispatchError>
