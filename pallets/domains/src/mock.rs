@@ -1,4 +1,7 @@
-use frame_support::{assert_ok, dispatch::{DispatchResult, DispatchResultWithPostInfo}, parameter_types, traits::{Currency, Everything}};
+use frame_support::{
+    parameter_types, dispatch::DispatchResultWithPostInfo,
+    traits::{Currency, Everything},
+};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -7,7 +10,7 @@ use sp_runtime::{
 use sp_std::convert::TryInto;
 
 use pallet_parachain_utils::Content;
-use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
+use pallet_parachain_utils::mock_functions::valid_content_ipfs;
 
 pub(crate) use crate as pallet_domains;
 use crate::types::*;
@@ -29,7 +32,7 @@ frame_support::construct_runtime!(
 );
 
 pub(crate) type AccountId = u64;
-pub(crate) type Balance = u64;
+type Balance = u64;
 type BlockNumber = u64;
 
 parameter_types! {
@@ -97,9 +100,9 @@ parameter_types! {
 
     pub static MaxDomainsPerAccount: u32 = 0;
 
-    pub static DomainsInsertLimit: u32 = 0;
+    pub const DomainsInsertLimit: u32 = 100;
     pub static ReservationPeriodLimit: BlockNumber = 0;
-    pub static OuterValueLimit: u16 = 0;
+    pub const OuterValueLimit: u16 = 256;
 
     pub static DomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
@@ -120,7 +123,6 @@ impl pallet_domains::Config for Test {
 }
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
-pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 
 pub(crate) fn default_domain() -> DomainName<Test> {
     vec![b'A'; MaxDomainLength::get() as usize].try_into().expect("domain exceeds max length")
@@ -130,31 +132,8 @@ pub(crate) fn domain_from(string: Vec<u8>) -> DomainName<Test> {
     string.try_into().expect("domain exceeds max length")
 }
 
-pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> InnerValue<Test> {
-    Domains::registered_domain(domain).unwrap().inner_value
-}
-
-pub(crate) fn get_outer_value(domain: &DomainName<Test>) -> OuterValue<Test> {
-    Domains::registered_domain(domain).unwrap().outer_value
-}
-
-pub(crate) fn get_domain_content(domain: &DomainName<Test>) -> Content {
-    Domains::registered_domain(domain).unwrap().content
-}
-
 pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(default_domain())
-}
-
-pub(crate) fn inner_value_account_domain_owner() -> InnerValue<Test> {
-    Some(DomainInnerLink::Account(DOMAIN_OWNER))
-}
-
-pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
-    Some(
-        vec![b'A'; length.unwrap_or(ExtBuilder::default().outer_value_limit as usize)]
-            .try_into().expect("outer value exceeds max length")
-    )
 }
 
 pub(crate) fn _register_domain_with_full_domain(
@@ -195,66 +174,6 @@ fn _register_domain(
     )
 }
 
-pub(crate) fn _set_inner_value_with_origin(origin: Origin) -> DispatchResult {
-    _set_inner_value(Some(origin), None, None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_domain_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _set_inner_value(None, Some(domain_name), None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_value(value: DomainInnerLink<AccountId>) -> DispatchResult {
-    _set_inner_value(None, None, Some(Some(value)))
-}
-
-pub(crate) fn _set_default_inner_value() -> DispatchResult {
-    _set_inner_value(None, None, None)
-}
-
-fn _set_inner_value(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<InnerValue<Test>>,
-) -> DispatchResult {
-    Domains::set_inner_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or_else(inner_value_account_domain_owner),
-    )
-}
-
-pub(crate) fn _set_outer_value_with_origin(origin: Origin) -> DispatchResult {
-    _set_outer_value(Some(origin), None, None)
-}
-
-pub(crate) fn _set_outer_value_with_value(value_opt: OuterValue<Test>) -> DispatchResult {
-    _set_outer_value(None, None, Some(value_opt))
-}
-
-pub(crate) fn _set_default_outer_value() -> DispatchResult {
-    _set_outer_value(None, None, None)
-}
-
-fn _set_outer_value(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<OuterValue<Test>>,
-) -> DispatchResult {
-    Domains::set_outer_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or(default_outer_value(None)),
-    )
-}
-
-pub(crate) fn _reserve_domains_with_list(
-    domains: Vec<DomainName<Test>>,
-) -> DispatchResultWithPostInfo {
-    _reserve_domains(None, domains)
-}
-
 pub(crate) fn _reserve_default_domain() -> DispatchResultWithPostInfo {
     _reserve_domains(None, Vec::new())
 }
@@ -268,30 +187,6 @@ pub fn _reserve_domains(
         {
             if domains.is_empty() { vec![default_domain_lc()] } else { domains }
         },
-    )
-}
-
-pub(crate) fn _set_domain_content_with_origin(origin: Origin) -> DispatchResult {
-    _set_domain_content(Some(origin), None, None)
-}
-
-pub(crate) fn _set_domain_content_with_content(content: Content) -> DispatchResult {
-    _set_domain_content(None, None, Some(content))
-}
-
-pub(crate) fn _set_default_domain_content() -> DispatchResult {
-    _set_domain_content(None, None, None)
-}
-
-fn _set_domain_content(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    content: Option<Content>,
-) -> DispatchResult {
-    Domains::set_domain_content(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        content.unwrap_or_else(another_valid_content_ipfs),
     )
 }
 
@@ -309,14 +204,11 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
     <Test as pallet_domains::Config>::Currency::reserved_balance(who)
 }
 
-#[derive(Clone)]
 pub struct ExtBuilder {
-    pub(crate) max_domains_per_account: u32,
-    pub(crate) domain_deposit: Balance,
-    pub(crate) outer_value_byte_deposit: Balance,
-    pub(crate) reservation_period_limit: BlockNumber,
-    pub(crate) domains_insert_limit: u32,
-    pub(crate) outer_value_limit: u16,
+    max_domains_per_account: u32,
+    domain_deposit: Balance,
+    outer_value_byte_deposit: Balance,
+    reservation_period_limit: BlockNumber,
 }
 
 impl Default for ExtBuilder {
@@ -326,8 +218,6 @@ impl Default for ExtBuilder {
             domain_deposit: 10,
             outer_value_byte_deposit: 1,
             reservation_period_limit: 1000,
-            domains_insert_limit: 100,
-            outer_value_limit: 256,
         }
     }
 }
@@ -353,23 +243,11 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn domains_insert_limit(mut self, domains_insert_limit: u32) -> Self {
-        self.domains_insert_limit = domains_insert_limit;
-        self
-    }
-
-    pub(crate) fn outer_value_limit(mut self, outer_value_limit: u16) -> Self {
-        self.outer_value_limit = outer_value_limit;
-        self
-    }
-
     fn set_configs(&self) {
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
         DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
-        DOMAINS_INSERT_LIMIT.with(|x| *x.borrow_mut() = self.domains_insert_limit);
-        OUTER_VALUE_LIMIT.with(|x| *x.borrow_mut() = self.outer_value_limit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {
@@ -382,15 +260,6 @@ impl ExtBuilder {
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| System::set_block_number(1));
 
-        ext
-    }
-
-    pub(crate) fn build_with_domain(self) -> TestExternalities {
-        let mut ext = self.clone().build();
-        ext.execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, self.domain_deposit);
-            assert_ok!(_register_default_domain());
-        });
         ext
     }
 }

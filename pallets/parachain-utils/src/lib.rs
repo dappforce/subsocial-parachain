@@ -129,11 +129,6 @@ pub mod mock_functions {
         Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD4".to_vec())
     }
 
-    pub fn another_valid_content_ipfs() -> Content {
-        // Only the last character is changed, only for testing purposes.
-        Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD5".to_vec())
-    }
-
     pub fn invalid_content_ipfs() -> Content {
         Content::IPFS(b"QmRAQB6DaazhR8".to_vec())
     }
