@@ -404,34 +404,3 @@ fn reserve_domains_should_fail_when_tried_to_insert_too_many_domains() {
             );
         });
 }
-
-// Test domain name validation function
-
-#[test]
-fn ensure_valid_domain_should_work() {
-    ExtBuilder::default()
-        .min_domain_length(3)
-        .build()
-        .execute_with(|| {
-            assert_ok!(Domains::ensure_valid_domain(b"abcde"));
-            assert_ok!(Domains::ensure_valid_domain(b"a-b-c"));
-            assert_ok!(Domains::ensure_valid_domain(b"12345"));
-
-            assert_noop!(
-                Domains::ensure_valid_domain(b"a"),
-                Error::<Test>::DomainNameIsTooShort,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(b"-ab"),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(b"ab-"),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(b"a--b"),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-        });
-}

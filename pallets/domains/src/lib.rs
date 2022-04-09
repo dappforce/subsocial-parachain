@@ -132,8 +132,8 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// The domain label may contain only A-Z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// The domain label length must be between 7 and 63 characters, inclusive.
-        DomainNameIsTooShort,
+        /// The domain label length must be between 3 and 63 characters, inclusive.
+        DomainIsOffLengthLimits,
         /// The domain has expired.
         DomainHasExpired,
         /// Domain was not found by either custom domain name or top level domain.
@@ -332,26 +332,31 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Checks the length of the provided u8 array.
+        fn ensure_domain_has_valid_length(
+            string: &[u8],
+            min: u32,
+            max: u32,
+            error: Error<T>,
+        ) -> DispatchResult {
+            let length = string.len();
+            ensure!(length >= min as usize && length <= max as usize, error);
+
+            Ok(())
+        }
+
         /// Throws an error if domain contains invalid character.
         fn ensure_domain_contains_valid_chars(domain: &[u8], error: Error<T>) -> DispatchResult {
-            let is_char_alphanumeric = |c: &&u8| (**c).is_ascii_alphanumeric();
+            let first_char_alpha = domain.first()
+                .filter(|c| (**c).is_ascii_alphabetic());
 
-            let first_char_alphanumeric = domain.first().filter(is_char_alphanumeric).is_some();
-            let last_char_alphanumeric = domain.last().filter(is_char_alphanumeric).is_some();
+            let last_char_not_hyphen = domain.last().filter(|c| **c != b'-');
 
-            let mut prev_char_hyphen = false;
-            let domain_correct = domain.iter().all(|c| {
-                let curr_char_hyphen = *c == b'-';
-
-                if prev_char_hyphen && curr_char_hyphen {
-                    return false;
-                }
-
-                prev_char_hyphen = curr_char_hyphen;
-                c.is_ascii_alphanumeric() || curr_char_hyphen
-            });
-
-            ensure!(first_char_alphanumeric && last_char_alphanumeric && domain_correct, error);
+            ensure!(
+                first_char_alpha.is_some() && last_char_not_hyphen.is_some() &&
+                domain.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'-'),
+                error
+            );
 
             Ok(())
         }
@@ -364,14 +369,15 @@ pub mod pallet {
         /// There are also some restrictions on the length:
         /// Domains length must be between 3 and 63 characters.
         pub fn ensure_valid_domain(domain: &[u8]) -> DispatchResult {
-            // No need to check max length, because we use BoundedVec as input value.
-            ensure!(
-                domain.len() >= T::MinDomainLength::get() as usize,
-                Error::<T>::DomainNameIsTooShort,
-            );
+            Self::ensure_domain_has_valid_length(
+                domain,
+                T::MinDomainLength::get(),
+                T::MaxDomainLength::get(),
+                Error::<T>::DomainIsOffLengthLimits,
+            )?;
 
             ensure!(
-                domain.iter().filter(|c| **c == b'.').count() <= 1,
+                domain.iter().all(|c| *c != b'.'),
                 Error::<T>::LowerLevelDomainsNotAllowed,
             );
 
