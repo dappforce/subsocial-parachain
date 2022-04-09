@@ -42,12 +42,12 @@ pub struct DomainMeta<T: Config> {
     // The domain owner.
     pub(super) owner: T::AccountId,
 
-    // This is how the domain should be rendered on the screen.
+    // Domain original view
     pub(super) screen_domain: DomainName<T>,
-    // Some additional domain metadata. For example avatar and description for this domain.
+    // Some additional (custom) domain metadata.
     pub(super) content: Content,
 
-    // The inner domain link to Subsocial entity such as Account, Space, or Post.
+    // The inner domain link (some Subsocial entity).
     pub(super) inner_value: Option<InnerValue<T>>,
     // The outer domain link (any string).
     pub(super) outer_value: Option<OuterValue<T>>,
