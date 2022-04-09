@@ -125,10 +125,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// The domain name was successfully registered and stored.
-        DomainRegistered { who: T::AccountId, domain_name: DomainName<T>/*, payed: BalanceOf<T>*/ },
+        /// The domain name was successfully registered.
+        DomainRegistered { who: T::AccountId, domain: DomainName<T> },
         /// The domain meta was successfully updated.
-        DomainMetaUpdated { who: T::AccountId, domain_name: DomainName<T> },
+        DomainMetaUpdated { who: T::AccountId, domain: DomainName<T> },
         /// New words have been reserved.
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
@@ -275,7 +275,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain_name: domain });
+            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain });
             Ok(())
         }
 
@@ -299,7 +299,7 @@ pub mod pallet {
             meta.content = new_content;
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
-            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain_name: domain });
+            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain });
             Ok(())
         }
 
@@ -412,7 +412,7 @@ pub mod pallet {
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered { who: owner, domain_name: full_domain });
+            Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
             Ok(())
         }
 
@@ -444,7 +444,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain_name: domain_lc });
+            Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain: domain_lc });
             Ok(())
         }
 
