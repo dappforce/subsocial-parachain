@@ -22,11 +22,6 @@ pub enum DomainInnerLink<AccountId> {
     Post(PostId),
 }
 
-pub(super) enum ReserveDeposit {
-    Yes,
-    No,
-}
-
 // A domain metadata.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
