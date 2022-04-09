@@ -55,7 +55,7 @@ fn register_domain_should_work() {
 fn register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            _force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
+            _register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
             BadOrigin
         );
     });
@@ -65,7 +65,7 @@ fn register_domain_should_fail_with_bad_origin() {
 fn register_domain_should_fail_when_reservation_period_zero() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            _force_register_domain_with_expires_in(0),
+            _register_domain_with_expires_in(0),
             Error::<Test>::ZeroReservationPeriod,
         );
     });
@@ -78,7 +78,7 @@ fn register_domain_should_fail_when_reservation_above_limit() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                _force_register_domain_with_expires_in(1001),
+                _register_domain_with_expires_in(1001),
                 Error::<Test>::TooBigRegistrationPeriod,
             );
         });
@@ -88,7 +88,7 @@ fn register_domain_should_fail_when_reservation_above_limit() {
 fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
         let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
-        assert_ok!(_reserve_default_word());
+        assert_ok!(_reserve_default_domain());
         assert_noop!(
             _register_default_domain(),
             Error::<Test>::DomainIsReserved,
@@ -119,9 +119,9 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
             let domain_one = domain_from(b"domain-one".to_vec());
             let domain_two = domain_from(b"domain-two".to_vec());
 
-            assert_ok!(_force_register_domain_with_name(domain_one));
+            assert_ok!(_register_domain_with_name(domain_one));
             assert_noop!(
-                _force_register_domain_with_name(domain_two),
+                _register_domain_with_name(domain_two),
                 Error::<Test>::TooManyDomainsPerAccount,
             );
         });
@@ -412,9 +412,9 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
 #[test]
 fn reserve_domains_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(_reserve_default_word());
+        assert_ok!(_reserve_default_domain());
 
-        assert!(Domains::is_word_reserved(default_word_lc()));
+        assert!(Domains::is_domain_reserved(default_domain_lc()));
 
         System::assert_last_event(Event::<Test>::DomainsReserved(1).into());
     });
@@ -435,7 +435,7 @@ fn reserve_domains_should_fail_when_tried_to_insert_too_many_domains() {
             ];
 
             assert_noop!(
-                _reserve_words_with_list(domains_list),
+                _reserve_domains_with_list(domains_list),
                 Error::<Test>::DomainsInsertLimitReached,
             );
         });

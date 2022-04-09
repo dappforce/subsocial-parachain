@@ -6,8 +6,6 @@ use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
 
-pub(crate) const IS_DOT_CHAR: fn(&u8) -> bool = |c: &u8| *c == b'.';
-
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>::AccountId>;
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
@@ -15,7 +13,8 @@ pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLengt
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
-/// Domains inner value variants
+pub(crate) const TOP_LEVEL_DOMAIN: [u8; 3] = *b"sub";
+
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum InnerValue<AccountId> {
     Account(AccountId),
