@@ -46,15 +46,15 @@ pub mod pallet {
         /// The currency trait.
         type Currency: ReservableCurrency<<Self as frame_system::Config>::AccountId>;
 
-        /// Domain's minimum length.
+        /// Domains minimum length.
         #[pallet::constant]
         type MinDomainLength: Get<u32>;
 
-        /// Domain's maximum length.
+        /// Domains maximum length.
         #[pallet::constant]
         type MaxDomainLength: Get<u32>;
 
-        /// Maximum number of domains that can be registered per account.
+        /// Maximum amount of domains that can be registered per account.
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
@@ -88,8 +88,8 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
-    #[pallet::getter(fn is_reserved_word)]
-    pub(super) type ReservedWords<T: Config> =
+    #[pallet::getter(fn is_domain_reserved)]
+    pub(super) type ReservedDomains<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
     #[pallet::storage]
@@ -112,7 +112,7 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, DomainInnerLink<T::AccountId>, DomainName<T>>;
 
     #[pallet::storage]
-    pub(super) type SupportedTlds<T: Config> =
+    pub(super) type AllowedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
     #[pallet::event]
@@ -148,8 +148,8 @@ pub mod pallet {
         DomainAlreadyOwned,
         /// A new inner value is the same as the old one.
         InnerValueNotChanged,
-        /// Lower than the second-level domains are not allowed.
-        SubdomainsNotAllowed,
+        /// Lower than Second level domains are not allowed.
+        LowerLevelDomainsNotAllowed,
         /// This account is not allowed to update the domain metadata.
         NotDomainOwner,
         /// A new outer value is the same as the old one.
@@ -160,16 +160,14 @@ pub mod pallet {
         TooBigRegistrationPeriod,
         /// Top level domain must be specified.
         TopLevelDomainNotSpecified,
-        /// Top-level domain is not supported.
-        TldNotSupported,
+        /// Top level domain not allowed.
+        TopLevelDomainNotAllowed,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Registers a domain ([full_domain]) using origin with [content],
-        /// and set the domain to expire in [expires_in] number of blocks.
-        /// [full_domain] is a full domain name including a dot (.) and TLD.
-        /// Example of a [full_domain]: `mytoken.ksm`
+        /// and set the domain to expire in [expires_in].
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
@@ -184,7 +182,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
+        /// Registers a domain ([full_domain]) using root in behalf of a [target] with [content],
         /// and set the domain to expire in [expires_in].
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn force_register_domain(
@@ -333,7 +331,7 @@ pub mod pallet {
 
             // Note that while upper and lower case letters are allowed in domain
             // names, domain names are not case-sensitive. That is, two names with
-            // the same spelling but different cases will be treated as identical.
+            // the same spelling but different case are to be treated as if identical.
             let domain_lc = Self::lower_domain_then_bound(full_domain.clone());
 
             ensure!(!Self::is_domain_reserved(&domain_lc), Error::<T>::DomainIsReserved);
@@ -392,9 +390,6 @@ pub mod pallet {
             let domain_correct = domain.iter().all(|c| {
                 let curr_char_hyphen = *c == b'-';
 
-                // It is not allowed to have two or more sequential hyphen in a domain name.
-                // Valid example: a-b-c.ksm
-                // Invalid example: a--b.ksm
                 if prev_char_hyphen && curr_char_hyphen {
                     return false;
                 }
@@ -417,7 +412,7 @@ pub mod pallet {
         /// Domains length must be between 3 and 63 characters.
         pub fn ensure_valid_domain(domain: &[u8]) -> DispatchResult {
             let mut split = domain.split(|c| *c == b'.');
-            let dots = split.clone().count().saturating_sub(1);
+            let dots = split.clone().count().saturating_div(2);
 
             ensure!(dots <= 1, Error::<T>::LowerLevelDomainsNotAllowed);
             ensure!(!dots.is_zero(), Error::<T>::TopLevelDomainNotSpecified);
