@@ -114,7 +114,7 @@ benchmarks! {
 		let full_domain = add_domain::<T>(lookup_source_from_account::<T>(&owner))?;
 
 		let value = Some(
-			vec![b'A'; T::MaxOuterValueLength::get() as usize]
+			vec![b'A'; T::OuterValueLimit::get() as usize]
 				.try_into()
 				.expect("outer value out of bounds")
 		);

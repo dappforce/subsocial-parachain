@@ -9,7 +9,7 @@ use super::*;
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type DomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::MaxDomainsPerAccount>;
 pub(crate) type InnerValue<T> = Option<DomainInnerLink<<T as frame_system::pallet::Config>::AccountId>>;
-pub(crate) type OuterValue<T> = Option<BoundedVec<u8, <T as Config>::MaxOuterValueLength>>;
+pub(crate) type OuterValue<T> = Option<BoundedVec<u8, <T as Config>::OuterValueLimit>>;
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;

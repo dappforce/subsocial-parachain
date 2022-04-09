@@ -54,7 +54,6 @@ pub mod pallet {
         #[pallet::constant]
         type MaxDomainLength: Get<u32>;
 
-        /// Maximum amount of domains that can be registered per account.
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
@@ -68,7 +67,7 @@ pub mod pallet {
 
         /// The length limit for the domains meta outer value.
         #[pallet::constant]
-        type MaxOuterValueLength: Get<u32>;
+        type OuterValueLimit: Get<u32>;
 
         /// The amount held on deposit for storing the domains structure.
         #[pallet::constant]
@@ -398,7 +397,7 @@ pub mod pallet {
         pub fn ensure_valid_outer_value(outer_value: &OuterValue<T>) -> DispatchResult {
             if let Some(outer) = &outer_value {
                 ensure!(
-                    outer.len() <= T::MaxOuterValueLength::get() as usize,
+                    outer.len() <= T::OuterValueLimit::get() as usize,
                     Error::<T>::OuterValueOffLengthLimit
                 );
             }
