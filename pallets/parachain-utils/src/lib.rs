@@ -1,6 +1,3 @@
-// TODO Try to reuse these utility functions via crate in the future,
-// when solochain and parachain will use the same substrate version.
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
