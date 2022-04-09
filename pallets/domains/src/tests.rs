@@ -435,24 +435,24 @@ fn ensure_valid_domain_should_work() {
         .min_domain_length(3)
         .build()
         .execute_with(|| {
-            assert_ok!(Domains::ensure_valid_domain(b"abcde.sub"));
-            assert_ok!(Domains::ensure_valid_domain(b"a-b-c.sub"));
-            assert_ok!(Domains::ensure_valid_domain(b"12345.sub"));
+            assert_ok!(Domains::ensure_valid_domain(b"abcde"));
+            assert_ok!(Domains::ensure_valid_domain(b"a-b-c"));
+            assert_ok!(Domains::ensure_valid_domain(b"12345"));
 
             assert_noop!(
-                Domains::ensure_valid_domain(b"a.sub"),
+                Domains::ensure_valid_domain(b"a"),
                 Error::<Test>::DomainNameIsTooShort,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"-ab.sub"),
+                Domains::ensure_valid_domain(b"-ab"),
                 Error::<Test>::DomainContainsInvalidChar,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"ab-.sub"),
+                Domains::ensure_valid_domain(b"ab-"),
                 Error::<Test>::DomainContainsInvalidChar,
             );
             assert_noop!(
-                Domains::ensure_valid_domain(b"a--b.sub"),
+                Domains::ensure_valid_domain(b"a--b"),
                 Error::<Test>::DomainContainsInvalidChar,
             );
         });

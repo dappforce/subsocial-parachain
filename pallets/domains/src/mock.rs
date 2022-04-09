@@ -123,17 +123,10 @@ pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 
 pub(crate) fn default_domain() -> DomainName<Test> {
-    let tld = &mut TOP_LEVEL_DOMAIN.to_vec();
-    let mut domain_vec = vec![b'A'; MaxDomainLength::get() as usize - tld.len() - 1];
-
-    domain_vec.push(b'.');
-    domain_vec.append(tld);
-    domain_vec.try_into().expect("domain exceeds max length")
+    vec![b'A'; MaxDomainLength::get() as usize].try_into().expect("domain exceeds max length")
 }
 
-pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
-    string.push(b'.');
-    string.append(&mut TOP_LEVEL_DOMAIN.to_vec());
+pub(crate) fn domain_from(string: Vec<u8>) -> DomainName<Test> {
     string.try_into().expect("domain exceeds max length")
 }
 

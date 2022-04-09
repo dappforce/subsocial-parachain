@@ -154,10 +154,6 @@ pub mod pallet {
         ZeroReservationPeriod,
         /// Cannot store a domain for that long period of time.
         TooBigRegistrationPeriod,
-        /// Top level domain must be specified.
-        TopLevelDomainNotSpecified,
-        /// Top level domain not allowed.
-        TopLevelDomainNotAllowed,
     }
 
     #[pallet::call]
@@ -368,19 +364,15 @@ pub mod pallet {
         /// There are also some restrictions on the length:
         /// Domains length must be between 3 and 63 characters.
         pub fn ensure_valid_domain(domain: &[u8]) -> DispatchResult {
-            let mut split = domain.split(|c| *c == b'.');
-            let dots = split.clone().count().saturating_div(2);
-
-            ensure!(dots <= 1, Error::<T>::LowerLevelDomainsNotAllowed);
-            ensure!(!dots.is_zero(), Error::<T>::TopLevelDomainNotSpecified);
-
-            let domain = split.next().unwrap();
-            ensure!(split.next().unwrap() == TOP_LEVEL_DOMAIN, Error::<T>::TopLevelDomainNotAllowed);
-
             // No need to check max length, because we use BoundedVec as input value.
             ensure!(
                 domain.len() >= T::MinDomainLength::get() as usize,
                 Error::<T>::DomainNameIsTooShort,
+            );
+
+            ensure!(
+                domain.iter().filter(|c| **c == b'.').count() <= 1,
+                Error::<T>::LowerLevelDomainsNotAllowed,
             );
 
             Self::ensure_domain_contains_valid_chars(

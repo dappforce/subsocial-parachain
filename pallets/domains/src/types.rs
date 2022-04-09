@@ -13,8 +13,6 @@ pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLengt
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
-pub(crate) const TOP_LEVEL_DOMAIN: [u8; 3] = *b"sub";
-
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum DomainInnerLink<AccountId> {
     Account(AccountId),
