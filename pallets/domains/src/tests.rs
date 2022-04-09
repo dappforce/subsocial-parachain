@@ -20,7 +20,6 @@ fn register_domain_should_work() {
         .build()
         .execute_with(|| {
             let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
-
             let expected_domain = default_domain();
             let expected_domain_lc = default_domain_lc();
 
@@ -53,7 +52,7 @@ fn register_domain_should_work() {
 }
 
 #[test]
-fn force_register_domain_should_fail_with_bad_origin() {
+fn register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             _force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
@@ -63,7 +62,7 @@ fn force_register_domain_should_fail_with_bad_origin() {
 }
 
 #[test]
-fn force_register_domain_should_fail_when_reservation_period_zero() {
+fn register_domain_should_fail_when_reservation_period_zero() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             _force_register_domain_with_expires_in(0),
@@ -73,7 +72,7 @@ fn force_register_domain_should_fail_when_reservation_period_zero() {
 }
 
 #[test]
-fn force_register_domain_should_fail_when_reservation_above_limit() {
+fn register_domain_should_fail_when_reservation_above_limit() {
     ExtBuilder::default()
         .reservation_period_limit(1000)
         .build()
@@ -86,11 +85,12 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
 }
 
 #[test]
-fn force_register_domain_should_fail_when_domain_reserved() {
+fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
         assert_ok!(_reserve_default_word());
         assert_noop!(
-            _force_register_default_domain(),
+            _register_default_domain(),
             Error::<Test>::DomainIsReserved,
         );
     });
@@ -98,7 +98,9 @@ fn force_register_domain_should_fail_when_domain_reserved() {
 
 #[test]
 fn register_domain_should_fail_when_domain_already_owned() {
-    ExtBuilder::default().build_with_domain().execute_with(|| {
+    ExtBuilder::default().build().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+        assert_ok!(_register_default_domain());
         assert_noop!(
             _register_default_domain(),
             Error::<Test>::DomainAlreadyOwned,
@@ -145,6 +147,8 @@ fn register_domain_should_fail_when_balance_is_insufficient() {
 #[test]
 fn set_inner_value_should_work() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         let domain_lc = default_domain_lc();
         let old_value = get_inner_value(&domain_lc);
 
@@ -162,33 +166,17 @@ fn set_inner_value_should_work() {
         );
 
         System::assert_last_event(Event::<Test>::DomainMetaUpdated {
-            who: DOMAIN_OWNER,
+            who: owner,
             domain_name: domain_lc,
         }.into());
     });
 }
 
 #[test]
-fn set_inner_value_should_work_when_value_changes() {
-    ExtBuilder::default().build_with_domain().execute_with(|| {
-        let domain_lc = default_domain_lc();
-        let initial_value = inner_value_account_domain_owner();
-        let new_value = inner_value_space_id();
-
-        assert_ok!(_set_default_inner_value());
-
-        assert_ok!(_set_inner_value_with_value(new_value.clone()));
-
-        assert_eq!(DomainByInnerValue::<Test>::get(&initial_value), None);
-        assert_eq!(DomainByInnerValue::<Test>::get(&new_value), Some(default_domain_lc()));
-
-        assert_eq!(Some(new_value), get_inner_value(&domain_lc));
-    });
-}
-
-#[test]
 fn set_inner_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
         assert_noop!(
@@ -201,8 +189,10 @@ fn set_inner_value_should_fail_when_domain_has_expired() {
 #[test]
 fn set_inner_value_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let not_an_owner = account_with_balance(DUMMY_ACCOUNT, BalanceOf::<Test>::max_value());
+
         assert_noop!(
-            _set_inner_value_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_inner_value_with_origin(Origin::signed(not_an_owner)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -211,38 +201,13 @@ fn set_inner_value_should_fail_when_not_domain_owner() {
 #[test]
 fn set_inner_value_should_fail_when_inner_value_not_differ() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         assert_ok!(_set_default_inner_value());
 
         assert_noop!(
             _set_default_inner_value(),
             Error::<Test>::InnerValueNotChanged,
-        );
-    });
-}
-
-#[test]
-fn force_set_inner_value_should_work() {
-    ExtBuilder::default().build_with_domain().execute_with(|| {
-        assert_ok!(
-            Domains::force_set_inner_value(
-                Origin::root(),
-                default_domain_lc(),
-                Some(inner_value_account_domain_owner()),
-            )
-        );
-    });
-}
-
-#[test]
-fn force_set_inner_value_should_fail_when_origin_not_root() {
-    ExtBuilder::default().build_with_domain().execute_with(|| {
-        assert_noop!(
-            Domains::force_set_inner_value(
-                Origin::signed(DOMAIN_OWNER),
-                default_domain_lc(),
-                Some(inner_value_account_domain_owner()),
-            ),
-            BadOrigin,
         );
     });
 }
@@ -286,7 +251,7 @@ fn set_outer_value_should_work() {
 }
 
 #[test]
-fn set_outer_value_should_work_when_deposit_changes() {
+fn set_outer_value_should_work_when_deposit_changed() {
     const LOCAL_BYTE_DEPOSIT_INIT: Balance = 1;
     let domain_deposit = ExtBuilder::default().base_domain_deposit;
 
@@ -297,30 +262,21 @@ fn set_outer_value_should_work_when_deposit_changes() {
             let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
             let calc_deposit = |value| value as Balance * LOCAL_BYTE_DEPOSIT_INIT + domain_deposit;
 
-            let initial_value = default_outer_value(Some(10));
-            let updated_value = default_outer_value(Some(20));
+            let initial_value = Some(default_outer_value(Some(10)));
+            assert_ok!(_set_outer_value_with_value(initial_value.clone()));
+            assert_eq!(get_reserved_balance(&owner), calc_deposit(initial_value.unwrap().len()));
 
-            // Set outer value with length 10 and ensure that an appropriate deposit reserved
-            assert_ok!(_set_outer_value_with_value(Some(initial_value.clone())));
-            assert_eq!(get_reserved_balance(&owner), calc_deposit(initial_value.len()));
-
-            // Set outer value with length 20 and ensure that deposit has increased
-            assert_ok!(_set_outer_value_with_value(Some(updated_value.clone())));
-            assert_eq!(get_reserved_balance(&owner), calc_deposit(updated_value.len()));
-
-            // Set outer value with length 10 and ensure that an appropriate deposit decreased
-            assert_ok!(_set_outer_value_with_value(Some(initial_value.clone())));
-            assert_eq!(get_reserved_balance(&owner), calc_deposit(initial_value.len()));
-
-            // Remove outer value and ensure that deposit was unreserved
-            assert_ok!(_set_outer_value_with_value(None));
-            assert_eq!(get_reserved_balance(&owner), calc_deposit(0));
+            let new_value = Some(default_outer_value(Some(20)));
+            assert_ok!(_set_outer_value_with_value(new_value.clone()));
+            assert_eq!(get_reserved_balance(&owner), calc_deposit(new_value.unwrap().len()));
         });
 }
 
 #[test]
 fn set_outer_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
         assert_noop!(
@@ -333,8 +289,10 @@ fn set_outer_value_should_fail_when_domain_has_expired() {
 #[test]
 fn set_outer_value_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let not_owner = account_with_balance(DUMMY_ACCOUNT, BalanceOf::<Test>::max_value());
+
         assert_noop!(
-            _set_outer_value_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_outer_value_with_origin(Origin::signed(not_owner)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -356,13 +314,16 @@ fn set_outer_value_should_fail_when_value_not_differ() {
 
 #[test]
 fn set_outer_value_should_fail_when_balance_is_insufficient() {
+    const LOCAL_DOMAIN_DEPOSIT: Balance = 10;
     const LOCAL_BYTE_DEPOSIT: Balance = 1;
 
     ExtBuilder::default()
+        .domain_deposit(LOCAL_DOMAIN_DEPOSIT)
         .outer_value_byte_deposit(LOCAL_BYTE_DEPOSIT)
         .build_with_domain()
         .execute_with(|| {
-            // At this point account has 0 free balance
+            let _ = account_with_balance(DOMAIN_OWNER, LOCAL_BYTE_DEPOSIT - 1);
+
             assert_noop!(
                 _set_default_outer_value(),
                 pallet_balances::Error::<Test>::InsufficientBalance,
@@ -397,6 +358,8 @@ fn set_domain_content_should_work() {
 #[test]
 fn set_domain_content_should_fail_when_domain_expired() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
         assert_noop!(
@@ -409,8 +372,10 @@ fn set_domain_content_should_fail_when_domain_expired() {
 #[test]
 fn set_domain_content_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let not_owner = account_with_balance(DUMMY_ACCOUNT, BalanceOf::<Test>::max_value());
+
         assert_noop!(
-            _set_domain_content_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_domain_content_with_origin(Origin::signed(not_owner)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -419,6 +384,8 @@ fn set_domain_content_should_fail_when_not_domain_owner() {
 #[test]
 fn set_domain_content_should_fail_when_content_not_differ() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         assert_ok!(_set_default_domain_content());
 
         assert_noop!(
@@ -431,6 +398,8 @@ fn set_domain_content_should_fail_when_content_not_differ() {
 #[test]
 fn set_domain_content_should_fail_when_content_is_invalid() {
     ExtBuilder::default().build_with_domain().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
         assert_noop!(
             _set_domain_content_with_content(invalid_content_ipfs()),
             DispatchError::Other(pallet_parachain_utils::Error::InvalidIpfsCid.into()),
@@ -444,7 +413,9 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
 fn reserve_domains_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(_reserve_default_word());
+
         assert!(Domains::is_word_reserved(default_word_lc()));
+
         System::assert_last_event(Event::<Test>::NewWordsReserved { count: 1 }.into());
     });
 }
@@ -464,74 +435,8 @@ fn reserve_domains_should_panic_when_tried_to_insert_too_many_domains() {
                 domain_from(b"domain-three".to_vec()),
             ].try_into().expect("qed; domains vector exceeds the limit");
 
-            // This should panic
-            let _ = Domains::reserve_words(Origin::root(), domains_list);
+            let _ = _reserve_words_with_list(domains_list);
         });
-}
-
-#[test]
-fn reserve_domains_should_fail_when_word_is_invalid() {
-    ExtBuilder::default().build().execute_with(|| {
-            let domains_list = vec![
-                domain_from(b"domain--one".to_vec())
-            ].try_into().expect("qed; domains vector exceeds the limit");
-
-            assert_noop!(
-                Domains::reserve_words(Origin::root(), domains_list),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-        });
-}
-
-// `support_tlds` tests
-
-#[test]
-fn support_tlds_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(
-            Domains::support_tlds(
-                Origin::root(),
-                vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
-            )
-        );
-
-        assert!(Domains::is_tld_supported(default_tld()));
-        System::assert_last_event(Event::<Test>::NewTldsSupported { count: 1 }.into());
-    });
-}
-
-#[test]
-#[should_panic]
-fn support_tlds_should_panic_when_tried_to_insert_too_many_domains() {
-    ExtBuilder::default()
-        // When limit is 2
-        .domains_insert_limit(2)
-        .build()
-        .execute_with(|| {
-            // Trying to insert a list of 3 TLDs
-            let tlds_list = vec![
-                domain_from(b"tldone".to_vec()),
-                domain_from(b"tldtwo".to_vec()),
-                domain_from(b"tldthree".to_vec()),
-            ].try_into().expect("qed; domains vector exceeds the limit");
-
-            // This should panic
-            let _ = Domains::support_tlds(Origin::root(), tlds_list);
-        });
-}
-
-#[test]
-fn support_tlds_should_fail_when_tld_is_invalid() {
-    ExtBuilder::default().build().execute_with(|| {
-        let tlds_list = vec![
-            domain_from(b"domain--one".to_vec())
-        ].try_into().expect("qed; domains vector exceeds the limit");
-
-        assert_noop!(
-                Domains::support_tlds(Origin::root(), tlds_list),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-    });
 }
 
 // Test domain name validation function

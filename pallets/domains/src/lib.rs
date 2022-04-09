@@ -249,12 +249,10 @@ pub mod pallet {
 
             let mut new_deposit = Zero::zero();
             if let Some(value) = &value_opt {
-                new_deposit = T::OuterValueByteDeposit::get()
-                    .saturating_mul(<BalanceOf<T>>::from(value.len() as u32));
-
-                Self::try_reserve_deposit(&sender, meta.outer_value_deposit, new_deposit)?;
+                new_deposit = T::OuterValueByteDeposit::get() * <BalanceOf<T>>::from(value.len() as u32);
+                Self::try_reserve_deposit(&sender, &mut meta.outer_value_deposit, new_deposit)?;
             } else {
-                <T as Config>::Currency::unreserve(&sender, meta.outer_value_deposit);
+                Self::try_unreserve_deposit(&sender, &mut meta.outer_value_deposit)?;
             }
 
             if meta.outer_value_deposit != new_deposit {
@@ -540,20 +538,35 @@ pub mod pallet {
 
         pub fn try_reserve_deposit(
             depositor: &T::AccountId,
-            old_deposit: BalanceOf<T>,
+            stored_value: &mut BalanceOf<T>,
             new_deposit: BalanceOf<T>,
         ) -> DispatchResult {
+            let old_deposit = *stored_value;
+
             match old_deposit.cmp(&new_deposit) {
                 Ordering::Less =>
                     <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
                 Ordering::Greater => {
                     let err_amount = <T as Config>::Currency::unreserve(
-                        depositor, old_deposit - new_deposit,
+                        depositor, new_deposit - old_deposit,
                     );
                     debug_assert!(err_amount.is_zero());
                 },
                 _ => (),
             }
+
+            *stored_value = new_deposit;
+            Ok(())
+        }
+
+        pub fn try_unreserve_deposit(
+            depositor: &T::AccountId,
+            stored_value: &mut BalanceOf<T>,
+        ) -> DispatchResult {
+            let old_deposit = *stored_value;
+            *stored_value = Zero::zero();
+
+            <T as Config>::Currency::unreserve(depositor, old_deposit);
 
             Ok(())
         }
