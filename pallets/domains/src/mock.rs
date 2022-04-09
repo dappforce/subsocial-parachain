@@ -191,7 +191,7 @@ fn _register_domain(
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResultWithPostInfo {
-    Domains::force_register_domain(
+    Domains::register_domain(
         origin.unwrap_or_else(Origin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
