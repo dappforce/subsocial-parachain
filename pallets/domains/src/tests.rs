@@ -286,7 +286,7 @@ fn set_outer_value_should_work() {
 }
 
 #[test]
-fn set_outer_value_should_reserve_correct_deposit_when_outer_value_keep_changing() {
+fn set_outer_value_should_work_when_deposit_changes() {
     const LOCAL_BYTE_DEPOSIT_INIT: Balance = 1;
     let domain_deposit = ExtBuilder::default().base_domain_deposit;
 
