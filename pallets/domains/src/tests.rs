@@ -255,7 +255,11 @@ fn set_inner_value_should_work_when_value_changes() {
 
         assert_ok!(_set_default_inner_value());
 
-        assert_ok!(_set_inner_value_with_value(new_value.clone()));
+        assert_ok!(Domains::set_inner_value(
+            Origin::signed(DOMAIN_OWNER),
+            domain_lc.clone(),
+            Some(new_value.clone()),
+        ));
 
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &initial_value), None);
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value), Some(default_domain_lc()));

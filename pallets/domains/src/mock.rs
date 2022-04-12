@@ -130,7 +130,7 @@ pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 pub(crate) const ACCOUNT_A: u64 = 10;
 pub(crate) const ACCOUNT_B: u64 = 20;
 
-const DEFAULT_TLD: [u8; 3] = *b"sub";
+pub(crate) const DEFAULT_TLD: [u8; 3] = *b"sub";
 
 pub(crate) fn origin_a() -> Origin {
     Origin::signed(ACCOUNT_A)
@@ -181,12 +181,6 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
 }
 
-pub(crate) fn default_word_lc() -> DomainName<Test> {
-    Domains::lower_domain_then_bound(
-        &Domains::split_domain_by_dot(&default_domain()).first().unwrap()
-    )
-}
-
 pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
     InnerValue::Account(DOMAIN_OWNER)
 }
@@ -198,16 +192,6 @@ pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
     vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
         .try_into().expect("qed; outer value exceeds max length")
-}
-
-pub(crate) fn _force_register_domain_with_full_domain(
-    domain: DomainName<Test>,
-) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain), None, None)
-}
-
-pub(crate) fn _force_register_default_domain() -> DispatchResult {
-    _force_register_domain(None, None, None, None, None)
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
@@ -258,16 +242,6 @@ fn _register_domain(
 
 pub(crate) fn _set_inner_value_with_origin(origin: Origin) -> DispatchResult {
     _set_inner_value(Some(origin), None, None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_domain_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _set_inner_value(None, Some(domain_name), None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_value(value: InnerValue<AccountId>) -> DispatchResult {
-    _set_inner_value(None, None, Some(Some(value)))
 }
 
 pub(crate) fn _set_default_inner_value() -> DispatchResult {
