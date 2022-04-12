@@ -4,7 +4,7 @@ The Subsocial parachain is our custom built Kusama blockchain, based on the Subs
 
 ## Build
 
-For linux, FreeBSD, OpenBSD and macOS:
+For Linux, FreeBSD, OpenBSD, and macOS:
 
 ```sh
 git clone https://github.com/dappforce/subsocial-parachain
@@ -40,7 +40,7 @@ Run as an archive node (store all blocks state):
 
 ## Using docker
 
-Official docker hub image of the Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
+Official Docker Hub image of the Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
 
 Simply run and join the network with docker:
 
