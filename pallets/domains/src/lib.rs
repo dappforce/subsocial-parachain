@@ -56,6 +56,10 @@ pub mod pallet {
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
+        /// Maximum number of promotional domains that can be registered per account.
+        #[pallet::constant]
+        type MaxPromoDomainsPerAccount: Get<u32>;
+
         /// The maximum number of domains that can be inserted into a storage at once.
         #[pallet::constant]
         type DomainsInsertLimit: Get<u32>;
@@ -186,7 +190,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::Yes)
+            Self::do_register_domain(owner, full_domain, content, expires_in, IsSudoRegister::No)
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
@@ -205,7 +209,7 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = T::Lookup::lookup(target)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, ReserveDeposit::No)
+            Self::do_register_domain(owner, full_domain, content, expires_in, IsSudoRegister::Yes)
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
@@ -352,19 +356,19 @@ pub mod pallet {
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
-            reserve_deposit: ReserveDeposit,
+            is_sudo: IsSudoRegister,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
                 expires_in <= T::RegistrationPeriodLimit::get(),
                 Error::<T>::TooBigRegistrationPeriod,
             );
+            ensure_content_is_valid(content.clone())?;
 
             // Note that while upper and lower case letters are allowed in domain
             // names, domain names are not case-sensitive. That is, two names with
             // the same spelling but different cases will be treated as identical.
             let domain_lc = Self::lower_domain_then_bound(&full_domain);
-
             let domain_parts = Self::split_domain_by_dot(&domain_lc);
 
             Self::ensure_valid_domain(&domain_parts)?;
@@ -373,16 +377,22 @@ pub mod pallet {
             let tld = domain_parts.last().unwrap();
 
             ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
-            ensure!(!Self::is_word_reserved(subdomain), Error::<T>::DomainIsReserved);
 
-            ensure_content_is_valid(content.clone())?;
+            let domains_per_account = Self::domains_by_owner(&owner).len();
+
+            if let IsSudoRegister::No = is_sudo {
+                ensure!(
+                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
+                    Error::<T>::TooManyDomainsPerAccount,
+                );
+                Self::ensure_word_is_not_reserved(subdomain)?;
+            }
 
             ensure!(
                 Self::registered_domain(&domain_lc).is_none(),
                 Error::<T>::DomainAlreadyOwned,
             );
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
             ensure!(
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
@@ -398,8 +408,8 @@ pub mod pallet {
                 deposit,
             );
 
-            if let ReserveDeposit::Yes = reserve_deposit {
-                // TODO Do unreserve the balance for expired or sold domains
+            if let IsSudoRegister::No = is_sudo {
+                // TODO: unreserve the balance for expired or sold domains
                 <T as Config>::Currency::reserve(&owner, deposit)?;
             }
 
@@ -576,6 +586,15 @@ pub mod pallet {
 
         pub(crate) fn split_domain_by_dot(full_domain: &DomainName<T>) -> Vec<DomainName<T>> {
             full_domain.split(|c| *c == b'.').map(Self::lower_domain_then_bound).collect()
+        }
+
+        fn ensure_word_is_not_reserved(domain: &DomainName<T>) -> DispatchResult {
+            let domain_without_hyphens = Self::bound_domain(
+                domain.iter().filter(|c| **c != b'-').cloned().collect()
+            );
+
+            ensure!(!Self::is_word_reserved(domain_without_hyphens), Error::<T>::DomainIsReserved);
+            Ok(())
         }
     }
 }
