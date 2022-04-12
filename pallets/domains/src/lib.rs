@@ -321,7 +321,7 @@ pub mod pallet {
             let inserted_words_count = Self::insert_domains(
                 &words,
                 Self::ensure_domain_contains_valid_chars,
-                |domain| ReservedWords::<T>::insert(domain, true),
+                |domain| ReservedWords::<T>::insert(Self::lower_domain_then_bound(domain), true),
             )?;
 
             Self::deposit_event(Event::NewWordsReserved { count: inserted_words_count });
@@ -342,7 +342,7 @@ pub mod pallet {
             let inserted_tlds_count = Self::insert_domains(
                 &tlds,
                 Self::ensure_ascii_alphanumeric,
-                |domain| SupportedTlds::<T>::insert(domain, true),
+                |domain| SupportedTlds::<T>::insert(Self::lower_domain_then_bound(domain), true),
             )?;
 
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
