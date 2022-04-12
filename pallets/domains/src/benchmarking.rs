@@ -106,15 +106,15 @@ benchmarks! {
 		add_default_tld::<T>()?;
 
 		let who = account_with_balance::<T>();
-		let domain_name = mock_domain::<T>();
+		let domain = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Signed(who.clone()), domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
 		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain_name }.into()
+			Event::DomainRegistered { who, domain }.into()
 		);
 	}
 
@@ -124,15 +124,15 @@ benchmarks! {
 		let who = account_with_balance::<T>();
 		let owner_lookup = lookup_source_from_account::<T>(&who);
 
-		let domain_name = mock_domain::<T>();
+		let domain = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner_lookup, domain_name.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Root, owner_lookup, domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
 		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain_name }.into()
+			Event::DomainRegistered { who, domain }.into()
 		);
 	}
 
@@ -176,7 +176,7 @@ benchmarks! {
 
 	set_outer_value {
 		let who = account_with_balance::<T>();
-		let domain_name = add_domain::<T>(&who)?;
+		let domain = add_domain::<T>(&who)?;
 
 		let value = Some(
 			vec![b'A'; T::MaxOuterValueLength::get() as usize]
@@ -184,18 +184,18 @@ benchmarks! {
 				.expect("qed; outer value exceeds max length")
 		);
 
-	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), value)
+	}: _(RawOrigin::Signed(who.clone()), domain.clone(), value)
 	verify {
-		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain_name }.into());
+		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain }.into());
 	}
 
 	set_domain_content {
 		let who = account_with_balance::<T>();
-		let domain_name = add_domain::<T>(&who)?;
+		let domain = add_domain::<T>(&who)?;
 		let new_content = another_valid_content_ipfs();
-	}: _(RawOrigin::Signed(who.clone()), domain_name.clone(), new_content)
+	}: _(RawOrigin::Signed(who.clone()), domain.clone(), new_content)
 	verify {
-		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain_name }.into());
+		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain }.into());
 	}
 
 	reserve_words {
