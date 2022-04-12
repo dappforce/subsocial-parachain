@@ -1,6 +1,6 @@
 # Subsocial parachain node
 
-Subsocial parachain is our custom built Kusama blockchain, based on the substrate framework.
+The Subsocial parachain is our custom built Kusama blockchain, based on the substrate framework.
 
 ## Build
 
@@ -17,7 +17,7 @@ cargo build --release
 
 Take into account that you need to build a binary as described in the previous step.
 
-Simple run and join the network:
+Simply run and join the network:
 
 ```shell
 ./target/release/subsocial-collator \
@@ -27,7 +27,7 @@ Simple run and join the network:
 --chain=kusama
 ```
 
-Run as archive node (store all blocks state):
+Run as an archive node (store all blocks state):
 
 ```shell
 ./target/release/subsocial-collator \
@@ -40,9 +40,9 @@ Run as archive node (store all blocks state):
 
 ## Using docker
 
-Official docker hub image of Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
+Official docker hub image of the Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
 
-Simple run and join the network with docker:
+Simply run and join the network with docker:
 
 ```shell
 docker run -d -v node-data:/data dappforce/subsocial-parachain:latest subsocial-collator \
