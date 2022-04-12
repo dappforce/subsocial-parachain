@@ -1,6 +1,6 @@
 # Subsocial parachain node
 
-The Subsocial parachain is our custom built Kusama blockchain, based on the substrate framework.
+The Subsocial parachain is our custom built Kusama blockchain, based on the Substrate framework.
 
 ## Build
 
