@@ -23,7 +23,7 @@ pub enum InnerValue<AccountId> {
     Post(PostId),
 }
 
-pub(super) enum IsSudoRegister {
+pub(super) enum IsForced {
     Yes,
     No,
 }

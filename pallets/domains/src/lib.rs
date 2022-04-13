@@ -190,7 +190,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsSudoRegister::No)
+            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::No)
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
@@ -209,10 +209,10 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = T::Lookup::lookup(target)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsSudoRegister::Yes)
+            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::Yes)
         }
 
-        /// Sets the domain inner_value to be one of subsocial account, space, or post.
+        /// Sets the domain inner_value to be one of Subsocial account, space, or post.
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
@@ -356,7 +356,7 @@ pub mod pallet {
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
-            is_sudo: IsSudoRegister,
+            is_forced: IsForced,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
@@ -380,7 +380,7 @@ pub mod pallet {
 
             let domains_per_account = Self::domains_by_owner(&owner).len();
 
-            if let IsSudoRegister::No = is_sudo {
+            if let IsForced::No = is_forced {
                 ensure!(
                     domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
                     Error::<T>::TooManyDomainsPerAccount,
@@ -398,9 +398,14 @@ pub mod pallet {
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
-            let expires_at = expires_in.saturating_add(System::<T>::block_number());
+            let mut deposit = Zero::zero();
+            if let IsForced::No = is_forced {
+                // TODO: unreserve the balance for expired or sold domains
+                deposit = T::BaseDomainDeposit::get();
+                <T as Config>::Currency::reserve(&owner, deposit)?;
+            }
 
-            let deposit = T::BaseDomainDeposit::get();
+            let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
                 expires_at,
                 owner.clone(),
@@ -408,12 +413,7 @@ pub mod pallet {
                 deposit,
             );
 
-            if let IsSudoRegister::No = is_sudo {
-                // TODO: unreserve the balance for expired or sold domains
-                <T as Config>::Currency::reserve(&owner, deposit)?;
-            }
-
-            // TODO: withdraw balance
+            // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
             DomainsByOwner::<T>::mutate(
@@ -588,12 +588,12 @@ pub mod pallet {
             full_domain.split(|c| *c == b'.').map(Self::lower_domain_then_bound).collect()
         }
 
-        fn ensure_word_is_not_reserved(domain: &DomainName<T>) -> DispatchResult {
-            let domain_without_hyphens = Self::bound_domain(
-                domain.iter().filter(|c| **c != b'-').cloned().collect()
+        fn ensure_word_is_not_reserved(word: &DomainName<T>) -> DispatchResult {
+            let word_without_hyphens = Self::bound_domain(
+                word.iter().filter(|c| **c != b'-').cloned().collect()
             );
 
-            ensure!(!Self::is_word_reserved(domain_without_hyphens), Error::<T>::DomainIsReserved);
+            ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())
         }
     }
