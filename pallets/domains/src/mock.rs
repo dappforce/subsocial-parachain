@@ -99,6 +99,7 @@ parameter_types! {
     pub const MaxDomainLength: u32 = 63;
 
     pub static MaxDomainsPerAccount: u32 = 0;
+    pub static MaxPromoDomainsPerAccount: u32 = 0;
 
     pub const DomainsInsertLimit: u32 = 2860;
     pub static ReservationPeriodLimit: BlockNumber = 0;
@@ -114,6 +115,7 @@ impl pallet_domains::Config for Test {
     type MinDomainLength = MinDomainLength;
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
+    type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
@@ -128,7 +130,7 @@ pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 pub(crate) const ACCOUNT_A: u64 = 10;
 pub(crate) const ACCOUNT_B: u64 = 20;
 
-const DEFAULT_TLD: [u8; 3] = *b"sub";
+pub(crate) const DEFAULT_TLD: [u8; 3] = *b"sub";
 
 pub(crate) fn origin_a() -> Origin {
     Origin::signed(ACCOUNT_A)
@@ -179,12 +181,6 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
 }
 
-pub(crate) fn default_word_lc() -> DomainName<Test> {
-    Domains::lower_domain_then_bound(
-        &Domains::split_domain_by_dot(&default_domain()).first().unwrap()
-    )
-}
-
 pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
     InnerValue::Account(DOMAIN_OWNER)
 }
@@ -196,16 +192,6 @@ pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
     vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
         .try_into().expect("qed; outer value exceeds max length")
-}
-
-pub(crate) fn _force_register_domain_with_full_domain(
-    domain: DomainName<Test>,
-) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain), None, None)
-}
-
-pub(crate) fn _force_register_default_domain() -> DispatchResult {
-    _force_register_domain(None, None, None, None, None)
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
@@ -256,16 +242,6 @@ fn _register_domain(
 
 pub(crate) fn _set_inner_value_with_origin(origin: Origin) -> DispatchResult {
     _set_inner_value(Some(origin), None, None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_domain_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _set_inner_value(None, Some(domain_name), None)
-}
-
-// TODO: maybe unused?
-pub(crate) fn _set_inner_value_with_value(value: InnerValue<AccountId>) -> DispatchResult {
-    _set_inner_value(None, None, Some(Some(value)))
 }
 
 pub(crate) fn _set_default_inner_value() -> DispatchResult {
@@ -350,6 +326,7 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
+    pub(crate) max_promo_domains_per_account: u32,
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
@@ -360,6 +337,7 @@ impl Default for ExtBuilder {
         ExtBuilder {
             min_domain_length: 3,
             max_domains_per_account: 10,
+            max_promo_domains_per_account: 10,
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
@@ -375,6 +353,11 @@ impl ExtBuilder {
 
     pub(crate) fn max_domains_per_account(mut self, max_domains_per_account: u32) -> Self {
         self.max_domains_per_account = max_domains_per_account;
+        self
+    }
+
+    pub(crate) fn max_promo_domains_per_account(mut self, max_promo_domains_per_account: u32) -> Self {
+        self.max_promo_domains_per_account = max_promo_domains_per_account;
         self
     }
 
@@ -396,6 +379,7 @@ impl ExtBuilder {
     fn set_configs(&self) {
         MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
+        MAX_PROMO_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_promo_domains_per_account);
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);

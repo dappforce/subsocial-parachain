@@ -97,6 +97,28 @@ fn register_domain_should_fail_when_balance_is_insufficient() {
 }
 
 #[test]
+fn register_domain_should_fail_when_promo_domains_limit_reached() {
+    ExtBuilder::default()
+        .max_promo_domains_per_account(1)
+        .build()
+        .execute_with(|| {
+            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
+            assert_ok!(_register_default_domain());
+
+            assert_noop!(
+                Domains::register_domain(
+                    Origin::signed(DOMAIN_OWNER),
+                    domain_from(b"second-domain".to_vec()),
+                    valid_content_ipfs(),
+                    ExtBuilder::default().reservation_period_limit,
+                ),
+                Error::<Test>::TooManyDomainsPerAccount,
+            );
+        });
+}
+
+#[test]
 fn force_register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
@@ -130,14 +152,23 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
 }
 
 #[test]
-fn force_register_domain_should_fail_when_domain_reserved() {
+fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
+        let word = Domains::bound_domain(b"splitword".to_vec());
+        let domain = domain_from(b"split-wo-rd".to_vec());
+
         assert_ok!(Domains::reserve_words(
             Origin::root(),
-            vec![default_word_lc()].try_into().expect("qed; domains vector exceeds the limit"),
+            vec![word].try_into().expect("qed; domains vector exceeds the limit"),
         ));
+
         assert_noop!(
-            _force_register_default_domain(),
+            Domains::register_domain(
+                Origin::signed(DOMAIN_OWNER),
+                domain,
+                valid_content_ipfs(),
+                ExtBuilder::default().reservation_period_limit,
+            ),
             Error::<Test>::DomainIsReserved,
         );
     });
@@ -224,7 +255,11 @@ fn set_inner_value_should_work_when_value_changes() {
 
         assert_ok!(_set_default_inner_value());
 
-        assert_ok!(_set_inner_value_with_value(new_value.clone()));
+        assert_ok!(Domains::set_inner_value(
+            Origin::signed(DOMAIN_OWNER),
+            domain_lc.clone(),
+            Some(new_value.clone()),
+        ));
 
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &initial_value), None);
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value), Some(default_domain_lc()));

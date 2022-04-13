@@ -173,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 7,
+	spec_version: 8,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -637,11 +637,12 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 7;
+    pub const MinDomainLength: u32 = 5;
     pub const MaxDomainLength: u32 = 63;
 
-    // TODO This value should be increased or even removed later, once it will be possible to purchase domains.
-    pub const MaxDomainsPerAccount: u32 = 3;
+    pub const MaxDomainsPerAccount: u32 = 100;
+    // TODO This value should be removed later, once it will be possible to purchase domains.
+	pub const MaxPromoDomainsPerAccount: u32 = 3;
 
 	// TODO: replace with a calculation
 	// 	(([MAXIMUM_BLOCK_WEIGHT] * 0.75) / ("function_weight")) * 0.33
@@ -659,6 +660,7 @@ impl pallet_domains::Config for Runtime {
 	type MinDomainLength = MinDomainLength;
 	type MaxDomainLength = MaxDomainLength;
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
+	type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;

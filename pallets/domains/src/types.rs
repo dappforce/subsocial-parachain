@@ -23,7 +23,7 @@ pub enum InnerValue<AccountId> {
     Post(PostId),
 }
 
-pub(super) enum ReserveDeposit {
+pub(super) enum IsForced {
     Yes,
     No,
 }
