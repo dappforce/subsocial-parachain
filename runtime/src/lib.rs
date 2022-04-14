@@ -173,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 8,
+	spec_version: 9,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -265,13 +265,10 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest { .. }) |
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
-		let is_domains_registration =
-			matches!(c, Call::Domains(pallet_domains::Call::register_domain { .. }));
 
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
-			Call::Domains(..) => !is_domains_registration,
 			_ => true,
 		}
 	}
@@ -637,7 +634,7 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 5;
+    pub const MinDomainLength: u32 = 7;
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
