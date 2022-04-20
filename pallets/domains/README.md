@@ -5,7 +5,11 @@ Domains pallet allows users to register and manage domains.
 
 ## Resolving Domain Names
 - **Pallet Name:** domains
-- **Storage:** `RegisteredDomains`: `DomainName` => `DomainMeta`
+- **Storages:** 
+  - `RegisteredDomains: Map<DomainName,DomainMeta>`\
+    Metadata associated per domain.
+  - `DomainsByOwner: Map<AccountId, DomainName[]>`\
+    Domains owned per account.
 
 Domain name can be resolved to obtain the owner.
 
@@ -112,5 +116,13 @@ to the owner of this domain. This can be done by the following script.
 async function fetchDomainOwner(domain) {
     const domainMeta = await api.query.domains.registeredDomains(domain);
     return domainMeta.unwrap().owner;
+}
+```
+
+### Fetch domain owned by account.
+```javascript
+async function fetchDomains(account) {
+    const domains = await api.query.domains.domainsByOwner(account);
+    return domains;
 }
 ```
