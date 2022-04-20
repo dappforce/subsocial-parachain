@@ -94,11 +94,14 @@ pub mod pallet {
     pub(super) type ReservedWords<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    /// Metadata associated per domain.
     #[pallet::storage]
     #[pallet::getter(fn registered_domain)]
     pub(super) type RegisteredDomains<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, DomainMeta<T>>;
 
+    /// Domains owned per account.
+    /// 
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
