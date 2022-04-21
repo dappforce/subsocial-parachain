@@ -1,15 +1,15 @@
 [package]
 name = "subsocial-collator"
-version = '0.1.3'
-build = 'build.rs'
-authors = ['DappForce <dappforce@pm.me>']
-edition = '2021'
-license = 'GPL-3.0-only'
-homepage = 'https://subsocial.network'
-repository = 'https://github.com/dappforce/subsocial-parachain'
-description = 'Parachain implementation of Subsocial node'
-keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
-categories = ['cryptography::cryptocurrencies']
+version = "0.1.3"
+build = "build.rs"
+authors = ["DappForce <dappforce@pm.me>"]
+edition = "2021"
+license = "GPL-3.0-only"
+homepage = "https://subsocial.network"
+repository = "https://github.com/dappforce/subsocial-parachain"
+description = "Parachain implementation of Subsocial node"
+keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
+categories = ["cryptography::cryptocurrencies"]
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
