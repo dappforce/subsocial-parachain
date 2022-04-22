@@ -198,6 +198,14 @@ benchmarks! {
 		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain }.into());
 	}
 
+    set_default_domain {
+		let who = account_with_balance::<T>();
+		let domain = add_domain::<T>(&who)?;
+	}: _(RawOrigin::Signed(who.clone()), domain.clone())
+	verify {
+		assert_last_event::<T>(Event::DefaultDomainUpdated { who, domain }.into());
+	}
+
 	reserve_words {
 		let s in 1 .. T::DomainsInsertLimit::get() => ();
 		let words = mock_bounded_string_array::<T>(s as usize);

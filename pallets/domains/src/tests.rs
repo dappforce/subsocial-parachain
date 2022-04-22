@@ -5,8 +5,9 @@ use sp_std::convert::TryInto;
 use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
 use pallet_parachain_utils::new_who_and_when;
 
-use crate::{DomainByInnerValue, Event, mock::*};
+use crate::{DomainByInnerValue, Event, mock::*, Pallet};
 use crate::Error;
+use crate::Error::DefaultDomainNotChanged;
 use crate::types::*;
 
 // `register_domain` tests
@@ -516,6 +517,89 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
         assert_noop!(
             _set_domain_content_with_content(invalid_content_ipfs()),
             DispatchError::Other(pallet_parachain_utils::Error::InvalidIpfsCid.into()),
+        );
+    });
+}
+
+// `set_default_domain` tests
+
+#[test]
+fn set_default_domain_should_fail_when_domain_not_found() {
+    ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
+        assert_noop!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DOMAIN_OWNER),
+                b"test.fail".to_vec().try_into().unwrap(),
+            ),
+            Error::<Test>::DomainNotFound,
+        );
+    });
+}
+
+#[test]
+fn set_default_domain_should_fail_when_domain_expired() {
+    ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
+        System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
+
+        assert_noop!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DOMAIN_OWNER),
+                default_domain(),
+            ),
+            Error::<Test>::DomainHasExpired,
+        );
+    });
+}
+
+#[test]
+fn set_default_domain_should_fail_when_not_domain_owner() {
+    ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
+
+        assert_noop!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DUMMY_ACCOUNT),
+                default_domain(),
+            ),
+            Error::<Test>::NotDomainOwner,
+        );
+    });
+}
+
+#[test]
+fn set_default_domain_should_work() {
+    ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
+
+        assert_ok!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DOMAIN_OWNER),
+                default_domain(),
+            ),
+        );
+
+        System::assert_last_event(Event::<Test>::DefaultDomainUpdated {
+            who: DOMAIN_OWNER,
+            domain: default_domain(),
+        }.into());
+    });
+}
+
+#[test]
+fn set_default_domain_should_fail_when_setting_the_same_value() {
+    ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
+
+        assert_ok!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DOMAIN_OWNER),
+                default_domain(),
+            ),
+        );
+
+        assert_noop!(
+            Pallet::<Test>::set_default_domain(
+                Origin::signed(DOMAIN_OWNER),
+                default_domain(),
+            ),
+            Error::<Test>::DefaultDomainNotChanged,
         );
     });
 }
