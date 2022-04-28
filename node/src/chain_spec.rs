@@ -298,7 +298,7 @@ pub fn subsocial_properties() -> Properties {
 	let mut properties = Properties::new();
 
 	properties.insert("ss58Format".into(), 28.into());
-	properties.insert("tokenDecimals".into(), 11.into());
+	properties.insert("tokenDecimals".into(), 10.into());
 	properties.insert("tokenSymbol".into(), "SUB".into());
 
 	properties
