@@ -167,7 +167,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 10,
+	spec_version: 11,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -508,8 +508,8 @@ parameter_types! {
     pub const RegistrationPeriodLimit: BlockNumber = 365 * DAYS;
     pub const MaxOuterValueLength: u32 = 261;
 
-    pub const BaseDomainDeposit: Balance = 1 * UNIT;
-    pub const OuterValueByteDeposit: Balance = 1 * MILLIUNIT;
+    pub const BaseDomainDeposit: Balance = 10 * UNIT;
+    pub const OuterValueByteDeposit: Balance = 10 * MILLIUNIT;
 }
 
 impl pallet_domains::Config for Runtime {
