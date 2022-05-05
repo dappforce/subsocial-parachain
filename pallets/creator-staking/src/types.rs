@@ -2,10 +2,10 @@ use std::collections::BTreeMap;
 use sp_std::ops::Add;
 use frame_support::pallet_prelude::*;
 use sp_std::prelude::*;
-use sp_runtime::{Perbill, traits::CheckedAdd};
+use sp_runtime::{ArithmeticError, Perbill, traits::CheckedAdd};
 use frame_support::sp_std;
-use sp_runtime::traits::Zero;
-use crate::{BalanceOf, Config};
+use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedSub, Zero};
+use crate::{BalanceOf, Config, Error};
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct RewardSplitConfig {
@@ -53,7 +53,7 @@ impl Default for RewardSplitConfig {
 pub(crate) type RoundIndex = u32;
 
 /// The current round index and transition information
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Round<BlockNumber> {
     /// Current round index
     pub current: RoundIndex,
@@ -64,7 +64,7 @@ pub struct Round<BlockNumber> {
 }
 
 impl<
-    B: Copy + Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+    B: Copy + Add<Output=B> + sp_std::ops::Sub<Output=B> + From<u32> + PartialOrd,
 > Default for Round<B>
 {
     fn default() -> Round<B> {
@@ -73,7 +73,7 @@ impl<
 }
 
 impl<
-    B: Copy + Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+    B: Copy + Add<Output=B> + sp_std::ops::Sub<Output=B> + From<u32> + PartialOrd,
 > Round<B>
 {
     pub fn new(current: RoundIndex, first: B, length: u32) -> Round<B> {
@@ -144,7 +144,7 @@ pub struct StakerInfo<T: Config> {
     pub active: BalanceOf<T>,
 
     /// Amount of balance staked for each creator.
-    pub staked_per_creator: BTreeMap<T::AccountId, BalanceOf<T>>,
+    pub stake_per_creator: BTreeMap<T::AccountId, StakeState<T>>,
 
     /// Any balance that's in the process of being unlocked.
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>>, T::MaxUnlockingChunks>,
@@ -161,7 +161,7 @@ impl<T: Config> StakerInfo<T> {
             active: stake,
             unlocking: Default::default(),
             status: StakerStatus::Active,
-            staked_per_creator: Default::default(),
+            stake_per_creator: Default::default(),
         }
     }
 }
@@ -174,4 +174,208 @@ pub struct UnlockChunk<Balance> {
 
     /// Era number at which point it'll be unlocked.
     pub round: RoundIndex,
+}
+
+/// Used to represent how much was staked in a particular era.
+/// E.g. `{staked: 1000, era: 5}` means that in era `5`, staked amount was 1000.
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct RoundBond<Balance: AtLeast32BitUnsigned + Copy> {
+    /// Staked amount in era
+    #[codec(compact)]
+    bond: Balance,
+    /// Staked era
+    #[codec(compact)]
+    round: RoundIndex,
+}
+
+impl<Balance: AtLeast32BitUnsigned + Copy> RoundBond<Balance> {
+    /// Create a new instance of `EraStake` with given values
+    fn new(staked: Balance, era: RoundIndex) -> Self {
+        Self { bond: staked, round: era }
+    }
+}
+
+/// Used to provide a compact and bounded storage for information about stakes in unclaimed eras.
+///
+/// In order to avoid creating a separate storage entry for each `(staker, contract, era)` triplet,
+/// this struct is used to provide a more memory efficient solution.
+///
+/// Basic idea is to store `EraStake` structs into a vector from which a complete
+/// picture of **unclaimed eras** and stakes can be constructed.
+///
+/// # Example
+/// For simplicity, the following example will represent `EraStake` using `<era, stake>` notation.
+/// Let us assume we have the following vector in `StakerInfo` struct.
+///
+/// `[<5, 1000>, <6, 1500>, <8, 2100>, <9, 0>, <11, 500>]`
+///
+/// This tells us which eras are unclaimed and how much it was staked in each era.
+/// The interpretation is the following:
+/// 1. In era **5**, staked amount was **1000** (interpreted from `<5, 1000>`)
+/// 2. In era **6**, staker staked additional **500**, increasing total staked amount to **1500**
+/// 3. No entry for era **7** exists which means there were no changes from the former entry.
+///    This means that in era **7**, staked amount was also **1500**
+/// 4. In era **8**, staker staked an additional **600**, increasing total stake to **2100**
+/// 5. In era **9**, staker unstaked everything from the contract (interpreted from `<9, 0>`)
+/// 6. No changes were made in era **10** so we can interpret this same as the previous entry which means **0** staked amount.
+/// 7. In era **11**, staker staked **500** on the contract, making his stake active again after 2 eras of inactivity.
+///
+/// **NOTE:** It is important to understand that staker **DID NOT** claim any rewards during this period.
+///
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct StakeState<T: Config> {
+    // Size of this list would be limited by a configurable constant
+    stakes: Vec<RoundBond<BalanceOf<T>>>,
+}
+
+impl<T: Config> StakeState<T> {
+    pub(crate) fn default() -> Self {
+        Self { stakes: Default::default() }
+    }
+
+    /// `true` if no active stakes and unclaimed eras exist, `false` otherwise
+    pub(crate) fn is_empty(&self) -> bool {
+        self.stakes.is_empty()
+    }
+
+    /// number of `EraStake` chunks
+    pub(crate) fn len(&self) -> u32 {
+        self.stakes.len() as u32
+    }
+
+    /// Stakes some value in the specified era.
+    ///
+    /// User should ensure that given era is either equal or greater than the
+    /// latest available era in the staking info.
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how internal vector changes when `stake` is called:
+    ///
+    /// `stakes: [<5, 1000>, <7, 1300>]`
+    /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
+    /// * `stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
+    ///
+    pub(crate) fn stake(&mut self, current_era: RoundIndex, value: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError> {
+        let era_stake = match self.stakes.last_mut() {
+            None => {
+                self.stakes.push(RoundBond::new(value, current_era));
+                return Ok(value);
+            }
+            Some(era_stake) => era_stake,
+        };
+
+        ensure!(current_era >= era_stake.round, Error::<T>::RoundNumberOutOfBounds);
+
+        let new_stake_value = era_stake.bond.checked_add(&value)
+            .ok_or(ArithmeticError::Overflow)?;
+
+        if current_era == era_stake.round {
+            *era_stake = RoundBond::new(new_stake_value, current_era)
+        } else {
+            self.stakes.push(RoundBond::new(new_stake_value, current_era))
+        }
+
+        Ok(new_stake_value)
+    }
+
+    /// Unstakes some value in the specified era.
+    ///
+    /// User should ensure that given era is either equal or greater than the
+    /// latest available era in the staking info.
+    ///
+    /// # Example 1
+    ///
+    /// `stakes: [<5, 1000>, <7, 1300>]`
+    /// * `unstake(7, 100)` will result in `[<5, 1000>, <7, 1200>]`
+    /// * `unstake(9, 400)` will result in `[<5, 1000>, <7, 1200>, <9, 800>]`
+    /// * `unstake(10, 800)` will result in `[<5, 1000>, <7, 1200>, <9, 800>, <10, 0>]`
+    ///
+    /// # Example 2
+    ///
+    /// `stakes: [<5, 1000>]`
+    /// * `unstake(5, 1000)` will result in `[]`
+    ///
+    /// Note that if no unclaimed eras remain, vector will be cleared.
+    ///
+    pub(crate) fn unstake(&mut self, current_era: RoundIndex, value: BalanceOf<T>) -> DispatchResult {
+        let era_stake = match self.stakes.last_mut() {
+            None => return Ok(()),
+            Some(era_stake) => era_stake,
+        };
+
+        ensure!(current_era >= era_stake.round, Error::<T>::RoundNumberOutOfBounds);
+
+        let new_stake_value = era_stake.bond.checked_sub(&value)
+            .ok_or(ArithmeticError::Underflow)?;
+
+        if current_era == era_stake.round {
+            *era_stake = RoundBond::new(new_stake_value, current_era)
+        } else {
+            self.stakes.push(RoundBond::new(new_stake_value, current_era))
+        }
+
+        // Removes unstaked values if they're no longer valid for comprehension
+        if !self.stakes.is_empty() && self.stakes[0].bond.is_zero() {
+            self.stakes.remove(0);
+        }
+
+        Ok(())
+    }
+
+    /// `Claims` the oldest era available for claiming.
+    /// In case valid era exists, returns `(claim era, staked amount)` tuple.
+    /// If no valid era exists, returns `(0, 0)` tuple.
+    ///
+    /// # Example
+    ///
+    /// The following example will demonstrate how the internal vec changes when `claim` is called consecutively.
+    ///
+    /// `stakes: [<5, 1000>, <7, 1300>, <8, 0>, <15, 3000>]`
+    ///
+    /// 1. `claim()` will return `(5, 1000)`
+    ///     Internal vector is modified to `[<6, 1000>, <7, 1300>, <8, 0>, <15, 3000>]`
+    ///
+    /// 2. `claim()` will return `(6, 1000)`.
+    ///    Internal vector is modified to `[<7, 1300>, <8, 0>, <15, 3000>]`
+    ///
+    /// 3. `claim()` will return `(7, 1300)`.
+    ///    Internal vector is modified to `[<15, 3000>]`
+    ///    Note that `0` staked period is discarded since nothing can be claimed there.
+    ///
+    /// 4. `claim()` will return `(15, 3000)`.
+    ///    Internal vector is modified to `[16, 3000]`
+    ///
+    /// Repeated calls would continue to modify vector following the same rule as in *4.*
+    ///
+    pub(crate) fn claim(&mut self) -> Option<RoundBond<BalanceOf<T>>> {
+        let era_stake = match self.stakes.first() {
+            None => return None,
+            Some(era_stake) => era_stake,
+        };
+        let era_stake = *era_stake;
+
+        if self.stakes.len() == 1 || self.stakes[1].round > era_stake.round + 1 {
+            self.stakes[0] = RoundBond {
+                bond: era_stake.bond,
+                round: era_stake.round.saturating_add(1),
+            }
+        } else {
+            // in case: self.stakes[1].era == era_stake.era + 1
+            self.stakes.remove(0);
+        }
+
+        // Removes unstaked values if they're no longer valid for comprehension
+        if !self.stakes.is_empty() && self.stakes[0].bond.is_zero() {
+            self.stakes.remove(0);
+        }
+
+        return Some(era_stake);
+    }
+
+    /// Latest staked value.
+    pub(crate) fn latest_staked_value(&self) -> Option<BalanceOf<T>> {
+        self.stakes.last().map(|x| x.bond)
+    }
 }

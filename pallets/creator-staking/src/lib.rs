@@ -25,8 +25,9 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_runtime::ArithmeticError;
     use sp_runtime::traits::{CheckedAdd, CheckedSub, One, Zero};
+    use sp_std::prelude::*;
     use crate::BalanceOf;
-    use crate::types::{CreatorInfo, RewardSplitConfig, Round, RoundIndex, StakerInfo};
+    use crate::types::{CreatorInfo, RewardSplitConfig, Round, RoundIndex, StakerInfo, StakeState};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -96,13 +97,12 @@ pub mod pallet {
 
     /// Total capital locked by this pallet.
     #[pallet::storage]
-    pub(crate) type Total<T: Config> = StorageValue<
+    pub(crate) type TotalStaked<T: Config> = StorageValue<
         _,
         BalanceOf<T>,
         ValueQuery,
     >;
 
-    /// Total capital locked by this pallet.
     #[pallet::storage]
     pub(crate) type StakedPerRound<T: Config> = StorageMap<
         _,
@@ -117,6 +117,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
+        NewRound {
+            starting_block: T::BlockNumber,
+            round: RoundIndex,
+        },
         CreatorRegistered {
             creator: T::AccountId,
         },
@@ -137,12 +141,43 @@ pub mod pallet {
         NotEnoughStake,
         InsufficientBalance,
         UnstakingWithNoValue,
+        RoundNumberOutOfBounds,
     }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-            todo!()
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+            let mut weight = todo!();
+
+            let mut round = <CurrentRound<T>>::get();
+            if round.should_update(n) {
+                // mutate round
+                round.update(n);
+                // notify that new round begin
+                /////// weight = weight.saturating_add(T::OnNewRound::on_new_round(round.current));
+                // pay all stakers for T::RewardPaymentDelay rounds ago
+                /////// Self::prepare_staking_payouts(round.current);
+                // select top collator candidates for next round
+
+                // let (collator_count, delegation_count, total_staked) =   ????
+                //     Self::select_top_candidates(round.current);
+
+                // start next round
+                <CurrentRound<T>>::put(round);
+                // snapshot total stake
+                <StakedPerRound<T>>::insert(round.current, <TotalStaked<T>>::get());
+                Self::deposit_event(Event::NewRound {
+                    starting_block: round.first,
+                    round: round.current,
+                });
+                // weight = weight.saturating_add(T::WeightInfo::round_transition_on_initialize(
+                //     collator_count,
+                //     delegation_count,
+                // ));
+            }
+
+
+            weight
         }
     }
 
@@ -203,7 +238,7 @@ pub mod pallet {
 
             Self::stake_for_creator(&mut staker_info, &mut creator_info, value)?;
 
-            <Total<T>>::mutate(|total_stake| *total_stake += value);
+            <TotalStaked<T>>::mutate(|total_stake| *total_stake += value);
             <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
@@ -227,7 +262,7 @@ pub mod pallet {
 
             Self::unstake_form_creator(&mut staker_info, &mut creator_info, value)?;
 
-            <Total<T>>::mutate(|total_stake| *total_stake -= value);
+            <TotalStaked<T>>::mutate(|total_stake| *total_stake -= value);
             <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
@@ -249,7 +284,7 @@ pub mod pallet {
 
             let prev_stake = Self::unstake_all_form_creator(&mut staker_info, &mut creator_info)?;
 
-            <Total<T>>::mutate(|total_stake| *total_stake -= prev_stake);
+            <TotalStaked<T>>::mutate(|total_stake| *total_stake -= prev_stake);
             <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
@@ -267,21 +302,25 @@ pub mod pallet {
             creator_info: &mut CreatorInfo<T>,
             stake: BalanceOf<T>,
         ) -> Result<(), DispatchError> {
+            let current_round = CurrentRound::<T>::get().current;
+
             staker_info.total = staker_info.total.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
             staker_info.active = staker_info.active.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
 
             let creator = &creator_info.id;
 
-            let total_stake = match staker_info.staked_per_creator.get(creator) {
-                Some(stake) => stake.checked_add(&stake).ok_or(ArithmeticError::Overflow)?,
+            let mut stake_state = match staker_info.stake_per_creator.get(creator) {
+                Some(stake_state) => stake_state.clone(),
                 None => {
                     creator_info.stakers_count.checked_add(One::one()).ok_or(ArithmeticError::Overflow)?;
-                    stake
+                    StakeState::<T>::default()
                 },
             };
 
+            stake_state.stake(current_round, stake)?;
+            staker_info.stake_per_creator.insert(creator.clone(), stake_state);
+
             creator_info.staked_amount = creator_info.staked_amount.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
-            staker_info.staked_per_creator.insert(creator.clone(), total_stake);
 
             Ok(())
         }
@@ -291,14 +330,21 @@ pub mod pallet {
             creator_info: &mut CreatorInfo<T>,
             stake: BalanceOf<T>,
         ) -> Result<(), DispatchError> {
+            let current_round = CurrentRound::<T>::get().current;
+
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
 
             let creator = &creator_info.id;
 
-            let current_stake = staker_info.staked_per_creator.get(creator).ok_or(Error::<T>::NotStakedForCreator)?;
-            if stake > *current_stake {
-                return Err(Error::<T>::RemainingStakeTooLow.into());
+            let mut staking_state = staker_info.stake_per_creator.get(creator)
+                .ok_or(Error::<T>::NotStakedForCreator)?
+                .clone();
+            let current_stake = staking_state.latest_staked_value()
+                .ok_or(Error::<T>::NotStakedForCreator)?;
+
+            if stake > current_stake {
+                return Err(ArithmeticError::Underflow.into());
             }
 
             let remaining_stake = current_stake.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
@@ -306,8 +352,10 @@ pub mod pallet {
                 return Err(Error::<T>::RemainingStakeTooLow.into());
             }
 
+            staking_state.unstake(current_round, stake)?;
+
             creator_info.staked_amount = creator_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
-            staker_info.staked_per_creator.insert(creator.clone(), remaining_stake);
+            staker_info.stake_per_creator.insert(creator.clone(), staking_state);
 
             Ok(().into())
         }
@@ -316,17 +364,25 @@ pub mod pallet {
             staker_info: &mut StakerInfo<T>,
             creator_info: &mut CreatorInfo<T>,
         ) -> Result<BalanceOf<T>, DispatchError> {
+            let current_round = CurrentRound::<T>::get().current;
+
             let creator = &creator_info.id;
 
-            let stake = staker_info.staked_per_creator.get(creator)
-                .ok_or(Error::<T>::NotStakedForCreator)?.clone();
+            let mut stake_state = staker_info.stake_per_creator.get(creator)
+                .ok_or(Error::<T>::NotStakedForCreator)?
+                .clone();
+
+            let stake = stake_state.latest_staked_value()
+                .ok_or(Error::<T>::NotStakedForCreator)?;
 
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
 
             creator_info.staked_amount = creator_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             creator_info.stakers_count.checked_sub(One::one()).ok_or(ArithmeticError::Underflow)?;
-            staker_info.staked_per_creator.remove(creator);
+
+            stake_state.unstake(current_round, stake);
+            staker_info.stake_per_creator.insert(creator.clone(), stake_state);
 
             Ok(stake)
         }
