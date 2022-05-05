@@ -1,13 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-///! # Influencer staking module.
-///! This module contains the functionality for the influencer staking.
+///! # Creator staking module.
+///! This module contains the functionality for the creator staking.
 ///!
 ///! ## Overview
-///! The influencer staking module is a simple staking system that allows users to stake tokens for
-///! a given user (influencer). The staking system is designed to be used by influencers to incentivize
-///! their social contributes. Rewards from staking inflation is splitterd between the stakers and the
-///! influencer.
+///! The creator staking module is a simple staking system that allows users to stake tokens for
+///! a given user (creator). The staking system is designed to be used by creators to incentivize
+///! their social contributes. Rewards from staking inflation is splitted between the stakers and the
+///! creator.
 
 
 pub mod types;
@@ -26,7 +26,7 @@ pub mod pallet {
     use sp_runtime::ArithmeticError;
     use sp_runtime::traits::{CheckedAdd, CheckedSub, One, Zero};
     use crate::BalanceOf;
-    use crate::types::{InfluencerInfo, RewardSplitConfig, Round, RoundIndex, StakerInfo};
+    use crate::types::{CreatorInfo, RewardSplitConfig, Round, RoundIndex, StakerInfo};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -40,7 +40,7 @@ pub mod pallet {
         type MaxUnlockingChunks: Get<u32>;
 
         #[pallet::constant]
-        type InfluenceRegistrationDeposit: Get<BalanceOf<Self>>;
+        type CreatorRegistrationDeposit: Get<BalanceOf<Self>>;
 
         #[pallet::constant]
         type MinStake: Get<BalanceOf<Self>>;
@@ -66,11 +66,11 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    pub type Influencers<T: Config> = StorageMap<
+    pub type Creators<T: Config> = StorageMap<
         _,
         Twox64Concat,
         T::AccountId,
-        InfluencerInfo<T>,
+        CreatorInfo<T>,
         OptionQuery,
     >;
 
@@ -84,10 +84,10 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    pub type StakedPerInfluencerPerStaker<T: Config> = StorageDoubleMap<
+    pub type StakedPerCreatorPerStaker<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        T::AccountId, // influencer
+        T::AccountId, // creator
         Twox64Concat,
         T::AccountId, // staker
         BalanceOf<T>,
@@ -117,11 +117,11 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        InfluencerRegistered {
-            influencer: T::AccountId,
+        CreatorRegistered {
+            creator: T::AccountId,
         },
-        InfluencerUnregistered {
-            influencer: T::AccountId,
+        CreatorUnregistered {
+            creator: T::AccountId,
         },
     }
 
@@ -129,9 +129,9 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         StakerDNE,
-        InfluencerDNE,
-        InfluencerAlreadyRegistered,
-        NotStakedForInfluencer,
+        CreatorDNE,
+        CreatorAlreadyRegistered,
+        NotStakedForCreator,
         StakeTooLow,
         RemainingStakeTooLow,
         NotEnoughStake,
@@ -149,35 +149,35 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000)]
-        pub fn register_influencer(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            let influencer = ensure_signed(origin)?;
-            ensure!(!Self::is_influencer(&influencer), Error::<T>::InfluencerAlreadyRegistered);
+        pub fn register_creator(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let creator = ensure_signed(origin)?;
+            ensure!(!Self::is_creator(&creator), Error::<T>::CreatorAlreadyRegistered);
 
-            let deposit = T::InfluenceRegistrationDeposit::get();
-            T::Currency::reserve(&influencer, deposit)?;
+            let deposit = T::CreatorRegistrationDeposit::get();
+            T::Currency::reserve(&creator, deposit)?;
 
-            <Influencers<T>>::insert(
-                &influencer,
-                InfluencerInfo::from_account(influencer.clone(), deposit),
+            <Creators<T>>::insert(
+                &creator,
+                CreatorInfo::from_account(creator.clone(), deposit),
             );
 
-            Self::deposit_event(Event::InfluencerRegistered { influencer });
+            Self::deposit_event(Event::CreatorRegistered { creator });
 
             Ok(().into())
         }
 
         #[pallet::weight(10_000)]
-        pub fn unregister_influencer(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            let influencer = ensure_signed(origin)?;
+        pub fn unregister_creator(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let creator = ensure_signed(origin)?;
 
-            let influencer_info = <Influencers<T>>::get(&influencer)
-                .ok_or(Error::<T>::InfluencerDNE)?;
+            let creator_info = <Creators<T>>::get(&creator)
+                .ok_or(Error::<T>::CreatorDNE)?;
 
-            T::Currency::unreserve(&influencer, influencer_info.deposit);
+            T::Currency::unreserve(&creator, creator_info.deposit);
 
-            <Influencers<T>>::remove(&influencer);
+            <Creators<T>>::remove(&creator);
 
-            Self::deposit_event(Event::InfluencerUnregistered { influencer });
+            Self::deposit_event(Event::CreatorUnregistered { creator });
 
             Ok(().into())
         }
@@ -185,7 +185,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn stake(
             origin: OriginFor<T>,
-            influencer: T::AccountId,
+            creator: T::AccountId,
             value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -195,16 +195,16 @@ pub mod pallet {
 				Error::<T>::InsufficientBalance
 			);
 
-            let mut influencer_info = <Influencers<T>>::get(&influencer)
-                .ok_or(Error::<T>::InfluencerDNE)?;
+            let mut creator_info = <Creators<T>>::get(&creator)
+                .ok_or(Error::<T>::CreatorDNE)?;
 
             let mut staker_info = <Stakers<T>>::get(&staker)
                 .unwrap_or_else(|| StakerInfo::<T>::from_account(staker.clone(), Zero::zero()));
 
-            Self::stake_for_influencer(&mut staker_info, &mut influencer_info, value)?;
+            Self::stake_for_creator(&mut staker_info, &mut creator_info, value)?;
 
             <Total<T>>::mutate(|total_stake| *total_stake += value);
-            <Influencers<T>>::insert(&influencer, influencer_info);
+            <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
             Ok(().into())
@@ -213,7 +213,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn unstake(
             origin: OriginFor<T>,
-            influencer: T::AccountId,
+            creator: T::AccountId,
             value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -222,13 +222,13 @@ pub mod pallet {
             let mut staker_info = <Stakers<T>>::get(&staker)
                 .ok_or(Error::<T>::StakerDNE)?;
 
-            let mut influencer_info = <Influencers<T>>::get(&influencer)
-                .ok_or(Error::<T>::InfluencerDNE)?;
+            let mut creator_info = <Creators<T>>::get(&creator)
+                .ok_or(Error::<T>::CreatorDNE)?;
 
-            Self::unstake_form_influencer(&mut staker_info, &mut influencer_info, value)?;
+            Self::unstake_form_creator(&mut staker_info, &mut creator_info, value)?;
 
             <Total<T>>::mutate(|total_stake| *total_stake -= value);
-            <Influencers<T>>::insert(&influencer, influencer_info);
+            <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
             Ok(().into())
@@ -237,20 +237,20 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn unstake_all(
             origin: OriginFor<T>,
-            influencer: T::AccountId,
+            creator: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
 
             let mut staker_info = <Stakers<T>>::get(&staker)
                 .ok_or(Error::<T>::StakerDNE)?;
 
-            let mut influencer_info = <Influencers<T>>::get(&influencer)
-                .ok_or(Error::<T>::InfluencerDNE)?;
+            let mut creator_info = <Creators<T>>::get(&creator)
+                .ok_or(Error::<T>::CreatorDNE)?;
 
-            let prev_stake = Self::unstake_all_form_influencer(&mut staker_info, &mut influencer_info)?;
+            let prev_stake = Self::unstake_all_form_creator(&mut staker_info, &mut creator_info)?;
 
             <Total<T>>::mutate(|total_stake| *total_stake -= prev_stake);
-            <Influencers<T>>::insert(&influencer, influencer_info);
+            <Creators<T>>::insert(&creator, creator_info);
             <Stakers<T>>::insert(&staker, staker_info);
 
             Ok(().into())
@@ -258,45 +258,45 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn is_influencer(who: &T::AccountId) -> bool {
-            <Influencers<T>>::contains_key(who)
+        fn is_creator(who: &T::AccountId) -> bool {
+            <Creators<T>>::contains_key(who)
         }
 
-        fn stake_for_influencer(
+        fn stake_for_creator(
             staker_info: &mut StakerInfo<T>,
-            influencer_info: &mut InfluencerInfo<T>,
+            creator_info: &mut CreatorInfo<T>,
             stake: BalanceOf<T>,
         ) -> Result<(), DispatchError> {
             staker_info.total = staker_info.total.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
             staker_info.active = staker_info.active.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
 
-            let influencer = &influencer_info.id;
+            let creator = &creator_info.id;
 
-            let total_stake = match staker_info.staked_per_influencer.get(influencer) {
+            let total_stake = match staker_info.staked_per_creator.get(creator) {
                 Some(stake) => stake.checked_add(&stake).ok_or(ArithmeticError::Overflow)?,
                 None => {
-                    influencer_info.stakers_count.checked_add(One::one()).ok_or(ArithmeticError::Overflow)?;
+                    creator_info.stakers_count.checked_add(One::one()).ok_or(ArithmeticError::Overflow)?;
                     stake
                 },
             };
 
-            influencer_info.staked_amount = influencer_info.staked_amount.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
-            staker_info.staked_per_influencer.insert(influencer.clone(), total_stake);
+            creator_info.staked_amount = creator_info.staked_amount.checked_add(&stake).ok_or(ArithmeticError::Overflow)?;
+            staker_info.staked_per_creator.insert(creator.clone(), total_stake);
 
             Ok(())
         }
 
-        fn unstake_form_influencer(
+        fn unstake_form_creator(
             staker_info: &mut StakerInfo<T>,
-            influencer_info: &mut InfluencerInfo<T>,
+            creator_info: &mut CreatorInfo<T>,
             stake: BalanceOf<T>,
         ) -> Result<(), DispatchError> {
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
 
-            let influencer = &influencer_info.id;
+            let creator = &creator_info.id;
 
-            let current_stake = staker_info.staked_per_influencer.get(influencer).ok_or(Error::<T>::NotStakedForInfluencer)?;
+            let current_stake = staker_info.staked_per_creator.get(creator).ok_or(Error::<T>::NotStakedForCreator)?;
             if stake > *current_stake {
                 return Err(Error::<T>::RemainingStakeTooLow.into());
             }
@@ -306,27 +306,27 @@ pub mod pallet {
                 return Err(Error::<T>::RemainingStakeTooLow.into());
             }
 
-            influencer_info.staked_amount = influencer_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
-            staker_info.staked_per_influencer.insert(influencer.clone(), remaining_stake);
+            creator_info.staked_amount = creator_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
+            staker_info.staked_per_creator.insert(creator.clone(), remaining_stake);
 
             Ok(().into())
         }
 
-        fn unstake_all_form_influencer(
+        fn unstake_all_form_creator(
             staker_info: &mut StakerInfo<T>,
-            influencer_info: &mut InfluencerInfo<T>,
+            creator_info: &mut CreatorInfo<T>,
         ) -> Result<BalanceOf<T>, DispatchError> {
-            let influencer = &influencer_info.id;
+            let creator = &creator_info.id;
 
-            let stake = staker_info.staked_per_influencer.get(influencer)
-                .ok_or(Error::<T>::NotStakedForInfluencer)?.clone();
+            let stake = staker_info.staked_per_creator.get(creator)
+                .ok_or(Error::<T>::NotStakedForCreator)?.clone();
 
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
 
-            influencer_info.staked_amount = influencer_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
-            influencer_info.stakers_count.checked_sub(One::one()).ok_or(ArithmeticError::Underflow)?;
-            staker_info.staked_per_influencer.remove(influencer);
+            creator_info.staked_amount = creator_info.staked_amount.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
+            creator_info.stakers_count.checked_sub(One::one()).ok_or(ArithmeticError::Underflow)?;
+            staker_info.staked_per_creator.remove(creator);
 
             Ok(stake)
         }

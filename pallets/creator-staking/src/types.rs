@@ -9,13 +9,13 @@ use crate::{BalanceOf, Config};
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct RewardSplitConfig {
-    pub influencer_percentage: Perbill,
+    pub creator_percentage: Perbill,
     pub stakers_percentage: Perbill,
 }
 
 impl RewardSplitConfig {
-    pub fn new(influencer_percentage: Perbill, stakers_percentage: Perbill) -> Option<Self> {
-        let config = RewardSplitConfig::new_unchecked(influencer_percentage, stakers_percentage);
+    pub fn new(creator_percentage: Perbill, stakers_percentage: Perbill) -> Option<Self> {
+        let config = RewardSplitConfig::new_unchecked(creator_percentage, stakers_percentage);
         if config.is_valid() {
             Some(config)
         } else {
@@ -23,15 +23,15 @@ impl RewardSplitConfig {
         }
     }
 
-    pub fn new_unchecked(influencer_percentage: Perbill, stakers_percentage: Perbill) -> Self {
+    pub fn new_unchecked(creator_percentage: Perbill, stakers_percentage: Perbill) -> Self {
         Self {
-            influencer_percentage,
+            creator_percentage,
             stakers_percentage,
         }
     }
 
     pub fn is_valid(&self) -> bool {
-        match self.influencer_percentage.checked_add(&self.stakers_percentage) {
+        match self.creator_percentage.checked_add(&self.stakers_percentage) {
             None => false,
             Some(x) if x != Perbill::one() => false,
             _ => true,
@@ -42,7 +42,7 @@ impl RewardSplitConfig {
 impl Default for RewardSplitConfig {
     fn default() -> Self {
         Self {
-            influencer_percentage: Perbill::from_percent(50),
+            creator_percentage: Perbill::from_percent(50),
             stakers_percentage: Perbill::from_percent(50),
         }
     }
@@ -97,21 +97,21 @@ impl<
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct InfluencerInfo<T: Config> {
+pub struct CreatorInfo<T: Config> {
     /// Staker account
     pub id: T::AccountId,
 
     /// The deposit used for registration.
     pub deposit: BalanceOf<T>,
 
-    /// The total number of stakers to this influencer.
+    /// The total number of stakers to this creator.
     pub stakers_count: u32,
 
-    /// The total amount of tokens staked to this influencer.
+    /// The total amount of tokens staked to this creator.
     pub staked_amount: BalanceOf<T>,
 }
 
-impl<T: Config> InfluencerInfo<T> {
+impl<T: Config> CreatorInfo<T> {
     pub fn from_account(account: T::AccountId, deposit: BalanceOf<T>) -> Self {
         Self {
             id: account,
@@ -143,8 +143,8 @@ pub struct StakerInfo<T: Config> {
     /// The total amount of balance that will be in stake in the next rounds.
     pub active: BalanceOf<T>,
 
-    /// Amount of balance staked for each influencer.
-    pub staked_per_influencer: BTreeMap<T::AccountId, BalanceOf<T>>,
+    /// Amount of balance staked for each creator.
+    pub staked_per_creator: BTreeMap<T::AccountId, BalanceOf<T>>,
 
     /// Any balance that's in the process of being unlocked.
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>>, T::MaxUnlockingChunks>,
@@ -161,7 +161,7 @@ impl<T: Config> StakerInfo<T> {
             active: stake,
             unlocking: Default::default(),
             status: StakerStatus::Active,
-            staked_per_influencer: Default::default(),
+            staked_per_creator: Default::default(),
         }
     }
 }

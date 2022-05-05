@@ -1,5 +1,5 @@
 [package]
-name = 'pallet-influencer-staking'
+name = 'pallet-creator-staking'
 version = '0.7.2'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2018'
