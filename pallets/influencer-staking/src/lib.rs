@@ -21,7 +21,6 @@ pub(crate) type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-    use frame_support::metadata::StorageEntryModifier::Default;
     use frame_support::traits::ReservableCurrency;
     use frame_system::pallet_prelude::*;
     use sp_runtime::ArithmeticError;
@@ -319,7 +318,8 @@ pub mod pallet {
         ) -> Result<BalanceOf<T>, DispatchError> {
             let influencer = &influencer_info.id;
 
-            let stake = staker_info.staked_per_influencer.get(influencer).ok_or(Error::<T>::NotStakedForInfluencer)?;
+            let stake = staker_info.staked_per_influencer.get(influencer)
+                .ok_or(Error::<T>::NotStakedForInfluencer)?.clone();
 
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;

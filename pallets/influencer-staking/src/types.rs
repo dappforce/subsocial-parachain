@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use sp_std::ops::Add;
 use frame_support::pallet_prelude::*;
 use sp_std::prelude::*;
-use sp_runtime::{ArithmeticError, Perbill, traits::CheckedAdd};
+use sp_runtime::{Perbill, traits::CheckedAdd};
 use frame_support::sp_std;
 use sp_runtime::traits::Zero;
 use crate::{BalanceOf, Config};
