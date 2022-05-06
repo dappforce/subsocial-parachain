@@ -133,7 +133,7 @@ pub enum StakerStatus {
 
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct StakerInfo<T: Config> {
+pub(crate) struct StakerInfo<T: Config> {
     /// Staker account
     pub id: T::AccountId,
 
@@ -224,7 +224,7 @@ impl<Balance: AtLeast32BitUnsigned + Copy> RoundBond<Balance> {
 ///
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct StakeState<T: Config> {
+pub(crate) struct StakeState<T: Config> {
     // Size of this list would be limited by a configurable constant
     stakes: Vec<RoundBond<BalanceOf<T>>>,
 }
@@ -232,6 +232,12 @@ pub struct StakeState<T: Config> {
 impl<T: Config> StakeState<T> {
     pub(crate) fn default() -> Self {
         Self { stakes: Default::default() }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new(mut stakes: Vec<RoundBond<BalanceOf<T>>>) -> Self {
+        stakes.sort_by(|a, b| a.round.cmp(&b.round));
+        Self { stakes }
     }
 
     /// `true` if no active stakes and unclaimed eras exist, `false` otherwise
@@ -375,7 +381,87 @@ impl<T: Config> StakeState<T> {
     }
 
     /// Latest staked value.
-    pub(crate) fn latest_staked_value(&self) -> Option<BalanceOf<T>> {
-        self.stakes.last().map(|x| x.bond)
+    pub(crate) fn latest_staked_value(&self) -> BalanceOf<T> {
+        self.stakes.last()
+            .map_or(Zero::zero(), |x| x.bond)
+    }
+}
+
+#[cfg(test)]
+mod staking_state_tests {
+    use super::*;
+    use crate::mock::*;
+    use rstest::rstest;
+
+    type SimpleRoundBond = (RoundIndex, BalanceOf<Test>);
+
+    impl From<SimpleRoundBond> for RoundBond<BalanceOf<Test>> {
+        fn from(x: SimpleRoundBond) -> Self {
+            RoundBond {
+                round: x.0,
+                bond: x.1,
+            }
+        }
+    }
+
+    fn option_from_round_bond(rb: RoundBond<BalanceOf<Test>>) -> Option<RoundBond<BalanceOf<Test>>> {
+        if rb.bond.is_zero() || rb.round.is_zero() {
+            return None
+        }
+
+        Some(rb)
+    }
+
+
+    fn create_round_bond_vec(vec: Vec<SimpleRoundBond>) -> Vec<RoundBond<BalanceOf<Test>>> {
+        vec.into_iter()
+            .map(|(round, bond)| RoundBond { round, bond })
+            .collect()
+    }
+
+    #[rstest]
+    #[case(
+        vec![(5, 1000), (7, 1300), (8, 0), (15, 3000)],
+        vec![
+            ((5,1000), vec![(6, 1000), (7, 1300), (8, 0), (15, 3000)]),
+            ((6,1000), vec![(7, 1300), (8, 0), (15, 3000)]),
+            ((7,1300), vec![(15, 3000)]),
+            ((15,3000), vec![(16, 3000)]),
+        ],
+    )]
+    #[case(
+        vec![(34, 1000), (36, 500), (40, 0), (150, 3000), (155, 0)],
+        vec![
+            ((34,1000), vec![(35, 1000), (36, 500), (40, 0), (150, 3000), (155, 0)]),
+            ((35, 1000), vec![(36, 500), (40, 0), (150, 3000), (155, 0)]),
+            ((36, 500), vec![(37, 500), (40, 0), (150, 3000), (155, 0)]),
+            ((37, 500), vec![(38, 500), (40, 0), (150, 3000), (155, 0)]),
+            ((38, 500), vec![(39, 500), (40, 0), (150, 3000), (155, 0)]),
+            ((39, 500), vec![(150, 3000), (155, 0)]),
+            ((150, 3000), vec![(151, 3000), (155, 0)]),
+            ((151, 3000), vec![(152, 3000), (155, 0)]),
+            ((152, 3000), vec![(153, 3000), (155, 0)]),
+            ((153, 3000), vec![(154, 3000), (155, 0)]),
+            ((154, 3000), vec![]),
+            ((0,0), vec![]),
+            ((0,0), vec![]),
+            ((0,0), vec![]),
+        ],
+    )]
+    fn claim_test(
+        #[case] initial_state: Vec<SimpleRoundBond>,
+        #[case] action_result_state: Vec<(SimpleRoundBond, Vec<SimpleRoundBond>)>,
+    ) {
+        let stakes = create_round_bond_vec(initial_state);
+
+        let mut s = StakeState::<Test>::new(stakes);
+
+        for (i, (expected_result, expected_state)) in action_result_state.into_iter().enumerate() {
+            let expected_state = create_round_bond_vec(expected_state);
+            let expected_result = option_from_round_bond(expected_result.into());
+            let result = s.claim();
+            assert_eq!(result, expected_result, "expected_result is wrong in action {}", i);
+            assert_eq!(s.stakes, expected_state, "expected_state is wrong in action {}", i);
+        }
     }
 }

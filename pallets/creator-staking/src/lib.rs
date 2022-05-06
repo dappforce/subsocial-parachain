@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate core;
+
 ///! # Creator staking module.
 ///! This module contains the functionality for the creator staking.
 ///!
@@ -11,6 +13,9 @@
 
 
 pub mod types;
+
+#[cfg(test)]
+mod mock;
 
 use frame_support::traits::Currency;
 pub use pallet::*;
@@ -76,7 +81,7 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    pub type Stakers<T: Config> = StorageMap<
+    pub(crate) type Stakers<T: Config> = StorageMap<
         _,
         Twox64Concat,
         T::AccountId,
@@ -340,8 +345,9 @@ pub mod pallet {
             let mut staking_state = staker_info.stake_per_creator.get(creator)
                 .ok_or(Error::<T>::NotStakedForCreator)?
                 .clone();
-            let current_stake = staking_state.latest_staked_value()
-                .ok_or(Error::<T>::NotStakedForCreator)?;
+            let current_stake = staking_state.latest_staked_value();
+
+            ensure!(!current_stake.is_zero(), Error::<T>::NotStakedForCreator);
 
             if stake > current_stake {
                 return Err(ArithmeticError::Underflow.into());
@@ -372,8 +378,9 @@ pub mod pallet {
                 .ok_or(Error::<T>::NotStakedForCreator)?
                 .clone();
 
-            let stake = stake_state.latest_staked_value()
-                .ok_or(Error::<T>::NotStakedForCreator)?;
+            let stake = stake_state.latest_staked_value();
+
+            ensure!(!stake.is_zero(), Error::<T>::NotStakedForCreator);
 
             staker_info.total = staker_info.total.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;
             staker_info.active = staker_info.active.checked_sub(&stake).ok_or(ArithmeticError::Underflow)?;

@@ -24,10 +24,14 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate', default-features
 sp-std = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = 'polkadot-v0.9.18' }
 
 [dev-dependencies]
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
+
 serde = { version = '1.0.132' }
 sp-core = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = 'polkadot-v0.9.18' }
 sp-runtime = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = 'polkadot-v0.9.18' }
 sp-io = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = 'polkadot-v0.9.18' }
+rstest = "0.12.0"
 
 [features]
 default = ['std']
@@ -38,5 +42,7 @@ std = [
 	'frame-support/std',
 	'frame-system/std',
 	'frame-benchmarking/std',
+	"pallet-balances/std",
+	"pallet-timestamp/std",
 ]
 try-runtime = [ 'frame-support/try-runtime' ]
