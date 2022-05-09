@@ -8,14 +8,14 @@ use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedSub, Zero};
 use crate::{BalanceOf, Config, Error};
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct RewardSplitConfig {
-    pub creator_percentage: Perbill,
+pub struct RewardConfigInfo {
+    pub creators_percentage: Perbill,
     pub stakers_percentage: Perbill,
 }
 
-impl RewardSplitConfig {
+impl RewardConfigInfo {
     pub fn new(creator_percentage: Perbill, stakers_percentage: Perbill) -> Option<Self> {
-        let config = RewardSplitConfig::new_unchecked(creator_percentage, stakers_percentage);
+        let config = RewardConfigInfo::new_unchecked(creator_percentage, stakers_percentage);
         if config.is_valid() {
             Some(config)
         } else {
@@ -25,13 +25,13 @@ impl RewardSplitConfig {
 
     pub fn new_unchecked(creator_percentage: Perbill, stakers_percentage: Perbill) -> Self {
         Self {
-            creator_percentage,
+            creators_percentage: creator_percentage,
             stakers_percentage,
         }
     }
 
     pub fn is_valid(&self) -> bool {
-        match self.creator_percentage.checked_add(&self.stakers_percentage) {
+        match self.creators_percentage.checked_add(&self.stakers_percentage) {
             None => false,
             Some(x) if x != Perbill::one() => false,
             _ => true,
@@ -39,10 +39,10 @@ impl RewardSplitConfig {
     }
 }
 
-impl Default for RewardSplitConfig {
+impl Default for RewardConfigInfo {
     fn default() -> Self {
         Self {
-            creator_percentage: Perbill::from_percent(50),
+            creators_percentage: Perbill::from_percent(50),
             stakers_percentage: Perbill::from_percent(50),
         }
     }
@@ -56,7 +56,7 @@ pub(crate) type RoundIndex = u32;
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Round<BlockNumber> {
     /// Current round index
-    pub current: RoundIndex,
+    pub index: RoundIndex,
     /// The first block of the current round
     pub first: BlockNumber,
     /// The length of the current round in number of blocks
@@ -78,7 +78,7 @@ impl<
 {
     pub fn new(current: RoundIndex, first: B, length: u32) -> Round<B> {
         Round {
-            current,
+            index: current,
             first,
             length,
         }
@@ -89,11 +89,30 @@ impl<
     }
     /// New round
     pub fn update(&mut self, now: B) {
-        self.current = self.current.saturating_add(1u32);
+        self.index = self.index.saturating_add(1u32);
         self.first = now;
     }
 }
 
+/// A record of rewards allocated for stakers and creators
+#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct RewardInfo<Balance> {
+    /// Total amount of rewards for stakers in a round
+    pub stakers: Balance,
+    /// Total amount of rewards for creators in a round
+    pub creators: Balance,
+}
+
+/// A record for total rewards and total amount staked for a round
+#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct RoundInfo<Balance> {
+    /// Total amount of earned rewards for a round
+    pub rewards: RewardInfo<Balance>,
+    /// Total staked amount in a round
+    pub staked: Balance,
+    /// Total locked amount in a round
+    pub locked: Balance,
+}
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
