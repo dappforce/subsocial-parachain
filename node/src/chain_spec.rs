@@ -6,8 +6,10 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
 use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
+use pallet_parachain_staking::{InflationInfo, Range};
+use pallet_parachain_staking::inflation::{BLOCKS_PER_YEAR, perbill_annual_to_perbill_round};
 
-use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT, Perbill};
 use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -243,31 +245,67 @@ pub fn staging_testnet_config() -> ChainSpec {
 	)
 }
 
+pub fn subsocial_inflation_config() -> InflationInfo<Balance> {
+    fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
+        perbill_annual_to_perbill_round(
+            annual,
+            // rounds per year
+            BLOCKS_PER_YEAR
+                / subsocial_parachain_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+        )
+    }
+    let annual = Range {
+        min: Perbill::from_percent(4),
+        ideal: Perbill::from_percent(5),
+        max: Perbill::from_percent(5),
+    };
+    InflationInfo {
+        // staking expectations
+        expect: Range {
+            min: 100_000 * UNIT,
+            ideal: 200_000 * UNIT,
+            max: 500_000 * UNIT,
+        },
+        // annual inflation
+        annual,
+        round: to_round_inflation(annual),
+    }
+}
+
 fn parachain_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<(AccountId, Balance)>,
-	id: ParaId,
-	root_key: AccountId,
+    initial_authorities: Vec<(AccountId, AuraId)>,
+    endowed_accounts: Vec<(AccountId, Balance)>,
+    id: ParaId,
+    root_key: AccountId,
 ) -> subsocial_parachain_runtime::GenesisConfig {
-	subsocial_parachain_runtime::GenesisConfig {
-		system: subsocial_parachain_runtime::SystemConfig {
-			code: subsocial_parachain_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-		},
-		balances: subsocial_parachain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
-				(account, balance.saturating_mul(UNIT))
-			}).collect(),
-		},
-		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: subsocial_parachain_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
+    subsocial_parachain_runtime::GenesisConfig {
+        system: subsocial_parachain_runtime::SystemConfig {
+            code: subsocial_parachain_runtime::WASM_BINARY
+                .expect("WASM binary was not build, please build it!")
+                .to_vec(),
+        },
+        balances: subsocial_parachain_runtime::BalancesConfig {
+            balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
+                (account, balance.saturating_mul(UNIT))
+            }).collect(),
+        },
+        parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+        pallet_parachain_staking: subsocial_parachain_runtime::ParachainStakingConfig {
+            candidates: vec![
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    2000 * UNIT,
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    2000 * UNIT,
+                ),
+            ],
+            delegations: vec![],
+            inflation_config: subsocial_inflation_config(),
+        },
 		session: subsocial_parachain_runtime::SessionConfig {
-			keys: invulnerables
+			keys: initial_authorities
 				.iter()
 				.cloned()
 				.map(|(acc, aura)| {
