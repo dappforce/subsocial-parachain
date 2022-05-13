@@ -7,7 +7,7 @@ use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header, traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::convert::TryInto;
+use sp_std::convert::{TryInto, TryFrom};
 
 use pallet_parachain_utils::Content;
 use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
