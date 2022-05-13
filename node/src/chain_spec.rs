@@ -86,6 +86,14 @@ pub fn development_config() -> ChainSpec {
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Charlie"),
+						get_collator_keys_from_seed("Charlie"),
 					)
 				],
 				vec![
@@ -290,17 +298,11 @@ fn parachain_genesis(
             }).collect(),
         },
         parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-        pallet_parachain_staking: subsocial_parachain_runtime::ParachainStakingConfig {
-            candidates: vec![
-                (
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    2000 * UNIT,
-                ),
-                (
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    2000 * UNIT,
-                ),
-            ],
+        parachain_staking: subsocial_parachain_runtime::ParachainStakingConfig {
+            candidates: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), 2000 * UNIT))
+				.collect(),
             delegations: vec![],
             inflation_config: subsocial_inflation_config(),
         },
