@@ -5394,7 +5394,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5681,7 +5681,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-utils"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -10541,7 +10541,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-collator"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -10606,7 +10606,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-parachain-runtime"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
