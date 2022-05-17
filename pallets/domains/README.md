@@ -7,9 +7,9 @@ Domains pallet allows users to register and manage their domains. The main purpo
 
 The main storages of domains pallet are: 
 - `RegisteredDomains: Map<DomainName,DomainMeta>`\
-  Metadata associated per domain.
+  Metadata associated with domain.
 - `DomainsByOwner: Map<AccountId, DomainName[]>`\
-  Domains owned per account.
+  Domains owned by account.
 
 
 ## Domain metadata
