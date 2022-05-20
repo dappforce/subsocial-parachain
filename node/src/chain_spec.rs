@@ -7,9 +7,8 @@ use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
 use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
 use pallet_parachain_staking::{InflationInfo, Range};
-use pallet_parachain_staking::inflation::{BLOCKS_PER_YEAR, perbill_annual_to_perbill_round};
 
-use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT, Perbill};
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT, Perbill, subsocial_inflation_config};
 use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -251,33 +250,6 @@ pub fn staging_testnet_config() -> ChainSpec {
 			para_id: DEFAULT_PARA_ID,
 		},
 	)
-}
-
-pub fn subsocial_inflation_config() -> InflationInfo<Balance> {
-    fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
-        perbill_annual_to_perbill_round(
-            annual,
-            // rounds per year
-            BLOCKS_PER_YEAR
-                / subsocial_parachain_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
-        )
-    }
-    let annual = Range {
-        min: Perbill::from_percent(4),
-        ideal: Perbill::from_percent(5),
-        max: Perbill::from_percent(5),
-    };
-    InflationInfo {
-        // staking expectations
-        expect: Range {
-            min: 100_000 * UNIT,
-            ideal: 200_000 * UNIT,
-            max: 500_000 * UNIT,
-        },
-        // annual inflation
-        annual,
-        round: to_round_inflation(annual),
-    }
 }
 
 fn parachain_genesis(
