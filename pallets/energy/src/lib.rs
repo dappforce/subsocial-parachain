@@ -9,7 +9,7 @@ pub use pallet::*;
 pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use frame_support::traits::{Currency, ExistenceRequirement, SignedImbalance, WithdrawReasons};
+    use frame_support::traits::Currency;
     use pallet_transaction_payment::OnChargeTransaction;
     use sp_runtime::ArithmeticError;
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
@@ -42,8 +42,13 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Energy have been generated to an account.
         EnergyGenerated {
-            who: T::AccountId,
+            /// The account that generated the energy.
+            generator: T::AccountId,
+            /// The account that received the energy.
+            receiver: T::AccountId,
+            /// The amount of balance that was burnt.
             burnt_balance: BalanceOf<T>,
+            /// The amount of energy that have been generated.
             generated_energy: BalanceOf<T>,
         },
     }
@@ -86,6 +91,13 @@ pub mod pallet {
             let _ = T::Currency::slash(&caller, amount);
 
             Self::generate_energy(&target, amount)?;
+
+            Self::deposit_event(Event::EnergyGenerated {
+                generator: caller,
+                receiver: target,
+                burnt_balance: amount,
+                generated_energy: amount,
+            });
 
             Ok(())
         }
