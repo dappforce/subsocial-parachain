@@ -20,7 +20,7 @@ pub mod pallet {
     use crate::*;
 
     pub(crate) type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
+        <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
@@ -51,14 +51,14 @@ pub mod pallet {
             receiver: T::AccountId,
             /// The amount of balance that was burnt.
             burnt_balance: BalanceOf<T>,
-            /// The amount of energy that have been generated.
+            /// The amount of energy that was generated.
             generated_energy: BalanceOf<T>,
         },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Not enough balance to generate energy.
+        /// Not enough SUB balance to burn and generate energy.
         NotEnoughBalance,
     }
 
