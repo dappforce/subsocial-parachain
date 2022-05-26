@@ -193,8 +193,11 @@ pub mod pallet {
                     .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
 
-            match Self::consume_energy(who, fee) {
-                Ok(()) => Ok(LiquidityInfo::Energy(fee)),
+            match Self::ensure_can_consume_energy(who, fee) {
+                Ok(()) => {
+                    Self::consume_energy(who, fee);
+                    Ok(LiquidityInfo::Energy(fee))
+                },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
         }
