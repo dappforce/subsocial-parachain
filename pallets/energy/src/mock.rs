@@ -285,6 +285,17 @@ impl<Real> OnChargeTransaction<Test> for ProxiedOnChargeTransaction<Real>
     }
 }
 
+pub(crate) fn account(id: AccountId) -> AccountId {
+    id
+}
+
+pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
+    let account = account(id);
+    let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&account, balance);
+    account
+}
+
+
 pub struct ExtBuilder {}
 
 impl Default for ExtBuilder {
