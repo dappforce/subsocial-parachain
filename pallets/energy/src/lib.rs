@@ -82,7 +82,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Generate energy for a target account by burning balance from the caller.
         #[pallet::weight(10_000)]
-        pub fn generate(
+        pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
             amount: BalanceOf<T>,
@@ -93,7 +93,8 @@ pub mod pallet {
             ensure!(T::Currency::can_slash(&caller, amount), Error::<T>::NotEnoughBalance);
             let _ = T::Currency::slash(&caller, amount);
 
-            Self::generate_energy(&target, amount)?;
+            Self::ensure_can_capture_energy(&target, amount)?;
+            Self::capture_energy(&target, amount);
 
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
@@ -107,28 +108,52 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn generate_energy(target: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-            TotalEnergy::<T>::mutate(|total| -> Result<(), ArithmeticError> {
-                *total = total.checked_add(&amount).ok_or(ArithmeticError::Overflow)?;
-                Ok(())
-            })?;
-            EnergyPerAccount::<T>::mutate(target, |energy| -> Result<(), ArithmeticError> {
-                *energy = energy.checked_add(&amount).ok_or(ArithmeticError::Overflow)?;
-                Ok(())
-            })?;
+        fn ensure_can_capture_energy(
+            target: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            ensure!(
+                Self::total_energy().checked_add(&amount).is_some(),
+                ArithmeticError::Overflow,
+            );
+            ensure!(
+                Self::available_energy(target).checked_add(&amount).is_some(),
+                ArithmeticError::Overflow,
+            );
             Ok(())
         }
 
-        fn consume_energy(target: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-            EnergyPerAccount::<T>::mutate(target, |energy| -> Result<(), ArithmeticError> {
-                *energy = energy.checked_sub(&amount).ok_or(ArithmeticError::Underflow)?;
-                Ok(())
-            })?;
-            TotalEnergy::<T>::mutate(|total| -> Result<(), ArithmeticError> {
-                *total = total.checked_sub(&amount).ok_or(ArithmeticError::Underflow)?;
-                Ok(())
-            })?;
+        fn capture_energy(target: &T::AccountId, amount: BalanceOf<T>) {
+            TotalEnergy::<T>::mutate(|total| {
+                *total = total.saturating_add(amount);
+            });
+            EnergyPerAccount::<T>::mutate(target, |energy| {
+                *energy = energy.saturating_add(amount);
+            });
+        }
+
+        fn ensure_can_consume_energy(
+            target: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            ensure!(
+                Self::total_energy().checked_sub(&amount).is_some(),
+                ArithmeticError::Underflow,
+            );
+            ensure!(
+                Self::available_energy(target).checked_sub(&amount).is_some(),
+                ArithmeticError::Underflow,
+            );
             Ok(())
+        }
+
+        fn consume_energy(target: &T::AccountId, amount: BalanceOf<T>) {
+            TotalEnergy::<T>::mutate(|total| {
+                *total = total.saturating_sub(amount);
+            });
+            EnergyPerAccount::<T>::mutate(target, |energy| {
+                *energy = energy.saturating_sub(amount);
+            });
         }
     }
 
@@ -194,7 +219,7 @@ pub mod pallet {
                 ),
                 LiquidityInfo::Energy(paid) => {
                     let refund_amount = paid.saturating_sub(corrected_fee);
-                    let _ = Self::generate_energy(who, refund_amount);
+                    let _ = Self::capture_energy(who, refund_amount);
 
                     // we don't do anything with the fees + tip.
 
