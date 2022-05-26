@@ -96,9 +96,9 @@ pub mod pallet {
             let target = T::Lookup::lookup(target)?;
 
             ensure!(T::Currency::can_slash(&caller, amount), Error::<T>::NotEnoughBalance);
-            let _ = T::Currency::slash(&caller, amount);
-
             Self::ensure_can_capture_energy(&target, amount)?;
+
+            let _ = T::Currency::slash(&caller, amount);
             Self::capture_energy(&target, amount);
 
             Self::deposit_event(Event::EnergyGenerated {
