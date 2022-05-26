@@ -2145,9 +2145,13 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

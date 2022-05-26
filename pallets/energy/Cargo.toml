@@ -24,6 +24,12 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 
+[dev-dependencies]
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+smallvec = "1.6.1"
+
 [features]
 default = ["std"]
 runtime-benchmarks = ["frame-benchmarking"]
@@ -34,6 +40,7 @@ std = [
     "frame-system/std",
     "frame-benchmarking/std",
     "pallet-transaction-payment/std",
+    "pallet-balances/std",
     "sp-runtime/std",
     "sp-std/std",
 ]
