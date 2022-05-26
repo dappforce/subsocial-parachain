@@ -69,7 +69,7 @@ pub mod pallet {
 
     /// Energy credited to each account.
     #[pallet::storage]
-    #[pallet::getter(fn avilable_energy)]
+    #[pallet::getter(fn available_energy)]
     pub(crate) type EnergyPerAccount<T: Config> = StorageMap<
         _,
         Twox64Concat,
@@ -163,7 +163,7 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            if Self::avilable_energy(&who) < fee {
+            if Self::available_energy(&who) < fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
                     .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
