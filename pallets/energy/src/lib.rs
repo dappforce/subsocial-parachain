@@ -17,7 +17,7 @@ pub use pallet::*;
 pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use frame_support::traits::Currency;
+    use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
     use pallet_transaction_payment::OnChargeTransaction;
     use sp_runtime::ArithmeticError;
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
@@ -95,10 +95,27 @@ pub mod pallet {
             let caller = ensure_signed(origin)?;
             let target = T::Lookup::lookup(target)?;
 
-            ensure!(T::Currency::can_slash(&caller, amount), Error::<T>::NotEnoughBalance);
+            let caller_balance = T::Currency::free_balance(&caller);
+            let caller_balance_after_burn = caller_balance
+                .checked_sub(&amount)
+                .ok_or(Error::<T>::NotEnoughBalance)?;
+
+            let withdraw_reason = WithdrawReasons::all();
+
+            T::Currency::ensure_can_withdraw(
+                &caller,
+                amount,
+                withdraw_reason,
+                caller_balance_after_burn,
+            )?;
             Self::ensure_can_capture_energy(&target, amount)?;
 
-            let _ = T::Currency::slash(&caller, amount);
+            let _ = T::Currency::withdraw(
+                &caller,
+                amount,
+                withdraw_reason,
+                ExistenceRequirement::KeepAlive,
+            )?;
             Self::capture_energy(&target, amount);
 
             Self::deposit_event(Event::EnergyGenerated {
