@@ -43,7 +43,10 @@ pub mod pallet {
             + FixedPointOperand;
 
         /// The ratio between the burned SUB and the captured energy.
-        type ConversionRatio: Get<FixedI64>;
+        type DefaultConversionRatio: Get<FixedI64>;
+
+        /// The origin which may update the conversion ratio.
+        type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
@@ -69,6 +72,10 @@ pub mod pallet {
             /// The amount of energy that was generated.
             generated_energy: BalanceOf<T>,
         },
+        ConversionRatioUpdated {
+            /// The new conversion ratio.
+            new_ratio: FixedI64,
+        },
     }
 
     #[pallet::error]
@@ -76,6 +83,13 @@ pub mod pallet {
         /// Not enough SUB balance to burn and generate energy.
         NotEnoughBalance,
     }
+
+    #[pallet::type_value]
+    pub(crate) fn ConversionRatioOnEmpty<T: Config>() -> FixedI64 { T::DefaultConversionRatio::get() }
+
+    #[pallet::storage]
+    #[pallet::getter(fn conversion_ratio)]
+    pub(crate) type ConversionRatio<T: Config> = StorageValue<_, FixedI64, ValueQuery, ConversionRatioOnEmpty<T>>;
 
     /// Total energy generated.
     #[pallet::storage]
@@ -95,6 +109,22 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+
+        /// Updates the conversion ratio.
+        #[pallet::weight(10_000)]
+        pub fn update_conversion_ratio(
+            origin: OriginFor<T>,
+            new_ratio: FixedI64,
+        ) -> DispatchResult {
+            let _ = T::UpdateOrigin::ensure_origin(origin)?;
+
+            ConversionRatio::<T>::put(new_ratio);
+
+            Self::deposit_event(Event::ConversionRatioUpdated { new_ratio });
+
+            Ok(())
+        }
+
         /// Generate energy for a target account by burning balance from the caller.
         #[pallet::weight(10_000)]
         pub fn generate_energy(
@@ -119,7 +149,7 @@ pub mod pallet {
                 caller_balance_after_burn,
             )?;
 
-            let captured_energy_amount = T::ConversionRatio::get()
+            let captured_energy_amount = Self::conversion_ratio()
                 .checked_mul_int(burn_amount)
                 .ok_or(ArithmeticError::Overflow)?;
 
