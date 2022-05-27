@@ -47,6 +47,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         let receiver = account(10);
 
         assert_eq!(Balances::free_balance(caller), 100);
+        assert_eq!(Balances::total_issuance(), 100);
         assert_eq!(Energy::energy_balance(receiver), 0);
         assert_eq!(Energy::total_energy(), 0);
 
@@ -59,6 +60,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         );
 
         assert_eq!(Balances::free_balance(caller), 0);
+        assert_eq!(Balances::total_issuance(), 0);
         assert_eq!(Energy::energy_balance(receiver), 100);
         assert_eq!(Energy::total_energy(), 100);
 
@@ -82,6 +84,7 @@ fn test_generate_energy_will_increment_total_energy() {
         let receiver2 = account(3);
 
         assert_eq!(Balances::free_balance(caller), 1000);
+        assert_eq!(Balances::total_issuance(), 1000);
         assert_eq!(Energy::energy_balance(receiver1), 0);
         assert_eq!(Energy::total_energy(), 0);
 
@@ -92,6 +95,7 @@ fn test_generate_energy_will_increment_total_energy() {
                 30,
             ),
         );
+        assert_eq!(Balances::total_issuance(), 970);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
@@ -99,6 +103,7 @@ fn test_generate_energy_will_increment_total_energy() {
                 50,
             ),
         );
+        assert_eq!(Balances::total_issuance(), 920);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
@@ -107,6 +112,7 @@ fn test_generate_energy_will_increment_total_energy() {
             ),
         );
 
+        assert_eq!(Balances::total_issuance(), 900);
         assert_eq!(Balances::free_balance(caller), 900);
         assert_eq!(Energy::energy_balance(receiver1), 80);
         assert_eq!(Energy::energy_balance(receiver2), 20);
