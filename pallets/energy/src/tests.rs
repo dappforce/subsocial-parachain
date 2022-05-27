@@ -77,7 +77,9 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
 
 #[test]
 fn test_generate_energy_will_increment_total_energy() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .conversion_ratio(1.25)
+        .build().execute_with(|| {
         let caller = account_with_balance(
             1, 1000,
         );
@@ -93,31 +95,33 @@ fn test_generate_energy_will_increment_total_energy() {
             Energy::generate_energy(
                 Origin::signed(caller),
                 receiver1,
-                30,
+                35,
             ),
         );
-        assert_eq!(Balances::total_issuance(), 970);
+        assert_eq!(Balances::total_issuance(), 965);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
                 receiver1,
-                50,
+                55,
             ),
         );
-        assert_eq!(Balances::total_issuance(), 920);
+        assert_eq!(Balances::total_issuance(), 910);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
                 receiver2,
-                20,
+                200,
             ),
         );
 
-        assert_eq!(Balances::total_issuance(), 900);
-        assert_eq!(Balances::free_balance(caller), 900);
-        assert_eq!(Energy::energy_balance(receiver1), 80);
-        assert_eq!(Energy::energy_balance(receiver2), 20);
-        assert_eq!(Energy::total_energy(), 100);
+        assert_eq!(Balances::total_issuance(), 710);
+        assert_eq!(Balances::free_balance(caller), 710);
+        // 35 * 1.25 = 43.75, 55 * 1.25 = 68.75
+        // 43 + 68 = 111
+        assert_eq!(Energy::energy_balance(receiver1), 111);
+        assert_eq!(Energy::energy_balance(receiver2), 250); // 200 * 1.25 = 250
+        assert_eq!(Energy::total_energy(), 362);
     });
 }
 
