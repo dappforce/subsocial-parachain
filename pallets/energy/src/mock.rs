@@ -1,18 +1,18 @@
+use codec::Decode;
 use sp_std::marker::PhantomData;
 use sp_std::cell::RefCell;
 use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
+use frame_support::dispatch::RawOrigin;
 use frame_support::pallet_prelude::{DispatchClass, Pays, Weight};
-use frame_support::traits::{ConstU8, Imbalance, IsType};
+use frame_support::traits::{ConstU8, EnsureOrigin, Get, Imbalance, IsType, SortedMembers};
 use frame_support::weights::{ConstantMultiplier, WeightToFeeCoefficients, WeightToFeeCoefficient, WeightToFeePolynomial, DispatchInfo};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
 use pallet_transaction_payment::{ChargeTransactionPayment, CurrencyAdapter, MultiplierUpdate, OnChargeTransaction};
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureRoot,
-};
+use frame_system::{limits::{BlockLength, BlockWeights}, EnsureRoot, EnsureSignedBy, Account};
+use frame_system::pallet_prelude::OriginFor;
 use pallet_balances::NegativeImbalance;
 use smallvec::smallvec;
 use sp_core::H256;
@@ -196,13 +196,37 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
 
 parameter_types! {
 	pub static ConversionRatio: FixedI64 = FixedI64::one();
+    pub static TestUpdateOrigin: AccountId = 1235;
+}
+
+pub struct EnsureAccount<Account, AccountId>(PhantomData<(Account, AccountId)>);
+
+impl<O, Account, AccountId>
+EnsureOrigin<O> for EnsureAccount<Account, AccountId>
+    where O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>,
+          AccountId: PartialEq + Clone + Ord + Decode,
+          Account: Get<AccountId>
+{
+    type Success = AccountId;
+    fn try_origin(o: O) -> Result<Self::Success, O> {
+        o.into().and_then(|o| match o {
+            RawOrigin::Signed(who) if who == Account::get() => Ok(who),
+            r => Err(O::from(r)),
+        })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> O {
+        O::from(RawOrigin::Signed(Account::get()))
+    }
 }
 
 impl pallet_energy::Config for Test {
     type Event = Event;
     type Currency = Balances;
     type Balance = <Test as pallet_balances::Config>::Balance;
-    type ConversionRatio = ConversionRatio;
+    type DefaultConversionRatio = ConversionRatio;
+    type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
     type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
 }
 
@@ -311,17 +335,24 @@ pub(crate) fn set_energy_balance(id: AccountId, balance: Balance) {
 
 pub struct ExtBuilder {
     conversion_ratio: f64,
+    update_origin: AccountId,
 }
 
 impl Default for ExtBuilder {
     fn default() -> Self {
         ExtBuilder {
             conversion_ratio: 1.0,
+            update_origin: 1235,
         }
     }
 }
 
 impl ExtBuilder {
+    pub(crate) fn update_origin(mut self, update_origin: AccountId) -> Self {
+        self.update_origin = update_origin;
+        self
+    }
+
     pub(crate) fn conversion_ratio(mut self, conversion_ratio: f64) -> Self {
         self.conversion_ratio = conversion_ratio;
         self
@@ -329,6 +360,7 @@ impl ExtBuilder {
 
     fn set_configs(&self) {
         CONVERSION_RATIO.with(|x| *x.borrow_mut() = FixedI64::from_float(self.conversion_ratio));
+        TEST_UPDATE_ORIGIN.with(|x| *x.borrow_mut() = self.update_origin);
     }
 
     pub(crate) fn build(self) -> TestExternalities {
