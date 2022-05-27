@@ -17,15 +17,15 @@ pub use pallet::*;
 pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
+    use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement, tokens::Balance};
     use pallet_transaction_payment::OnChargeTransaction;
-    use sp_runtime::ArithmeticError;
+    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
     use sp_std::convert::TryInto;
+    use sp_std::fmt::Debug;
     use crate::*;
 
-    pub(crate) type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
+    pub(crate) type BalanceOf<T> = <T as Config>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
@@ -33,7 +33,17 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency type.
-        type Currency: Currency<Self::AccountId>;
+        type Currency: Currency<Self::AccountId, Balance=Self::Balance>;
+
+        /// The balance type.
+        type Balance: Balance
+            + MaybeSerializeDeserialize
+            + Debug
+            + MaxEncodedLen
+            + FixedPointOperand;
+
+        /// The ratio between the burned SUB and the captured energy.
+        type ConversionRatio: Get<FixedI64>;
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
@@ -108,7 +118,12 @@ pub mod pallet {
                 withdraw_reason,
                 caller_balance_after_burn,
             )?;
-            Self::ensure_can_capture_energy(&target, amount)?;
+
+            let captured_energy_amount = T::ConversionRatio::get()
+                .checked_mul_int(amount)
+                .ok_or(ArithmeticError::Overflow)?;
+
+            Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
             let _ = T::Currency::withdraw(
                 &caller,
@@ -116,13 +131,13 @@ pub mod pallet {
                 withdraw_reason,
                 ExistenceRequirement::KeepAlive,
             )?;
-            Self::capture_energy(&target, amount);
+            Self::capture_energy(&target, captured_energy_amount);
 
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
                 receiver: target,
                 burnt_balance: amount,
-                generated_energy: amount,
+                generated_energy: captured_energy_amount,
             });
 
             Ok(())
@@ -219,7 +234,7 @@ pub mod pallet {
                 Ok(()) => {
                     Self::consume_energy(who, fee);
                     Ok(LiquidityInfo::Energy(fee))
-                },
+                }
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
         }

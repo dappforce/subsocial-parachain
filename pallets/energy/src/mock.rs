@@ -17,8 +17,8 @@ use pallet_balances::NegativeImbalance;
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{Perbill, testing::Header, traits::{BlakeTwo256, IdentityLookup}};
-use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf};
+use sp_runtime::{Perbill, testing::Header, traits::{BlakeTwo256, IdentityLookup}, FixedI64};
+use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, One};
 use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_std::convert::{TryInto, TryFrom};
 
@@ -194,10 +194,15 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
     assert_eq!(compute_fee(100_000, 10_000, 10_000), 20_000);
 }
 
+parameter_types! {
+	pub static ConversionRatio: FixedI64 = FixedI64::one();
+}
 
 impl pallet_energy::Config for Test {
     type Event = Event;
     type Currency = Balances;
+    type Balance = <Test as pallet_balances::Config>::Balance;
+    type ConversionRatio = ConversionRatio;
     type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
 }
 
@@ -304,16 +309,31 @@ pub(crate) fn set_energy_balance(id: AccountId, balance: Balance) {
     EnergyBalance::<Test>::insert(id, balance);
 }
 
-pub struct ExtBuilder {}
+pub struct ExtBuilder {
+    conversion_ratio: f64,
+}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        ExtBuilder {}
+        ExtBuilder {
+            conversion_ratio: 1.0,
+        }
     }
 }
 
 impl ExtBuilder {
+    pub(crate) fn conversion_ratio(mut self, conversion_ratio: f64) -> Self {
+        self.conversion_ratio = conversion_ratio;
+        self
+    }
+
+    fn set_configs(&self) {
+        CONVERSION_RATIO.with(|x| *x.borrow_mut() = FixedI64::from_float(self.conversion_ratio));
+    }
+
     pub(crate) fn build(self) -> TestExternalities {
+        self.set_configs();
+
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
