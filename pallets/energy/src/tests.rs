@@ -43,7 +43,9 @@ fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
 
 #[test]
 fn test_generate_energy_will_work_when_caller_have_enough_balance() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .conversion_ratio(10f64)
+        .build().execute_with(|| {
         let caller = account_with_balance(1, 100);
         let receiver = account(10);
 
@@ -62,14 +64,14 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
 
         assert_eq!(Balances::free_balance(caller), 0);
         assert_eq!(Balances::total_issuance(), 0);
-        assert_eq!(Energy::energy_balance(receiver), 100);
-        assert_eq!(Energy::total_energy(), 100);
+        assert_eq!(Energy::energy_balance(receiver), 1000);
+        assert_eq!(Energy::total_energy(), 1000);
 
         System::assert_last_event(EnergyEvent::EnergyGenerated {
             generator: caller,
             receiver,
             burnt_balance: 100,
-            generated_energy: 100,
+            generated_energy: 1000,
         }.into());
     });
 }
@@ -121,7 +123,7 @@ fn test_generate_energy_will_increment_total_energy() {
         // 43 + 68 = 111
         assert_eq!(Energy::energy_balance(receiver1), 111);
         assert_eq!(Energy::energy_balance(receiver2), 250); // 200 * 1.25 = 250
-        assert_eq!(Energy::total_energy(), 362);
+        assert_eq!(Energy::total_energy(), 361);
     });
 }
 
