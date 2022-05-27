@@ -100,34 +100,34 @@ pub mod pallet {
         pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
-            amount: BalanceOf<T>,
+            burn_amount: BalanceOf<T>,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
             let target = T::Lookup::lookup(target)?;
 
             let caller_balance = T::Currency::free_balance(&caller);
             let caller_balance_after_burn = caller_balance
-                .checked_sub(&amount)
+                .checked_sub(&burn_amount)
                 .ok_or(Error::<T>::NotEnoughBalance)?;
 
             let withdraw_reason = WithdrawReasons::all();
 
             T::Currency::ensure_can_withdraw(
                 &caller,
-                amount,
+                burn_amount,
                 withdraw_reason,
                 caller_balance_after_burn,
             )?;
 
             let captured_energy_amount = T::ConversionRatio::get()
-                .checked_mul_int(amount)
+                .checked_mul_int(burn_amount)
                 .ok_or(ArithmeticError::Overflow)?;
 
             Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
             let _ = T::Currency::withdraw(
                 &caller,
-                amount,
+                burn_amount,
                 withdraw_reason,
                 ExistenceRequirement::KeepAlive,
             )?;
@@ -136,7 +136,7 @@ pub mod pallet {
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
                 receiver: target,
-                burnt_balance: amount,
+                burnt_balance: burn_amount,
                 generated_energy: captured_energy_amount,
             });
 
