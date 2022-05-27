@@ -23,7 +23,7 @@ use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_std::convert::{TryInto, TryFrom};
 
 pub(crate) use crate as pallet_energy;
-use crate::EnergyPerAccount;
+use crate::EnergyBalance;
 
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -301,7 +301,7 @@ pub(crate) fn set_sub_balance(id: AccountId, balance: Balance) {
 }
 
 pub(crate) fn set_energy_balance(id: AccountId, balance: Balance) {
-    EnergyPerAccount::<Test>::insert(id, balance);
+    EnergyBalance::<Test>::insert(id, balance);
 }
 
 pub struct ExtBuilder {}

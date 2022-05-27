@@ -47,7 +47,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         let receiver = account(10);
 
         assert_eq!(Balances::free_balance(caller), 100);
-        assert_eq!(Energy::available_energy(receiver), 0);
+        assert_eq!(Energy::energy_balance(receiver), 0);
         assert_eq!(Energy::total_energy(), 0);
 
         assert_ok!(
@@ -59,7 +59,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         );
 
         assert_eq!(Balances::free_balance(caller), 0);
-        assert_eq!(Energy::available_energy(receiver), 100);
+        assert_eq!(Energy::energy_balance(receiver), 100);
         assert_eq!(Energy::total_energy(), 100);
 
         System::assert_last_event(EnergyEvent::EnergyGenerated {
@@ -82,7 +82,7 @@ fn test_generate_energy_will_increment_total_energy() {
         let receiver2 = account(3);
 
         assert_eq!(Balances::free_balance(caller), 1000);
-        assert_eq!(Energy::available_energy(receiver1), 0);
+        assert_eq!(Energy::energy_balance(receiver1), 0);
         assert_eq!(Energy::total_energy(), 0);
 
         assert_ok!(
@@ -108,8 +108,8 @@ fn test_generate_energy_will_increment_total_energy() {
         );
 
         assert_eq!(Balances::free_balance(caller), 900);
-        assert_eq!(Energy::available_energy(receiver1), 80);
-        assert_eq!(Energy::available_energy(receiver2), 20);
+        assert_eq!(Energy::energy_balance(receiver1), 80);
+        assert_eq!(Energy::energy_balance(receiver2), 20);
         assert_eq!(Energy::total_energy(), 100);
     });
 }

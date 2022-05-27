@@ -74,8 +74,8 @@ pub mod pallet {
 
     /// Energy credited to each account.
     #[pallet::storage]
-    #[pallet::getter(fn available_energy)]
-    pub(crate) type EnergyPerAccount<T: Config> = StorageMap<
+    #[pallet::getter(fn energy_balance)]
+    pub(crate) type EnergyBalance<T: Config> = StorageMap<
         _,
         Twox64Concat,
         T::AccountId,
@@ -139,7 +139,7 @@ pub mod pallet {
                 ArithmeticError::Overflow,
             );
             ensure!(
-                Self::available_energy(target).checked_add(&amount).is_some(),
+                Self::energy_balance(target).checked_add(&amount).is_some(),
                 ArithmeticError::Overflow,
             );
             Ok(())
@@ -149,7 +149,7 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
-            EnergyPerAccount::<T>::mutate(target, |energy| {
+            EnergyBalance::<T>::mutate(target, |energy| {
                 *energy = energy.saturating_add(amount);
             });
         }
@@ -163,7 +163,7 @@ pub mod pallet {
                 ArithmeticError::Underflow,
             );
             ensure!(
-                Self::available_energy(target).checked_sub(&amount).is_some(),
+                Self::energy_balance(target).checked_sub(&amount).is_some(),
                 ArithmeticError::Underflow,
             );
             Ok(())
@@ -173,7 +173,7 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            EnergyPerAccount::<T>::mutate(target, |energy| {
+            EnergyBalance::<T>::mutate(target, |energy| {
                 *energy = energy.saturating_sub(amount);
             });
         }
@@ -210,7 +210,7 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            if Self::available_energy(&who) < fee {
+            if Self::energy_balance(&who) < fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
                     .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
