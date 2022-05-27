@@ -5,6 +5,7 @@ use frame_support::weights::PostDispatchInfo;
 use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::DispatchError;
 use sp_runtime::traits::SignedExtension;
+use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 use crate::Error;
 use crate::mock::*;
 
@@ -123,13 +124,20 @@ fn test_generate_energy_will_increment_total_energy() {
 
 ///// tests for Energy::OnChargeTransaction
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+enum ChargeTransactionError {
+    PreDispatch_Payment,
+    PostDispatch_Payment,
+    Other,
+}
+
 fn charge_transaction(
     caller: &AccountId,
     fee: Balance,
     actual_fee: Balance,
     tip: Balance,
     pre_validator: fn(),
-) {
+) -> Result<(), ChargeTransactionError> {
     let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
     let info = DispatchInfo {
         weight: fee,
@@ -147,7 +155,13 @@ fn charge_transaction(
             &call,
             &info,
             0,
-        ).expect("ChargeTransactionPayment pre_dispatch failed");
+        ).map_err(|err| {
+        if let TransactionValidityError::Invalid(InvalidTransaction::Payment) = err {
+            ChargeTransactionError::PreDispatch_Payment
+        } else {
+            ChargeTransactionError::Other
+        }
+    })?;
 
     pre_validator();
 
@@ -157,25 +171,33 @@ fn charge_transaction(
         &post_info,
         0,
         &Ok(()),
-    ).expect("ChargeTransactionPayment post_dispatch failed");
+    ).map_err(|err| {
+        if let TransactionValidityError::Invalid(InvalidTransaction::Payment) = err {
+            ChargeTransactionError::PostDispatch_Payment
+        } else {
+            ChargeTransactionError::Other
+        }
+    })?;
+
+    Ok(())
 }
 
 #[test]
-#[should_panic(expected = "ChargeTransactionPayment pre_dispatch failed: TransactionValidityError::Invalid(InvalidTransaction::Payment)")]
 fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account(1);
         set_sub_balance(caller, 0);
         set_energy_balance(caller, 0);
 
-        charge_transaction(
-            &caller,
-            100,
-            100,
-            0,
-            || {},
+        assert_eq!(
+            charge_transaction(
+                &caller,
+                100,
+                100,
+                0,
+                || {},
+            ).unwrap_err(),
+            ChargeTransactionError::PreDispatch_Payment,
         );
-
-        panic!("should panic before this line");
     });
 }
