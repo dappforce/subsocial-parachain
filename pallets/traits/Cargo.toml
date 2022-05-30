@@ -1,0 +1,29 @@
+[package]
+name = 'df-traits'
+version = '0.7.3'
+authors = ['DappForce <dappforce@pm.me>']
+edition = '2018'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+repository = 'https://github.com/dappforce/dappforce-subsocial-node'
+description = 'Common traits for Subsocial pallets'
+keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
+
+[features]
+default = ['std']
+std = [
+    'sp-runtime/std',
+    'frame-support/std',
+    'pallet-permissions/std',
+    'pallet-utils/std'
+]
+
+[dependencies]
+# Local dependencies
+pallet-permissions = { default-features = false, path = '../permissions' }
+pallet-utils = { default-features = false, path = '../utils' }
+
+# Substrate dependencies
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
