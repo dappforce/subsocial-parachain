@@ -378,3 +378,63 @@ impl ExtBuilder {
         ext
     }
 }
+
+macro_rules! assert_total_energy {
+    ($expected_total_energy:expr) => {
+        let total_energy = Energy::total_energy();
+        assert_eq!(
+            total_energy,
+            $expected_total_energy,
+            "Expected total energy to be {}, but found {}",
+            $expected_total_energy,
+            total_energy,
+        );
+    };
+}
+pub(crate) use assert_total_energy;
+
+macro_rules! assert_total_issuance {
+    ($expected_issuance:expr) => {
+    let total_issuance = Balances::total_issuance();
+        assert_eq!(
+            total_issuance,
+            $expected_issuance,
+            "Expected total issuance to be {}, but found {}",
+            $expected_issuance,
+            total_issuance,
+        );
+    };
+}
+pub(crate) use assert_total_issuance;
+
+macro_rules! assert_energy_balance {
+    ($account:expr, $expected_energy_balance:expr) => {
+        let energy_balance = EnergyBalance::<Test>::get($account);
+        assert_eq!(
+            energy_balance,
+            $expected_energy_balance,
+            "Expected energy balance of {}={} to be {}, but found {}",
+            stringify!($account),
+            $account,
+            $expected_energy_balance,
+            energy_balance,
+        );
+    };
+}
+pub(crate) use assert_energy_balance;
+
+macro_rules! assert_balance {
+    ($account:expr, $expected_balance:expr) => {
+        let balance = Balances::free_balance($account);
+        assert_eq!(
+            balance,
+            $expected_balance,
+            "Expected balance of {}={} to be {}, but found {}",
+            stringify!($account),
+            $account,
+            $expected_balance,
+            balance,
+        );
+    };
+}
+pub(crate) use assert_balance;

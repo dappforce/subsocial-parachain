@@ -9,6 +9,7 @@ use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityEr
 use crate::Error;
 use crate::mock::*;
 
+use pallet_energy::EnergyBalance;
 use pallet_energy::Event as EnergyEvent;
 
 #[test]
@@ -49,10 +50,10 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         let caller = account_with_balance(1, 100);
         let receiver = account(10);
 
-        assert_eq!(Balances::free_balance(caller), 100);
-        assert_eq!(Balances::total_issuance(), 100);
-        assert_eq!(Energy::energy_balance(receiver), 0);
-        assert_eq!(Energy::total_energy(), 0);
+        assert_balance!(caller, 100);
+        assert_total_issuance!(100);
+        assert_energy_balance!(receiver, 0);
+        assert_total_energy!(0);
 
         assert_ok!(
             Energy::generate_energy(
@@ -61,11 +62,10 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
                 100,
             ),
         );
-
-        assert_eq!(Balances::free_balance(caller), 0);
-        assert_eq!(Balances::total_issuance(), 0);
-        assert_eq!(Energy::energy_balance(receiver), 1000);
-        assert_eq!(Energy::total_energy(), 1000);
+        assert_balance!(caller, 0);
+        assert_total_issuance!(0);
+        assert_energy_balance!(receiver, 1000);
+        assert_total_energy!(1000);
 
         System::assert_last_event(EnergyEvent::EnergyGenerated {
             generator: caller,
@@ -88,10 +88,11 @@ fn test_generate_energy_will_increment_total_energy() {
         let receiver1 = account(2);
         let receiver2 = account(3);
 
-        assert_eq!(Balances::free_balance(caller), 1000);
-        assert_eq!(Balances::total_issuance(), 1000);
-        assert_eq!(Energy::energy_balance(receiver1), 0);
-        assert_eq!(Energy::total_energy(), 0);
+        assert_balance!(caller, 1000);
+        assert_total_issuance!(1000);
+        assert_energy_balance!(receiver1, 0);
+        assert_energy_balance!(receiver2, 0);
+        assert_total_energy!(0);
 
         assert_ok!(
             Energy::generate_energy(
@@ -100,7 +101,7 @@ fn test_generate_energy_will_increment_total_energy() {
                 35,
             ),
         );
-        assert_eq!(Balances::total_issuance(), 965);
+        assert_total_issuance!(965);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
@@ -108,7 +109,7 @@ fn test_generate_energy_will_increment_total_energy() {
                 55,
             ),
         );
-        assert_eq!(Balances::total_issuance(), 910);
+        assert_total_issuance!(910);
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
@@ -117,13 +118,14 @@ fn test_generate_energy_will_increment_total_energy() {
             ),
         );
 
-        assert_eq!(Balances::total_issuance(), 710);
-        assert_eq!(Balances::free_balance(caller), 710);
+        assert_total_issuance!(710);
+        assert_balance!(caller, 710);
         // 35 * 1.25 = 43.75, 55 * 1.25 = 68.75
         // 43 + 68 = 111
-        assert_eq!(Energy::energy_balance(receiver1), 111);
-        assert_eq!(Energy::energy_balance(receiver2), 250); // 200 * 1.25 = 250
-        assert_eq!(Energy::total_energy(), 361);
+        assert_energy_balance!(receiver1, 111);
+        assert_energy_balance!(receiver2, 250); // 200 * 1.25 = 250
+        assert_total_energy!(361);
+        dbg!()
     });
 }
 
