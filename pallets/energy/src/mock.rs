@@ -232,16 +232,16 @@ impl pallet_energy::Config for Test {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub(crate) struct WithdrawFeeArgs {
-    who: AccountId,
-    fee: Balance,
-    tip: Balance,
+    pub(crate) who: AccountId,
+    pub(crate) fee_with_tip: Balance,
+    pub(crate) tip: Balance,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub(crate) struct CorrectAndDepositFeeArgs {
-    who: AccountId,
-    corrected_fee: Balance,
-    already_withdrawn: Option<Balance>,
+    pub(crate) who: AccountId,
+    pub(crate) corrected_fee_with_tip: Balance,
+    pub(crate) already_withdrawn: Option<Balance>,
 }
 
 thread_local! {
@@ -292,7 +292,7 @@ impl<Real> OnChargeTransaction<Test> for ProxiedOnChargeTransaction<Real>
     ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
         set_withdraw_fee_args(WithdrawFeeArgs {
             who: who.clone(),
-            fee: fee.into(),
+            fee_with_tip: fee.into(),
             tip: tip.into(),
         });
         Real::withdraw_fee(who, call, dispatch_info, fee, tip)
@@ -308,7 +308,7 @@ impl<Real> OnChargeTransaction<Test> for ProxiedOnChargeTransaction<Real>
     ) -> Result<(), TransactionValidityError> {
         set_corrected_and_deposit_fee_args(CorrectAndDepositFeeArgs {
             who: who.clone(),
-            corrected_fee: corrected_fee.into(),
+            corrected_fee_with_tip: corrected_fee.into(),
             already_withdrawn: already_withdrawn.into_ref().as_ref().map(|val| val.peek().clone()),
         });
         Real::correct_and_deposit_fee(who, dispatch_info, post_info, corrected_fee, tip, already_withdrawn)
@@ -374,6 +374,9 @@ impl ExtBuilder {
 
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
+
+        clear_withdraw_fee_args();
+        clear_corrected_and_deposit_fee_args();
 
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()

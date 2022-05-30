@@ -123,7 +123,8 @@ fn test_generate_energy_will_increment_total_energy() {
         // 35 * 1.25 = 43.75, 55 * 1.25 = 68.75
         // 43 + 68 = 111
         assert_energy_balance!(receiver1, 111);
-        assert_energy_balance!(receiver2, 250); // 200 * 1.25 = 250
+        assert_energy_balance!(receiver2, 250);
+        // 200 * 1.25 = 250
         assert_total_energy!(361);
         dbg!()
     });
@@ -139,12 +140,12 @@ enum ChargeTransactionError {
     Other,
 }
 
-fn charge_transaction(
+fn charge_transaction<PreValidator: FnOnce()>(
     caller: &AccountId,
     fee: Balance,
     actual_fee: Balance,
     tip: Balance,
-    pre_validator: fn(),
+    pre_validator: PreValidator,
 ) -> Result<(), ChargeTransactionError> {
     let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
     let info = DispatchInfo {
@@ -203,9 +204,78 @@ fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
                 100,
                 100,
                 0,
-                || {},
+                || {
+                    assert_eq!(get_captured_withdraw_fee_args().unwrap(), WithdrawFeeArgs {
+                        who: caller.clone(),
+                        fee_with_tip: 100,
+                        tip: 0,
+                    });
+                },
             ).unwrap_err(),
             ChargeTransactionError::PreDispatch_Payment,
         );
+
+        assert!(get_corrected_and_deposit_fee_args().is_none());
+    });
+}
+
+#[test]
+fn test_charge_transaction_should_pay_with_energy_if_enough() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(1);
+        set_sub_balance(caller, 1000);
+        set_energy_balance(caller, 1000);
+
+        assert_ok!(
+            charge_transaction(
+                &caller,
+                150,
+                100,
+                20,
+                ||  {
+                    assert_energy_balance!(caller, 1000 - 150 - 20); // subtract the expected fees + tip
+                    assert_balance!(caller, 1000); // no change
+                    assert!(get_captured_withdraw_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
+                },
+            ),
+        );
+        assert_energy_balance!(caller, 1000 - 100 - 20); // subtract the actual fees + tip
+        assert_balance!(caller, 1000); // no change
+        assert!(get_corrected_and_deposit_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
+    });
+}
+
+
+#[test]
+fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(1);
+        set_sub_balance(caller, 1000);
+        set_energy_balance(caller, 100);
+
+        assert_ok!(
+            charge_transaction(
+                &caller,
+                200,
+                50,
+                13,
+                ||  {
+                    assert_energy_balance!(caller, 100); // no change
+                    assert_balance!(caller, 1000 - 200 - 13); // subtract the expected fees + tip
+                    assert_eq!(get_captured_withdraw_fee_args().unwrap(), WithdrawFeeArgs {
+                        who: caller.clone(),
+                        fee_with_tip: 200 + 13,
+                        tip: 13,
+                    });
+                },
+            ),
+        );
+        assert_energy_balance!(caller, 100); // no change
+        assert_balance!(caller, 1000 - 50 - 13); // subtract the actual fees + tip
+        assert!(matches!(get_corrected_and_deposit_fee_args().unwrap(), CorrectAndDepositFeeArgs {
+            who: caller,
+            corrected_fee_with_tip: 63, // 50 + 13
+            already_withdrawn: _, // ignored
+        }));
     });
 }
