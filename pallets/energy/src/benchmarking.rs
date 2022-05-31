@@ -18,7 +18,7 @@ use super::FixedFromFloat;
 
 benchmarks! {
     update_conversion_ratio {
-        let ratio = FixedI64::from_f64(2.65);
+        let ratio = FixedI64::checked_from_rational(2_65, 100).unwrap();
         let origin = T::UpdateOrigin::successful_origin();
     }: _<T::Origin>(origin, ratio)
     verify {

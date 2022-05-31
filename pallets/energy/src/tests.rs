@@ -6,7 +6,6 @@ use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::DispatchError;
 use sp_runtime::traits::{SignedExtension, Dispatchable, Bounded};
 use sp_runtime::{FixedI64};
-use super::FixedFromFloat;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 use crate::{Error, WeightInfo};
 use crate::mock::*;
@@ -14,17 +13,6 @@ use crate::mock::*;
 use pallet_energy::EnergyBalance;
 use pallet_energy::Event as EnergyEvent;
 use pallet_energy::Call as EnergyCall;
-
-//// tests for FixedFromFloat::from_f64
-
-#[test]
-#[allow(non_snake_case)]
-fn test_FixedFromFloat_from_f64() {
-    assert_eq!(FixedI64::from_f64(0.0), FixedI64::from_float(0.0));
-    assert_eq!(FixedI64::from_f64(f64::max_value()), FixedI64::from_float(f64::max_value()));
-    assert_eq!(FixedI64::from_f64(f64::min_value()), FixedI64::from_float(f64::min_value()));
-}
-
 
 ///// tests for Energy::update_conversion_ratio()
 
@@ -97,7 +85,7 @@ fn test_update_conversion_ratio_will_have_correct_weight() {
         .update_origin(update_origin)
         .build().execute_with(|| {
         let call: Call = EnergyCall::<Test>::update_conversion_ratio {
-            new_ratio: FixedI64::from_f64(1.5),
+            new_ratio: FixedI64::from_float(1.5),
         }.into();
 
         let info = call.get_dispatch_info();

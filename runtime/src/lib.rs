@@ -28,6 +28,7 @@ use frame_support::{
 	},
 	PalletId,
 };
+use frame_support::traits::Get;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -603,8 +604,10 @@ impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
 }
 
+
+
 parameter_types! {
-	pub DefaultEnergyConversionRatio: FixedI64 = FixedI64::from_f64(1.25);
+	pub DefaultEnergyConversionRatio: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
 }
 
 impl pallet_energy::Config for Runtime {
