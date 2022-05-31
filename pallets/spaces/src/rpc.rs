@@ -5,7 +5,7 @@ use sp_std::prelude::*;
 
 use pallet_utils::{bool_to_option, SpaceId, rpc::{FlatContent, FlatWhoAndWhen, ShouldSkip}};
 
-use crate::{Module, Space, Config, FIRST_SPACE_ID};
+use crate::{Config, Pallet, Space, FIRST_SPACE_ID};
 
 #[derive(Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
