@@ -1,16 +1,118 @@
 use frame_support::{assert_noop, assert_ok, pallet};
-use frame_support::dispatch::DispatchInfo;
+use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
 use frame_support::pallet_prelude::{DispatchClass, Pays};
-use frame_support::weights::PostDispatchInfo;
+use frame_support::weights::{extract_actual_weight, PostDispatchInfo};
 use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::DispatchError;
-use sp_runtime::traits::SignedExtension;
+use sp_runtime::traits::{SignedExtension, Dispatchable, Bounded};
+use sp_runtime::{FixedI64};
+use super::FixedFromFloat;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
-use crate::Error;
+use crate::{Error, WeightInfo};
 use crate::mock::*;
 
 use pallet_energy::EnergyBalance;
 use pallet_energy::Event as EnergyEvent;
+use pallet_energy::Call as EnergyCall;
+
+//// tests for FixedFromFloat::from_f64
+
+#[test]
+#[allow(non_snake_case)]
+fn test_FixedFromFloat_from_f64() {
+    assert_eq!(FixedI64::from_f64(0.0), FixedI64::from_float(0.0));
+    assert_eq!(FixedI64::from_f64(f64::max_value()), FixedI64::from_float(f64::max_value()));
+    assert_eq!(FixedI64::from_f64(f64::min_value()), FixedI64::from_float(f64::min_value()));
+}
+
+
+///// tests for Energy::update_conversion_ratio()
+
+#[test]
+fn test_update_conversion_ratio_will_fail_when_unsigned() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            Energy::update_conversion_ratio(
+                Origin::none(),
+                FixedI64::from_float(1.5),
+            ),
+            DispatchError::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn test_update_conversion_ratio_will_fail_when_caller_is_not_update_origin() {
+    ExtBuilder::default()
+        .update_origin(1)
+        .build().execute_with(|| {
+        let not_update_origin = 2;
+        assert_noop!(
+            Energy::update_conversion_ratio(
+                Origin::signed(not_update_origin),
+                FixedI64::from_float(1.5),
+            ),
+            DispatchError::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn test_update_conversion_ratio_will_work_as_expected() {
+    let update_origin = account(1);
+    ExtBuilder::default()
+        .conversion_ratio(987.654)
+        .update_origin(update_origin)
+        .build().execute_with(|| {
+
+        assert_eq!(
+            Energy::conversion_ratio(),
+            FixedI64::from_float(987.654),
+            "Default conversion ratio should be 987.654"
+        );
+
+        assert_ok!(
+            Energy::update_conversion_ratio(
+                Origin::signed(update_origin),
+                FixedI64::from_float(1.12354),
+            ),
+        );
+
+        assert_eq!(
+            Energy::conversion_ratio(),
+            FixedI64::from_float(1.12354)
+        );
+
+        System::assert_last_event(EnergyEvent::ConversionRatioUpdated {
+            new_ratio: FixedI64::from_float(1.12354),
+        }.into());
+    });
+}
+
+#[test]
+fn test_update_conversion_ratio_will_have_correct_weight() {
+    let update_origin = account(1);
+    ExtBuilder::default()
+        .conversion_ratio(1.25)
+        .update_origin(update_origin)
+        .build().execute_with(|| {
+        let call: Call = EnergyCall::<Test>::update_conversion_ratio {
+            new_ratio: FixedI64::from_f64(1.5),
+        }.into();
+
+        let info = call.get_dispatch_info();
+        let result = call.dispatch(Origin::signed(update_origin));
+
+        assert_ok!(result);
+
+        assert_eq!(
+            extract_actual_weight(&result, &info),
+            <Test as pallet_energy::Config>::WeightInfo::update_conversion_ratio(),
+        );
+    });
+}
+
+///// tests for Energy::generate_energy()
 
 #[test]
 fn test_generate_energy_will_fail_when_unsigned() {
@@ -130,6 +232,30 @@ fn test_generate_energy_will_increment_total_energy() {
     });
 }
 
+#[test]
+fn test_generate_energy_will_have_correct_weight() {
+    ExtBuilder::default()
+        .conversion_ratio(1.25)
+        .build().execute_with(|| {
+        let caller = account_with_balance(1, 1000);
+        let receiver = account(2);
+
+        let call: Call = EnergyCall::<Test>::generate_energy {
+            target: receiver,
+            burn_amount: 100,
+        }.into();
+
+        let info = call.get_dispatch_info();
+        let result = call.dispatch(Origin::signed(caller));
+
+        assert_ok!(result);
+
+        assert_eq!(
+            extract_actual_weight(&result, &info),
+            <Test as pallet_energy::Config>::WeightInfo::generate_energy(),
+        );
+    });
+}
 
 ///// tests for Energy::OnChargeTransaction
 
@@ -204,13 +330,7 @@ fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
                 100,
                 100,
                 0,
-                || {
-                    assert_eq!(get_captured_withdraw_fee_args().unwrap(), WithdrawFeeArgs {
-                        who: caller.clone(),
-                        fee_with_tip: 100,
-                        tip: 0,
-                    });
-                },
+                || panic!("should not be called, because there was a pre_dispatch error"),
             ).unwrap_err(),
             ChargeTransactionError::PreDispatch_Payment,
         );
