@@ -10,6 +10,13 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
+
+pub use crate::weights::WeightInfo;
+
 pub use pallet::*;
 
 
@@ -24,6 +31,16 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
     use crate::*;
+
+    pub trait FixedFromFloat {
+        fn from_f64(f: f64) -> Self;
+    }
+
+    impl FixedFromFloat for FixedI64 {
+        fn from_f64(f: f64) -> Self {
+            FixedI64::from_inner((f * FixedI64::DIV as f64) as <FixedI64 as FixedPointNumber>::Inner)
+        }
+    }
 
     pub(crate) type BalanceOf<T> = <T as Config>::Balance;
 
@@ -51,6 +68,9 @@ pub mod pallet {
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
         type FallbackOnChargeTransaction: OnChargeTransaction<Self, Balance=BalanceOf<Self>>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]

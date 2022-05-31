@@ -35,6 +35,7 @@ pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
+pallet-energy = { path = "../pallets/energy", default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.24" }
@@ -153,6 +154,7 @@ std = [
 	"pallet-space-follows/std",
 	"pallet-space-ownership/std",
 	"pallet-spaces/std",
+	"pallet-energy/std",
 ]
 
 runtime-benchmarks = [
@@ -173,6 +175,7 @@ runtime-benchmarks = [
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
+	"pallet-energy/runtime-benchmarks",
 ]
 
 try-runtime = [

@@ -33,7 +33,9 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64};
+use pallet_energy::FixedFromFloat;
+use sp_runtime::traits::One;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -377,7 +379,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -601,6 +603,20 @@ impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
 }
 
+parameter_types! {
+	pub DefaultEnergyConversionRatio: FixedI64 = FixedI64::from_f64(1.25);
+}
+
+impl pallet_energy::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Balance = Balance;
+	type DefaultConversionRatio = DefaultEnergyConversionRatio;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type FallbackOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -639,6 +655,7 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
+		Energy: pallet_energy = 61,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -670,6 +687,7 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
+		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }

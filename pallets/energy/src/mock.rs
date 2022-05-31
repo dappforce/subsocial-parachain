@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use codec::Decode;
 use sp_std::marker::PhantomData;
 use sp_std::cell::RefCell;
@@ -8,7 +9,7 @@ use frame_support::{
 use frame_support::dispatch::RawOrigin;
 use frame_support::pallet_prelude::{DispatchClass, Pays, Weight};
 use frame_support::traits::{ConstU8, EnsureOrigin, Get, Imbalance, IsType, SortedMembers};
-use frame_support::weights::{ConstantMultiplier, WeightToFeeCoefficients, WeightToFeeCoefficient, WeightToFeePolynomial, DispatchInfo};
+use frame_support::weights::{ConstantMultiplier, WeightToFeeCoefficients, WeightToFeeCoefficient, WeightToFeePolynomial, DispatchInfo, WeightToFee};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
 use pallet_transaction_payment::{ChargeTransactionPayment, CurrencyAdapter, MultiplierUpdate, OnChargeTransaction};
 use frame_system::{limits::{BlockLength, BlockWeights}, EnsureRoot, EnsureSignedBy, Account};
@@ -165,11 +166,11 @@ impl pallet_transaction_payment::Config for Test {
 
 #[test]
 fn test_that_pallet_transaction_payment_works_as_expected() {
-    assert_eq!(ZeroWeightToFeePolynomial::calc(&4000), 0);
-    assert_eq!(ZeroWeightToFeePolynomial::calc(&1), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&4000), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&1), 0);
 
-    assert_eq!(IdentityWeightToFeePolynomial::calc(&4000), 4000);
-    assert_eq!(IdentityWeightToFeePolynomial::calc(&1), 1);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&4000), 4000);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&1), 1);
 
     fn compute_fee(len: u32, weight: Weight, tip: Balance) -> Balance {
         ExtBuilder::default().build().execute_with(|| {
@@ -228,6 +229,7 @@ impl pallet_energy::Config for Test {
     type DefaultConversionRatio = ConversionRatio;
     type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
     type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
+    type WeightInfo = ();
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
