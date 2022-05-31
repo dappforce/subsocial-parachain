@@ -131,7 +131,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
 
         /// Updates the conversion ratio.
-        #[pallet::weight(10_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::update_conversion_ratio())]
         pub fn update_conversion_ratio(
             origin: OriginFor<T>,
             new_ratio: FixedI64,
@@ -146,7 +146,7 @@ pub mod pallet {
         }
 
         /// Generate energy for a target account by burning balance from the caller.
-        #[pallet::weight(10_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::generate_energy())]
         pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
