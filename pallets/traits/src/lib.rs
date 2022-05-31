@@ -7,7 +7,7 @@ use pallet_permissions::{
   SpacePermissions,
   SpacePermissionsContext
 };
-use pallet_utils::{SpaceId, User};
+use pallet_parachain_utils::{SpaceId, User};
 
 pub mod moderation;
 
