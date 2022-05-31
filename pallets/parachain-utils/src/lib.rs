@@ -83,6 +83,30 @@ impl Content {
     }
 }
 
+#[derive(Encode, Decode, Ord, PartialOrd, Clone, Eq, PartialEq, RuntimeDebug)]
+pub enum User<AccountId> {
+    Account(AccountId),
+    Space(SpaceId),
+}
+
+impl<AccountId> User<AccountId> {
+    pub fn maybe_account(self) -> Option<AccountId> {
+        if let User::Account(account_id) = self {
+            Some(account_id)
+        } else {
+            None
+        }
+    }
+
+    pub fn maybe_space(self) -> Option<SpaceId> {
+        if let User::Space(space_id) = self {
+            Some(space_id)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Encode, Decode, RuntimeDebug)]
 pub enum Error {
     /// IPFS CID is invalid.

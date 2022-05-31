@@ -1,8 +1,8 @@
 [package]
 name = 'df-traits'
-version = '0.7.3'
+version = '0.1.5'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2018'
+edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/dappforce-subsocial-node'
@@ -15,15 +15,15 @@ default = ['std']
 std = [
     'sp-runtime/std',
     'frame-support/std',
+    'pallet-parachain-utils/std',
     'pallet-permissions/std',
-    'pallet-utils/std'
 ]
 
 [dependencies]
 # Local dependencies
+pallet-parachain-utils = { default-features = false, path = '../parachain-utils' }
 pallet-permissions = { default-features = false, path = '../permissions' }
-pallet-utils = { default-features = false, path = '../utils' }
 
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
