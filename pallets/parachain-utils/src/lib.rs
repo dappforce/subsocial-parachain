@@ -109,12 +109,22 @@ impl<AccountId> User<AccountId> {
 
 #[derive(Encode, Decode, RuntimeDebug)]
 pub enum Error {
+    /// Account is blocked in a given space.
+    AccountIsBlocked,
+    /// Content is blocked in a given space.
+    ContentIsBlocked,
     /// IPFS CID is invalid.
     InvalidIpfsCid,
     /// `Raw` content type is not yet supported.
     RawContentTypeNotSupported,
     /// `Hyper` content type is not yet supported.
     HypercoreContentTypeNotSupported,
+    /// Space handle is too short.
+    HandleIsTooShort,
+    /// Space handle is too long.
+    HandleIsTooLong,
+    /// Space handle contains invalid characters.
+    HandleContainsInvalidChars,
     /// Content type is `None`.
     ContentIsEmpty,
 }
@@ -122,12 +132,21 @@ pub enum Error {
 impl From<Error> for &'static str {
     fn from(e: Error) -> &'static str {
         match e {
+            Error::AccountIsBlocked => "AccountIsBlocked",
+            Error::ContentIsBlocked => "ContentIsBlocked",
             Error::InvalidIpfsCid => "InvalidIpfsCid",
             Error::RawContentTypeNotSupported => "RawContentTypeNotSupported",
             Error::HypercoreContentTypeNotSupported => "HypercoreContentTypeNotSupported",
+            Error::HandleIsTooShort => "HandleIsTooShort",
+            Error::HandleIsTooLong => "HandleIsTooLong",
+            Error::HandleContainsInvalidChars => "HandleContainsInvalidChars",
             Error::ContentIsEmpty => "ContentIsEmpty",
         }
     }
+}
+
+pub fn throw_utils_error(error: Error) -> DispatchError {
+    DispatchError::Other(error.into())
 }
 
 pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
