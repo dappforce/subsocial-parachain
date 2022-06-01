@@ -1,4 +1,4 @@
-//! # Energy Module
+//! # Energy Pallet
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -82,6 +82,7 @@ pub mod pallet {
             /// The amount of energy that was generated.
             generated_energy: BalanceOf<T>,
         },
+        /// Energy conversion ratio has been updated.
         ConversionRatioUpdated {
             /// The new conversion ratio.
             new_ratio: FixedI64,
@@ -94,9 +95,11 @@ pub mod pallet {
         NotEnoughBalance,
     }
 
+    /// Supplies the [ConversionRatio] with [T::DefaultConversionRatio] if empty.
     #[pallet::type_value]
     pub(crate) fn ConversionRatioOnEmpty<T: Config>() -> FixedI64 { T::DefaultConversionRatio::get() }
 
+    /// The current conversion ratio.
     #[pallet::storage]
     #[pallet::getter(fn conversion_ratio)]
     pub(crate) type ConversionRatio<T: Config> = StorageValue<_, FixedI64, ValueQuery, ConversionRatioOnEmpty<T>>;
@@ -120,7 +123,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
 
-        /// Updates the conversion ratio.
+        /// Updates the conversion ratio. Only callable by the `UpdateOrigin`.
         #[pallet::weight(<T as Config>::WeightInfo::update_conversion_ratio())]
         pub fn update_conversion_ratio(
             origin: OriginFor<T>,
@@ -185,6 +188,7 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Ensure that [account] can capture the given [amount] of energy.
         fn ensure_can_capture_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
@@ -200,6 +204,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Capture energy for [account].
         fn capture_energy(target: &T::AccountId, amount: BalanceOf<T>) {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
@@ -209,6 +214,7 @@ pub mod pallet {
             });
         }
 
+        /// Ensure that [account] can consume the given [amount] of energy.
         fn ensure_can_consume_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
@@ -224,6 +230,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Consume energy for [account].
         fn consume_energy(target: &T::AccountId, amount: BalanceOf<T>) {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
@@ -235,6 +242,7 @@ pub mod pallet {
     }
 
 
+    /// Keeps track of how the user paid for the transaction.
     pub enum LiquidityInfo<T: Config> {
         /// Nothing have been paid.
         Nothing,
@@ -302,6 +310,7 @@ pub mod pallet {
                     let _ = Self::capture_energy(who, refund_amount);
 
                     // we don't do anything with the fees + tip.
+                    // TODO: maybe we tip using SUB?
 
                     Ok(())
                 }
