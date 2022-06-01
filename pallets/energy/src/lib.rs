@@ -26,7 +26,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement, tokens::Balance};
     use pallet_transaction_payment::OnChargeTransaction;
-    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand, Perbill};
+    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
