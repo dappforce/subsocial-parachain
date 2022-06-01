@@ -5,7 +5,7 @@ use frame_support::weights::{extract_actual_weight, PostDispatchInfo};
 use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::DispatchError;
 use sp_runtime::traits::{SignedExtension, Dispatchable, Bounded};
-use sp_runtime::{FixedI64};
+use sp_runtime::{FixedI64, FixedPointNumber};
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 use crate::{Error, WeightInfo};
 use crate::mock::*;
@@ -41,6 +41,22 @@ fn test_update_conversion_ratio_will_fail_when_caller_is_not_update_origin() {
                 FixedI64::from_float(1.5),
             ),
             DispatchError::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn test_update_conversion_ratio_will_fail_when_new_ratio_is_negative() {
+    let update_origin = account(1);
+    ExtBuilder::default()
+        .update_origin(update_origin)
+        .build().execute_with(|| {
+        assert_noop!(
+            Energy::update_conversion_ratio(
+                Origin::signed(update_origin),
+                FixedI64::from_float(-4.0),
+            ),
+            Error::<Test>::ConversionRatioIsNotPositive,
         );
     });
 }
@@ -244,6 +260,113 @@ fn test_generate_energy_will_have_correct_weight() {
         );
     });
 }
+
+//// tests on both Energy::update_conversion_ratio() and Energy::generate_energy()
+
+#[test]
+fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls() {
+    let update_origin = account(1);
+    ExtBuilder::default()
+        .conversion_ratio(1.25)
+        .update_origin(update_origin)
+        .build().execute_with(|| {
+        let caller = account_with_balance(1, 1_000_000_000);
+        let receiver = account(2);
+
+        assert_eq!(
+            <Test as pallet_energy::Config>::DefaultConversionRatio::get().to_float(),
+            1.25,
+            "Default conversion ratio should be 1.25",
+        );
+
+        assert_eq!(
+            Energy::conversion_ratio().to_float(),
+            1.25,
+            "Stored conversion ratio should be 1.25",
+        );
+
+        assert_ok!(
+            Energy::generate_energy(
+                Origin::signed(caller),
+                receiver,
+                100,
+            ),
+        );
+
+        assert_energy_balance!(receiver, 125);
+
+        assert_ok!(
+            Energy::update_conversion_ratio(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(50, 100).unwrap(), // 50%
+            ),
+        );
+
+        assert_eq!(
+            Energy::conversion_ratio().to_float(),
+            0.5,
+            "Stored conversion ratio should be 0.5",
+        );
+
+        assert_ok!(
+            Energy::generate_energy(
+                Origin::signed(caller),
+                receiver,
+                150,
+            ),
+        );
+
+        assert_energy_balance!(receiver, 200);
+
+        assert_ok!(
+            Energy::update_conversion_ratio(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(12345, 10000).unwrap(), // 123.45%
+            ),
+        );
+
+        assert_eq!(
+            Energy::conversion_ratio().to_float(),
+            1.2345,
+            "Stored conversion ratio should be 1.2345",
+        );
+
+        assert_ok!(
+            Energy::generate_energy(
+                Origin::signed(caller),
+                receiver,
+                700000,
+            ),
+        );
+
+        assert_energy_balance!(receiver, 864350);
+
+        assert_ok!(
+            Energy::update_conversion_ratio(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(333_333_334, 1_000_000_000).unwrap(), // 33.3333334%
+            ),
+        );
+
+        assert_eq!(
+            Energy::conversion_ratio().to_float(),
+            0.333333334,
+            "Stored conversion ratio should be 0.333333334",
+        );
+
+        assert_ok!(
+            Energy::generate_energy(
+                Origin::signed(caller),
+                receiver,
+                406950,
+            ),
+        );
+
+        assert_energy_balance!(receiver, 1_000_000);
+    });
+}
+
+
 
 ///// tests for Energy::OnChargeTransaction
 

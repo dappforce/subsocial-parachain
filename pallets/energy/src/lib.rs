@@ -50,6 +50,7 @@ pub mod pallet {
             + FixedPointOperand;
 
         /// The ratio between the burned SUB and the captured energy.
+        /// The ratio must be a positive number.
         type DefaultConversionRatio: Get<FixedI64>;
 
         /// The origin which may update the conversion ratio.
@@ -93,6 +94,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// Not enough SUB balance to burn and generate energy.
         NotEnoughBalance,
+        /// Conversion ratio is not a positive number.
+        ConversionRatioIsNotPositive,
     }
 
     /// Supplies the [ConversionRatio] with [T::DefaultConversionRatio] if empty.
@@ -130,6 +133,8 @@ pub mod pallet {
             new_ratio: FixedI64,
         ) -> DispatchResult {
             let _ = T::UpdateOrigin::ensure_origin(origin)?;
+
+            ensure!(new_ratio > Zero::zero(), Error::<T>::ConversionRatioIsNotPositive);
 
             ConversionRatio::<T>::put(new_ratio);
 
