@@ -355,6 +355,32 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
 
 
 #[test]
+fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(1);
+        set_sub_balance(caller, 1000);
+        set_energy_balance(caller, 1000);
+
+        assert_ok!(
+            charge_transaction(
+                &caller,
+                0,
+                0,
+                0,
+                ||  {
+                    assert_energy_balance!(caller, 1000); // no change
+                    assert_balance!(caller, 1000); // no change
+                    assert!(get_captured_withdraw_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
+                },
+            ),
+        );
+        assert_energy_balance!(caller, 1000); // no change
+        assert_balance!(caller, 1000); // no change
+        assert!(get_corrected_and_deposit_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
+    });
+}
+
+#[test]
 fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account(1);
