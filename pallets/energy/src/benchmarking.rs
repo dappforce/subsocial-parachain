@@ -14,7 +14,6 @@ use frame_support::traits::EnsureOrigin;
 use frame_benchmarking::account;
 use sp_runtime::FixedPointNumber;
 use sp_runtime::traits::{StaticLookup, Bounded};
-use super::FixedFromFloat;
 
 benchmarks! {
     update_conversion_ratio {

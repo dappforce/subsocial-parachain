@@ -34,8 +34,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64};
-use pallet_energy::FixedFromFloat;
+pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use sp_runtime::traits::One;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
