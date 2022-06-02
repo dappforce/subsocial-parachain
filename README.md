@@ -40,7 +40,8 @@ Run as an archive node (store all blocks state):
 
 ## Using docker
 
-Official Docker Hub image of the Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
+Official Docker Hub image of the Subsocial parachain: 
+https://hub.docker.com/r/dappforce/subsocial-parachain
 
 Simply run and join the network with docker:
 
