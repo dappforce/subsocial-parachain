@@ -15,7 +15,7 @@
   "protocolId": "subx",
   "properties": {
     "ss58Format": 28,
-    "tokenDecimals": 11,
+    "tokenDecimals": 10,
     "tokenSymbol": "SUB"
   },
   "relay_chain": "kusama",
