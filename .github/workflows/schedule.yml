@@ -1,0 +1,127 @@
+name: GH runner Activation 
+on:
+
+  schedule:
+    - cron: "0 1 * * 0"
+
+jobs:
+
+  create_runner:
+    name: create_runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.TERRAFORM }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /root/runners/parachain-nodes/terraform-apply-delete/
+            ./plan.sh
+            ./apply.sh
+        
+  build:
+    if: contains( github.event.pull_request.labels.*.name, 'CI')          
+    name: Create & push Docker image
+    needs: create_runner
+    runs-on: [ self-hosted, linux, x64, parachain ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          IMAGE="dappforce/subsocial-parachain"
+          echo ::set-output name=tagged_image::${IMAGE}:${TAG}
+          echo ::set-output name=tag::${TAG}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME_NEW }}
+          password: ${{ secrets.DOCKER_PASSWORD_NEW }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-single-buildx
+
+      - name: Build production image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.prep.outputs.tagged_image }}
+            dappforce/subsocial-parachain:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  remove_snapshot:
+    name: remove_snapshot
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.TERRAFORM }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /root/runners/parachain-nodes/terraform-snapshot/
+            ./delete.sh
+
+
+  create_snapshot:
+    name: create_snapshot
+    needs: remove_snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.TERRAFORM }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /root/runners/parachain-nodes/terraform-snapshot/
+            ./plan.sh
+            ./apply.sh
+
+
+  remove_runner:
+    name: remove_runner
+    needs: create_snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.TERRAFORM }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /root/runners/parachain-nodes/terraform-apply-delete/
+            ./plan.sh
+            ./destroy.sh                       
