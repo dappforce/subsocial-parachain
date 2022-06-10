@@ -38,10 +38,10 @@ pub struct Space<T: Config> {
     pub hidden: bool,
 
     /// The total number of posts in a given space.
-    pub(super) posts_count: u32,
+    pub posts_count: u32,
 
     /// The number of hidden posts in a given space.
-    pub(super) hidden_posts_count: u32,
+    pub hidden_posts_count: u32,
 
     /// The number of account following a given space.
     pub(super) followers_count: u32,

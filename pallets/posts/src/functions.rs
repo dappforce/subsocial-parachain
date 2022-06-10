@@ -1,6 +1,6 @@
 use frame_support::dispatch::DispatchResult;
 
-use pallet_utils::{remove_from_vec, SpaceId};
+use pallet_parachain_utils::{remove_from_vec, SpaceId};
 
 use super::*;
 
@@ -14,7 +14,7 @@ impl<T: Config> Post<T> {
     ) -> Self {
         Post {
             id,
-            created: WhoAndWhen::<T>::new(created_by.clone()),
+            created: new_who_and_when::<T>(created_by.clone()),
             updated: None,
             owner: created_by,
             extension,
@@ -404,7 +404,7 @@ impl<T: Config> Pallet<T> {
 
         ensure!(
             T::IsAccountBlocked::is_allowed_account(editor.clone(), new_space_id),
-            UtilsError::<T>::AccountIsBlocked
+            throw_utils_error(UtilsError::AccountIsBlocked)
         );
         Spaces::ensure_account_has_space_permission(
             editor,
@@ -414,11 +414,11 @@ impl<T: Config> Pallet<T> {
         )?;
         ensure!(
             T::IsPostBlocked::is_allowed_post(post.id, new_space_id),
-            UtilsError::<T>::PostIsBlocked
+            throw_utils_error(UtilsError::PostIsBlocked)
         );
         ensure!(
             T::IsContentBlocked::is_allowed_content(post.content.clone(), new_space_id),
-            UtilsError::<T>::ContentIsBlocked
+            throw_utils_error(UtilsError::ContentIsBlocked)
         );
 
         match post.extension {
