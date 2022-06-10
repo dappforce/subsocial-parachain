@@ -1,4 +1,4 @@
-use crate::{Module, Config, Role, RoleIdsByUserInSpace};
+use crate::{Config, Pallet, Role, RoleIdsByUserInSpace};
 
 use frame_support::storage::IterableStorageDoubleMap;
 use sp_std::prelude::*;
@@ -7,7 +7,7 @@ use sp_std::collections::{ btree_set::BTreeSet };
 use pallet_utils::{SpaceId, User};
 use pallet_permissions::{SpacePermission};
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
     pub fn get_space_permissions_by_account(
         account: T::AccountId,
         space_id: SpaceId

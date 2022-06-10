@@ -135,7 +135,7 @@ impl Config for Test {
 pub type AccountId = u64;
 pub type BlockNumber = u64;
 
-impl<T: Config> SpaceForRolesProvider for Module<T> {
+impl<T: Config> SpaceForRolesProvider for Pallet<T> {
     type AccountId = AccountId;
 
     // This function should return an error every time Space doesn't exist by SpaceId
@@ -149,7 +149,7 @@ impl<T: Config> SpaceForRolesProvider for Module<T> {
     }
 }
 
-impl<T: Config> SpaceFollowsProvider for Module<T> {
+impl<T: Config> SpaceFollowsProvider for Pallet<T> {
     type AccountId = AccountId;
 
     fn is_space_follower(_account: Self::AccountId, _space_id: u64) -> bool {
