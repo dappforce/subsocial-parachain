@@ -15,14 +15,13 @@ use frame_support::{
     dispatch::{DispatchResult, DispatchError},
     traits::Everything,
 };
-use frame_system as system;
 
 use pallet_permissions::{
     SpacePermission,
     SpacePermission as SP,
 };
 use df_traits::{SpaceForRoles, SpaceFollowsProvider, SpaceForRolesProvider};
-use pallet_utils::{SpaceId, User, Content, DEFAULT_MIN_HANDLE_LEN, DEFAULT_MAX_HANDLE_LEN};
+use pallet_parachain_utils::{SpaceId, User, Content};
 
 use crate as roles;
 
@@ -39,16 +38,19 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Roles: roles::{Pallet, Call, Storage, Event<T>},
-        Utils: pallet_utils::{Pallet, Storage, Event<T>, Config<T>},
     }
 );
 
+pub(super) type AccountId = u64;
+pub(super) type Balance = u64;
+type BlockNumber = u64;
+
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
+	pub const BlockHashCount: u64 = 250;
+	pub const SS58Prefix: u8 = 42;
 }
-impl system::Config for Test {
+
+impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
@@ -66,12 +68,13 @@ impl system::Config for Test {
     type DbWeight = ();
     type Version = ();
     type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<u64>;
+    type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
-    type SS58Prefix = ();
+    type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -101,18 +104,6 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-parameter_types! {
-    pub const MinHandleLen: u32 = DEFAULT_MIN_HANDLE_LEN;
-    pub const MaxHandleLen: u32 = DEFAULT_MAX_HANDLE_LEN;
-}
-
-impl pallet_utils::Config for Test {
-    type Event = Event;
-    type Currency = Balances;
-    type MinHandleLen = MinHandleLen;
-    type MaxHandleLen = MaxHandleLen;
-}
-
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
 
 impl pallet_permissions::Config for Test {
@@ -131,9 +122,6 @@ impl Config for Test {
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
 }
-
-pub type AccountId = u64;
-pub type BlockNumber = u64;
 
 impl<T: Config> SpaceForRolesProvider for Pallet<T> {
     type AccountId = AccountId;
