@@ -1,28 +1,26 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::ensure_signed;
-use sp_std::prelude::*;
+pub use pallet::*;
+
+use frame_support::dispatch::DispatchResult;
 
 use df_traits::{moderation::IsAccountBlocked, SpaceFollowsProvider};
 use pallet_profiles::{Module as Profiles, SocialAccountById};
-use pallet_spaces::{BeforeSpaceCreated, Module as Spaces, Space, SpaceById};
-use pallet_utils::{remove_from_vec, Error as UtilsError, SpaceId};
+use pallet_spaces::{BeforeSpaceCreated, Pallet as Spaces, types::Space, SpaceById};
 
-pub mod rpc;
-
-pub use pallet::*;
+// pub mod rpc;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use pallet_parachain_utils::{Error as UtilsError, SpaceId, remove_from_vec, throw_utils_error};
 
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + pallet_utils::Config
         + pallet_spaces::Config
         + pallet_profiles::Config
     {
@@ -36,7 +34,8 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
-    pub struct Pallet<T>(PhantomData<T>);
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -60,8 +59,6 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(5, 5))]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
-            use frame_support::StorageMap;
-
             let follower = ensure_signed(origin)?;
 
             ensure!(
@@ -74,7 +71,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(follower.clone(), space.id),
-                UtilsError::<T>::AccountIsBlocked
+                throw_utils_error(UtilsError::AccountIsBlocked)
             );
 
             Self::add_space_follower(follower, space)?;
@@ -97,7 +94,6 @@ pub mod pallet {
     }
 
     #[pallet::event]
-    #[pallet::metadata(T::AccountId = "AccountId")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         SpaceFollowed(
@@ -140,75 +136,74 @@ pub mod pallet {
     #[pallet::getter(fn spaces_followed_by_account)]
     pub type SpacesFollowedByAccount<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, Vec<SpaceId>, ValueQuery>;
-}
 
-impl<T: Config> Pallet<T> {
-    fn add_space_follower(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult {
-        use frame_support::StorageMap;
+    impl<T: Config> Pallet<T> {
+        fn add_space_follower(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult {
+            use frame_support::StorageMap;
 
-        space.inc_followers();
+            space.inc_followers();
 
-        let mut social_account = Profiles::get_or_new_social_account(follower.clone());
-        social_account.inc_following_spaces();
+            let mut social_account = Profiles::<T>::get_or_new_social_account(follower.clone());
+            social_account.inc_following_spaces();
 
-        T::BeforeSpaceFollowed::before_space_followed(
-            follower.clone(),
-            social_account.reputation,
-            space,
-        )?;
+            T::BeforeSpaceFollowed::before_space_followed(
+                follower.clone(),
+                space,
+            )?;
 
-        let space_id = space.id;
-        SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
-        SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
-        SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
-            space_ids.push(space_id)
-        });
-        SocialAccountById::<T>::insert(follower.clone(), social_account);
+            let space_id = space.id;
+            SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
+            SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
+            SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
+                space_ids.push(space_id)
+            });
+            SocialAccountById::<T>::insert(follower.clone(), social_account);
 
-        Self::deposit_event(Event::SpaceFollowed(follower, space_id));
+            Self::deposit_event(Event::SpaceFollowed(follower, space_id));
 
-        Ok(())
+            Ok(())
+        }
+
+        pub fn unfollow_space_by_account(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
+            use frame_support::StorageMap;
+
+            let space = &mut Spaces::require_space(space_id)?;
+            space.dec_followers();
+
+            let mut social_account = Profiles::<T>::social_account_by_id(follower.clone())
+                .ok_or(Error::<T>::SocialAccountNotFound)?;
+            social_account.dec_following_spaces();
+
+            T::BeforeSpaceUnfollowed::before_space_unfollowed(follower.clone(), space)?;
+
+            SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
+                remove_from_vec(space_ids, space_id)
+            });
+            SpaceFollowers::<T>::mutate(space_id, |account_ids| {
+                remove_from_vec(account_ids, follower.clone())
+            });
+            SpaceFollowedByAccount::<T>::remove((follower.clone(), space_id));
+            SocialAccountById::<T>::insert(follower.clone(), social_account);
+            SpaceById::<T>::insert(space_id, space);
+
+            Self::deposit_event(Event::SpaceUnfollowed(follower, space_id));
+            Ok(())
+        }
     }
 
-    pub fn unfollow_space_by_account(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
-        use frame_support::StorageMap;
+    impl<T: Config> SpaceFollowsProvider for Pallet<T> {
+        type AccountId = T::AccountId;
 
-        let space = &mut Spaces::require_space(space_id)?;
-        space.dec_followers();
-
-        let mut social_account = Profiles::social_account_by_id(follower.clone())
-            .ok_or(Error::<T>::SocialAccountNotFound)?;
-        social_account.dec_following_spaces();
-
-        T::BeforeSpaceUnfollowed::before_space_unfollowed(follower.clone(), space)?;
-
-        SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
-            remove_from_vec(space_ids, space_id)
-        });
-        SpaceFollowers::<T>::mutate(space_id, |account_ids| {
-            remove_from_vec(account_ids, follower.clone())
-        });
-        SpaceFollowedByAccount::<T>::remove((follower.clone(), space_id));
-        SocialAccountById::<T>::insert(follower.clone(), social_account);
-        SpaceById::<T>::insert(space_id, space);
-
-        Self::deposit_event(Event::SpaceUnfollowed(follower, space_id));
-        Ok(())
+        fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool {
+            Pallet::<T>::space_followed_by_account((account, space_id))
+        }
     }
-}
 
-impl<T: Config> SpaceFollowsProvider for Pallet<T> {
-    type AccountId = T::AccountId;
-
-    fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool {
-        Pallet::<T>::space_followed_by_account((account, space_id))
-    }
-}
-
-impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
-    fn before_space_created(creator: T::AccountId, space: &mut Space<T>) -> DispatchResult {
-        // Make a space creator the first follower of this space:
-        Pallet::<T>::add_space_follower(creator, space)
+    impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
+        fn before_space_created(creator: T::AccountId, space: &mut Space<T>) -> DispatchResult {
+            // Make a space creator the first follower of this space:
+            Pallet::<T>::add_space_follower(creator, space)
+        }
     }
 }
 
@@ -216,7 +211,6 @@ impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
 pub trait BeforeSpaceFollowed<T: Config> {
     fn before_space_followed(
         follower: T::AccountId,
-        follower_reputation: u32,
         space: &mut Space<T>,
     ) -> DispatchResult;
 }
@@ -224,7 +218,6 @@ pub trait BeforeSpaceFollowed<T: Config> {
 impl<T: Config> BeforeSpaceFollowed<T> for () {
     fn before_space_followed(
         _follower: T::AccountId,
-        _follower_reputation: u32,
         _space: &mut Space<T>,
     ) -> DispatchResult {
         Ok(())

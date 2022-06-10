@@ -1,8 +1,8 @@
 [package]
 name = 'pallet-space-follows'
-version = '0.7.3'
+version = '0.1.5'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2018'
+edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/dappforce-subsocial-node'
@@ -21,25 +21,20 @@ std = [
     'df-traits/std',
     'pallet-profiles/std',
     'pallet-spaces/std',
-    'pallet-utils/std',
+    'pallet-parachain-utils/std',
 ]
 
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '2.0.0'
-
 [dependencies]
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # Local depenpdencies
 df-traits = { default-features = false, path = '../traits' }
 pallet-profiles = { default-features = false, path = '../profiles' }
 pallet-spaces = { default-features = false, path = '../spaces' }
-pallet-utils = { default-features = false, path = '../utils' }
+pallet-parachain-utils = { default-features = false, path = '../parachain-utils' }
 
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

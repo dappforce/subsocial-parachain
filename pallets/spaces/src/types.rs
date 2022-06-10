@@ -16,7 +16,7 @@ pub(crate) type SpacesByAccount<T> = BoundedVec<SpaceId, <T as Config>::MaxSpace
 #[scale_info(skip_type_params(T))]
 pub struct Space<T: Config> {
     /// Unique sequential identifier of a space. Examples of space ids: `1`, `2`, `3`, and so on.
-    pub(super) id: SpaceId,
+    pub id: SpaceId,
 
     pub(super) created: WhoAndWhenOf<T>,
     pub(super) updated: Option<WhoAndWhenOf<T>>,
@@ -35,7 +35,7 @@ pub struct Space<T: Config> {
 
     /// Hidden field is used to recommend to end clients (web and mobile apps) that a particular
     /// space and its' posts should not be shown.
-    pub(super) hidden: bool,
+    pub hidden: bool,
 
     /// The total number of posts in a given space.
     pub(super) posts_count: u32,
