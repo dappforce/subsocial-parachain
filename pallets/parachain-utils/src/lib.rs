@@ -125,6 +125,8 @@ pub enum Error {
     AccountIsBlocked,
     /// Content is blocked in a given space.
     ContentIsBlocked,
+    /// Post is blocked in a given space.
+    PostIsBlocked,
     /// IPFS CID is invalid.
     InvalidIpfsCid,
     /// `Raw` content type is not yet supported.
@@ -146,6 +148,7 @@ impl From<Error> for &'static str {
         match e {
             Error::AccountIsBlocked => "AccountIsBlocked",
             Error::ContentIsBlocked => "ContentIsBlocked",
+            Error::PostIsBlocked => "PostIsBlocked",
             Error::InvalidIpfsCid => "InvalidIpfsCid",
             Error::RawContentTypeNotSupported => "RawContentTypeNotSupported",
             Error::HypercoreContentTypeNotSupported => "HypercoreContentTypeNotSupported",
