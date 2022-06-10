@@ -21,61 +21,24 @@ use df_traits::{
     moderation::{IsAccountBlocked, IsContentBlocked},
     PermissionChecker, SpaceFollowsProvider, SpaceForRolesProvider,
 };
-use pallet_permissions::{Module as Permissions, SpacePermission, SpacePermissionSet};
-use pallet_utils::{Content, Error as UtilsError, Module as Utils, SpaceId, User, WhoAndWhen};
+use pallet_permissions::{Pallet as Permissions, SpacePermission, SpacePermissionSet};
+use pallet_parachain_utils::{
+    Content, Error as UtilsError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
+    ensure_content_is_valid, convert_users_vec_to_btree_set, throw_utils_error,
+};
 
 pub use pallet::*;
 pub mod functions;
-pub mod rpc;
 
-#[cfg(test)]
-mod mock;
+pub mod types;
+pub use types::*;
+// pub mod rpc;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod mock;
 
-pub type RoleId = u64;
-
-/// Information about a role's permissions, its' containing space, and its' content.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-pub struct Role<T: Config> {
-    pub created: WhoAndWhen<T>,
-    pub updated: Option<WhoAndWhen<T>>,
-
-    /// Unique sequential identifier of a role. Examples of role ids: `1`, `2`, `3`, and so on.
-    pub id: RoleId,
-
-    /// An id of a space that contains this role.
-    pub space_id: SpaceId,
-
-    /// If `true` then the permissions associated with a given role will have no affect.
-    /// This is useful if you would like to temporarily disable permissions from a given role,
-    /// without removing the role from its' owners
-    pub disabled: bool,
-
-    /// An optional block number at which this role will expire. If `expires_at` is `Some`
-    /// and the current block is greater or equal to its value, the permissions associated
-    /// with a given role will have no affect.
-    pub expires_at: Option<T::BlockNumber>,
-
-    /// Content can optionally contain additional information associated with a role,
-    /// such as a name, description, and image for a role. This may be useful for end users.
-    pub content: Content,
-
-    /// A set of permisions granted to owners of a particular role which are valid
-    /// only within the space containing this role
-    pub permissions: SpacePermissionSet,
-}
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct RoleUpdate {
-    pub disabled: Option<bool>,
-    pub content: Option<Content>,
-    pub permissions: Option<SpacePermissionSet>,
-}
-
-pub const FIRST_ROLE_ID: u64 = 1;
+// #[cfg(test)]
+// mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -85,7 +48,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-        frame_system::Config + pallet_permissions::Config + pallet_utils::Config
+        frame_system::Config + pallet_permissions::Config + pallet_timestamp::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -107,6 +70,7 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::hooks]
@@ -128,220 +92,7 @@ pub mod pallet {
         }
     }
 
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {
-        /// Create a new role, with a list of permissions, within a given space.
-        ///
-        /// `content` can optionally contain additional information associated with a role,
-        /// such as a name, description, and image for a role. This may be useful for end users.
-        ///
-        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
-        pub fn create_role(
-            origin: OriginFor<T>,
-            space_id: SpaceId,
-            time_to_live: Option<T::BlockNumber>,
-            content: Content,
-            permissions: Vec<SpacePermission>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
-
-            Utils::<T>::is_valid_content(content.clone())?;
-            ensure!(
-                T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
-                UtilsError::<T>::ContentIsBlocked
-            );
-
-            Self::ensure_role_manager(who.clone(), space_id)?;
-
-            let permissions_set = permissions.into_iter().collect();
-            let new_role = Role::<T>::new(
-                who.clone(),
-                space_id,
-                time_to_live,
-                content,
-                permissions_set,
-            )?;
-
-            // TODO review strange code:
-            let next_role_id = new_role
-                .id
-                .checked_add(1)
-                .ok_or(Error::<T>::RoleIdOverflow)?;
-            NextRoleId::<T>::put(next_role_id);
-
-            RoleById::<T>::insert(new_role.id, new_role.clone());
-            RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
-
-            Self::deposit_event(Event::RoleCreated(who, space_id, new_role.id));
-            Ok(())
-        }
-
-        /// Update an existing role by a given id.
-        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-        pub fn update_role(
-            origin: OriginFor<T>,
-            role_id: RoleId,
-            update: RoleUpdate,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            let has_updates = update.disabled.is_some()
-                || update.content.is_some()
-                || update.permissions.is_some();
-
-            ensure!(has_updates, Error::<T>::NoUpdatesProvided);
-
-            let mut role = Self::require_role(role_id)?;
-
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            let mut is_update_applied = false;
-
-            if let Some(disabled) = update.disabled {
-                if disabled != role.disabled {
-                    role.set_disabled(disabled)?;
-                    is_update_applied = true;
-                }
-            }
-
-            if let Some(content) = update.content {
-                if content != role.content {
-                    Utils::<T>::is_valid_content(content.clone())?;
-                    ensure!(
-                        T::IsContentBlocked::is_allowed_content(content.clone(), role.space_id),
-                        UtilsError::<T>::ContentIsBlocked
-                    );
-
-                    role.content = content;
-                    is_update_applied = true;
-                }
-            }
-
-            if let Some(permissions) = update.permissions {
-                if !permissions.is_empty() {
-                    let permissions_diff: Vec<_> = permissions
-                        .symmetric_difference(&role.permissions)
-                        .cloned()
-                        .collect();
-
-                    if !permissions_diff.is_empty() {
-                        role.permissions = permissions;
-                        is_update_applied = true;
-                    }
-                }
-            }
-
-            if is_update_applied {
-                role.updated = Some(WhoAndWhen::<T>::new(who.clone()));
-
-                <RoleById<T>>::insert(role_id, role);
-                Self::deposit_event(Event::RoleUpdated(who, role_id));
-            }
-            Ok(())
-        }
-
-        /// Delete a given role and clean all associated storage items.
-        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(6, 5))]
-        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            let role = Self::require_role(role_id)?;
-
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            let users = Self::users_by_role_id(role_id);
-            ensure!(
-                users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
-                Error::<T>::TooManyUsersToDeleteRole
-            );
-
-            let role_idx_by_space_opt = Self::role_ids_by_space_id(role.space_id)
-                .iter()
-                .position(|x| *x == role_id);
-
-            if let Some(role_idx) = role_idx_by_space_opt {
-                RoleIdsBySpaceId::<T>::mutate(role.space_id, |n| n.swap_remove(role_idx));
-            }
-
-            role.revoke_from_users(users);
-
-            <RoleById<T>>::remove(role_id);
-            <UsersByRoleId<T>>::remove(role_id);
-
-            Self::deposit_event(Event::RoleDeleted(who, role_id));
-            Ok(())
-        }
-
-        /// Grant a given role to a list of users.
-        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
-        pub fn grant_role(
-            origin: OriginFor<T>,
-            role_id: RoleId,
-            users: Vec<User<T::AccountId>>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
-            let users_set: BTreeSet<User<T::AccountId>> =
-                Utils::<T>::convert_users_vec_to_btree_set(users)?;
-
-            let role = Self::require_role(role_id)?;
-
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            for user in users_set.iter() {
-                if !Self::users_by_role_id(role_id).contains(user) {
-                    <UsersByRoleId<T>>::mutate(role_id, |users| {
-                        users.push(user.clone());
-                    });
-                }
-                if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id)
-                {
-                    <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
-                        roles.push(role_id);
-                    })
-                }
-            }
-
-            Self::deposit_event(Event::RoleGranted(
-                who,
-                role_id,
-                users_set.iter().cloned().collect(),
-            ));
-            Ok(())
-        }
-
-        /// Revoke a given role from a list of users.
-        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
-        pub fn revoke_role(
-            origin: OriginFor<T>,
-            role_id: RoleId,
-            users: Vec<User<T::AccountId>>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
-
-            let role = Self::require_role(role_id)?;
-
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            role.revoke_from_users(users.clone());
-
-            Self::deposit_event(Event::RoleRevoked(who, role_id, users));
-            Ok(())
-        }
-    }
-
     #[pallet::event]
-    #[pallet::metadata(T::AccountId = "AccountId", Vec<User<T::AccountId>> = "Vec<User<AccountId>>")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         RoleCreated(T::AccountId, SpaceId, RoleId),
@@ -409,6 +160,7 @@ pub mod pallet {
     pub type UsersByRoleId<T: Config> =
         StorageMap<_, Twox64Concat, RoleId, Vec<User<T::AccountId>>, ValueQuery>;
 
+    // TODO: use BoundedVec here
     /// Get a list of all role ids available in a given space.
     #[pallet::storage]
     #[pallet::getter(fn role_ids_by_space_id)]
@@ -428,4 +180,216 @@ pub mod pallet {
         Vec<RoleId>,
         ValueQuery,
     >;
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// Create a new role, with a list of permissions, within a given space.
+        ///
+        /// `content` can optionally contain additional information associated with a role,
+        /// such as a name, description, and image for a role. This may be useful for end users.
+        ///
+        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        pub fn create_role(
+            origin: OriginFor<T>,
+            space_id: SpaceId,
+            time_to_live: Option<T::BlockNumber>,
+            content: Content,
+            permissions: Vec<SpacePermission>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
+
+            ensure_content_is_valid(content.clone())?;
+            ensure!(
+                T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
+                throw_utils_error(UtilsError::ContentIsBlocked),
+            );
+
+            Self::ensure_role_manager(who.clone(), space_id)?;
+
+            let permissions_set = permissions.into_iter().collect();
+            let new_role = Role::<T>::new(
+                who.clone(),
+                space_id,
+                time_to_live,
+                content,
+                permissions_set,
+            )?;
+
+            // TODO review strange code:
+            let next_role_id = new_role
+                .id
+                .checked_add(1)
+                .ok_or(Error::<T>::RoleIdOverflow)?;
+            NextRoleId::<T>::put(next_role_id);
+
+            RoleById::<T>::insert(new_role.id, new_role.clone());
+            RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
+
+            Self::deposit_event(Event::RoleCreated(who, space_id, new_role.id));
+            Ok(())
+        }
+
+        /// Update an existing role by a given id.
+        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+        pub fn update_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            update: RoleUpdate,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            let has_updates = update.disabled.is_some()
+                || update.content.is_some()
+                || update.permissions.is_some();
+
+            ensure!(has_updates, Error::<T>::NoUpdatesProvided);
+
+            let mut role = Self::require_role(role_id)?;
+
+            Self::ensure_role_manager(who.clone(), role.space_id)?;
+
+            let mut is_update_applied = false;
+
+            if let Some(disabled) = update.disabled {
+                if disabled != role.disabled {
+                    role.set_disabled(disabled)?;
+                    is_update_applied = true;
+                }
+            }
+
+            if let Some(content) = update.content {
+                if content != role.content {
+                    ensure_content_is_valid(content.clone())?;
+                    ensure!(
+                        T::IsContentBlocked::is_allowed_content(content.clone(), role.space_id),
+                        throw_utils_error(UtilsError::ContentIsBlocked)
+                    );
+
+                    role.content = content;
+                    is_update_applied = true;
+                }
+            }
+
+            if let Some(permissions) = update.permissions {
+                if !permissions.is_empty() {
+                    let permissions_diff: Vec<_> = permissions
+                        .symmetric_difference(&role.permissions)
+                        .cloned()
+                        .collect();
+
+                    if !permissions_diff.is_empty() {
+                        role.permissions = permissions;
+                        is_update_applied = true;
+                    }
+                }
+            }
+
+            if is_update_applied {
+                role.updated = Some(new_who_and_when::<T>(who.clone()));
+
+                <RoleById<T>>::insert(role_id, role);
+                Self::deposit_event(Event::RoleUpdated(who, role_id));
+            }
+            Ok(())
+        }
+
+        /// Delete a given role and clean all associated storage items.
+        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(6, 5))]
+        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            let role = Self::require_role(role_id)?;
+
+            Self::ensure_role_manager(who.clone(), role.space_id)?;
+
+            let users = Self::users_by_role_id(role_id);
+            ensure!(
+                users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
+                Error::<T>::TooManyUsersToDeleteRole
+            );
+
+            let role_idx_by_space_opt = Self::role_ids_by_space_id(role.space_id)
+                .iter()
+                .position(|x| *x == role_id);
+
+            if let Some(role_idx) = role_idx_by_space_opt {
+                RoleIdsBySpaceId::<T>::mutate(role.space_id, |n| n.swap_remove(role_idx));
+            }
+
+            role.revoke_from_users(users);
+
+            <RoleById<T>>::remove(role_id);
+            <UsersByRoleId<T>>::remove(role_id);
+
+            Self::deposit_event(Event::RoleDeleted(who, role_id));
+            Ok(())
+        }
+
+        /// Grant a given role to a list of users.
+        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        pub fn grant_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            users: Vec<User<T::AccountId>>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
+            let users_set: BTreeSet<User<T::AccountId>> =
+                convert_users_vec_to_btree_set(users)?;
+
+            let role = Self::require_role(role_id)?;
+
+            Self::ensure_role_manager(who.clone(), role.space_id)?;
+
+            for user in users_set.iter() {
+                if !Self::users_by_role_id(role_id).contains(user) {
+                    <UsersByRoleId<T>>::mutate(role_id, |users| {
+                        users.push(user.clone());
+                    });
+                }
+                if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id)
+                {
+                    <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
+                        roles.push(role_id);
+                    })
+                }
+            }
+
+            Self::deposit_event(Event::RoleGranted(
+                who,
+                role_id,
+                users_set.iter().cloned().collect(),
+            ));
+            Ok(())
+        }
+
+        /// Revoke a given role from a list of users.
+        /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        pub fn revoke_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            users: Vec<User<T::AccountId>>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
+
+            let role = Self::require_role(role_id)?;
+
+            Self::ensure_role_manager(who.clone(), role.space_id)?;
+
+            role.revoke_from_users(users.clone());
+
+            Self::deposit_event(Event::RoleRevoked(who, role_id, users));
+            Ok(())
+        }
+    }
 }

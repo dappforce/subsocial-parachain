@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 use frame_support::pallet_prelude::*;
-use sp_std::{vec, vec::Vec};
+use sp_std::{vec, vec::Vec, collections::btree_set::BTreeSet};
 
 pub type SpaceId = u64;
 pub type PostId = u64;
@@ -83,7 +83,7 @@ impl Content {
     }
 }
 
-#[derive(Encode, Decode, Ord, PartialOrd, Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, Ord, PartialOrd, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum User<AccountId> {
     Account(AccountId),
     Space(SpaceId),
@@ -105,6 +105,18 @@ impl<AccountId> User<AccountId> {
             None
         }
     }
+}
+
+pub fn convert_users_vec_to_btree_set<AccountId: Ord + Clone>(
+    users_vec: Vec<User<AccountId>>
+) -> Result<BTreeSet<User<AccountId>>, DispatchError> {
+    let mut users_set: BTreeSet<User<AccountId>> = BTreeSet::new();
+
+    for user in users_vec.iter() {
+        users_set.insert(user.clone());
+    }
+
+    Ok(users_set)
 }
 
 #[derive(Encode, Decode, RuntimeDebug)]
