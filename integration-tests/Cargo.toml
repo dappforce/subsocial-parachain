@@ -1,0 +1,72 @@
+[package]
+name = 'integration-tests'
+version = '0.7.3'
+authors = ['DappForce <dappforce@pm.me>']
+edition = '2018'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+repository = 'https://github.com/dappforce/dappforce-subsocial-node'
+description = 'Integration tests'
+keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'scale-info/std',
+    'sp-io/std',
+    'sp-runtime/std',
+    'sp-std/std',
+    'pallet-balances/std',
+    'pallet-timestamp/std',
+    'frame-support/std',
+    'frame-system/std',
+    'pallet-moderation/std',
+    'pallet-permissions/std',
+    'pallet-post-history/std',
+    'pallet-posts/std',
+    'pallet-profile-follows/std',
+    'pallet-profile-history/std',
+    'pallet-profiles/std',
+    'pallet-reactions/std',
+    'pallet-roles/std',
+    'pallet-space-follows/std',
+    'pallet-space-history/std',
+    'pallet-space-ownership/std',
+    'pallet-spaces/std',
+    'pallet-utils/std',
+]
+
+[dependencies]
+codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+
+[dev-dependencies]
+serde = { version = '1.0.119' }
+
+pallet-moderation = { default-features = false, path = '../../subsocial-node/pallets/moderation' }
+pallet-permissions = { default-features = false, path = '../../subsocial-node/pallets/permissions' }
+pallet-post-history = { default-features = false, path = '../../subsocial-node/pallets/post-history' }
+pallet-posts = { default-features = false, path = '../../subsocial-node/pallets/posts' }
+pallet-profile-follows = { default-features = false, path = '../../subsocial-node/pallets/profile-follows' }
+pallet-profile-history = { default-features = false, path = '../../subsocial-node/pallets/profile-history' }
+pallet-profiles = { default-features = false, path = '../../subsocial-node/pallets/profiles' }
+pallet-reactions = { default-features = false, path = '../../subsocial-node/pallets/reactions' }
+pallet-roles = { default-features = false, path = '../../subsocial-node/pallets/roles' }
+pallet-space-follows = { default-features = false, path = '../../subsocial-node/pallets/space-follows' }
+pallet-space-history = { default-features = false, path = '../../subsocial-node/pallets/space-history' }
+pallet-space-ownership = { default-features = false, path = '../../subsocial-node/pallets/space-ownership' }
+pallet-spaces = { default-features = false, path = '../../subsocial-node/pallets/spaces' }
+pallet-utils = { default-features = false, path = '../../subsocial-node/pallets/utils' }
+
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
