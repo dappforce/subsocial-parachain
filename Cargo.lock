@@ -1995,6 +1995,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "df-traits"
+version = "0.1.5"
+dependencies = [
+ "frame-support",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "sp-runtime",
+]
+
+[[package]]
 name = "digest"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3358,6 +3368,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "276ec31bcb4a9ee45f58bec6f9ec700ae4cf4f4f8f2fa7e06cb406bd5ffdd770"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "integration-tests"
+version = "0.1.5"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5693,6 +5727,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-permissions"
+version = "0.1.5"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-parachain-utils",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-posts"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-space-follows",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -5704,6 +5772,21 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-profiles"
+version = "0.1.5"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -5746,6 +5829,26 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-roles"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -5813,6 +5916,38 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "rand_chacha 0.2.2",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-space-follows"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "pallet-parachain-utils",
+ "pallet-profiles",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-spaces"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-timestamp",
+ "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std",
