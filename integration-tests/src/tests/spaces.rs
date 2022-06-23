@@ -27,7 +27,7 @@ fn create_subspace_should_fail_when_content_is_blocked() {
                 Some(valid_content_ipfs()),
                 None,
             ),
-            UtilsError::<TestRuntime>::ContentIsBlocked
+            DispatchError::Other(UtilsError::ContentIsBlocked.into())
         );
     });
 }
@@ -45,7 +45,7 @@ fn create_subspace_should_fail_when_account_is_blocked() {
                 None,
                 None,
             ),
-            UtilsError::<TestRuntime>::AccountIsBlocked
+            DispatchError::Other(UtilsError::AccountIsBlocked.into())
         );
     });
 }
@@ -60,7 +60,7 @@ fn update_space_should_fail_when_account_is_blocked() {
                 None,
                 Some(update_for_space_handle(Some(space_handle_2())))
             ),
-            UtilsError::<TestRuntime>::AccountIsBlocked
+            DispatchError::Other(UtilsError::AccountIsBlocked.into())
         );
     });
 }
@@ -75,7 +75,7 @@ fn update_space_should_fail_when_content_is_blocked() {
                 None,
                 Some(space_update(None, Some(valid_content_ipfs()), None))
             ),
-            UtilsError::<TestRuntime>::ContentIsBlocked
+            DispatchError::Other(UtilsError::ContentIsBlocked.into())
         );
     });
 }
@@ -178,7 +178,7 @@ fn create_space_should_fail_when_too_short_handle_provided() {
         // Try to catch an error creating a space with too short handle
         assert_noop!(
             _create_space(None, Some(Some(short_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleIsTooShort
+            DispatchError::Other(UtilsError::HandleIsTooShort.into())
         );
     });
 }
@@ -191,7 +191,7 @@ fn create_space_should_fail_when_too_long_handle_provided() {
         // Try to catch an error creating a space with too long handle
         assert_noop!(
             _create_space(None, Some(Some(long_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleIsTooLong
+            DispatchError::Other(UtilsError::HandleIsTooLong.into())
         );
     });
 }
@@ -216,7 +216,7 @@ fn create_space_should_fail_when_handle_contains_at_char() {
 
         assert_noop!(
             _create_space(None, Some(Some(invalid_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -228,7 +228,7 @@ fn create_space_should_fail_when_handle_contains_minus_char() {
 
         assert_noop!(
             _create_space(None, Some(Some(invalid_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -240,7 +240,7 @@ fn create_space_should_fail_when_handle_contains_space_char() {
 
         assert_noop!(
             _create_space(None, Some(Some(invalid_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -252,7 +252,7 @@ fn create_space_should_fail_when_handle_contains_unicode() {
 
         assert_noop!(
             _create_space(None, Some(Some(invalid_handle)), None, None),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -275,7 +275,7 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a space with invalid content
         assert_noop!(
             _create_space(None, None, Some(invalid_content_ipfs()), None),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }
@@ -427,7 +427,7 @@ fn update_space_should_fail_when_too_short_handle_provided() {
                 None,
                 Some(update_for_space_handle(Some(short_handle)))
             ),
-            UtilsError::<TestRuntime>::HandleIsTooShort
+            DispatchError::Other(UtilsError::HandleIsTooShort.into())
         );
     });
 }
@@ -440,7 +440,7 @@ fn update_space_should_fail_when_too_long_handle_provided() {
         // Try to catch an error updating a space with too long handle
         assert_noop!(
             _update_space(None, None, Some(update_for_space_handle(Some(long_handle)))),
-            UtilsError::<TestRuntime>::HandleIsTooLong
+            DispatchError::Other(UtilsError::HandleIsTooLong.into())
         );
     });
 }
@@ -475,7 +475,7 @@ fn update_space_should_fail_when_handle_contains_at_char() {
                 None,
                 Some(update_for_space_handle(Some(invalid_handle)))
             ),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -491,7 +491,7 @@ fn update_space_should_fail_when_handle_contains_minus_char() {
                 None,
                 Some(update_for_space_handle(Some(invalid_handle)))
             ),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -507,7 +507,7 @@ fn update_space_should_fail_when_handle_contains_space_char() {
                 None,
                 Some(update_for_space_handle(Some(invalid_handle)))
             ),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -523,7 +523,7 @@ fn update_space_should_fail_when_handle_contains_unicode() {
                 None,
                 Some(update_for_space_handle(Some(invalid_handle)))
             ),
-            UtilsError::<TestRuntime>::HandleContainsInvalidChars
+            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
         );
     });
 }
@@ -551,7 +551,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(space_update(None, Some(invalid_content_ipfs()), None,))
             ),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }

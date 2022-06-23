@@ -1,4 +1,5 @@
 use frame_support::{assert_noop, assert_ok};
+use sp_runtime::DispatchError;
 
 use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
 use pallet_permissions::SpacePermission as SP;
@@ -23,7 +24,7 @@ fn create_post_should_fail_when_content_is_blocked() {
         block_content_in_space_1();
         assert_noop!(
             _create_post(None, None, None, Some(valid_content_ipfs()),),
-            UtilsError::<TestRuntime>::ContentIsBlocked
+            DispatchError::Other(UtilsError::ContentIsBlocked.into()),
         );
     });
 }
@@ -34,7 +35,7 @@ fn create_post_should_fail_when_account_is_blocked() {
         block_account_in_space_1();
         assert_noop!(
             _create_post(None, None, None, Some(valid_content_ipfs()),),
-            UtilsError::<TestRuntime>::AccountIsBlocked
+            DispatchError::Other(UtilsError::AccountIsBlocked.into()),
         );
     });
 }
@@ -49,7 +50,7 @@ fn update_post_should_fail_when_content_is_blocked() {
                 None,
                 Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
             ),
-            UtilsError::<TestRuntime>::ContentIsBlocked
+            DispatchError::Other(UtilsError::ContentIsBlocked.into())
         );
     });
 }
@@ -64,7 +65,7 @@ fn update_post_should_fail_when_account_is_blocked() {
                 None,
                 Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
             ),
-            UtilsError::<TestRuntime>::AccountIsBlocked
+            DispatchError::Other(UtilsError::AccountIsBlocked.into())
         );
     });
 }
@@ -93,7 +94,7 @@ fn update_post_should_fail_when_post_is_blocked() {
                         None
                     )
                 )
-            ), UtilsError::<TestRuntime>::PostIsBlocked
+            ), DispatchError::Other(UtilsError::PostIsBlocked.into())
         );
     });
 }
@@ -168,7 +169,7 @@ fn create_post_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a regular post with invalid content
         assert_noop!(
             _create_post(None, None, None, Some(invalid_content_ipfs())),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }
@@ -526,7 +527,7 @@ fn update_post_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(post_update(None, Some(invalid_content_ipfs()), None))
             ),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }

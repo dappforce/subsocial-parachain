@@ -100,7 +100,7 @@ fn create_comment_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a comment with wrong parent
         assert_noop!(
             _create_comment(None, None, None, Some(invalid_content_ipfs())),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }
@@ -232,7 +232,7 @@ fn update_comment_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(post_update(None, Some(invalid_content_ipfs()), None))
             ),
-            UtilsError::<TestRuntime>::InvalidIpfsCid
+            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
         );
     });
 }
