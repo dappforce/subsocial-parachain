@@ -23,15 +23,12 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'pallet-permissions/std',
-#    'pallet-post-history/std',
     'pallet-posts/std',
 #    'pallet-profile-follows/std',
-#    'pallet-profile-history/std',
     'pallet-profiles/std',
 #    'pallet-reactions/std',
     'pallet-roles/std',
     'pallet-space-follows/std',
-#    'pallet-space-history/std',
 #    'pallet-space-ownership/std',
     'pallet-spaces/std',
     'pallet-parachain-utils/std',
@@ -53,15 +50,12 @@ sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v
 
 [dev-dependencies]
 pallet-permissions = { default-features = false, path = '../pallets/permissions' }
-#pallet-post-history = { default-features = false, path = '../pallets/post-history' }
 pallet-posts = { default-features = false, path = '../pallets/posts' }
 #pallet-profile-follows = { default-features = false, path = '../pallets/profile-follows' }
-#pallet-profile-history = { default-features = false, path = '../pallets/profile-history' }
 pallet-profiles = { default-features = false, path = '../pallets/profiles' }
 #pallet-reactions = { default-features = false, path = '../pallets/reactions' }
 pallet-roles = { default-features = false, path = '../pallets/roles' }
 pallet-space-follows = { default-features = false, path = '../pallets/space-follows' }
-#pallet-space-history = { default-features = false, path = '../pallets/space-history' }
 #pallet-space-ownership = { default-features = false, path = '../pallets/space-ownership' }
 pallet-spaces = { default-features = false, path = '../pallets/spaces' }
 pallet-parachain-utils = { default-features = false, path = '../pallets/parachain-utils' }

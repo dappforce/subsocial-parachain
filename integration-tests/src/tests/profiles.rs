@@ -21,8 +21,6 @@ fn create_profile_should_work() {
         assert_eq!(profile.created.account, ACCOUNT1);
         assert!(profile.updated.is_none());
         assert_eq!(profile.content, profile_content_ipfs());
-
-        assert!(ProfileHistory::edit_history(ACCOUNT1).is_empty());
     });
 }
 
@@ -62,13 +60,6 @@ fn update_profile_should_work() {
             .unwrap();
         assert!(profile.updated.is_some());
         assert_eq!(profile.content, space_content_ipfs());
-
-        // Check whether profile history is written correctly
-        let profile_history = ProfileHistory::edit_history(ACCOUNT1)[0].clone();
-        assert_eq!(
-            profile_history.old_data.content,
-            Some(profile_content_ipfs())
-        );
     });
 }
 

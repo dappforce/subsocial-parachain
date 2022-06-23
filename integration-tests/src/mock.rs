@@ -48,14 +48,11 @@ frame_support::construct_runtime!(
             Timestamp: pallet_timestamp,
             Permissions: pallet_permissions,
             Posts: pallet_posts,
-            PostHistory: pallet_post_history,
             ProfileFollows: pallet_profile_follows,
             Profiles: pallet_profiles,
-            ProfileHistory: pallet_profile_history,
             Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
-            SpaceHistory: pallet_space_history,
             SpaceOwnership: pallet_space_ownership,
             Spaces: pallet_spaces,
         }
@@ -144,11 +141,9 @@ parameter_types! {
 impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
-    type AfterPostUpdated = PostHistory;
+    type AfterPostUpdated = ();
     type IsPostBlocked = MockModeration;
 }
-
-impl pallet_post_history::Config for TestRuntime {}
 
 impl pallet_profile_follows::Config for TestRuntime {
     type Event = Event;
@@ -156,12 +151,7 @@ impl pallet_profile_follows::Config for TestRuntime {
     type BeforeAccountUnfollowed = ();
 }
 
-impl pallet_profiles::Config for TestRuntime {
-    type Event = Event;
-    type AfterProfileUpdated = ProfileHistory;
-}
-
-impl pallet_profile_history::Config for TestRuntime {}
+impl pallet_profiles::Config for TestRuntime {}
 
 impl pallet_reactions::Config for TestRuntime {
     type Event = Event;
@@ -202,13 +192,11 @@ impl pallet_spaces::Config for TestRuntime {
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
     type BeforeSpaceCreated = SpaceFollows;
-    type AfterSpaceUpdated = SpaceHistory;
+    type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type HandleDeposit = HandleDeposit;
 }
-
-impl pallet_space_history::Config for TestRuntime {}
 
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
