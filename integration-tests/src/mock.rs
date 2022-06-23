@@ -27,7 +27,7 @@ use pallet_spaces::{SpaceById, SpaceUpdate, Error as SpacesError, SpacesSettings
 use pallet_space_follows::Error as SpaceFollowsError;
 use pallet_space_ownership::Error as SpaceOwnershipError;
 use pallet_moderation::{EntityId, EntityStatus, ReportId};
-use pallet_utils::{
+use pallet_parachain_utils::{
     mock_functions::*,
     DEFAULT_MIN_HANDLE_LEN, DEFAULT_MAX_HANDLE_LEN,
     Error as UtilsError,
@@ -60,7 +60,6 @@ frame_support::construct_runtime!(
             SpaceHistory: pallet_space_history::{Pallet, Storage},
             SpaceOwnership: pallet_space_ownership::{Pallet, Call, Storage, Event<T>},
             Spaces: pallet_spaces::{Pallet, Call, Storage, Event<T>, Config<T>},
-            Utils: pallet_utils::{Pallet, Storage, Event<T>, Config<T>},
         }
     );
 
@@ -126,7 +125,7 @@ parameter_types! {
       pub const MaxHandleLen: u32 = DEFAULT_MAX_HANDLE_LEN;
     }
 
-impl pallet_utils::Config for TestRuntime {
+impl pallet_parachain_utils::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
     type MinHandleLen = MinHandleLen;

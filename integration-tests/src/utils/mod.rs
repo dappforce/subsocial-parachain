@@ -1,5 +1,5 @@
 use pallet_reactions::ReactionId;
-use pallet_utils::{PostId, SpaceId};
+use pallet_parachain_utils::{PostId, SpaceId};
 use crate::mock::AccountId;
 
 pub(crate) mod spaces_utils;

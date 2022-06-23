@@ -1,7 +1,7 @@
 use frame_support::pallet_prelude::*;
 
 use pallet_reactions::{ReactionId, ReactionKind};
-use pallet_utils::PostId;
+use pallet_parachain_utils::PostId;
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1};
