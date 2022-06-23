@@ -255,12 +255,13 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             let has_updates = update.parent_id.is_some()
-                || update.handle.is_some()
                 || update.content.is_some()
                 || update.hidden.is_some()
                 || update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
+
+            ensure!(update.handle.is_some(), Error::<T>::HandlesAreDisabled);
 
             let mut space = Self::require_space(space_id)?;
 
