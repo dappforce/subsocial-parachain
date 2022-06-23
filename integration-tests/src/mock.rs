@@ -20,7 +20,6 @@ use pallet_permissions::{
     SpacePermissions,
 };
 use pallet_posts::{Post, PostUpdate, PostExtension, Comment, Error as PostsError};
-use pallet_profiles::{ProfileUpdate, Error as ProfilesError};
 // use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
 use pallet_spaces::{SpaceById, SpaceUpdate, Error as SpacesError, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
@@ -47,7 +46,7 @@ frame_support::construct_runtime!(
             Timestamp: pallet_timestamp,
             Permissions: pallet_permissions,
             Posts: pallet_posts,
-            Profiles: pallet_profiles,
+            Profiles: pallet_profiles::{Pallet, Call, Storage},
             // Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
@@ -111,18 +110,6 @@ impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
-}
-
-parameter_types! {
-      pub const MinHandleLen: u32 = DEFAULT_MIN_HANDLE_LEN;
-      pub const MaxHandleLen: u32 = DEFAULT_MAX_HANDLE_LEN;
-    }
-
-impl pallet_parachain_utils::Config for TestRuntime {
-    type Event = Event;
-    type Currency = Balances;
-    type MinHandleLen = MinHandleLen;
-    type MaxHandleLen = MaxHandleLen;
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;

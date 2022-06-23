@@ -9,7 +9,7 @@ use crate::utils::{ACCOUNT1, SPACE1};
 
 /// Lowercase a handle and then try to find a space id by it.
 pub(crate) fn find_space_id_by_handle(handle: Vec<u8>) -> Option<SpaceId> {
-    let lc_handle = Utils::lowercase_handle(handle);
+    let lc_handle = handle.to_ascii_lowercase();
     Spaces::space_id_by_handle(lc_handle)
 }
 

@@ -7,8 +7,6 @@ mod shared_post;
 
 mod spaces;
 
-mod profiles;
-
 mod space_follows;
 
 mod space_ownership;
