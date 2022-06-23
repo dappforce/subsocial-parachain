@@ -93,10 +93,13 @@ pub(crate) fn _create_space_with_parent_id(
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
 ) -> DispatchResultWithPostInfo {
+    if matches!(handle, Some(Some(_))) {
+        panic!("HANDLES ARE DISABLED");
+    }
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         parent_id_opt.unwrap_or_default(),
-        handle.unwrap_or_default(),
+        None,
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default()
     )

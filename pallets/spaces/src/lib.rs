@@ -192,7 +192,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let owner = ensure_signed(origin)?;
 
-            ensure!(handle_opt.is_some(), Error::<T>::HandlesAreDisabled);
+            ensure!(handle_opt.is_none(), Error::<T>::HandlesAreDisabled);
 
             ensure_content_is_valid(content.clone())?;
 
@@ -261,7 +261,7 @@ pub mod pallet {
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
 
-            ensure!(update.handle.is_some(), Error::<T>::HandlesAreDisabled);
+            ensure!(update.handle.is_none(), Error::<T>::HandlesAreDisabled);
 
             let mut space = Self::require_space(space_id)?;
 

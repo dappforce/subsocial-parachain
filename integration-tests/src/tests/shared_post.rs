@@ -19,7 +19,7 @@ fn share_post_should_work() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            Some(Some(b"space2_handle".to_vec())),
+            None,
             None,
             None
         )); // SpaceId 2 by ACCOUNT2
@@ -114,7 +114,7 @@ fn share_post_should_fail_when_original_post_not_found() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            Some(Some(b"space2_handle".to_vec())),
+            None,
             None,
             None
         )); // SpaceId 2 by ACCOUNT2
@@ -137,7 +137,7 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            Some(Some(b"space2_handle".to_vec())),
+            None,
             None,
             None
         )); // SpaceId 2 by ACCOUNT2
