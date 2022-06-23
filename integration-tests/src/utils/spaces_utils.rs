@@ -7,20 +7,6 @@ use pallet_parachain_utils::{Content, SpaceId};
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, SPACE1};
 
-/// Lowercase a handle and then try to find a space id by it.
-pub(crate) fn find_space_id_by_handle(handle: Vec<u8>) -> Option<SpaceId> {
-    let lc_handle = handle.to_ascii_lowercase();
-    Spaces::space_id_by_handle(lc_handle)
-}
-
-pub(crate) fn space_handle() -> Vec<u8> {
-    b"Space_Handle".to_vec()
-}
-
-pub(crate) fn space_handle_2() -> Vec<u8> {
-    b"space_handle_2".to_vec()
-}
-
 pub(crate) fn space_content_ipfs() -> Content {
     Content::IPFS(b"bafyreib3mgbou4xln42qqcgj6qlt3cif35x4ribisxgq7unhpun525l54e".to_vec())
 }
@@ -65,7 +51,7 @@ pub(crate) fn space_settings_with_handles_enabled() -> SpacesSettings {
 }
 
 
-pub(crate) fn _create_default_space() -> DispatchResult {
+pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
     _create_space(None, None, None, None)
 }
 
@@ -74,7 +60,7 @@ pub(crate) fn _create_space(
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
-) -> DispatchResult {
+) -> DispatchResultWithPostInfo {
     _create_space_with_parent_id(
         origin,
         None,
@@ -90,7 +76,7 @@ pub(crate) fn _create_subspace(
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
-) -> DispatchResult {
+) -> DispatchResultWithPostInfo {
     _create_space_with_parent_id(
         origin,
         parent_id_opt,
@@ -106,11 +92,11 @@ pub(crate) fn _create_space_with_parent_id(
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
-) -> DispatchResult {
+) -> DispatchResultWithPostInfo {
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         parent_id_opt.unwrap_or_default(),
-        handle.unwrap_or_else(|| Some(space_handle())),
+        handle.unwrap_or_default(),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default()
     )
@@ -128,16 +114,16 @@ pub(crate) fn _update_space(
     )
 }
 
-pub(crate) fn _update_space_settings_with_handles_enabled() -> DispatchResult {
+pub(crate) fn _update_space_settings_with_handles_enabled() -> DispatchResultWithPostInfo {
     _update_space_settings(None, Some(space_settings_with_handles_enabled()))
 }
 
-pub(crate) fn _update_space_settings_with_handles_disabled() -> DispatchResult {
+pub(crate) fn _update_space_settings_with_handles_disabled() -> DispatchResultWithPostInfo {
     _update_space_settings(None, Some(space_settings_with_handles_disabled()))
 }
 
 /// Default origin is a root.
-pub(crate) fn _update_space_settings(origin: Option<Origin>, new_settings: Option<SpacesSettings>) -> DispatchResult {
+pub(crate) fn _update_space_settings(origin: Option<Origin>, new_settings: Option<SpacesSettings>) -> DispatchResultWithPostInfo {
     Spaces::update_settings(
         origin.unwrap_or_else(Origin::root),
         new_settings.unwrap_or_else(space_settings_with_handles_disabled)

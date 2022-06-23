@@ -41,7 +41,7 @@ fn create_subspace_should_fail_when_account_is_blocked() {
             _create_subspace(
                 None,
                 Some(Some(SPACE1)),
-                Some(Some(space_handle_2())),
+                None,
                 None,
                 None,
             ),
@@ -58,7 +58,7 @@ fn update_space_should_fail_when_account_is_blocked() {
             _update_space(
                 None,
                 None,
-                Some(update_for_space_handle(Some(space_handle_2())))
+                None,
             ),
             DispatchError::Other(UtilsError::AccountIsBlocked.into())
         );
@@ -87,7 +87,7 @@ fn create_space_should_work() {
 
         // Check storages
         assert_eq!(Spaces::space_ids_by_owner(ACCOUNT1), vec![SPACE1]);
-        assert_eq!(find_space_id_by_handle(space_handle()), Some(SPACE1));
+        // assert_eq!(find_space_id_by_handle(space_handle()), Some(SPACE1));
         assert_eq!(Spaces::next_space_id(), SPACE2);
 
         // Check whether data stored correctly
@@ -98,7 +98,7 @@ fn create_space_should_work() {
         assert_eq!(space.hidden, false);
 
         assert_eq!(space.owner, ACCOUNT1);
-        assert_eq!(space.handle, Some(space_handle()));
+        // assert_eq!(space.handle, Some(space_handle()));
         assert_eq!(space.content, space_content_ipfs());
 
         assert_eq!(space.posts_count, 0);
@@ -163,36 +163,10 @@ fn create_space_should_store_handle_lowercase() {
             None
         )); // SpaceId 1
 
-        // Handle should be lowercase in storage and original in struct
-        let space = Spaces::space_by_id(SPACE1).unwrap();
-        assert_eq!(space.handle, Some(new_handle.clone()));
-        assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_too_short_handle_provided() {
-    ExtBuilder::build().execute_with(|| {
-        let short_handle: Vec<u8> = vec![65; (MinHandleLen::get() - 1) as usize];
-
-        // Try to catch an error creating a space with too short handle
-        assert_noop!(
-            _create_space(None, Some(Some(short_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleIsTooShort.into())
-        );
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_too_long_handle_provided() {
-    ExtBuilder::build().execute_with(|| {
-        let long_handle: Vec<u8> = vec![65; (MaxHandleLen::get() + 1) as usize];
-
-        // Try to catch an error creating a space with too long handle
-        assert_noop!(
-            _create_space(None, Some(Some(long_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleIsTooLong.into())
-        );
+        // // Handle should be lowercase in storage and original in struct
+        // let space = Spaces::space_by_id(SPACE1).unwrap();
+        // assert_eq!(space.handle, Some(new_handle.clone()));
+        // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
     });
 }
 
@@ -299,12 +273,12 @@ fn update_space_should_work() {
 
         // Check whether space updates correctly
         let space = Spaces::space_by_id(SPACE1).unwrap();
-        assert_eq!(space.handle, Some(new_handle.clone()));
+        // assert_eq!(space.handle, Some(new_handle.clone()));
         assert_eq!(space.content, expected_content_ipfs);
         assert_eq!(space.hidden, true);
 
-        assert_eq!(find_space_id_by_handle(space_handle()), None);
-        assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
+        // assert_eq!(find_space_id_by_handle(space_handle()), None);
+        // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
 
         // Check that the handle deposit has been reserved:
         let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -331,25 +305,25 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
     );
 }
 
-#[test]
-fn update_space_should_work_when_unreserving_handle() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let no_handle = None;
-        let space_update = update_for_space_handle(no_handle);
-        assert_ok!(_update_space(None, None, Some(space_update)));
-
-        // Check that the space handle is unreserved after this update:
-        let space = Spaces::space_by_id(SPACE1).unwrap();
-        assert_eq!(space.handle, None);
-
-        // Check that the previous space handle is not reserved in storage anymore:
-        assert_eq!(find_space_id_by_handle(space_handle()), None);
-
-        // Check that the handle deposit has been unreserved:
-        let reserved_balance = Balances::reserved_balance(ACCOUNT1);
-        assert!(reserved_balance.is_zero());
-    });
-}
+// #[test]
+// fn update_space_should_work_when_unreserving_handle() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let no_handle = None;
+//         let space_update = update_for_space_handle(no_handle);
+//         assert_ok!(_update_space(None, None, Some(space_update)));
+//
+//         // Check that the space handle is unreserved after this update:
+//         let space = Spaces::space_by_id(SPACE1).unwrap();
+//         assert_eq!(space.handle, None);
+//
+//         // Check that the previous space handle is not reserved in storage anymore:
+//         assert_eq!(find_space_id_by_handle(space_handle()), None);
+//
+//         // Check that the handle deposit has been unreserved:
+//         let reserved_balance = Balances::reserved_balance(ACCOUNT1);
+//         assert!(reserved_balance.is_zero());
+//     });
+// }
 
 #[test]
 fn should_update_space_content_when_handles_disabled() {
@@ -362,7 +336,7 @@ fn should_update_space_content_when_handles_disabled() {
 #[test]
 fn should_fail_to_update_space_handle_when_handles_disabled() {
     ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = update_for_space_handle(Some(space_handle_2()));
+        let space_update = update_for_space_handle(Some(b"Space_Handle".to_vec()));
         assert_noop!(
             _update_space(None, None, Some(space_update)),
             SpacesError::<TestRuntime>::HandlesAreDisabled
@@ -411,36 +385,6 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
                 Some(update_for_space_handle(Some(new_handle)))
             ),
             SpacesError::<TestRuntime>::NoPermissionToUpdateSpace
-        );
-    });
-}
-
-#[test]
-fn update_space_should_fail_when_too_short_handle_provided() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let short_handle: Vec<u8> = vec![65; (MinHandleLen::get() - 1) as usize];
-
-        // Try to catch an error updating a space with too short handle
-        assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_handle(Some(short_handle)))
-            ),
-            DispatchError::Other(UtilsError::HandleIsTooShort.into())
-        );
-    });
-}
-
-#[test]
-fn update_space_should_fail_when_too_long_handle_provided() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let long_handle: Vec<u8> = vec![65; (MaxHandleLen::get() + 1) as usize];
-
-        // Try to catch an error updating a space with too long handle
-        assert_noop!(
-            _update_space(None, None, Some(update_for_space_handle(Some(long_handle)))),
-            DispatchError::Other(UtilsError::HandleIsTooLong.into())
         );
     });
 }
@@ -532,7 +476,7 @@ fn update_space_should_fail_when_handle_contains_unicode() {
 fn update_space_should_fail_when_handles_are_disabled() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_ok!(_update_space_settings_with_handles_disabled());
-        let space_update = update_for_space_handle(Some(space_handle_2()));
+        let space_update = update_for_space_handle(Some(b"Space_Handle".to_vec()));
 
         assert_noop!(
             _update_space(None, None, Some(space_update)),
