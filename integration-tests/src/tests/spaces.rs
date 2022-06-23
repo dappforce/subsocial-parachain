@@ -58,7 +58,7 @@ fn update_space_should_fail_when_account_is_blocked() {
             _update_space(
                 None,
                 None,
-                None,
+                Some(update_for_space_content(updated_space_content()))
             ),
             DispatchError::Other(UtilsError::AccountIsBlocked.into())
         );
@@ -104,9 +104,9 @@ fn create_space_should_work() {
         assert_eq!(space.posts_count, 0);
         assert_eq!(space.followers_count, 1);
 
-        // Check that the handle deposit has been reserved:
-        let reserved_balance = Balances::reserved_balance(ACCOUNT1);
-        assert_eq!(reserved_balance, HANDLE_DEPOSIT);
+        // // Check that the handle deposit has been reserved:
+        // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
+        // assert_eq!(reserved_balance, HANDLE_DEPOSIT);
     });
 }
 
@@ -150,98 +150,98 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
         ));
         });
 }
+//
+// #[test]
+// fn create_space_should_store_handle_lowercase() {
+//     ExtBuilder::build().execute_with(|| {
+//         let new_handle: Vec<u8> = b"sPaCe_hAnDlE".to_vec();
+//
+//         assert_ok!(_create_space(
+//             None,
+//             Some(Some(new_handle.clone())),
+//             None,
+//             None
+//         )); // SpaceId 1
+//
+//         // // Handle should be lowercase in storage and original in struct
+//         // let space = Spaces::space_by_id(SPACE1).unwrap();
+//         // assert_eq!(space.handle, Some(new_handle.clone()));
+//         // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
+//     });
+// }
+//
+// #[test]
+// fn create_space_should_fail_when_not_unique_handle_provided() {
+//     ExtBuilder::build().execute_with(|| {
+//         assert_ok!(_create_default_space());
+//         // SpaceId 1
+//         // Try to catch an error creating a space with not unique handle
+//         assert_noop!(
+//             _create_default_space(),
+//             SpacesError::<TestRuntime>::SpaceHandleIsNotUnique
+//         );
+//     });
+// }
 
-#[test]
-fn create_space_should_store_handle_lowercase() {
-    ExtBuilder::build().execute_with(|| {
-        let new_handle: Vec<u8> = b"sPaCe_hAnDlE".to_vec();
+// #[test]
+// fn create_space_should_fail_when_handle_contains_at_char() {
+//     ExtBuilder::build().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"@space_handle".to_vec();
+//
+//         assert_noop!(
+//             _create_space(None, Some(Some(invalid_handle)), None, None),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-        assert_ok!(_create_space(
-            None,
-            Some(Some(new_handle.clone())),
-            None,
-            None
-        )); // SpaceId 1
+// #[test]
+// fn create_space_should_fail_when_handle_contains_minus_char() {
+//     ExtBuilder::build().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"space-handle".to_vec();
+//
+//         assert_noop!(
+//             _create_space(None, Some(Some(invalid_handle)), None, None),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-        // // Handle should be lowercase in storage and original in struct
-        // let space = Spaces::space_by_id(SPACE1).unwrap();
-        // assert_eq!(space.handle, Some(new_handle.clone()));
-        // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
-    });
-}
+// #[test]
+// fn create_space_should_fail_when_handle_contains_space_char() {
+//     ExtBuilder::build().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"space handle".to_vec();
+//
+//         assert_noop!(
+//             _create_space(None, Some(Some(invalid_handle)), None, None),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-#[test]
-fn create_space_should_fail_when_not_unique_handle_provided() {
-    ExtBuilder::build().execute_with(|| {
-        assert_ok!(_create_default_space());
-        // SpaceId 1
-        // Try to catch an error creating a space with not unique handle
-        assert_noop!(
-            _create_default_space(),
-            SpacesError::<TestRuntime>::SpaceHandleIsNotUnique
-        );
-    });
-}
+// #[test]
+// fn create_space_should_fail_when_handle_contains_unicode() {
+//     ExtBuilder::build().execute_with(|| {
+//         let invalid_handle: Vec<u8> = String::from("блог_хендл").into_bytes().to_vec();
+//
+//         assert_noop!(
+//             _create_space(None, Some(Some(invalid_handle)), None, None),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-#[test]
-fn create_space_should_fail_when_handle_contains_at_char() {
-    ExtBuilder::build().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"@space_handle".to_vec();
-
-        assert_noop!(
-            _create_space(None, Some(Some(invalid_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_handle_contains_minus_char() {
-    ExtBuilder::build().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"space-handle".to_vec();
-
-        assert_noop!(
-            _create_space(None, Some(Some(invalid_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_handle_contains_space_char() {
-    ExtBuilder::build().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"space handle".to_vec();
-
-        assert_noop!(
-            _create_space(None, Some(Some(invalid_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_handle_contains_unicode() {
-    ExtBuilder::build().execute_with(|| {
-        let invalid_handle: Vec<u8> = String::from("блог_хендл").into_bytes().to_vec();
-
-        assert_noop!(
-            _create_space(None, Some(Some(invalid_handle)), None, None),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn create_space_should_fail_when_handles_are_disabled() {
-    ExtBuilder::build().execute_with(|| {
-        assert_ok!(_update_space_settings_with_handles_disabled());
-
-        assert_noop!(
-            _create_default_space(),
-            SpacesError::<TestRuntime>::HandlesAreDisabled
-        );
-    });
-}
+// #[test]
+// fn create_space_should_fail_when_handles_are_disabled() {
+//     ExtBuilder::build().execute_with(|| {
+//         assert_ok!(_update_space_settings_with_handles_disabled());
+//
+//         assert_noop!(
+//             _create_default_space(),
+//             SpacesError::<TestRuntime>::HandlesAreDisabled
+//         );
+//     });
+// }
 
 #[test]
 fn create_space_should_fail_when_ipfs_cid_is_invalid() {
@@ -265,7 +265,7 @@ fn update_space_should_work() {
             None, // From ACCOUNT1 (has permission as he's an owner)
             None,
             Some(space_update(
-                Some(Some(new_handle.clone())),
+                None,
                 Some(expected_content_ipfs.clone()),
                 Some(true),
             ))
@@ -280,9 +280,9 @@ fn update_space_should_work() {
         // assert_eq!(find_space_id_by_handle(space_handle()), None);
         // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
 
-        // Check that the handle deposit has been reserved:
-        let reserved_balance = Balances::reserved_balance(ACCOUNT1);
-        assert_eq!(reserved_balance, HANDLE_DEPOSIT);
+        // // Check that the handle deposit has been reserved:
+        // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
+        // assert_eq!(reserved_balance, HANDLE_DEPOSIT);
     });
 }
 
@@ -291,7 +291,7 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                Some(Some(b"new_handle".to_vec())),
+                None,
                 Some(updated_space_content()),
                 Some(true),
             );
@@ -336,7 +336,12 @@ fn should_update_space_content_when_handles_disabled() {
 #[test]
 fn should_fail_to_update_space_handle_when_handles_disabled() {
     ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = update_for_space_handle(Some(b"Space_Handle".to_vec()));
+        let space_update = space_update(
+            Some(b"Space_Handle".to_vec()).into(),
+            updated_space_content().into(),
+            None,
+        );
+
         assert_noop!(
             _update_space(None, None, Some(space_update)),
             SpacesError::<TestRuntime>::HandlesAreDisabled
@@ -358,14 +363,12 @@ fn update_space_should_fail_when_no_updates_for_space_provided() {
 #[test]
 fn update_space_should_fail_when_space_not_found() {
     ExtBuilder::build_with_space().execute_with(|| {
-        let new_handle: Vec<u8> = b"new_handle".to_vec();
-
         // Try to catch an error updating a space with wrong space ID
         assert_noop!(
             _update_space(
                 None,
                 Some(SPACE2),
-                Some(update_for_space_handle(Some(new_handle)))
+                Some(update_for_space_content(updated_space_content()))
             ),
             SpacesError::<TestRuntime>::SpaceNotFound
         );
@@ -375,108 +378,110 @@ fn update_space_should_fail_when_space_not_found() {
 #[test]
 fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
     ExtBuilder::build_with_space().execute_with(|| {
-        let new_handle: Vec<u8> = b"new_handle".to_vec();
-
         // Try to catch an error updating a space with an account that it not permitted
         assert_noop!(
             _update_space(
                 Some(Origin::signed(ACCOUNT2)),
                 None,
-                Some(update_for_space_handle(Some(new_handle)))
+                Some(update_for_space_content(updated_space_content()))
             ),
             SpacesError::<TestRuntime>::NoPermissionToUpdateSpace
         );
     });
 }
 
-#[test]
-fn update_space_should_fail_when_not_unique_handle_provided() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let handle: Vec<u8> = b"unique_handle".to_vec();
+// #[test]
+// fn update_space_should_fail_when_not_unique_handle_provided() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let handle: Vec<u8> = b"unique_handle".to_vec();
+//
+//         assert_ok!(_create_space(None, Some(Some(handle.clone())), None, None)); // SpaceId 2 with a custom handle
+//
+//         // Should fail when updating a space 1 with a handle of a space 2:
+//         assert_noop!(
+//             _update_space(
+//                 None,
+//                 Some(SPACE1),
+//                 Some(update_for_space_handle(Some(handle)))
+//             ),
+//             SpacesError::<TestRuntime>::SpaceHandleIsNotUnique
+//         );
+//     });
+// }
 
-        assert_ok!(_create_space(None, Some(Some(handle.clone())), None, None)); // SpaceId 2 with a custom handle
+// #[test]
+// fn update_space_should_fail_when_handle_contains_at_char() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"@space_handle".to_vec();
+//
+//         assert_noop!(
+//             _update_space(
+//                 None,
+//                 None,
+//                 Some(update_for_space_handle(Some(invalid_handle)))
+//             ),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-        // Should fail when updating a space 1 with a handle of a space 2:
-        assert_noop!(
-            _update_space(
-                None,
-                Some(SPACE1),
-                Some(update_for_space_handle(Some(handle)))
-            ),
-            SpacesError::<TestRuntime>::SpaceHandleIsNotUnique
-        );
-    });
-}
+// #[test]
+// fn update_space_should_fail_when_handle_contains_minus_char() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"space-handle".to_vec();
+//
+//         assert_noop!(
+//             _update_space(
+//                 None,
+//                 None,
+//                 Some(update_for_space_handle(Some(invalid_handle)))
+//             ),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
-#[test]
-fn update_space_should_fail_when_handle_contains_at_char() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"@space_handle".to_vec();
-
-        assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_handle(Some(invalid_handle)))
-            ),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn update_space_should_fail_when_handle_contains_minus_char() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"space-handle".to_vec();
-
-        assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_handle(Some(invalid_handle)))
-            ),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn update_space_should_fail_when_handle_contains_space_char() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let invalid_handle: Vec<u8> = b"space handle".to_vec();
-
-        assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_handle(Some(invalid_handle)))
-            ),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
-
-#[test]
-fn update_space_should_fail_when_handle_contains_unicode() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        let invalid_handle: Vec<u8> = String::from("блог_хендл").into_bytes().to_vec();
-
-        assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_handle(Some(invalid_handle)))
-            ),
-            DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
-        );
-    });
-}
+// #[test]
+// fn update_space_should_fail_when_handle_contains_space_char() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let invalid_handle: Vec<u8> = b"space handle".to_vec();
+//
+//         assert_noop!(
+//             _update_space(
+//                 None,
+//                 None,
+//                 Some(update_for_space_handle(Some(invalid_handle)))
+//             ),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
+//
+// #[test]
+// fn update_space_should_fail_when_handle_contains_unicode() {
+//     ExtBuilder::build_with_space().execute_with(|| {
+//         let invalid_handle: Vec<u8> = String::from("блог_хендл").into_bytes().to_vec();
+//
+//         assert_noop!(
+//             _update_space(
+//                 None,
+//                 None,
+//                 Some(update_for_space_handle(Some(invalid_handle)))
+//             ),
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//         );
+//     });
+// }
 
 #[test]
 fn update_space_should_fail_when_handles_are_disabled() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_ok!(_update_space_settings_with_handles_disabled());
-        let space_update = update_for_space_handle(Some(b"Space_Handle".to_vec()));
+        let space_update = space_update(
+            Some(b"Space_Handle".to_vec()).into(),
+            updated_space_content().into(),
+            None,
+        );
 
         assert_noop!(
             _update_space(None, None, Some(space_update)),
@@ -505,7 +510,7 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                Some(Some(b"new_handle".to_vec())),
+                None,
                 Some(updated_space_content()),
                 Some(true),
             );

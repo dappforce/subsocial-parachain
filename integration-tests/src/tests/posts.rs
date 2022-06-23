@@ -468,7 +468,7 @@ fn update_post_should_fail_when_post_not_found() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             None,
-            Some(Some(b"space2_handle".to_vec())),
+            None,
             None,
             None
         )); // SpaceId 2
@@ -495,7 +495,7 @@ fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             None,
-            Some(Some(b"space2_handle".to_vec())),
+            None,
             None,
             None
         )); // SpaceId 2
