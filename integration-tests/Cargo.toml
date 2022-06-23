@@ -28,7 +28,7 @@ std = [
     'pallet-reactions/std',
     'pallet-roles/std',
     'pallet-space-follows/std',
-#    'pallet-space-ownership/std',
+    'pallet-space-ownership/std',
     'pallet-spaces/std',
     'pallet-parachain-utils/std',
     'df-traits/std',
@@ -54,7 +54,7 @@ pallet-profiles = { default-features = false, path = '../pallets/profiles' }
 pallet-reactions = { default-features = false, path = '../pallets/reactions' }
 pallet-roles = { default-features = false, path = '../pallets/roles' }
 pallet-space-follows = { default-features = false, path = '../pallets/space-follows' }
-#pallet-space-ownership = { default-features = false, path = '../pallets/space-ownership' }
+pallet-space-ownership = { default-features = false, path = '../pallets/space-ownership' }
 pallet-spaces = { default-features = false, path = '../pallets/spaces' }
 pallet-parachain-utils = { default-features = false, path = '../pallets/parachain-utils' }
 df-traits = { default-features = false, path = '../pallets/traits' }

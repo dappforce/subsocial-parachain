@@ -25,7 +25,7 @@ use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
 use pallet_spaces::{SpaceById, Error as SpacesError};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
-// use pallet_space_ownership::Error as SpaceOwnershipError;
+use pallet_space_ownership::Error as SpaceOwnershipError;
 use pallet_parachain_utils::{
     mock_functions::*,
     Error as UtilsError,
@@ -51,7 +51,7 @@ frame_support::construct_runtime!(
             Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
-            // SpaceOwnership: pallet_space_ownership,
+            SpaceOwnership: pallet_space_ownership,
             Spaces: pallet_spaces,
         }
     );
@@ -157,9 +157,9 @@ impl pallet_space_follows::Config for TestRuntime {
     type BeforeSpaceUnfollowed = ();
 }
 
-// impl pallet_space_ownership::Config for TestRuntime {
-//     type Event = Event;
-// }
+impl pallet_space_ownership::Config for TestRuntime {
+    type Event = Event;
+}
 
 pub(crate) const HANDLE_DEPOSIT: u64 = 15;
 
@@ -281,11 +281,10 @@ impl ExtBuilder {
     /// Custom ext configuration with pending ownership transfer without Space
     pub fn build_with_pending_ownership_transfer_no_space() -> TestExternalities {
         let mut ext = Self::build_with_space();
-        // TODO: re-enable update_post_should_work_after_transfer_space_ownership()
-        // ext.execute_with(|| {
-        //     assert_ok!(_transfer_default_space_ownership());
-        //     <SpaceById<TestRuntime>>::remove(SPACE1);
-        // });
+        ext.execute_with(|| {
+            assert_ok!(_transfer_default_space_ownership());
+            <SpaceById<TestRuntime>>::remove(SPACE1);
+        });
         ext
     }
 
