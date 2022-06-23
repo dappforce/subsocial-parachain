@@ -3385,6 +3385,7 @@ dependencies = [
  "pallet-reactions",
  "pallet-roles",
  "pallet-space-follows",
+ "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -5951,6 +5952,20 @@ dependencies = [
  "frame-system",
  "pallet-parachain-utils",
  "pallet-profiles",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-space-ownership"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "pallet-parachain-utils",
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
