@@ -443,7 +443,7 @@ pub mod pallet {
 
         pub fn allowed_to_create_space(owner: &T::AccountId) -> DispatchResult {
             ensure!(
-                Self::space_ids_by_owner(&owner).len() >= T::MaxSpacesPerAccount::get() as usize,
+                Self::space_ids_by_owner(&owner).len() <= T::MaxSpacesPerAccount::get() as usize,
                 Error::<T>::TooManySpacesPerAccount,
             );
             Ok(())
