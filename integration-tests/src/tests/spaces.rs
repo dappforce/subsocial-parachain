@@ -103,7 +103,6 @@ fn create_space_should_work() {
 
         assert_eq!(space.posts_count, 0);
         assert_eq!(space.followers_count, 1);
-        assert!(SpaceHistory::edit_history(space.id).is_empty());
 
         // Check that the handle deposit has been reserved:
         let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -304,12 +303,6 @@ fn update_space_should_work() {
         assert_eq!(space.content, expected_content_ipfs);
         assert_eq!(space.hidden, true);
 
-        // Check whether history recorded correctly
-        let edit_history = &SpaceHistory::edit_history(space.id)[0];
-        assert_eq!(edit_history.old_data.handle, Some(Some(space_handle())));
-        assert_eq!(edit_history.old_data.content, Some(space_content_ipfs()));
-        assert_eq!(edit_history.old_data.hidden, Some(false));
-
         assert_eq!(find_space_id_by_handle(space_handle()), None);
         assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
 
@@ -348,10 +341,6 @@ fn update_space_should_work_when_unreserving_handle() {
         // Check that the space handle is unreserved after this update:
         let space = Spaces::space_by_id(SPACE1).unwrap();
         assert_eq!(space.handle, None);
-
-        // Check that the previous space handle has been added to the space history:
-        let edit_history = &SpaceHistory::edit_history(space.id)[0];
-        assert_eq!(edit_history.old_data.handle, Some(Some(space_handle())));
 
         // Check that the previous space handle is not reserved in storage anymore:
         assert_eq!(find_space_id_by_handle(space_handle()), None);

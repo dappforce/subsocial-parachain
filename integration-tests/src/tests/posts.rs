@@ -125,8 +125,6 @@ fn create_post_should_work() {
         assert_eq!(post.shares_count, 0);
         assert_eq!(post.upvotes_count, 0);
         assert_eq!(post.downvotes_count, 0);
-
-        assert!(PostHistory::edit_history(POST1).is_empty());
     });
 }
 
@@ -225,12 +223,6 @@ fn update_post_should_work() {
         assert_eq!(post.space_id, Some(SPACE1));
         assert_eq!(post.content, expected_content_ipfs);
         assert_eq!(post.hidden, true);
-
-        // Check whether history recorded correctly
-        let post_history = PostHistory::edit_history(POST1)[0].clone();
-        assert!(post_history.old_data.space_id.is_none());
-        assert_eq!(post_history.old_data.content, Some(post_content_ipfs()));
-        assert_eq!(post_history.old_data.hidden, Some(false));
     });
 }
 
