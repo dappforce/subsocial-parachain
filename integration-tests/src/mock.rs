@@ -26,7 +26,6 @@ use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
 use pallet_spaces::{SpaceById, SpaceUpdate, Error as SpacesError, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
 use pallet_space_ownership::Error as SpaceOwnershipError;
-use pallet_moderation::{EntityId, EntityStatus, ReportId};
 use pallet_parachain_utils::{
     mock_functions::*,
     DEFAULT_MIN_HANDLE_LEN, DEFAULT_MAX_HANDLE_LEN,
@@ -47,7 +46,6 @@ frame_support::construct_runtime!(
             System: system::{Pallet, Call, Config, Storage, Event<T>},
             Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
             Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-            Moderation: pallet_moderation::{Pallet, Call, Storage, Event<T>},
             Permissions: pallet_permissions::{Pallet, Call},
             Posts: pallet_posts::{Pallet, Call, Storage, Event<T>},
             PostHistory: pallet_post_history::{Pallet, Storage},
@@ -133,6 +131,7 @@ impl pallet_parachain_utils::Config for TestRuntime {
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
+use crate::utils::moderation_utils::MockModeration;
 
 impl pallet_permissions::Config for TestRuntime {
     type DefaultSpacePermissions = DefaultSpacePermissions;
@@ -146,7 +145,7 @@ impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
     type AfterPostUpdated = PostHistory;
-    type IsPostBlocked = Moderation;
+    type IsPostBlocked = MockModeration;
 }
 
 impl pallet_post_history::Config for TestRuntime {}
@@ -177,8 +176,8 @@ impl pallet_roles::Config for TestRuntime {
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type Spaces = Spaces;
     type SpaceFollows = SpaceFollows;
-    type IsAccountBlocked = Moderation;
-    type IsContentBlocked = Moderation;
+    type IsAccountBlocked = MockModeration;
+    type IsContentBlocked = MockModeration;
 }
 
 impl pallet_space_follows::Config for TestRuntime {
@@ -204,21 +203,12 @@ impl pallet_spaces::Config for TestRuntime {
     type SpaceFollows = SpaceFollows;
     type BeforeSpaceCreated = SpaceFollows;
     type AfterSpaceUpdated = SpaceHistory;
-    type IsAccountBlocked = Moderation;
-    type IsContentBlocked = Moderation;
+    type IsAccountBlocked = MockModeration;
+    type IsContentBlocked = MockModeration;
     type HandleDeposit = HandleDeposit;
 }
 
 impl pallet_space_history::Config for TestRuntime {}
-
-parameter_types! {
-        pub const DefaultAutoblockThreshold: u16 = 20;
-    }
-
-impl pallet_moderation::Config for TestRuntime {
-    type Event = Event;
-    type DefaultAutoblockThreshold = DefaultAutoblockThreshold;
-}
 
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;

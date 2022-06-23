@@ -1,99 +1,134 @@
 use frame_support::assert_ok;
 use frame_support::pallet_prelude::*;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
-use pallet_moderation::{EntityId, EntityStatus, ReportId};
-use pallet_parachain_utils::{Content, SpaceId};
+use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
 use pallet_parachain_utils::mock_functions::valid_content_ipfs;
+use pallet_parachain_utils::{Content, PostId, SpaceId};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1, SPACE1};
 
 // Moderation pallet mocks
-// FIXME: remove when linter error is fixed
-#[allow(dead_code)]
-const REPORT1: ReportId = 1;
-
-pub(crate) fn _report_default_post() -> DispatchResult {
-    _report_entity(None, None, None, None)
-}
-
-pub(crate) fn _report_entity(
-    origin: Option<Origin>,
-    entity: Option<EntityId<AccountId>>,
-    scope: Option<SpaceId>,
-    reason: Option<Content>,
-) -> DispatchResult {
-    Moderation::report_entity(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        entity.unwrap_or(EntityId::Post(POST1)),
-        scope.unwrap_or(SPACE1),
-        reason.unwrap_or_else(valid_content_ipfs),
-    )
-}
-
-pub(crate) fn _suggest_entity_status(
-    origin: Option<Origin>,
-    entity: Option<EntityId<AccountId>>,
-    scope: Option<SpaceId>,
-    status: Option<Option<EntityStatus>>,
-    report_id_opt: Option<Option<ReportId>>,
-) -> DispatchResult {
-    Moderation::suggest_entity_status(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        entity.unwrap_or(EntityId::Post(POST1)),
-        scope.unwrap_or(SPACE1),
-        status.unwrap_or(Some(EntityStatus::Blocked)),
-        report_id_opt.unwrap_or(Some(REPORT1)),
-    )
-}
-
-pub(crate) fn _update_entity_status(
-    origin: Option<Origin>,
-    entity: Option<EntityId<AccountId>>,
-    scope: Option<SpaceId>,
-    status_opt: Option<Option<EntityStatus>>,
-) -> DispatchResult {
-    Moderation::update_entity_status(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        entity.unwrap_or(EntityId::Post(POST1)),
-        scope.unwrap_or(SPACE1),
-        status_opt.unwrap_or(Some(EntityStatus::Allowed)),
-    )
-}
-
-pub(crate) fn _delete_entity_status(
-    origin: Option<Origin>,
-    entity: Option<EntityId<AccountId>>,
-    scope: Option<SpaceId>,
-) -> DispatchResult {
-    Moderation::delete_entity_status(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        entity.unwrap_or(EntityId::Post(POST1)),
-        scope.unwrap_or(SPACE1),
-    )
-}
 
 /*------------------------------------------------------------------------------------------------*/
 // Moderation tests
 
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
+pub enum EntityId {
+    Content(Content),
+    Account(AccountId),
+    Space(SpaceId),
+    Post(PostId),
+}
+
+impl Hash for EntityId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            EntityId::Content(content) => match content {
+                Content::None => 0.hash(state),
+                Content::Raw(content) => content.hash(state),
+                Content::IPFS(content) => content.hash(state),
+                Content::Hyper(content) => content.hash(state),
+            },
+            EntityId::Account(account) => account.hash(state),
+            EntityId::Space(space) => space.hash(state),
+            EntityId::Post(post) => post.hash(state),
+        }
+    }
+}
+
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, Hash)]
+pub enum EntityStatus {
+    Allowed,
+    Blocked,
+}
+
+thread_local! {
+    pub static MOCK_MODERATION_STATE: RefCell<HashMap<(EntityId, SpaceId), EntityStatus>> = RefCell::new(Default::default());
+}
+pub struct MockModeration;
+
+impl MockModeration {
+    fn set_entity_status(entity: EntityId, space: SpaceId, status: EntityStatus) {
+        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
+            let mut mock_moderation_state = mock_moderation_state.borrow_mut();
+            mock_moderation_state.insert((entity, space), status);
+        });
+    }
+
+    fn get_entity_status(id: EntityId, scope: SpaceId) -> Option<EntityStatus> {
+        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
+            let mock_moderation_state = mock_moderation_state.borrow();
+            let status = mock_moderation_state.get(&(id, scope)).cloned();
+            status
+        })
+    }
+
+    fn is_allowed_entity(id: EntityId, scope: SpaceId) -> bool {
+        Self::get_entity_status(id, scope)
+            .unwrap_or(EntityStatus::Allowed) == EntityStatus::Allowed
+    }
+
+    fn is_blocked_entity(id: EntityId, scope: SpaceId) -> bool {
+        Self::get_entity_status(id, scope) == Some(EntityStatus::Blocked)
+    }
+}
+
+impl IsPostBlocked<PostId> for MockModeration {
+    fn is_blocked_post(post_id: PostId, scope: SpaceId) -> bool {
+        Self::is_blocked_entity(EntityId::Post(post_id), scope)
+    }
+
+    fn is_allowed_post(post_id: PostId, scope: SpaceId) -> bool {
+        Self::is_allowed_entity(EntityId::Post(post_id), scope)
+    }
+}
+
+impl IsAccountBlocked<AccountId> for MockModeration {
+    fn is_blocked_account(account: AccountId, scope: SpaceId) -> bool {
+        Self::is_blocked_entity(EntityId::Account(account), scope)
+    }
+
+    fn is_allowed_account(account: AccountId, scope: SpaceId) -> bool {
+        Self::is_allowed_entity(EntityId::Account(account), scope)
+    }
+}
+
+impl IsSpaceBlocked for MockModeration {
+    fn is_blocked_space(space_id: SpaceId, scope: SpaceId) -> bool {
+        Self::is_blocked_entity(EntityId::Space(space_id), scope)
+    }
+
+    fn is_allowed_space(space_id: SpaceId, scope: SpaceId) -> bool {
+        Self::is_allowed_entity(EntityId::Space(space_id), scope)
+    }
+}
+
+impl IsContentBlocked for MockModeration {
+    fn is_blocked_content(content: Content, scope: SpaceId) -> bool {
+        Self::is_blocked_entity(EntityId::Content(content), scope)
+    }
+
+    fn is_allowed_content(content: Content, scope: SpaceId) -> bool {
+        Self::is_allowed_entity(EntityId::Content(content), scope)
+    }
+}
+
 pub(crate) fn block_account_in_space_1() {
-    assert_ok!(
-            _update_entity_status(
-                None,
-                Some(EntityId::Account(ACCOUNT1)),
-                Some(SPACE1),
-                Some(Some(EntityStatus::Blocked))
-            )
-        );
+    MockModeration::set_entity_status(
+        EntityId::Account(ACCOUNT1),
+        SPACE1,
+        EntityStatus::Blocked,
+    );
 }
 
 pub(crate) fn block_content_in_space_1() {
-    assert_ok!(
-            _update_entity_status(
-                None,
-                Some(EntityId::Content(valid_content_ipfs())),
-                Some(SPACE1),
-                Some(Some(EntityStatus::Blocked))
-            )
-        );
+    MockModeration::set_entity_status(
+        EntityId::Content(valid_content_ipfs()),
+        SPACE1,
+        EntityStatus::Blocked,
+    );
 }

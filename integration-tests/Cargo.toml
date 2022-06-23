@@ -22,7 +22,6 @@ std = [
     'pallet-timestamp/std',
     'frame-support/std',
     'frame-system/std',
-#    'pallet-moderation/std',
     'pallet-permissions/std',
 #    'pallet-post-history/std',
     'pallet-posts/std',
@@ -36,6 +35,7 @@ std = [
 #    'pallet-space-ownership/std',
     'pallet-spaces/std',
     'pallet-parachain-utils/std',
+    'df-traits/std',
 ]
 
 [dependencies]
@@ -52,7 +52,6 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkad
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
 
 [dev-dependencies]
-#pallet-moderation = { default-features = false, path = '../pallets/moderation' }
 pallet-permissions = { default-features = false, path = '../pallets/permissions' }
 #pallet-post-history = { default-features = false, path = '../pallets/post-history' }
 pallet-posts = { default-features = false, path = '../pallets/posts' }
@@ -66,6 +65,7 @@ pallet-space-follows = { default-features = false, path = '../pallets/space-foll
 #pallet-space-ownership = { default-features = false, path = '../pallets/space-ownership' }
 pallet-spaces = { default-features = false, path = '../pallets/spaces' }
 pallet-parachain-utils = { default-features = false, path = '../pallets/parachain-utils' }
+df-traits = { default-features = false, path = '../pallets/traits' }
 
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
