@@ -3382,6 +3382,7 @@ dependencies = [
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
+ "pallet-reactions",
  "pallet-roles",
  "pallet-space-follows",
  "pallet-spaces",
@@ -5817,6 +5818,25 @@ dependencies = [
  "parity-scale-codec",
  "safe-mix",
  "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-reactions"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
  "sp-runtime",
  "sp-std",
 ]

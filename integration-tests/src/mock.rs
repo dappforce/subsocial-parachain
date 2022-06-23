@@ -21,7 +21,7 @@ use pallet_permissions::{
     SpacePermissions,
 };
 use pallet_posts::{Post, PostUpdate, PostExtension, Comment, Error as PostsError};
-// use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
+use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
 use pallet_spaces::{SpaceById, Error as SpacesError};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
@@ -48,7 +48,7 @@ frame_support::construct_runtime!(
             Permissions: pallet_permissions,
             Posts: pallet_posts,
             Profiles: pallet_profiles::{Pallet, Call, Storage},
-            // Reactions: pallet_reactions,
+            Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
             // SpaceOwnership: pallet_space_ownership,
@@ -134,9 +134,9 @@ impl pallet_posts::Config for TestRuntime {
 
 impl pallet_profiles::Config for TestRuntime {}
 
-// impl pallet_reactions::Config for TestRuntime {
-//     type Event = Event;
-// }
+impl pallet_reactions::Config for TestRuntime {
+    type Event = Event;
+}
 
 parameter_types! {
         pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
@@ -274,8 +274,7 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where BlockNumber is 1
     pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post_and_two_spaces();
-        // TODO: re-enable when testing for reactions
-        // ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
+        ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
         ext
     }
 
