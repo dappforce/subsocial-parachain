@@ -195,6 +195,12 @@ pub fn remove_from_vec<F: PartialEq>(vector: &mut Vec<F>, element: F) {
     }
 }
 
+pub fn remove_from_bounded<F: PartialEq, S>(vector: &mut BoundedVec<F, S>, element: F) {
+    if let Some(index) = vector.iter().position(|x| *x == element) {
+        vector.swap_remove(index);
+    }
+}
+
 pub fn bool_to_option(value: bool) -> Option<bool> {
     if value {
         Some(value)

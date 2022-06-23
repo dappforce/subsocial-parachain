@@ -22,7 +22,7 @@ pub struct Space<T: Config> {
     pub(super) updated: Option<WhoAndWhenOf<T>>,
 
     /// The current owner of a given space.
-    pub(super) owner: T::AccountId,
+    pub owner: T::AccountId,
 
     // The next fields can be updated by the owner:
     pub(super) parent_id: Option<SpaceId>,
