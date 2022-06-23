@@ -21,10 +21,10 @@ use pallet_permissions::{
 };
 use pallet_posts::{Post, PostUpdate, PostExtension, Comment, Error as PostsError};
 use pallet_profiles::{ProfileUpdate, Error as ProfilesError};
-use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
+// use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
 use pallet_spaces::{SpaceById, SpaceUpdate, Error as SpacesError, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
-use pallet_space_ownership::Error as SpaceOwnershipError;
+// use pallet_space_ownership::Error as SpaceOwnershipError;
 use pallet_parachain_utils::{
     mock_functions::*,
     DEFAULT_MIN_HANDLE_LEN, DEFAULT_MAX_HANDLE_LEN,
@@ -48,10 +48,10 @@ frame_support::construct_runtime!(
             Permissions: pallet_permissions,
             Posts: pallet_posts,
             Profiles: pallet_profiles,
-            Reactions: pallet_reactions,
+            // Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
-            SpaceOwnership: pallet_space_ownership,
+            // SpaceOwnership: pallet_space_ownership,
             Spaces: pallet_spaces,
         }
     );
@@ -145,9 +145,9 @@ impl pallet_posts::Config for TestRuntime {
 
 impl pallet_profiles::Config for TestRuntime {}
 
-impl pallet_reactions::Config for TestRuntime {
-    type Event = Event;
-}
+// impl pallet_reactions::Config for TestRuntime {
+//     type Event = Event;
+// }
 
 parameter_types! {
         pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
@@ -168,9 +168,9 @@ impl pallet_space_follows::Config for TestRuntime {
     type BeforeSpaceUnfollowed = ();
 }
 
-impl pallet_space_ownership::Config for TestRuntime {
-    type Event = Event;
-}
+// impl pallet_space_ownership::Config for TestRuntime {
+//     type Event = Event;
+// }
 
 pub(crate) const HANDLE_DEPOSIT: u64 = 15;
 
@@ -285,17 +285,19 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where BlockNumber is 1
     pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post_and_two_spaces();
-        ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
+        // TODO: re-enable when testing for reactions
+        // ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
         ext
     }
 
     /// Custom ext configuration with pending ownership transfer without Space
     pub fn build_with_pending_ownership_transfer_no_space() -> TestExternalities {
         let mut ext = Self::build_with_space();
-        ext.execute_with(|| {
-            assert_ok!(_transfer_default_space_ownership());
-            <SpaceById<TestRuntime>>::remove(SPACE1);
-        });
+        // TODO: re-enable update_post_should_work_after_transfer_space_ownership()
+        // ext.execute_with(|| {
+        //     assert_ok!(_transfer_default_space_ownership());
+        //     <SpaceById<TestRuntime>>::remove(SPACE1);
+        // });
         ext
     }
 

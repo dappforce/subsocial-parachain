@@ -400,17 +400,17 @@ fn should_fail_when_trying_to_move_comment() {
     });
 }
 
-#[test]
-fn update_post_should_work_after_transfer_space_ownership() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        let post_update = post_update(None, Some(updated_post_content()), Some(true));
-
-        assert_ok!(_transfer_default_space_ownership());
-
-        // Post update with ID 1 should be fine
-        assert_ok!(_update_post(None, None, Some(post_update)));
-    });
-}
+// #[test]
+// fn update_post_should_work_after_transfer_space_ownership() {
+//     ExtBuilder::build_with_post().execute_with(|| {
+//         let post_update = post_update(None, Some(updated_post_content()), Some(true));
+//
+//         assert_ok!(_transfer_default_space_ownership());
+//
+//         // Post update with ID 1 should be fine
+//         assert_ok!(_update_post(None, None, Some(post_update)));
+//     });
+// }
 
 #[test]
 fn update_any_post_should_work_when_account_has_default_permission() {
