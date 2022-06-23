@@ -73,19 +73,19 @@ fn update_profile_should_fail_when_social_account_not_found() {
     });
 }
 
-#[test]
-fn update_profile_should_fail_when_account_has_no_profile() {
-    ExtBuilder::build().execute_with(|| {
-        assert_ok!(ProfileFollows::follow_account(
-            Origin::signed(ACCOUNT1),
-            ACCOUNT2
-        ));
-        assert_noop!(
-            _update_profile(None, Some(profile_content_ipfs())),
-            ProfilesError::<TestRuntime>::AccountHasNoProfile
-        );
-    });
-}
+// #[test]
+// fn update_profile_should_fail_when_account_has_no_profile() {
+//     ExtBuilder::build().execute_with(|| {
+//         assert_ok!(ProfileFollows::follow_account(
+//             Origin::signed(ACCOUNT1),
+//             ACCOUNT2
+//         ));
+//         assert_noop!(
+//             _update_profile(None, Some(profile_content_ipfs())),
+//             ProfilesError::<TestRuntime>::AccountHasNoProfile
+//         );
+//     });
+// }
 
 #[test]
 fn update_profile_should_fail_when_no_updates_for_profile_provided() {

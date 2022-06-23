@@ -24,7 +24,6 @@ std = [
     'frame-system/std',
     'pallet-permissions/std',
     'pallet-posts/std',
-#    'pallet-profile-follows/std',
     'pallet-profiles/std',
 #    'pallet-reactions/std',
     'pallet-roles/std',
@@ -51,7 +50,6 @@ sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v
 [dev-dependencies]
 pallet-permissions = { default-features = false, path = '../pallets/permissions' }
 pallet-posts = { default-features = false, path = '../pallets/posts' }
-#pallet-profile-follows = { default-features = false, path = '../pallets/profile-follows' }
 pallet-profiles = { default-features = false, path = '../pallets/profiles' }
 #pallet-reactions = { default-features = false, path = '../pallets/reactions' }
 pallet-roles = { default-features = false, path = '../pallets/roles' }

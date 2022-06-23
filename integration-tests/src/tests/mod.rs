@@ -11,6 +11,4 @@ mod profiles;
 
 mod space_follows;
 
-mod profile_follows;
-
 mod space_ownership;
