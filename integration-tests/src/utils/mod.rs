@@ -1,4 +1,4 @@
-// use pallet_reactions::ReactionId;
+use pallet_reactions::ReactionId;
 use pallet_parachain_utils::{PostId, SpaceId};
 use crate::mock::AccountId;
 
@@ -24,5 +24,5 @@ pub(crate) const POST1: PostId = 1;
 pub(crate) const POST2: PostId = 2;
 pub(crate) const POST3: PostId = 3;
 
-// pub(crate) const REACTION1: ReactionId = 1;
-// pub(crate) const REACTION2: ReactionId = 2;
+pub(crate) const REACTION1: ReactionId = 1;
+pub(crate) const REACTION2: ReactionId = 2;
