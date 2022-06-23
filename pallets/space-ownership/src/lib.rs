@@ -1,15 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
-    traits::Get,
-};
-use frame_system::{self as system, ensure_signed};
+use frame_system::ensure_signed;
 use sp_std::prelude::*;
 
 use df_traits::moderation::IsAccountBlocked;
-use pallet_spaces::{Module as Spaces, SpaceById, SpaceIdsByOwner};
-use pallet_utils::{remove_from_vec, Error as UtilsError, SpaceId};
+use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
+use pallet_parachain_utils::{remove_from_bounded, Error as UtilsError, SpaceId};
 
 pub use pallet::*;
 
@@ -18,9 +14,10 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use pallet_parachain_utils::throw_utils_error;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_utils::Config + pallet_spaces::Config {
+    pub trait Config: frame_system::Config + pallet_spaces::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
 
@@ -62,7 +59,7 @@ pub mod pallet {
             ensure!(who != transfer_to, Error::<T>::CannotTranferToCurrentOwner);
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
-                UtilsError::<T>::AccountIsBlocked
+                throw_utils_error(UtilsError::AccountIsBlocked)
             );
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
@@ -77,24 +74,22 @@ pub mod pallet {
 
         #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2))]
         pub fn accept_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
-            use frame_support::StorageMap;
-
             let new_owner = ensure_signed(origin)?;
 
             let mut space = Spaces::require_space(space_id)?;
             ensure!(!space.is_owner(&new_owner), Error::<T>::AlreadyASpaceOwner);
 
-            let transfer_to =
-                Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
+            let transfer_to = Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
+
             ensure!(
                 new_owner == transfer_to,
                 Error::<T>::NotAllowedToAcceptOwnershipTransfer
             );
 
+            Spaces::<T>::allowed_to_create_space(&transfer_to)?;
+
             // Here we know that the origin is eligible to become a new owner of this space.
             PendingSpaceOwner::<T>::remove(space_id);
-
-            Spaces::maybe_transfer_handle_deposit_to_new_space_owner(&space, &new_owner)?;
 
             let old_owner = space.owner;
             space.owner = new_owner.clone();
@@ -102,11 +97,13 @@ pub mod pallet {
 
             // Remove space id from the list of spaces by old owner
             SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {
-                remove_from_vec(space_ids, space_id)
+                remove_from_bounded(space_ids, space_id)
             });
 
             // Add space id to the list of spaces by new owner
-            SpaceIdsByOwner::<T>::mutate(new_owner.clone(), |ids| ids.push(space_id));
+            SpaceIdsByOwner::<T>::mutate(new_owner.clone(), |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
 
             // TODO add a new owner as a space follower? See T::BeforeSpaceCreated::before_space_created(new_owner.clone(), space)?;
 
@@ -134,7 +131,6 @@ pub mod pallet {
     }
 
     #[pallet::event]
-    #[pallet::metadata(T::AccountId = "AccountId")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         SpaceOwnershipTransferCreated(
