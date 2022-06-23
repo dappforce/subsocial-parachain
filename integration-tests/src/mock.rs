@@ -13,6 +13,7 @@ use frame_support::{
     storage::StorageMap,
     traits::Everything,
 };
+use frame_support::traits::ConstU32;
 use frame_system as system;
 
 use pallet_permissions::{
@@ -21,12 +22,12 @@ use pallet_permissions::{
 };
 use pallet_posts::{Post, PostUpdate, PostExtension, Comment, Error as PostsError};
 // use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
-use pallet_spaces::{SpaceById, SpaceUpdate, Error as SpacesError, SpacesSettings};
+use pallet_spaces::{SpaceById, Error as SpacesError};
+use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
 // use pallet_space_ownership::Error as SpaceOwnershipError;
 use pallet_parachain_utils::{
     mock_functions::*,
-    DEFAULT_MIN_HANDLE_LEN, DEFAULT_MAX_HANDLE_LEN,
     Error as UtilsError,
     SpaceId, PostId, User, Content,
 };
@@ -83,6 +84,7 @@ impl system::Config for TestRuntime {
     type SystemWeightInfo = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -167,14 +169,14 @@ parameter_types! {
 
 impl pallet_spaces::Config for TestRuntime {
     type Event = Event;
-    type Currency = Balances;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
     type BeforeSpaceCreated = SpaceFollows;
     type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
-    type HandleDeposit = HandleDeposit;
+    type MaxHandleLen = ConstU32<50>;
+    type MaxSpacesPerAccount = ConstU32<100>;
 }
 
 pub(crate) type AccountId = u64;
