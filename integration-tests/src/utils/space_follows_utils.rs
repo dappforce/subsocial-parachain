@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 
-use pallet_utils::SpaceId;
+use pallet_parachain_utils::SpaceId;
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT2, SPACE1};

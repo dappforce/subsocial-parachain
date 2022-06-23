@@ -2,7 +2,7 @@ use frame_support::{assert_noop, assert_ok};
 
 use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
 use pallet_spaces::{Error as SpacesError, SpaceById, SpaceUpdate, SpacesSettings};
-use pallet_utils::{
+use pallet_parachain_utils::{
     mock_functions::*, Content, Error as UtilsError, PostId, SpaceId, User, DEFAULT_MAX_HANDLE_LEN,
     DEFAULT_MIN_HANDLE_LEN,
 };

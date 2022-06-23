@@ -1,8 +1,8 @@
 use frame_support::{assert_noop, assert_ok};
 
 use pallet_profiles::Error as ProfilesError;
-use pallet_utils::Error as UtilsError;
-use pallet_utils::mock_functions::*;
+use pallet_parachain_utils::Error as UtilsError;
+use pallet_parachain_utils::mock_functions::*;
 
 use crate::mock::*;
 use crate::utils::*;

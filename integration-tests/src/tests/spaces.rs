@@ -1,10 +1,10 @@
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 use sp_runtime::traits::Zero;
 
-use pallet_utils::Error as UtilsError;
+use pallet_parachain_utils::Error as UtilsError;
 use pallet_spaces::Error as SpacesError;
 use pallet_permissions::SpacePermission as SP;
-use pallet_utils::mock_functions::*;
+use pallet_parachain_utils::mock_functions::*;
 
 use crate::mock::*;
 use crate::utils::*;

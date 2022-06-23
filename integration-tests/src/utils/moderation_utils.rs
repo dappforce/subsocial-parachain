@@ -2,8 +2,8 @@ use frame_support::assert_ok;
 use frame_support::pallet_prelude::*;
 
 use pallet_moderation::{EntityId, EntityStatus, ReportId};
-use pallet_utils::{Content, SpaceId};
-use pallet_utils::mock_functions::valid_content_ipfs;
+use pallet_parachain_utils::{Content, SpaceId};
+use pallet_parachain_utils::mock_functions::valid_content_ipfs;
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1, SPACE1};
