@@ -5,7 +5,7 @@ use sp_std::prelude::*;
 
 use df_traits::moderation::IsAccountBlocked;
 use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
-use pallet_parachain_utils::{remove_from_bounded, Error as UtilsError, SpaceId};
+use pallet_parachain_utils::{remove_from_bounded_vec, Error as UtilsError, SpaceId};
 
 pub use pallet::*;
 
@@ -97,7 +97,7 @@ pub mod pallet {
 
             // Remove space id from the list of spaces by old owner
             SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {
-                remove_from_bounded(space_ids, space_id)
+                remove_from_bounded_vec(space_ids, space_id)
             });
 
             // Add space id to the list of spaces by new owner
