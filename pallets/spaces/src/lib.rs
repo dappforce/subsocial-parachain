@@ -196,7 +196,7 @@ pub mod pallet {
 
             ensure_content_is_valid(content.clone())?;
 
-            Self::allowed_to_create_space(&owner)?;
+            Self::ensure_space_limit_not_reached(&owner)?;
 
             // TODO: add tests for this case
             if let Some(parent_id) = parent_id_opt {
@@ -440,9 +440,9 @@ pub mod pallet {
             })
         }
 
-        pub fn allowed_to_create_space(owner: &T::AccountId) -> DispatchResult {
+        pub fn ensure_space_limit_not_reached(owner: &T::AccountId) -> DispatchResult {
             ensure!(
-                Self::space_ids_by_owner(&owner).len() >= T::MaxSpacesPerAccount::get() as usize,
+                Self::space_ids_by_owner(&owner).len() <= T::MaxSpacesPerAccount::get() as usize,
                 Error::<T>::TooManySpacesPerAccount,
             );
             Ok(())

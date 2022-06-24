@@ -86,7 +86,7 @@ pub mod pallet {
                 Error::<T>::NotAllowedToAcceptOwnershipTransfer
             );
 
-            Spaces::<T>::allowed_to_create_space(&transfer_to)?;
+            Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
 
             // Here we know that the origin is eligible to become a new owner of this space.
             PendingSpaceOwner::<T>::remove(space_id);
