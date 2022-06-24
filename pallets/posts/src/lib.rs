@@ -96,73 +96,6 @@ pub mod pallet {
         }
     }
 
-    #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T: Config> {
-        PostCreated(T::AccountId, PostId),
-        PostUpdated(T::AccountId, PostId),
-        PostDeleted(T::AccountId, PostId),
-        PostShared(T::AccountId, PostId),
-        PostMoved(T::AccountId, PostId),
-    }
-
-    #[deprecated(note = "use `Event` instead")]
-    pub type RawEvent<T> = Event<T>;
-
-    #[pallet::error]
-    pub enum Error<T> {
-        /// Post was not found by id.
-        PostNotFound,
-        /// An account is not a post owner.
-        NotAPostOwner,
-        /// Nothing to update in this post.
-        NoUpdatesForPost,
-        /// Root post should have a space id.
-        PostHasNoSpaceId,
-        /// Not allowed to create a post/comment when a scope (space or root post) is hidden.
-        CannotCreateInHiddenScope,
-        /// Post has no replies.
-        NoRepliesOnPost,
-        /// Cannot move a post to the same space.
-        CannotMoveToSameSpace,
-
-        // Sharing related errors:
-        /// Original post not found when sharing.
-        OriginalPostNotFound,
-        /// Cannot share a post that that is sharing another post.
-        CannotShareSharingPost,
-        /// This post's extension is not a `SharedPost`.
-        NotASharingPost,
-
-        // Comment related errors:
-        /// Unknown parent comment id.
-        UnknownParentComment,
-        /// Post by `parent_id` is not of a `Comment` extension.
-        NotACommentByParentId,
-        /// Cannot update space id of a comment.
-        CannotUpdateSpaceIdOnComment,
-        /// Max comment depth reached.
-        MaxCommentDepthReached,
-        /// Only comment owner can update this comment.
-        NotACommentAuthor,
-        /// This post's extension is not a `Comment`.
-        NotComment,
-
-        // Permissions related errors:
-        /// User has no permission to create root posts in this space.
-        NoPermissionToCreatePosts,
-        /// User has no permission to create comments (aka replies) in this space.
-        NoPermissionToCreateComments,
-        /// User has no permission to share posts/comments from this space to another space.
-        NoPermissionToShare,
-        /// User has no permission to update any posts in this space.
-        NoPermissionToUpdateAnyPost,
-        /// A post owner is not allowed to update their own posts in this space.
-        NoPermissionToUpdateOwnPosts,
-        /// A comment owner is not allowed to update their own comments in this space.
-        NoPermissionToUpdateOwnComments,
-    }
-    
     #[pallet::type_value]
     pub fn DefaultForNextPostId() -> PostId {
         FIRST_POST_ID
@@ -195,6 +128,78 @@ pub mod pallet {
     #[pallet::getter(fn shared_post_ids_by_original_post_id)]
     pub type SharedPostIdsByOriginalPostId<T: Config> =
         StorageMap<_, Twox64Concat, PostId, Vec<PostId>, ValueQuery>;
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        PostCreated(T::AccountId, PostId),
+        PostUpdated(T::AccountId, PostId),
+        PostDeleted(T::AccountId, PostId),
+        PostShared(T::AccountId, PostId),
+        PostMoved(T::AccountId, PostId),
+    }
+
+    #[deprecated(note = "use `Event` instead")]
+    pub type RawEvent<T> = Event<T>;
+
+    #[pallet::error]
+    pub enum Error<T> {
+        // Post related errors:
+
+        /// Post was not found by id.
+        PostNotFound,
+        /// An account is not a post owner.
+        NotAPostOwner,
+        /// Nothing to update in this post.
+        NoUpdatesForPost,
+        /// Root post should have a space id.
+        PostHasNoSpaceId,
+        /// Not allowed to create a post/comment when a scope (space or root post) is hidden.
+        CannotCreateInHiddenScope,
+        /// Post has no replies.
+        NoRepliesOnPost,
+        /// Cannot move a post to the same space.
+        CannotMoveToSameSpace,
+
+        // Sharing related errors:
+
+        /// Original post not found when sharing.
+        OriginalPostNotFound,
+        /// Cannot share a post that that is sharing another post.
+        CannotShareSharingPost,
+        /// This post's extension is not a `SharedPost`.
+        NotASharingPost,
+
+        // Comment related errors:
+
+        /// Unknown parent comment id.
+        UnknownParentComment,
+        /// Post by `parent_id` is not of a `Comment` extension.
+        NotACommentByParentId,
+        /// Cannot update space id of a comment.
+        CannotUpdateSpaceIdOnComment,
+        /// Max comment depth reached.
+        MaxCommentDepthReached,
+        /// Only comment owner can update this comment.
+        NotACommentAuthor,
+        /// This post's extension is not a `Comment`.
+        NotComment,
+
+        // Permissions related errors:
+
+        /// User has no permission to create root posts in this space.
+        NoPermissionToCreatePosts,
+        /// User has no permission to create comments (aka replies) in this space.
+        NoPermissionToCreateComments,
+        /// User has no permission to share posts/comments from this space to another space.
+        NoPermissionToShare,
+        /// User has no permission to update any posts in this space.
+        NoPermissionToUpdateAnyPost,
+        /// A post owner is not allowed to update their own posts in this space.
+        NoPermissionToUpdateOwnPosts,
+        /// A comment owner is not allowed to update their own comments in this space.
+        NoPermissionToUpdateOwnComments,
+    }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
