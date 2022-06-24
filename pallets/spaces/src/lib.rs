@@ -442,7 +442,7 @@ pub mod pallet {
 
         pub fn ensure_space_limit_not_reached(owner: &T::AccountId) -> DispatchResult {
             ensure!(
-                Self::space_ids_by_owner(&owner).len() <= T::MaxSpacesPerAccount::get() as usize,
+                Self::space_ids_by_owner(&owner).len() < T::MaxSpacesPerAccount::get() as usize,
                 Error::<T>::TooManySpacesPerAccount,
             );
             Ok(())
