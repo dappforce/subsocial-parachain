@@ -26,7 +26,7 @@ use pallet_spaces::{SpaceById, Error as SpacesError};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
 use pallet_space_ownership::Error as SpaceOwnershipError;
-use pallet_parachain_utils::{
+use pallet_subsocial_support::{
     mock_functions::*,
     Error as UtilsError,
     SpaceId, PostId, User, Content,
@@ -145,7 +145,7 @@ parameter_types! {
 impl pallet_roles::Config for TestRuntime {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    type Spaces = Spaces;
+    type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;

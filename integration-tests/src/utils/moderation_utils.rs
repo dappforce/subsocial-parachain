@@ -4,9 +4,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
-use pallet_parachain_utils::mock_functions::valid_content_ipfs;
-use pallet_parachain_utils::{Content, PostId, SpaceId};
+use pallet_subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
+    mock_functions::valid_content_ipfs, Content, PostId, SpaceId,
+};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1, SPACE1};

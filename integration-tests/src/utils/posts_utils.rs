@@ -1,7 +1,7 @@
 use frame_support::pallet_prelude::*;
 
 use pallet_posts::{Comment, PostExtension, PostUpdate};
-use pallet_parachain_utils::{Content, PostId, SpaceId};
+use pallet_subsocial_support::{Content, PostId, SpaceId};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1, POST2, SPACE1, SPACE2};
