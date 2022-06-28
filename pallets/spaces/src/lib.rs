@@ -26,9 +26,10 @@ pub mod types;
 
 pub use pallet::*;
 
-use df_traits::SpaceFollowsProvider;
 use pallet_permissions::{SpacePermission, SpacePermissions};
-use pallet_parachain_utils::{Content, SpaceId, new_who_and_when};
+use pallet_subsocial_support::{
+    traits::SpaceFollowsProvider, Content, SpaceId, new_who_and_when,
+};
 use sp_std::vec::Vec;
 
 #[frame_support::pallet]
@@ -39,12 +40,11 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
-    use df_traits::{
-        moderation::{IsAccountBlocked, IsContentBlocked},
-        PermissionChecker, SpaceForRoles, SpaceForRolesProvider,
+    use pallet_permissions::{
+        Pallet as Permissions, SpacePermissionsContext, PermissionChecker, SpacePermissionsInfoOf,
     };
-    use pallet_permissions::{Pallet as Permissions, SpacePermissionsContext};
-    use pallet_parachain_utils::{
+    use pallet_subsocial_support::{
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider}, SpacePermissionsInfo,
         Error as UtilsError, ensure_content_is_valid, throw_utils_error,
     };
 
@@ -451,13 +451,13 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> SpaceForRolesProvider for Pallet<T> {
-        type AccountId = T::AccountId;
-
-        fn get_space(id: SpaceId) -> Result<SpaceForRoles<Self::AccountId>, DispatchError> {
+    impl<T: Config> SpacePermissionsProvider<SpacePermissionsInfoOf<T>> for Pallet<T> {
+        fn get_space(
+            id: SpaceId,
+        ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;
 
-            Ok(SpaceForRoles {
+            Ok(SpacePermissionsInfo {
                 owner: space.owner,
                 permissions: space.permissions,
             })

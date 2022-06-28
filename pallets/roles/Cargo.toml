@@ -21,9 +21,8 @@ std = [
     'pallet-timestamp/std',
     'sp-runtime/std',
     'sp-std/std',
-    'df-traits/std',
     'pallet-permissions/std',
-    'pallet-parachain-utils/std',
+    'pallet-subsocial-support/std',
 ]
 
 [dependencies]
@@ -31,9 +30,8 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # Local dependencies
-df-traits = { default-features = false, path = '../traits' }
 pallet-permissions = { default-features = false, path = '../permissions' }
-pallet-parachain-utils = { default-features = false, path = '../parachain-utils' }
+pallet-subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

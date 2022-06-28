@@ -26,10 +26,10 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked};
 use pallet_permissions::SpacePermission;
 use pallet_spaces::{Pallet as Spaces, types::Space, SpaceById};
-use pallet_parachain_utils::{
+use pallet_subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
     Content, Error as UtilsError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
     throw_utils_error, ensure_content_is_valid,
 };

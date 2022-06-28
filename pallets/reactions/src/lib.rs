@@ -10,12 +10,12 @@ use serde::Deserialize;
 use sp_runtime::{DispatchError, RuntimeDebug};
 use sp_std::prelude::*;
 
-use df_traits::moderation::IsAccountBlocked;
 use pallet_permissions::SpacePermission;
 use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
-use pallet_parachain_utils::{
-    remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf, new_who_and_when, throw_utils_error,
+use pallet_subsocial_support::{
+    traits::{IsAccountBlocked}, remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf,
+    new_who_and_when, throw_utils_error,
 };
 
 pub use pallet::*;

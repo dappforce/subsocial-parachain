@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 
-use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
+use pallet_subsocial_support::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
 use sp_std::vec::Vec;

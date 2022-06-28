@@ -17,12 +17,11 @@ use frame_system::{self as system, ensure_signed};
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
-use df_traits::{
-    moderation::{IsAccountBlocked, IsContentBlocked},
-    PermissionChecker, SpaceFollowsProvider, SpaceForRolesProvider,
+use pallet_permissions::{
+    Pallet as Permissions, SpacePermission, SpacePermissionSet, PermissionChecker,
 };
-use pallet_permissions::{Pallet as Permissions, SpacePermission, SpacePermissionSet};
-use pallet_parachain_utils::{
+use pallet_subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, Error as UtilsError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
     ensure_content_is_valid, convert_users_vec_to_btree_set, throw_utils_error,
 };
@@ -45,6 +44,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use pallet_permissions::SpacePermissionsInfoOf;
 
     #[pallet::config]
     pub trait Config:
@@ -59,7 +59,7 @@ pub mod pallet {
         #[pallet::constant]
         type MaxUsersToProcessPerDeleteRole: Get<u16>;
 
-        type Spaces: SpaceForRolesProvider<AccountId = Self::AccountId>;
+        type SpacePermissionsProvider: SpacePermissionsProvider<SpacePermissionsInfoOf<Self>>;
 
         type SpaceFollows: SpaceFollowsProvider<AccountId = Self::AccountId>;
 

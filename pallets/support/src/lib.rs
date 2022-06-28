@@ -9,6 +9,8 @@ use scale_info::TypeInfo;
 use frame_support::pallet_prelude::*;
 use sp_std::{vec, vec::Vec, collections::btree_set::BTreeSet};
 
+pub mod traits;
+
 pub type SpaceId = u64;
 pub type PostId = u64;
 
@@ -158,6 +160,12 @@ impl From<Error> for &'static str {
             Error::ContentIsEmpty => "ContentIsEmpty",
         }
     }
+}
+
+/// Minimal set of fields from Space struct that are required by roles pallet.
+pub struct SpacePermissionsInfo<AccountId, SpacePermissions> {
+    pub owner: AccountId,
+    pub permissions: Option<SpacePermissions>,
 }
 
 pub fn throw_utils_error(error: Error) -> DispatchError {

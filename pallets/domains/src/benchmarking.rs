@@ -15,7 +15,7 @@ use frame_system::RawOrigin;
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_std::{convert::TryInto, vec};
 
-use pallet_parachain_utils::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
+use pallet_subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
 
 fn account_with_balance<T: Config>() -> T::AccountId {
 	let owner: T::AccountId = whitelisted_caller();

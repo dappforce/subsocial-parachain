@@ -21,11 +21,10 @@ std = [
     'pallet-timestamp/std',
     'sp-runtime/std',
     'sp-std/std',
-    'df-traits/std',
     'pallet-permissions/std',
     'pallet-space-follows/std',
     'pallet-spaces/std',
-    'pallet-parachain-utils/std',
+    'pallet-subsocial-support/std',
 ]
 
 [dependencies]
@@ -35,11 +34,10 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 serde = { features = ['derive'], optional = true, version = '1.0.132' }
 
 # Local dependencies
-df-traits = { default-features = false, path = '../traits' }
 pallet-permissions = { default-features = false, path = '../permissions' }
 pallet-space-follows = { default-features = false, path = '../space-follows' }
 pallet-spaces = { default-features = false, path = '../spaces' }
-pallet-parachain-utils = { default-features = false, path = '../parachain-utils' }
+pallet-subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

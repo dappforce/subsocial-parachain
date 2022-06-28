@@ -1,6 +1,6 @@
 use frame_support::dispatch::DispatchResult;
 
-use pallet_parachain_utils::{remove_from_vec, SpaceId};
+use pallet_subsocial_support::{remove_from_vec, SpaceId};
 
 use super::*;
 

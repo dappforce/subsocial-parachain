@@ -1,4 +1,4 @@
-use pallet_parachain_utils::{SpaceId, Content};
+use crate::{SpaceId, Content};
 
 pub trait IsAccountBlocked<AccountId> {
     fn is_blocked_account(account: AccountId, scope: SpaceId) -> bool;

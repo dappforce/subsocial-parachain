@@ -16,12 +16,11 @@ use frame_support::{
     traits::Everything,
 };
 
-use pallet_permissions::{
-    SpacePermission,
-    SpacePermission as SP,
+use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
+use pallet_subsocial_support::{
+    traits::{SpaceFollowsProvider, SpacePermissionsProvider as SpacePermissionsProviderT},
+    SpacePermissionsInfo, SpaceId, User, Content,
 };
-use df_traits::{SpaceForRoles, SpaceFollowsProvider, SpaceForRolesProvider};
-use pallet_parachain_utils::{SpaceId, User, Content};
 
 use crate as roles;
 
@@ -117,20 +116,20 @@ parameter_types! {
 impl Config for Test {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    type Spaces = Roles;
+    type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
 }
 
-impl<T: Config> SpaceForRolesProvider for Pallet<T> {
-    type AccountId = AccountId;
-
+impl SpacePermissionsProviderT<SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
     // This function should return an error every time Space doesn't exist by SpaceId
     // Currently, we have a list of valid space id's to check
-    fn get_space(id: SpaceId) -> Result<SpaceForRoles<Self::AccountId>, DispatchError> {
-        if self::valid_space_ids().contains(&id) {
-            return Ok(SpaceForRoles { owner: ACCOUNT1, permissions: None })
+    fn get_space(
+        id: SpaceId,
+    ) -> Result<SpacePermissionsInfo<AccountId, SpacePermissions>, DispatchError> {
+        if valid_space_ids().contains(&id) {
+            return Ok(SpacePermissionsInfo { owner: ACCOUNT1, permissions: None })
         }
 
         Err("SpaceNotFound".into())

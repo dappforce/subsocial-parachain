@@ -4,7 +4,6 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use df_traits::{moderation::IsAccountBlocked, SpaceFollowsProvider};
 use pallet_profiles::{Module as Profiles, SocialAccountById};
 use pallet_spaces::{BeforeSpaceCreated, Pallet as Spaces, types::Space, SpaceById};
 
@@ -16,7 +15,10 @@ pub mod pallet {
 
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use pallet_parachain_utils::{Error as UtilsError, SpaceId, remove_from_vec, throw_utils_error};
+    use pallet_subsocial_support::{
+        traits::{IsAccountBlocked, SpaceFollowsProvider},
+        Error as UtilsError, SpaceId, remove_from_vec, throw_utils_error,
+    };
     use sp_std::vec::Vec;
 
     #[pallet::config]
