@@ -22,7 +22,7 @@ std = [
     'sp-runtime/std',
     'sp-std/std',
     'pallet-permissions/std',
-    'pallet-subsocial-support/std',
+    'subsocial-support/std',
 ]
 
 [dependencies]
@@ -31,7 +31,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 
 # Local dependencies
 pallet-permissions = { default-features = false, path = '../permissions' }
-pallet-subsocial-support = { default-features = false, path = '../support' }
+subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

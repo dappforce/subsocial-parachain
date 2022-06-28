@@ -1,7 +1,7 @@
 use frame_support::pallet_prelude::*;
 
 use pallet_permissions::SpacePermission;
-use pallet_subsocial_support::{Content, SpaceId, User};
+use subsocial_support::{Content, SpaceId, User};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, ACCOUNT2, SPACE1};

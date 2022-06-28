@@ -3,10 +3,8 @@ panic = "unwind"
 
 [workspace]
 members = [
+    "integration-tests",
     "node",
     "runtime",
-    "integration-tests",
-    "pallets/domains",
-    "pallets/parachain-utils",
-#    "pallets/*",
+    "pallets/*",
 ]

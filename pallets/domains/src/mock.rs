@@ -9,8 +9,8 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryInto, TryFrom};
 
-use pallet_subsocial_support::Content;
-use pallet_subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
+use subsocial_support::Content;
+use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
 
 pub(crate) use crate as pallet_domains;
 use crate::types::*;

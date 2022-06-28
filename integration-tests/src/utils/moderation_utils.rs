@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
     mock_functions::valid_content_ipfs, Content, PostId, SpaceId,
 };

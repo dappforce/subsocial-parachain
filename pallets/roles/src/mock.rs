@@ -17,7 +17,7 @@ use frame_support::{
 };
 
 use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::{SpaceFollowsProvider, SpacePermissionsProvider as SpacePermissionsProviderT},
     SpacePermissionsInfo, SpaceId, User, Content,
 };

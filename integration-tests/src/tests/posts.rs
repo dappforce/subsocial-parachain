@@ -5,7 +5,7 @@ use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate
 use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::{Error as SpacesError, SpaceById};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use pallet_subsocial_support::{
+use subsocial_support::{
     mock_functions::*, Content, Error as UtilsError, PostId, SpaceId, User,
 };
 

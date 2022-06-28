@@ -20,7 +20,7 @@ use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 use pallet_permissions::{
     Pallet as Permissions, SpacePermission, SpacePermissionSet, PermissionChecker,
 };
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, Error as UtilsError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
     ensure_content_is_valid, convert_users_vec_to_btree_set, throw_utils_error,

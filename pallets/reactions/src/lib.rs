@@ -13,7 +13,7 @@ use sp_std::prelude::*;
 use pallet_permissions::SpacePermission;
 use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::{IsAccountBlocked}, remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf,
     new_who_and_when, throw_utils_error,
 };

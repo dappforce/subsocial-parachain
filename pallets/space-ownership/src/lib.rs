@@ -4,7 +4,7 @@ use frame_system::ensure_signed;
 use sp_std::prelude::*;
 
 use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::IsAccountBlocked, remove_from_bounded_vec, Error as UtilsError, SpaceId,
 };
 
@@ -15,7 +15,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use pallet_subsocial_support::throw_utils_error;
+    use subsocial_support::throw_utils_error;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {

@@ -24,7 +24,7 @@ std = [
     'pallet-permissions/std',
     'pallet-space-follows/std',
     'pallet-spaces/std',
-    'pallet-subsocial-support/std',
+    'subsocial-support/std',
 ]
 
 [dependencies]
@@ -37,7 +37,7 @@ serde = { features = ['derive'], optional = true, version = '1.0.132' }
 pallet-permissions = { default-features = false, path = '../permissions' }
 pallet-space-follows = { default-features = false, path = '../space-follows' }
 pallet-spaces = { default-features = false, path = '../spaces' }
-pallet-subsocial-support = { default-features = false, path = '../support' }
+subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

@@ -27,7 +27,7 @@ pub mod types;
 pub use pallet::*;
 
 use pallet_permissions::{SpacePermission, SpacePermissions};
-use pallet_subsocial_support::{
+use subsocial_support::{
     traits::SpaceFollowsProvider, Content, SpaceId, new_who_and_when,
 };
 use sp_std::vec::Vec;
@@ -43,7 +43,7 @@ pub mod pallet {
     use pallet_permissions::{
         Pallet as Permissions, SpacePermissionsContext, PermissionChecker, SpacePermissionsInfoOf,
     };
-    use pallet_subsocial_support::{
+    use subsocial_support::{
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider}, SpacePermissionsInfo,
         Error as UtilsError, ensure_content_is_valid, throw_utils_error,
     };

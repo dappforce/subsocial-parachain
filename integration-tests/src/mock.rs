@@ -26,7 +26,7 @@ use pallet_spaces::{SpaceById, Error as SpacesError};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use pallet_space_follows::Error as SpaceFollowsError;
 use pallet_space_ownership::Error as SpaceOwnershipError;
-use pallet_subsocial_support::{
+use subsocial_support::{
     mock_functions::*,
     Error as UtilsError,
     SpaceId, PostId, User, Content,

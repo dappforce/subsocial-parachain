@@ -3,7 +3,7 @@ use frame_support::{dispatch::{DispatchError, DispatchResult}};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 
-use pallet_subsocial_support::{SpaceId, SpacePermissionsInfo, User};
+use subsocial_support::{SpaceId, SpacePermissionsInfo, User};
 
 use super::*;
 
