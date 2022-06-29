@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 
-use subsocial_support::{WhoAndWhenOf, new_who_and_when};
+use subsocial_support::{new_who_and_when, WhoAndWhenOf};
 
 use super::*;
 use sp_std::vec::Vec;
@@ -70,9 +70,7 @@ pub struct SpacesSettings {
 
 impl Default for SpacesSettings {
     fn default() -> Self {
-        Self {
-            handles_enabled: true,
-        }
+        Self { handles_enabled: true }
     }
 }
 
@@ -139,8 +137,7 @@ impl<T: Config> Space<T> {
     }
 
     pub fn try_get_parent(&self) -> Result<SpaceId, DispatchError> {
-        self.parent_id
-            .ok_or_else(|| Error::<T>::SpaceIsAtRoot.into())
+        self.parent_id.ok_or_else(|| Error::<T>::SpaceIsAtRoot.into())
     }
 
     pub fn is_public(&self) -> bool {

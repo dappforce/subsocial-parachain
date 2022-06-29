@@ -41,7 +41,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use pallet_permissions::{
-        Pallet as Permissions, SpacePermissionsContext, PermissionChecker, SpacePermissionsInfoOf,
+        Pallet as Permissions, PermissionChecker, SpacePermissionsContext, SpacePermissionsInfoOf,
     };
     use subsocial_support::{
         ensure_content_is_valid,
@@ -137,7 +137,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn space_ids_by_owner)]
     pub type SpaceIdsByOwner<T: Config> =
-    StorageMap<_, Twox64Concat, T::AccountId, SpacesByAccount<T>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, SpacesByAccount<T>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn settings)]
@@ -151,9 +151,7 @@ pub mod pallet {
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
-            Self {
-                endowed_account: None,
-            }
+            Self { endowed_account: None }
         }
     }
 
@@ -208,23 +206,16 @@ pub mod pallet {
                 permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
 
             let space_id = Self::next_space_id();
-            let new_space = &mut Space::new(
-                space_id,
-                parent_id_opt,
-                owner.clone(),
-                content,
-                permissions,
-            );
+            let new_space =
+                &mut Space::new(space_id, parent_id_opt, owner.clone(), content, permissions);
 
             // FIXME: What's about handle reservation if this fails?
             T::BeforeSpaceCreated::before_space_created(owner.clone(), new_space)?;
 
             SpaceById::<T>::insert(space_id, new_space);
-            SpaceIdsByOwner::<T>::mutate(
-                &owner, |ids| {
-                    ids.try_push(space_id).expect("qed; too many spaces per account")
-                }
-            );
+            SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
             NextSpaceId::<T>::mutate(|n| *n += 1);
 
             Self::deposit_event(Event::SpaceCreated(owner, space_id));
@@ -239,10 +230,10 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            let has_updates = update.parent_id.is_some()
-                || update.content.is_some()
-                || update.hidden.is_some()
-                || update.permissions.is_some();
+            let has_updates = update.parent_id.is_some() ||
+                update.content.is_some() ||
+                update.hidden.is_some() ||
+                update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
 
@@ -348,10 +339,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             let space_settings = Self::settings();
-            ensure!(
-                space_settings != new_settings,
-                Error::<T>::NoUpdatesForSpacesSettings
-            );
+            ensure!(space_settings != new_settings, Error::<T>::NoUpdatesForSpacesSettings);
 
             PalletSettings::<T>::mutate(|settings| *settings = new_settings);
 
@@ -380,10 +368,7 @@ pub mod pallet {
         /// Check that there is a `Space` with such `space_id` in the storage
         /// or return`SpaceNotFound` error.
         pub fn ensure_space_exists(space_id: SpaceId) -> DispatchResult {
-            ensure!(
-                <SpaceById<T>>::contains_key(space_id),
-                Error::<T>::SpaceNotFound
-            );
+            ensure!(<SpaceById<T>>::contains_key(space_id), Error::<T>::SpaceNotFound);
             Ok(())
         }
 
@@ -412,10 +397,7 @@ pub mod pallet {
         }
 
         pub fn ensure_handles_enabled() -> DispatchResult {
-            ensure!(
-                Self::settings().handles_enabled,
-                Error::<T>::HandlesAreDisabled
-            );
+            ensure!(Self::settings().handles_enabled, Error::<T>::HandlesAreDisabled);
             Ok(())
         }
 
@@ -436,7 +418,7 @@ pub mod pallet {
                     f(space);
                     *space_opt = Some(space.clone());
 
-                    return Ok(space.clone());
+                    return Ok(space.clone())
                 }
 
                 Err(Error::<T>::SpaceNotFound.into())
@@ -458,10 +440,7 @@ pub mod pallet {
         ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;
 
-            Ok(SpacePermissionsInfo {
-                owner: space.owner,
-                permissions: space.permissions,
-            })
+            Ok(SpacePermissionsInfo { owner: space.owner, permissions: space.permissions })
         }
     }
 
