@@ -23,7 +23,7 @@ impl<T: Config> Pallet<T> {
     pub fn ensure_role_manager(account: T::AccountId, space_id: SpaceId) -> DispatchResult {
         ensure!(
             T::IsAccountBlocked::is_allowed_account(account.clone(), space_id),
-            throw_utils_error(UtilsError::AccountIsBlocked)
+            UtilsError::AccountIsBlocked
         );
         Self::ensure_user_has_space_permission_with_load_space(
             User::Account(account),

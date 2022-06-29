@@ -13,6 +13,7 @@ categories = ["cryptography::cryptocurrencies"]
 [features]
 default = ["std"]
 std = [
+    "strum/std",
     "codec/std",
     "scale-info/std",
     "frame-support/std",
@@ -22,6 +23,8 @@ std = [
 ]
 
 [dependencies]
+strum = { optional = true, default-features = false, version = "0.24", features = ["derive"] }
+
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 

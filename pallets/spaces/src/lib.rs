@@ -44,8 +44,9 @@ pub mod pallet {
         Pallet as Permissions, SpacePermissionsContext, PermissionChecker, SpacePermissionsInfoOf,
     };
     use subsocial_support::{
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider}, SpacePermissionsInfo,
-        Error as UtilsError, ensure_content_is_valid, throw_utils_error,
+        ensure_content_is_valid,
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
+        Error as UtilsError, SpacePermissionsInfo,
     };
 
     #[pallet::config]
@@ -205,11 +206,11 @@ pub mod pallet {
 
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), parent_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    UtilsError::AccountIsBlocked
                 );
                 ensure!(
                     T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                    throw_utils_error(UtilsError::ContentIsBlocked)
+                    UtilsError::ContentIsBlocked
                 );
 
                 Self::ensure_account_has_space_permission(
@@ -268,7 +269,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                UtilsError::AccountIsBlocked
             );
 
             Self::ensure_account_has_space_permission(
@@ -307,12 +308,12 @@ pub mod pallet {
 
                     ensure!(
                         T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
-                        throw_utils_error(UtilsError::ContentIsBlocked)
+                        UtilsError::ContentIsBlocked
                     );
                     if let Some(parent_id) = space.parent_id {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                            throw_utils_error(UtilsError::ContentIsBlocked)
+                            UtilsError::ContentIsBlocked
                         );
                     }
 

@@ -15,7 +15,7 @@ use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
 use subsocial_support::{
     traits::{IsAccountBlocked}, remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf,
-    new_who_and_when, throw_utils_error,
+    new_who_and_when,
 };
 
 pub use pallet::*;
@@ -173,7 +173,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                UtilsError::AccountIsBlocked
             );
 
             match kind {
@@ -237,7 +237,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    UtilsError::AccountIsBlocked
                 );
             }
 
@@ -291,7 +291,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    UtilsError::AccountIsBlocked
                 );
             }
 

@@ -10826,6 +10826,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-std",
+ "strum 0.24.0",
 ]
 
 [[package]]

@@ -23,7 +23,7 @@ use pallet_permissions::{
 use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, Error as UtilsError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
-    ensure_content_is_valid, convert_users_vec_to_btree_set, throw_utils_error,
+    ensure_content_is_valid, convert_users_vec_to_btree_set,
 };
 
 pub use pallet::*;
@@ -204,7 +204,7 @@ pub mod pallet {
             ensure_content_is_valid(content.clone())?;
             ensure!(
                 T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
-                throw_utils_error(UtilsError::ContentIsBlocked),
+                UtilsError::ContentIsBlocked,
             );
 
             Self::ensure_role_manager(who.clone(), space_id)?;
@@ -266,7 +266,7 @@ pub mod pallet {
                     ensure_content_is_valid(content.clone())?;
                     ensure!(
                         T::IsContentBlocked::is_allowed_content(content.clone(), role.space_id),
-                        throw_utils_error(UtilsError::ContentIsBlocked)
+                        UtilsError::ContentIsBlocked
                     );
 
                     role.content = content;

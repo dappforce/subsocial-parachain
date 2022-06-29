@@ -15,7 +15,6 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use subsocial_support::throw_utils_error;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
@@ -76,7 +75,7 @@ pub mod pallet {
             ensure!(who != transfer_to, Error::<T>::CannotTranferToCurrentOwner);
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                UtilsError::AccountIsBlocked
             );
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());

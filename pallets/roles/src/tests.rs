@@ -115,7 +115,7 @@ fn create_role_should_fail_with_ipfs_is_incorrect() {
             None, // Without time_to_live
             Some(self::invalid_role_content_ipfs()),
             None // With default permissions set
-        ), throw_utils_error(UtilsError::InvalidIpfsCid));
+        ), UtilsError::InvalidIpfsCid);
     });
 }
 
@@ -327,7 +327,7 @@ fn update_role_should_fail_with_ipfs_is_incorrect() {
             None, // From ACCOUNT1
             None, // On RoleId 1
             Some(self::role_update(None, Some(self::invalid_role_content_ipfs()), None))
-        ), throw_utils_error(UtilsError::InvalidIpfsCid));
+        ), UtilsError::InvalidIpfsCid);
     });
 }
 

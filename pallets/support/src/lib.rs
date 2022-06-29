@@ -121,7 +121,7 @@ pub fn convert_users_vec_to_btree_set<AccountId: Ord + Clone>(
     Ok(users_set)
 }
 
-#[derive(Encode, Decode, RuntimeDebug)]
+#[derive(Encode, Decode, RuntimeDebug, strum::IntoStaticStr)]
 pub enum Error {
     /// Account is blocked in a given space.
     AccountIsBlocked,
@@ -145,20 +145,9 @@ pub enum Error {
     ContentIsEmpty,
 }
 
-impl From<Error> for &'static str {
-    fn from(e: Error) -> &'static str {
-        match e {
-            Error::AccountIsBlocked => "AccountIsBlocked",
-            Error::ContentIsBlocked => "ContentIsBlocked",
-            Error::PostIsBlocked => "PostIsBlocked",
-            Error::InvalidIpfsCid => "InvalidIpfsCid",
-            Error::RawContentTypeNotSupported => "RawContentTypeNotSupported",
-            Error::HypercoreContentTypeNotSupported => "HypercoreContentTypeNotSupported",
-            Error::HandleIsTooShort => "HandleIsTooShort",
-            Error::HandleIsTooLong => "HandleIsTooLong",
-            Error::HandleContainsInvalidChars => "HandleContainsInvalidChars",
-            Error::ContentIsEmpty => "ContentIsEmpty",
-        }
+impl From<Error> for DispatchError {
+    fn from(err: Error) -> DispatchError {
+        Self::Other(err.into())
     }
 }
 
@@ -166,10 +155,6 @@ impl From<Error> for &'static str {
 pub struct SpacePermissionsInfo<AccountId, SpacePermissions> {
     pub owner: AccountId,
     pub permissions: Option<SpacePermissions>,
-}
-
-pub fn throw_utils_error(error: Error) -> DispatchError {
-    DispatchError::Other(error.into())
 }
 
 pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
