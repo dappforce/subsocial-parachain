@@ -7,9 +7,7 @@ use sp_std::vec::Vec;
 
 pub const FIRST_SPACE_ID: u64 = 1;
 pub const RESERVED_SPACE_COUNT: u64 = 1000;
-pub const DEFAULT_MAX_HANDLE_LEN: u32 = 50;
 
-pub(crate) type Handle<T> = BoundedVec<u8, <T as Config>::MaxHandleLen>;
 pub(crate) type SpacesByAccount<T> = BoundedVec<SpaceId, <T as Config>::MaxSpacesPerAccount>;
 
 /// Information about a space's owner, its' content, visibility and custom permissions.
@@ -28,10 +26,6 @@ pub struct Space<T: Config> {
     // The next fields can be updated by the owner:
     pub(super) parent_id: Option<SpaceId>,
 
-    /// Unique alpha-numeric identifier that can be used in a space's URL.
-    /// Handle can only contain numbers, letter and underscore: `0`-`9`, `a`-`z`, `_`.
-    pub handle: Option<Handle<T>>,
-
     pub content: Content,
 
     /// Hidden field is used to recommend to end clients (web and mobile apps) that a particular
@@ -47,8 +41,6 @@ pub struct Space<T: Config> {
     /// The number of account following a given space.
     pub followers_count: u32,
 
-    pub(super) score: i32,
-
     /// This allows you to override Subsocial's default permissions by enabling or disabling role
     /// permissions.
     pub permissions: Option<SpacePermissions>,
@@ -57,21 +49,9 @@ pub struct Space<T: Config> {
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct SpaceUpdate {
     pub parent_id: Option<Option<SpaceId>>,
-    pub handle: Option<Option<Vec<u8>>>,
     pub content: Option<Content>,
     pub hidden: Option<bool>,
     pub permissions: Option<Option<SpacePermissions>>,
-}
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct SpacesSettings {
-    pub handles_enabled: bool,
-}
-
-impl Default for SpacesSettings {
-    fn default() -> Self {
-        Self { handles_enabled: true }
-    }
 }
 
 impl<T: Config> Space<T> {
@@ -88,13 +68,11 @@ impl<T: Config> Space<T> {
             updated: None,
             owner: created_by,
             parent_id,
-            handle: Default::default(),
             content,
             hidden: false,
             posts_count: 0,
             hidden_posts_count: 0,
             followers_count: 0,
-            score: 0,
             permissions,
         }
     }

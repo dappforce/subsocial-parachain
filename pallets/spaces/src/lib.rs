@@ -1,7 +1,7 @@
 //! # Spaces Module
 //!
 //! Spaces are the primary components of Subsocial. This module allows you to create a Space
-//! and customize it by updating its' owner(s), content, unique handle, and permissions.
+//! and customize it by updating its' owner(s), content, and permissions.
 //!
 //! To understand how Spaces fit into the Subsocial ecosystem, you can think of how
 //! folders and files work in a file system. Spaces are similar to folders, that can contain Posts,
@@ -69,9 +69,6 @@ pub mod pallet {
         type IsContentBlocked: IsContentBlocked;
 
         #[pallet::constant]
-        type MaxHandleLen: Get<u32>;
-
-        #[pallet::constant]
         type MaxSpacesPerAccount: Get<u32>;
     }
 
@@ -92,10 +89,6 @@ pub mod pallet {
     pub enum Error<T> {
         /// Space was not found by id.
         SpaceNotFound,
-        /// Space handle is not unique.
-        SpaceHandleIsNotUnique,
-        /// Handles are disabled in `PalletSettings`.
-        HandlesAreDisabled,
         /// Nothing to update in this space.
         NoUpdatesForSpace,
         /// Only space owners can manage this space.
@@ -127,21 +120,11 @@ pub mod pallet {
     #[pallet::getter(fn space_by_id)]
     pub type SpaceById<T: Config> = StorageMap<_, Twox64Concat, SpaceId, Space<T>>;
 
-    /// Find a given space id by its' unique handle.
-    /// If a handle is not registered, nothing will be returned (`None`).
-    #[pallet::storage]
-    #[pallet::getter(fn space_id_by_handle)]
-    pub type SpaceIdByHandle<T: Config> = StorageMap<_, Blake2_128Concat, Handle<T>, SpaceId>;
-
     /// Find the ids of all spaces owned, by a given account.
     #[pallet::storage]
     #[pallet::getter(fn space_ids_by_owner)]
     pub type SpaceIdsByOwner<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, SpacesByAccount<T>, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn settings)]
-    pub type PalletSettings<T: Config> = StorageValue<_, SpacesSettings, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -168,14 +151,10 @@ pub mod pallet {
         pub fn create_space(
             origin: OriginFor<T>,
             parent_id_opt: Option<SpaceId>,
-            // FIXME: unused since domains release
-            handle_opt: Option<Vec<u8>>,
             content: Content,
             permissions_opt: Option<SpacePermissions>,
         ) -> DispatchResultWithPostInfo {
             let owner = ensure_signed(origin)?;
-
-            ensure!(handle_opt.is_none(), Error::<T>::HandlesAreDisabled);
 
             ensure_content_is_valid(content.clone())?;
 
@@ -209,7 +188,6 @@ pub mod pallet {
             let new_space =
                 &mut Space::new(space_id, parent_id_opt, owner.clone(), content, permissions);
 
-            // FIXME: What's about handle reservation if this fails?
             T::BeforeSpaceCreated::before_space_created(owner.clone(), new_space)?;
 
             SpaceById::<T>::insert(space_id, new_space);
@@ -236,8 +214,6 @@ pub mod pallet {
                 update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
-
-            ensure!(update.handle.is_none(), Error::<T>::HandlesAreDisabled);
 
             let mut space = Self::require_space(space_id)?;
 
@@ -330,21 +306,6 @@ pub mod pallet {
             }
             Ok(())
         }
-
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
-        pub fn update_settings(
-            origin: OriginFor<T>,
-            new_settings: SpacesSettings,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            let space_settings = Self::settings();
-            ensure!(space_settings != new_settings, Error::<T>::NoUpdatesForSpacesSettings);
-
-            PalletSettings::<T>::mutate(|settings| *settings = new_settings);
-
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -394,11 +355,6 @@ pub mod pallet {
             };
 
             T::Roles::ensure_account_has_space_permission(account, ctx, permission, error)
-        }
-
-        pub fn ensure_handles_enabled() -> DispatchResult {
-            ensure!(Self::settings().handles_enabled, Error::<T>::HandlesAreDisabled);
-            Ok(())
         }
 
         pub fn try_move_space_to_root(space_id: SpaceId) -> DispatchResult {
