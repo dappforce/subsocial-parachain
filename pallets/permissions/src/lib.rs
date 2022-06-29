@@ -9,6 +9,7 @@ use sp_std::collections::btree_set::BTreeSet;
 
 pub mod default_permissions;
 mod types;
+
 pub use types::*;
 
 #[frame_support::pallet]
@@ -61,17 +62,17 @@ pub mod pallet {
 
             // Check if this permission is forbidden:
             if permission.is_present_in_role(perms_by_role.none) {
-                return Some(false);
+                return Some(false)
             }
 
             let is_space_owner = ctx.is_space_owner;
             let is_follower = is_space_owner || ctx.is_space_follower;
 
-            if permission.is_present_in_role(perms_by_role.everyone)
-                || is_follower && permission.is_present_in_role(perms_by_role.follower)
-                || is_space_owner && permission.is_present_in_role(perms_by_role.space_owner)
+            if permission.is_present_in_role(perms_by_role.everyone) ||
+                is_follower && permission.is_present_in_role(perms_by_role.follower) ||
+                is_space_owner && permission.is_present_in_role(perms_by_role.space_owner)
             {
-                return Some(true);
+                return Some(true)
             }
 
             None

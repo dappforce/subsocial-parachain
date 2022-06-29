@@ -1,7 +1,7 @@
 use crate::{SpacePermission as SP, SpacePermissions};
 
-use sp_std::vec;
 use frame_support::parameter_types;
+use sp_std::vec;
 
 parameter_types! {
   pub DefaultSpacePermissions: SpacePermissions = SpacePermissions {
