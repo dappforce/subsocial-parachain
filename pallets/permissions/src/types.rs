@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use frame_support::{dispatch::{DispatchError, DispatchResult}};
+use frame_support::dispatch::{DispatchError, DispatchResult};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 
@@ -86,20 +86,20 @@ pub type SpacePermissionSet = BTreeSet<SpacePermission>;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SpacePermissions {
     /// None represents a set of permissions which is not capable of being performed by anyone.
-    /// For example, if you want to create a space similar to Twitter, you would set the permissions
-    /// for `UpdateOwnPosts`, `UpdateOwnComments`, and `Downvote` to `none`.
+    /// For example, if you want to create a space similar to Twitter, you would set the
+    /// permissions for `UpdateOwnPosts`, `UpdateOwnComments`, and `Downvote` to `none`.
     pub none: Option<SpacePermissionSet>,
 
-    /// Everyone represents a set of permissions which are capable of being performed by every account
-    /// in a given space.
+    /// Everyone represents a set of permissions which are capable of being performed by every
+    /// account in a given space.
     pub everyone: Option<SpacePermissionSet>,
 
-    /// Follower represents a set of permissions which are capable of being performed by every account
-    /// that follows a given space.
+    /// Follower represents a set of permissions which are capable of being performed by every
+    /// account that follows a given space.
     pub follower: Option<SpacePermissionSet>,
 
-    /// Space owner represents a set of permissions which are capable of being performed by an account
-    /// that is a current owner of a given space.
+    /// Space owner represents a set of permissions which are capable of being performed by an
+    /// account that is a current owner of a given space.
     pub space_owner: Option<SpacePermissionSet>,
 }
 
@@ -115,7 +115,7 @@ impl SpacePermission {
     pub(super) fn is_present_in_role(&self, perms_opt: Option<SpacePermissionSet>) -> bool {
         if let Some(perms) = perms_opt {
             if perms.contains(self) {
-                return true;
+                return true
             }
         }
         false
@@ -138,11 +138,6 @@ pub trait PermissionChecker {
         permission: SpacePermission,
         error: DispatchError,
     ) -> DispatchResult {
-        Self::ensure_user_has_space_permission(
-            User::Account(account),
-            ctx,
-            permission,
-            error
-        )
+        Self::ensure_user_has_space_permission(User::Account(account), ctx, permission, error)
     }
 }
