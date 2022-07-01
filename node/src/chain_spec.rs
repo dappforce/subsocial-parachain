@@ -291,6 +291,7 @@ fn parachain_genesis(
 		sudo: subsocial_parachain_runtime::SudoConfig {
 			key: Some(root_key),
 		},
+		spaces: Default::default(),
 	}
 }
 
