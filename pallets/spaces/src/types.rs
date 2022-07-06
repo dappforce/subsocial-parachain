@@ -3,6 +3,7 @@ use frame_support::pallet_prelude::*;
 use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
+use sp_std::vec::Vec;
 
 pub const FIRST_SPACE_ID: u64 = 1;
 pub const RESERVED_SPACE_COUNT: u64 = 1000;

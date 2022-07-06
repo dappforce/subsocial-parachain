@@ -29,6 +29,7 @@ pub use pallet::*;
 use df_traits::SpaceFollowsProvider;
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use pallet_parachain_utils::{Content, SpaceId, new_who_and_when};
+use sp_std::vec::Vec;
 
 #[frame_support::pallet]
 pub mod pallet {
