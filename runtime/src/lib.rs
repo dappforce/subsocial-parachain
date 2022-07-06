@@ -580,6 +580,7 @@ impl pallet_spaces::Config for Runtime {
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;
+	type WeightInfo = ();
 }
 
 impl pallet_space_ownership::Config for Runtime {
@@ -661,6 +662,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_spaces, Spaces]
 	);
 }
 

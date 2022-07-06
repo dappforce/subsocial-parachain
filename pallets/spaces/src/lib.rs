@@ -23,6 +23,11 @@
 
 // pub mod rpc;
 pub mod types;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+mod weights;
+
+pub use crate::weights::WeightInfo;
 
 pub use pallet::*;
 
@@ -71,6 +76,9 @@ pub mod pallet {
 
         #[pallet::constant]
         type MaxSpacesPerAccount: Get<u32>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -148,7 +156,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(500_000 + T::DbWeight::get().reads_writes(5, 4))]
+        #[pallet::weight(<T as Config>::WeightInfo::create_space())]
         pub fn create_space(
             origin: OriginFor<T>,
             parent_id_opt: Option<SpaceId>,
@@ -201,7 +209,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(500_000 + T::DbWeight::get().reads_writes(3, 3))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_space())]
         pub fn update_space(
             origin: OriginFor<T>,
             space_id: SpaceId,

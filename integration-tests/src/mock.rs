@@ -163,6 +163,7 @@ impl pallet_spaces::Config for TestRuntime {
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
+    type WeightInfo = ();
 }
 
 pub(crate) type AccountId = u64;
