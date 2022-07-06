@@ -52,17 +52,17 @@ thread_local! {
 pub struct MockModeration;
 
 impl MockModeration {
-    fn set_entity_status(entity: EntityId, space: SpaceId, status: EntityStatus) {
-        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
-            let mut mock_moderation_state = mock_moderation_state.borrow_mut();
-            mock_moderation_state.insert((entity, space), status);
+    fn set_entity_status(id: EntityId, space: SpaceId, status: EntityStatus) {
+        MOCK_MODERATION_STATE.with(|state| {
+            let mut state = state.borrow_mut();
+            state.insert((id, space), status);
         });
     }
 
     fn get_entity_status(id: EntityId, scope: SpaceId) -> Option<EntityStatus> {
-        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
-            let mock_moderation_state = mock_moderation_state.borrow();
-            let status = mock_moderation_state.get(&(id, scope)).cloned();
+        MOCK_MODERATION_STATE.with(|state| {
+            let state = state.borrow();
+            let status = state.get(&(id, scope)).cloned();
             status
         })
     }
