@@ -320,8 +320,8 @@ pub mod pallet {
                         Space::<T>::new(id, None, endowed_account.clone(), Content::None, None),
                     ));
                 }
-                spaces.iter().for_each(|(k, v)| {
-                    SpaceById::<T>::insert(k, v);
+                spaces.iter().for_each(|(space_id, space)| {
+                    SpaceById::<T>::insert(space_id, space);
                 });
             }
         }
