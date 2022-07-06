@@ -27,14 +27,14 @@ smallvec = "1.6.1"
 # Local
 df-traits = { path = "../pallets/traits", default-features = false }
 pallet-domains = { path = "../pallets/domains", default-features = false }
-pallet-permissions = { default-features = false, path = '../pallets/permissions' }
-pallet-posts = { default-features = false, path = '../pallets/posts' }
-pallet-profiles = { default-features = false, path = '../pallets/profiles' }
-pallet-reactions = { default-features = false, path = '../pallets/reactions' }
-pallet-roles = { default-features = false, path = '../pallets/roles' }
-pallet-space-follows = { default-features = false, path = '../pallets/space-follows' }
-pallet-space-ownership = { default-features = false, path = '../pallets/space-ownership' }
-pallet-spaces = { default-features = false, path = '../pallets/spaces' }
+pallet-permissions = { path = '../pallets/permissions', default-features = false }
+pallet-posts = { path = '../pallets/posts', default-features = false }
+pallet-profiles = { path = '../pallets/profiles', default-features = false }
+pallet-reactions = { path = '../pallets/reactions', default-features = false }
+pallet-roles = { path = '../pallets/roles', default-features = false }
+pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
+pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
+pallet-spaces = { path = '../pallets/spaces', default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.19" }
