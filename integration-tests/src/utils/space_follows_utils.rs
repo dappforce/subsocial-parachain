@@ -5,6 +5,7 @@ use pallet_parachain_utils::SpaceId;
 use crate::mock::*;
 use crate::utils::{ACCOUNT2, SPACE1};
 
+/// Account 2 follows Space 1
 pub(crate) fn _default_follow_space() -> DispatchResult {
     _follow_space(None, None)
 }
