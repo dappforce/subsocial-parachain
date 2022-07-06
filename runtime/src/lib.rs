@@ -629,13 +629,13 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 
 		Permissions: pallet_permissions = 70,
-		Posts: pallet_posts = 71,
+		Roles: pallet_roles = 71,
 		Profiles: pallet_profiles::{Pallet, Storage} = 72,
-		Reactions: pallet_reactions = 73,
-		Roles: pallet_roles = 74,
-		SpaceFollows: pallet_space_follows = 75,
-		SpaceOwnership: pallet_space_ownership = 76,
-		Spaces: pallet_spaces = 77,
+		SpaceFollows: pallet_space_follows = 73,
+		SpaceOwnership: pallet_space_ownership = 74,
+		Spaces: pallet_spaces = 75,
+		Posts: pallet_posts = 76,
+		Reactions: pallet_reactions = 77,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
