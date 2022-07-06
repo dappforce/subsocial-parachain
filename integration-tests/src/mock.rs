@@ -161,12 +161,6 @@ impl pallet_space_ownership::Config for TestRuntime {
     type Event = Event;
 }
 
-pub(crate) const HANDLE_DEPOSIT: u64 = 15;
-
-parameter_types! {
-        pub const HandleDeposit: u64 = HANDLE_DEPOSIT;
-    }
-
 impl pallet_spaces::Config for TestRuntime {
     type Event = Event;
     type Roles = Roles;
