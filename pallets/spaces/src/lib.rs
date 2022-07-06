@@ -29,6 +29,7 @@ pub use pallet::*;
 use df_traits::SpaceFollowsProvider;
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use pallet_parachain_utils::{Content, SpaceId, new_who_and_when};
+use sp_std::vec::Vec;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -192,7 +193,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let owner = ensure_signed(origin)?;
 
-            ensure!(handle_opt.is_some(), Error::<T>::HandlesAreDisabled);
+            ensure!(handle_opt.is_none(), Error::<T>::HandlesAreDisabled);
 
             ensure_content_is_valid(content.clone())?;
 
@@ -255,12 +256,13 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             let has_updates = update.parent_id.is_some()
-                || update.handle.is_some()
                 || update.content.is_some()
                 || update.hidden.is_some()
                 || update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
+
+            ensure!(update.handle.is_none(), Error::<T>::HandlesAreDisabled);
 
             let mut space = Self::require_space(space_id)?;
 

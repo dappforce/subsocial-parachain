@@ -3,6 +3,7 @@ use frame_support::pallet_prelude::*;
 use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
+use sp_std::vec::Vec;
 
 pub const FIRST_SPACE_ID: u64 = 1;
 pub const RESERVED_SPACE_COUNT: u64 = 1000;
@@ -18,8 +19,8 @@ pub struct Space<T: Config> {
     /// Unique sequential identifier of a space. Examples of space ids: `1`, `2`, `3`, and so on.
     pub id: SpaceId,
 
-    pub(super) created: WhoAndWhenOf<T>,
-    pub(super) updated: Option<WhoAndWhenOf<T>>,
+    pub created: WhoAndWhenOf<T>,
+    pub updated: Option<WhoAndWhenOf<T>>,
 
     /// The current owner of a given space.
     pub owner: T::AccountId,
@@ -29,9 +30,9 @@ pub struct Space<T: Config> {
 
     /// Unique alpha-numeric identifier that can be used in a space's URL.
     /// Handle can only contain numbers, letter and underscore: `0`-`9`, `a`-`z`, `_`.
-    pub(super) handle: Option<Handle<T>>,
+    pub handle: Option<Handle<T>>,
 
-    pub(super) content: Content,
+    pub content: Content,
 
     /// Hidden field is used to recommend to end clients (web and mobile apps) that a particular
     /// space and its' posts should not be shown.
@@ -44,13 +45,13 @@ pub struct Space<T: Config> {
     pub hidden_posts_count: u32,
 
     /// The number of account following a given space.
-    pub(super) followers_count: u32,
+    pub followers_count: u32,
 
     pub(super) score: i32,
 
     /// This allows you to override Subsocial's default permissions by enabling or disabling role
     /// permissions.
-    pub(super) permissions: Option<SpacePermissions>,
+    pub permissions: Option<SpacePermissions>,
 }
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
