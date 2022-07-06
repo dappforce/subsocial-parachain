@@ -3371,6 +3371,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "0.1.5"
+dependencies = [
+ "df-traits",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-parachain-utils",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-reactions",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-space-ownership",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

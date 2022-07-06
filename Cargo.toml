@@ -5,6 +5,7 @@ panic = "unwind"
 members = [
     "node",
     "runtime",
+    "integration-tests",
     "pallets/domains",
     "pallets/parachain-utils",
 #    "pallets/*",
