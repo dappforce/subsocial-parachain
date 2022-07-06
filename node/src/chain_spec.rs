@@ -289,9 +289,11 @@ fn parachain_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		sudo: subsocial_parachain_runtime::SudoConfig {
-			key: Some(root_key),
+			key: Some(root_key.clone()),
 		},
-		spaces: Default::default(),
+		spaces: subsocial_parachain_runtime::SpacesConfig {
+			endowed_account: Some(root_key),
+		},
 	}
 }
 
