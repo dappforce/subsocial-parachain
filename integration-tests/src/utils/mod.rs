@@ -12,7 +12,6 @@ pub(crate) mod space_follows_utils;
 pub(crate) mod posts_utils;
 
 
-
 pub(crate) const ACCOUNT1: AccountId = 1;
 pub(crate) const ACCOUNT2: AccountId = 2;
 pub(crate) const ACCOUNT3: AccountId = 3;
