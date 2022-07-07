@@ -38,6 +38,10 @@ pub use pallet::*;
 pub mod functions;
 
 pub mod types;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 pub use types::*;
 
 // pub mod rpc;
@@ -54,6 +58,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_support::traits::IsType;
     use frame_system::pallet_prelude::*;
+    use crate::weights::WeightInfo;
 
     #[pallet::config]
     pub trait Config: frame_system::Config
@@ -71,6 +76,8 @@ pub mod pallet {
         type AfterPostUpdated: AfterPostUpdated<Self>;
 
         type IsPostBlocked: IsPostBlocked<PostId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -203,7 +210,13 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(100_000 + T::DbWeight::get().reads_writes(8, 8))]
+        #[pallet::weight(
+            match extension {
+                PostExtension::RegularPost => <T as Config>::WeightInfo::create_post__regular(),
+                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__shared(),
+                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__comment(),
+            }
+        )]
         pub fn create_post(
             origin: OriginFor<T>,
             space_id_opt: Option<SpaceId>,

@@ -539,6 +539,7 @@ impl pallet_posts::Config for Runtime {
 	type MaxCommentDepth = MaxCommentDepth;
 	type AfterPostUpdated = ()/*PostHistory*/;
 	type IsPostBlocked = ()/*Moderation*/;
+	type WeightInfo = ();
 }
 
 impl pallet_reactions::Config for Runtime {
@@ -661,6 +662,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_posts, Posts]
 	);
 }
 
