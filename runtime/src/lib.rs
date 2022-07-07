@@ -543,6 +543,7 @@ impl pallet_posts::Config for Runtime {
 
 impl pallet_reactions::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for Runtime {
@@ -661,6 +662,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_reactions, Reactions]
 	);
 }
 

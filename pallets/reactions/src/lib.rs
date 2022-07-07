@@ -1,5 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -57,11 +61,15 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
+    use crate::weights::WeightInfo;
+
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -150,7 +158,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(6, 5))]
+        #[pallet::weight(<T as Config>::WeightInfo::create_post_reaction())]
         pub fn create_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -211,7 +219,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 2))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_post_reaction())]
         pub fn update_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -267,7 +275,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 4))]
+        #[pallet::weight(<T as Config>::WeightInfo::delete_post_reaction())]
         pub fn delete_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
