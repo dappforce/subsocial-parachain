@@ -28,7 +28,6 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::traits::ConstU32;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -579,7 +578,6 @@ impl pallet_spaces::Config for Runtime {
 	type AfterSpaceUpdated = ();
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
-	type MaxHandleLen = ConstU32<0>;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;
 }
 
