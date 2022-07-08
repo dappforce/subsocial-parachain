@@ -5,7 +5,7 @@ use frame_support::dispatch::DispatchError;
 use crate::SpaceId;
 
 pub trait SpacePermissionsProvider<SpacePermissionsInfo> {
-    fn get_space(id: SpaceId) -> Result<SpacePermissionsInfo, DispatchError>;
+    fn space_permissions_info(id: SpaceId) -> Result<SpacePermissionsInfo, DispatchError>;
 }
 
 pub trait SpaceFollowsProvider {

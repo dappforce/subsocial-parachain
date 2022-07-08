@@ -453,7 +453,7 @@ pub mod pallet {
     }
 
     impl<T: Config> SpacePermissionsProvider<SpacePermissionsInfoOf<T>> for Pallet<T> {
-        fn get_space(
+        fn space_permissions_info(
             id: SpaceId,
         ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;

@@ -39,7 +39,7 @@ impl<T: Config> Pallet<T> {
         permission: SpacePermission,
         error: DispatchError,
     ) -> DispatchResult {
-        let space = T::SpacePermissionsProvider::get_space(space_id)?;
+        let space = T::SpacePermissionsProvider::space_permissions_info(space_id)?;
 
         let mut is_owner = false;
         let mut is_follower = false;

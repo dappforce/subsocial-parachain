@@ -125,7 +125,7 @@ impl Config for Test {
 impl SpacePermissionsProviderT<SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
     // This function should return an error every time Space doesn't exist by SpaceId
     // Currently, we have a list of valid space id's to check
-    fn get_space(
+    fn space_permissions_info(
         id: SpaceId,
     ) -> Result<SpacePermissionsInfo<AccountId, SpacePermissions>, DispatchError> {
         if valid_space_ids().contains(&id) {
