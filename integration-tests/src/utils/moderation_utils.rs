@@ -1,4 +1,3 @@
-use frame_support::assert_ok;
 use frame_support::pallet_prelude::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -10,7 +9,7 @@ use subsocial_support::{
 };
 
 use crate::mock::*;
-use crate::utils::{ACCOUNT1, POST1, SPACE1};
+use crate::utils::{ACCOUNT1, SPACE1};
 
 // Moderation pallet mocks
 

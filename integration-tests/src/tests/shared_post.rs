@@ -1,12 +1,7 @@
 use frame_support::{assert_noop, assert_ok};
 
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
+use pallet_posts::Error as PostsError;
 use pallet_permissions::SpacePermission as SP;
-use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use subsocial_support::{
-    mock_functions::*, Content, PostId, SpaceId, User,
-};
 use crate::mock::*;
 use crate::utils::*;
 use crate::utils::posts_utils::*;
@@ -19,7 +14,6 @@ fn share_post_should_work() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            None,
             None,
             None
         )); // SpaceId 2 by ACCOUNT2
@@ -58,7 +52,6 @@ fn share_post_should_work_when_one_of_roles_is_permitted() {
         || {
             assert_ok!(_create_space(
                 None,       // From ACCOUNT1
-                Some(None), // Provided without any handle
                 None,       // With default space content,
                 None
             ));
@@ -115,7 +108,6 @@ fn share_post_should_fail_when_original_post_not_found() {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
             None,
-            None,
             None
         )); // SpaceId 2 by ACCOUNT2
 
@@ -137,7 +129,6 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            None,
             None,
             None
         )); // SpaceId 2 by ACCOUNT2
@@ -167,7 +158,6 @@ fn share_post_should_fail_when_account_has_no_permission_to_create_posts_in_new_
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT1)),
-            Some(None), // No space_handle provided (ok)
             None,       // Default space content,
             None
         )); // SpaceId 2 by ACCOUNT1
@@ -191,7 +181,6 @@ fn share_post_should_fail_when_no_right_permission_in_account_roles() {
         || {
             assert_ok!(_create_space(
                 None,       // From ACCOUNT1
-                Some(None), // Provided without any handle
                 None,       // With default space content
                 None
             ));
