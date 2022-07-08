@@ -1,11 +1,8 @@
 use frame_support::{assert_noop, assert_ok};
-use frame_support::pallet_prelude::DispatchError;
 
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
-use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
+use pallet_posts::Error as PostsError;
 use subsocial_support::{
-    mock_functions::*, Content, PostId, SpaceId, User,
+    mock_functions::*, PostId,
 };
 
 use crate::mock::*;
@@ -112,7 +109,7 @@ fn create_comment_should_fail_when_trying_to_create_in_hidden_space_scope() {
         assert_ok!(_update_space(
             None,
             None,
-            Some(space_update(None, None, Some(true)))
+            Some(space_update(None, Some(true)))
         ));
 
         assert_noop!(

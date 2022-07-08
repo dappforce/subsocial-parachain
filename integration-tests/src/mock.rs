@@ -10,7 +10,6 @@ use sp_runtime::{
 use frame_support::{
     assert_ok,
     parameter_types,
-    storage::StorageMap,
     traits::Everything,
 };
 use frame_support::traits::ConstU32;
@@ -20,17 +19,9 @@ use pallet_permissions::{
     SpacePermission as SP,
     SpacePermissions,
 };
-use pallet_posts::{Post, PostUpdate, PostExtension, Comment, Error as PostsError};
-use pallet_reactions::{ReactionId, ReactionKind, Error as ReactionsError};
-use pallet_spaces::{SpaceById, Error as SpacesError};
-use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use pallet_space_follows::Error as SpaceFollowsError;
-use pallet_space_ownership::Error as SpaceOwnershipError;
+use pallet_spaces::SpaceById;
 pub use subsocial_support::{ModerationError, ContentError};
-use subsocial_support::{
-    mock_functions::*,
-    SpaceId, PostId, User, Content,
-};
+use subsocial_support::User;
 use crate::utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -169,7 +160,6 @@ impl pallet_spaces::Config for TestRuntime {
     type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
-    type MaxHandleLen = ConstU32<50>;
     type MaxSpacesPerAccount = ConstU32<100>;
 }
 
@@ -220,11 +210,11 @@ impl ExtBuilder {
     }
 
     fn add_space_with_custom_permissions(permissions: SpacePermissions) {
-        assert_ok!(_create_space(None, None, None, Some(Some(permissions))));
+        assert_ok!(_create_space(None, None, Some(Some(permissions))));
     }
 
-    fn add_space_with_no_handle() {
-        assert_ok!(_create_space(None, Some(None), None, None));
+    fn add_another_space() {
+        assert_ok!(_create_space_with_content(another_space_content_ipfs()));
     }
 
     fn add_post() {
@@ -261,7 +251,7 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1-2, PostId 1 where BlockNumber 1
     pub fn build_with_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post();
-        ext.execute_with(Self::add_space_with_no_handle);
+        ext.execute_with(Self::add_another_space);
         ext
     }
 
@@ -321,15 +311,6 @@ impl ExtBuilder {
     pub fn build_with_space_and_custom_permissions(permissions: SpacePermissions) -> TestExternalities {
         let mut ext = Self::build();
         ext.execute_with(|| Self::add_space_with_custom_permissions(permissions));
-        ext
-    }
-
-    /// Custom ext configuration with SpaceId 1, BlockNumber 1, and disable handles
-    pub fn build_with_space_then_disable_handles() -> TestExternalities {
-        let mut ext = Self::build_with_space();
-        ext.execute_with(|| {
-            assert_ok!(_update_space_settings_with_handles_disabled());
-        });
         ext
     }
 }

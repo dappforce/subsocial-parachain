@@ -1,11 +1,9 @@
 use frame_support::{assert_noop, assert_ok};
-use sp_runtime::DispatchError;
 
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
+use pallet_posts::{Error as PostsError, Post};
 use pallet_permissions::SpacePermission as SP;
-use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use subsocial_support::{mock_functions::*, Content, PostId, SpaceId, User};
+use pallet_spaces::Error as SpacesError;
+use subsocial_support::{mock_functions::*, PostId, SpaceId};
 
 use crate::mock::*;
 use crate::utils::*;
@@ -351,7 +349,6 @@ fn move_hidden_post_should_fail_origin_has_no_permission_to_create_posts() {
         // Create a space #2 from account #2
         assert_ok!(_create_space(
             Some(Origin::signed(ACCOUNT2)),
-            Some(None),
             None,
             None
         ));
@@ -389,7 +386,7 @@ fn move_post_should_fail_when_space_none_and_account_is_not_post_owner() {
 #[test]
 fn should_fail_when_trying_to_move_comment() {
     ExtBuilder::build_with_comment().execute_with(|| {
-        assert_ok!(_create_space(None, Some(None), None, None));
+        assert_ok!(_create_space(None, None, None));
 
         // Comments cannot be moved, they stick to their parent post
         assert_noop!(
@@ -467,7 +464,6 @@ fn update_post_should_fail_when_post_not_found() {
         assert_ok!(_create_space(
             None,
             None,
-            None,
             None
         )); // SpaceId 2
 
@@ -492,7 +488,6 @@ fn update_post_should_fail_when_post_not_found() {
 fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
-            None,
             None,
             None,
             None

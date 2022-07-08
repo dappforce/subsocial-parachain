@@ -1,5 +1,4 @@
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
-use sp_runtime::traits::Zero;
+use frame_support::{assert_noop, assert_ok};
 
 use pallet_spaces::Error as SpacesError;
 use pallet_permissions::SpacePermission as SP;
@@ -22,7 +21,6 @@ fn create_subspace_should_fail_when_content_is_blocked() {
             _create_subspace(
                 None,
                 Some(Some(SPACE1)),
-                None,
                 Some(valid_content_ipfs()),
                 None,
             ),
@@ -40,7 +38,6 @@ fn create_subspace_should_fail_when_account_is_blocked() {
             _create_subspace(
                 None,
                 Some(Some(SPACE1)),
-                None,
                 None,
                 None,
             ),
@@ -72,7 +69,7 @@ fn update_space_should_fail_when_content_is_blocked() {
             _update_space(
                 None,
                 None,
-                Some(space_update(None, Some(valid_content_ipfs()), None))
+                Some(space_update(Some(valid_content_ipfs()), None))
             ),
             ModerationError::ContentIsBlocked,
         );
@@ -247,7 +244,7 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build().execute_with(|| {
         // Try to catch an error creating a space with invalid content
         assert_noop!(
-            _create_space(None, None, Some(invalid_content_ipfs()), None),
+            _create_space(None, Some(invalid_content_ipfs()), None),
             ContentError::InvalidIpfsCid,
         );
     });
@@ -256,7 +253,6 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
 #[test]
 fn update_space_should_work() {
     ExtBuilder::build_with_space().execute_with(|| {
-        let new_handle: Vec<u8> = b"new_handle".to_vec();
         let expected_content_ipfs = updated_space_content();
         // Space update with ID 1 should be fine
 
@@ -264,7 +260,6 @@ fn update_space_should_work() {
             None, // From ACCOUNT1 (has permission as he's an owner)
             None,
             Some(space_update(
-                None,
                 Some(expected_content_ipfs.clone()),
                 Some(true),
             ))
@@ -290,7 +285,6 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                None,
                 Some(updated_space_content()),
                 Some(true),
             );
@@ -323,30 +317,6 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
 //         assert!(reserved_balance.is_zero());
 //     });
 // }
-
-#[test]
-fn should_update_space_content_when_handles_disabled() {
-    ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = update_for_space_content(updated_space_content());
-        assert_ok!(_update_space(None, None, Some(space_update)));
-    });
-}
-
-#[test]
-fn should_fail_to_update_space_handle_when_handles_disabled() {
-    ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = space_update(
-            Some(b"Space_Handle".to_vec()).into(),
-            updated_space_content().into(),
-            None,
-        );
-
-        assert_noop!(
-            _update_space(None, None, Some(space_update)),
-            SpacesError::<TestRuntime>::HandlesAreDisabled
-        );
-    });
-}
 
 #[test]
 fn update_space_should_fail_when_no_updates_for_space_provided() {
@@ -473,23 +443,6 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 // }
 
 #[test]
-fn update_space_should_fail_when_handles_are_disabled() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        assert_ok!(_update_space_settings_with_handles_disabled());
-        let space_update = space_update(
-            Some(b"Space_Handle".to_vec()).into(),
-            updated_space_content().into(),
-            None,
-        );
-
-        assert_noop!(
-            _update_space(None, None, Some(space_update)),
-            SpacesError::<TestRuntime>::HandlesAreDisabled
-        );
-    });
-}
-
-#[test]
 fn update_space_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build_with_space().execute_with(|| {
         // Try to catch an error updating a space with invalid content
@@ -497,7 +450,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
             _update_space(
                 None,
                 None,
-                Some(space_update(None, Some(invalid_content_ipfs()), None,))
+                Some(space_update(Some(invalid_content_ipfs()), None,))
             ),
             ContentError::InvalidIpfsCid,
         );
@@ -509,7 +462,6 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                None,
                 Some(updated_space_content()),
                 Some(true),
             );
@@ -526,37 +478,6 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
             );
         },
     );
-}
-
-#[test]
-fn update_space_settings_should_work() {
-    ExtBuilder::build().execute_with(|| {
-        assert_ok!(_update_space_settings_with_handles_disabled());
-
-        let spaces_settings = Spaces::settings();
-        // Ensure that `handles_enabled` field is false
-        assert!(!spaces_settings.handles_enabled);
-    });
-}
-
-#[test]
-fn update_space_settings_should_fail_when_account_is_not_root() {
-    ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _update_space_settings(Some(Origin::signed(ACCOUNT1)), None),
-            DispatchError::BadOrigin
-        );
-    });
-}
-
-#[test]
-fn update_space_settings_should_fail_when_same_settings_provided() {
-    ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _update_space_settings_with_handles_enabled(),
-            SpacesError::<TestRuntime>::NoUpdatesForSpacesSettings
-        );
-    });
 }
 
 // TODO: refactor or remove. Deprecated tests

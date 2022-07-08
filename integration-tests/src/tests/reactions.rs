@@ -1,7 +1,7 @@
 use frame_support::{assert_noop, assert_ok};
 
-use pallet_reactions::{Error as ReactionsError, ReactionId, ReactionKind};
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
+use pallet_reactions::Error as ReactionsError;
+use pallet_posts::Error as PostsError;
 
 use crate::mock::*;
 use crate::utils::*;
@@ -89,7 +89,7 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
         assert_ok!(_update_space(
             None,
             None,
-            Some(space_update(None, None, Some(true)))
+            Some(space_update(None, Some(true)))
         ));
 
         assert_noop!(
