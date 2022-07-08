@@ -17,7 +17,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use subsocial_support::{
         traits::{IsAccountBlocked, SpaceFollowsProvider},
-        Error as UtilsError, SpaceId, remove_from_vec,
+        ModerationError, SpaceId, remove_from_vec,
     };
     use sp_std::vec::Vec;
 
@@ -118,7 +118,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(follower.clone(), space.id),
-                UtilsError::AccountIsBlocked
+                ModerationError::AccountIsBlocked
             );
 
             Self::add_space_follower(follower, space)?;

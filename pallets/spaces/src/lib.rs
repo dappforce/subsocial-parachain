@@ -46,7 +46,7 @@ pub mod pallet {
     use subsocial_support::{
         ensure_content_is_valid,
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
-        Error as UtilsError, SpacePermissionsInfo,
+        ModerationError, SpacePermissionsInfo,
     };
 
     #[pallet::config]
@@ -206,11 +206,11 @@ pub mod pallet {
 
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), parent_id),
-                    UtilsError::AccountIsBlocked
+                    ModerationError::AccountIsBlocked
                 );
                 ensure!(
                     T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                    UtilsError::ContentIsBlocked
+                    ModerationError::ContentIsBlocked
                 );
 
                 Self::ensure_account_has_space_permission(
@@ -269,7 +269,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                UtilsError::AccountIsBlocked
+                ModerationError::AccountIsBlocked
             );
 
             Self::ensure_account_has_space_permission(
@@ -308,12 +308,12 @@ pub mod pallet {
 
                     ensure!(
                         T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
-                        UtilsError::ContentIsBlocked
+                        ModerationError::ContentIsBlocked
                     );
                     if let Some(parent_id) = space.parent_id {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                            UtilsError::ContentIsBlocked
+                            ModerationError::ContentIsBlocked
                         );
                     }
 

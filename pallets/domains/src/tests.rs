@@ -1,5 +1,5 @@
 use frame_support::{assert_noop, assert_ok};
-use sp_runtime::{DispatchError, DispatchError::BadOrigin, traits::Zero};
+use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
 
 use subsocial_support::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
@@ -515,7 +515,7 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_noop!(
             _set_domain_content_with_content(invalid_content_ipfs()),
-            DispatchError::Other(subsocial_support::Error::InvalidIpfsCid.into()),
+            subsocial_support::ContentError::InvalidIpfsCid,
         );
     });
 }

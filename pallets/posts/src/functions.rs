@@ -404,7 +404,7 @@ impl<T: Config> Pallet<T> {
 
         ensure!(
             T::IsAccountBlocked::is_allowed_account(editor.clone(), new_space_id),
-            UtilsError::AccountIsBlocked
+            ModerationError::AccountIsBlocked
         );
         Spaces::ensure_account_has_space_permission(
             editor,
@@ -414,11 +414,11 @@ impl<T: Config> Pallet<T> {
         )?;
         ensure!(
             T::IsPostBlocked::is_allowed_post(post.id, new_space_id),
-            UtilsError::PostIsBlocked
+            ModerationError::PostIsBlocked
         );
         ensure!(
             T::IsContentBlocked::is_allowed_content(post.content.clone(), new_space_id),
-            UtilsError::ContentIsBlocked
+            ModerationError::ContentIsBlocked
         );
 
         match post.extension {

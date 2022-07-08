@@ -14,7 +14,7 @@ use pallet_permissions::SpacePermission;
 use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
 use subsocial_support::{
-    traits::{IsAccountBlocked}, remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf,
+    traits::{IsAccountBlocked}, remove_from_vec, ModerationError, PostId, WhoAndWhenOf,
     new_who_and_when,
 };
 
@@ -173,7 +173,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                UtilsError::AccountIsBlocked
+                ModerationError::AccountIsBlocked
             );
 
             match kind {
@@ -237,7 +237,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    UtilsError::AccountIsBlocked
+                    ModerationError::AccountIsBlocked
                 );
             }
 
@@ -291,7 +291,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    UtilsError::AccountIsBlocked
+                    ModerationError::AccountIsBlocked
                 );
             }
 

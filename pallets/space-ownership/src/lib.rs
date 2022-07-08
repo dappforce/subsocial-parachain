@@ -5,7 +5,7 @@ use sp_std::prelude::*;
 
 use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
 use subsocial_support::{
-    traits::IsAccountBlocked, remove_from_bounded_vec, Error as UtilsError, SpaceId,
+    traits::IsAccountBlocked, remove_from_bounded_vec, ModerationError, SpaceId,
 };
 
 pub use pallet::*;
@@ -75,7 +75,7 @@ pub mod pallet {
             ensure!(who != transfer_to, Error::<T>::CannotTranferToCurrentOwner);
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
-                UtilsError::AccountIsBlocked
+                ModerationError::AccountIsBlocked
             );
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());

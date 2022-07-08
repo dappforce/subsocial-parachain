@@ -30,7 +30,7 @@ use pallet_permissions::SpacePermission;
 use pallet_spaces::{Pallet as Spaces, types::Space, SpaceById};
 use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
-    Content, Error as UtilsError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
+    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
     ensure_content_is_valid,
 };
 
@@ -229,11 +229,11 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(creator.clone(), space.id),
-                UtilsError::AccountIsBlocked
+                ModerationError::AccountIsBlocked
             );
             ensure!(
                 T::IsContentBlocked::is_allowed_content(content, space.id),
-                UtilsError::ContentIsBlocked
+                ModerationError::ContentIsBlocked
             );
 
             let root_post = &mut new_post.get_root_post()?;
@@ -297,7 +297,7 @@ pub mod pallet {
             if let Some(space) = &space_opt {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
-                    UtilsError::AccountIsBlocked
+                    ModerationError::AccountIsBlocked
                 );
                 Self::ensure_account_can_update_post(&editor, &post, space)?;
             }
@@ -312,7 +312,7 @@ pub mod pallet {
                     if let Some(space) = &space_opt {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
-                            UtilsError::ContentIsBlocked
+                            ModerationError::ContentIsBlocked
                         );
                     }
 
