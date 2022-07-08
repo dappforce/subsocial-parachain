@@ -141,7 +141,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            Pallet::<T>::init_pallet(self);
+            Pallet::<T>::init_pallet(self.endowed_account.as_ref());
         }
     }
 
@@ -311,8 +311,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Create reserved spaces either on genesis build or when pallet is added to a runtime.
-        pub fn init_pallet(config: &GenesisConfig<T>) {
-            if let Some(endowed_account) = config.endowed_account.clone() {
+        pub fn init_pallet(endowed_account_opt: Option<&T::AccountId>) {
+            if let Some(endowed_account) = endowed_account_opt {
                 let mut spaces = Vec::new();
 
                 for id in FIRST_SPACE_ID..=RESERVED_SPACE_COUNT {
