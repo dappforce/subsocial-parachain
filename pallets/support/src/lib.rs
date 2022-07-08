@@ -46,21 +46,17 @@ pub enum Content {
     /// No content.
     None,
     /// A raw vector of bytes.
-    Raw(Vec<u8>),
+    Other(Vec<u8>),
     /// IPFS CID v0 of content.
-    #[allow(clippy::upper_case_acronyms)]
     IPFS(Vec<u8>),
-    /// Hypercore protocol (former DAT) id of content.
-    Hyper(Vec<u8>),
 }
 
 impl From<Content> for Vec<u8> {
     fn from(content: Content) -> Vec<u8> {
         match content {
             Content::None => vec![],
-            Content::Raw(vec_u8) => vec_u8,
+            Content::Other(vec_u8) => vec_u8,
             Content::IPFS(vec_u8) => vec_u8,
-            Content::Hyper(vec_u8) => vec_u8,
         }
     }
 }
@@ -147,10 +143,8 @@ impl From<ModerationError> for DispatchError {
 pub enum ContentError {
     /// IPFS CID is invalid.
     InvalidIpfsCid,
-    /// `Raw` content type is not yet supported.
-    RawContentTypeNotSupported,
-    /// `Hyper` content type is not yet supported.
-    HypercoreContentTypeNotSupported,
+    /// `Other` content type is not yet supported.
+    OtherContentTypeNotSupported,
     /// Content type is `None`.
     ContentIsEmpty,
 }
@@ -170,8 +164,8 @@ pub struct SpacePermissionsInfo<AccountId, SpacePermissions> {
 pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
     match content {
         Content::None => Ok(()),
-        Content::Raw(_) => Err(
-            ContentError::RawContentTypeNotSupported.into()
+        Content::Other(_) => Err(
+            ContentError::OtherContentTypeNotSupported.into()
         ),
         Content::IPFS(ipfs_cid) => {
             let len = ipfs_cid.len();
@@ -179,10 +173,7 @@ pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
             // IPFS CID v1 is 59 bytes.
             ensure!(len == 46 || len == 59, ContentError::InvalidIpfsCid);
             Ok(())
-        }
-        Content::Hyper(_) => Err(
-            ContentError::HypercoreContentTypeNotSupported.into()
-        ),
+        },
     }
 }
 
