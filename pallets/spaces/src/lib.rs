@@ -47,7 +47,7 @@ pub mod pallet {
     use subsocial_support::{
         ensure_content_is_valid,
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
-        ModerationError, SpacePermissionsInfo,
+        ModerationError, SpacePermissionsInfo, WhoAndWhenOf,
     };
 
     #[pallet::config]
@@ -306,6 +306,50 @@ pub mod pallet {
 
                 Self::deposit_event(Event::SpaceUpdated(owner, space_id));
             }
+            Ok(())
+        }
+
+        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(1, 3))]
+        pub fn force_create_space(
+            origin: OriginFor<T>,
+            space_id: SpaceId,
+            created: WhoAndWhenOf<T>,
+            owner: T::AccountId,
+            parent_id_opt: Option<SpaceId>,
+            content: Content,
+            hidden: bool,
+            followers_count: u32,
+            permissions_opt: Option<SpacePermissions>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            let permissions =
+                permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
+
+            let new_space = &mut Space {
+                id: space_id,
+                created,
+                updated: None,
+                owner: owner.clone(),
+                parent_id: None,
+                content,
+                hidden,
+                posts_count: 0,
+                hidden_posts_count: 0,
+                followers_count,
+                permissions
+            };
+
+            SpaceById::<T>::insert(space_id, new_space);
+            SpaceIdsByOwner::<T>::mutate(
+                &owner, |ids| {
+                    ids.try_push(space_id).expect("qed; too many spaces per account")
+                }
+            );
+            NextSpaceId::<T>::put(last_space_id);
+
+            Self::deposit_event(Event::SpaceCreated(owner, space_id));
+
             Ok(())
         }
     }
