@@ -12,7 +12,7 @@ pub mod xcm_config;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature, DispatchError};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -28,7 +28,6 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::dispatch::DispatchResult;
 use frame_support::traits::ConstU32;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -527,7 +526,6 @@ impl pallet_domains::Config for Runtime {
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
-use pallet_permissions::{SpacePermission, SpacePermissionsContext};
 
 impl pallet_permissions::Config for Runtime {
 	type DefaultSpacePermissions = DefaultSpacePermissions;
@@ -557,7 +555,7 @@ parameter_types! {
 impl pallet_roles::Config for Runtime {
 	type Event = Event;
 	type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-	type Spaces = Spaces;
+	type SpacePermissionsProvider = Spaces;
 	type SpaceFollows = SpaceFollows;
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;

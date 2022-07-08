@@ -10758,7 +10758,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "df-traits",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
