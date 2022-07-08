@@ -2,7 +2,7 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
 use sp_runtime::traits::Zero;
 
-use pallet_parachain_utils::{WhoAndWhenOf, new_who_and_when};
+use subsocial_support::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
 

@@ -4,9 +4,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
-use pallet_parachain_utils::mock_functions::valid_content_ipfs;
-use pallet_parachain_utils::{Content, PostId, SpaceId};
+use subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
+    mock_functions::valid_content_ipfs, Content, PostId, SpaceId,
+};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, POST1, SPACE1};
@@ -29,9 +30,8 @@ impl Hash for EntityId {
         match self {
             EntityId::Content(content) => match content {
                 Content::None => 0.hash(state),
-                Content::Raw(content) => content.hash(state),
+                Content::Other(content) => content.hash(state),
                 Content::IPFS(content) => content.hash(state),
-                Content::Hyper(content) => content.hash(state),
             },
             EntityId::Account(account) => account.hash(state),
             EntityId::Space(space) => space.hash(state),

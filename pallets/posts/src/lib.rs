@@ -26,12 +26,12 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked};
 use pallet_permissions::SpacePermission;
 use pallet_spaces::{Pallet as Spaces, types::Space, SpaceById};
-use pallet_parachain_utils::{
-    Content, Error as UtilsError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
-    throw_utils_error, ensure_content_is_valid,
+use subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
+    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
+    ensure_content_is_valid,
 };
 
 pub use pallet::*;
@@ -229,11 +229,11 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(creator.clone(), space.id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                ModerationError::AccountIsBlocked
             );
             ensure!(
                 T::IsContentBlocked::is_allowed_content(content, space.id),
-                throw_utils_error(UtilsError::ContentIsBlocked)
+                ModerationError::ContentIsBlocked
             );
 
             let root_post = &mut new_post.get_root_post()?;
@@ -297,7 +297,7 @@ pub mod pallet {
             if let Some(space) = &space_opt {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    ModerationError::AccountIsBlocked
                 );
                 Self::ensure_account_can_update_post(&editor, &post, space)?;
             }
@@ -312,7 +312,7 @@ pub mod pallet {
                     if let Some(space) = &space_opt {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
-                            throw_utils_error(UtilsError::ContentIsBlocked)
+                            ModerationError::ContentIsBlocked
                         );
                     }
 

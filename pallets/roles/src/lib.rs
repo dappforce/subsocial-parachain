@@ -17,14 +17,13 @@ use frame_system::{self as system, ensure_signed};
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
-use df_traits::{
-    moderation::{IsAccountBlocked, IsContentBlocked},
-    PermissionChecker, SpaceFollowsProvider, SpaceForRolesProvider,
+use pallet_permissions::{
+    Pallet as Permissions, SpacePermission, SpacePermissionSet, PermissionChecker,
 };
-use pallet_permissions::{Pallet as Permissions, SpacePermission, SpacePermissionSet};
-use pallet_parachain_utils::{
-    Content, Error as UtilsError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
-    ensure_content_is_valid, convert_users_vec_to_btree_set, throw_utils_error,
+use subsocial_support::{
+    traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
+    Content, ModerationError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
+    ensure_content_is_valid, convert_users_vec_to_btree_set,
 };
 
 pub use pallet::*;
@@ -45,6 +44,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use pallet_permissions::SpacePermissionsInfoOf;
 
     #[pallet::config]
     pub trait Config:
@@ -59,7 +59,7 @@ pub mod pallet {
         #[pallet::constant]
         type MaxUsersToProcessPerDeleteRole: Get<u16>;
 
-        type Spaces: SpaceForRolesProvider<AccountId = Self::AccountId>;
+        type SpacePermissionsProvider: SpacePermissionsProvider<SpacePermissionsInfoOf<Self>>;
 
         type SpaceFollows: SpaceFollowsProvider<AccountId = Self::AccountId>;
 
@@ -204,7 +204,7 @@ pub mod pallet {
             ensure_content_is_valid(content.clone())?;
             ensure!(
                 T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
-                throw_utils_error(UtilsError::ContentIsBlocked),
+                ModerationError::ContentIsBlocked,
             );
 
             Self::ensure_role_manager(who.clone(), space_id)?;
@@ -266,7 +266,7 @@ pub mod pallet {
                     ensure_content_is_valid(content.clone())?;
                     ensure!(
                         T::IsContentBlocked::is_allowed_content(content.clone(), role.space_id),
-                        throw_utils_error(UtilsError::ContentIsBlocked)
+                        ModerationError::ContentIsBlocked
                     );
 
                     role.content = content;

@@ -30,8 +30,7 @@ std = [
     'pallet-space-follows/std',
     'pallet-space-ownership/std',
     'pallet-spaces/std',
-    'pallet-parachain-utils/std',
-    'df-traits/std',
+    'subsocial-support/std',
 ]
 
 [dependencies]
@@ -56,8 +55,7 @@ pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
-pallet-parachain-utils = { path = '../pallets/parachain-utils', default-features = false }
-df-traits = { path = '../pallets/traits', default-features = false }
+subsocial-support = { path = '../pallets/support', default-features = false }
 
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.19', default-features = false }

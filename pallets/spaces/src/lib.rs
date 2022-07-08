@@ -26,9 +26,10 @@ pub mod types;
 
 pub use pallet::*;
 
-use df_traits::SpaceFollowsProvider;
 use pallet_permissions::{SpacePermission, SpacePermissions};
-use pallet_parachain_utils::{Content, SpaceId, new_who_and_when};
+use subsocial_support::{
+    traits::SpaceFollowsProvider, Content, SpaceId, new_who_and_when,
+};
 use sp_std::vec::Vec;
 
 #[frame_support::pallet]
@@ -39,13 +40,13 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
-    use df_traits::{
-        moderation::{IsAccountBlocked, IsContentBlocked},
-        PermissionChecker, SpaceForRoles, SpaceForRolesProvider,
+    use pallet_permissions::{
+        Pallet as Permissions, SpacePermissionsContext, PermissionChecker, SpacePermissionsInfoOf,
     };
-    use pallet_permissions::{Pallet as Permissions, SpacePermissionsContext};
-    use pallet_parachain_utils::{
-        Error as UtilsError, ensure_content_is_valid, throw_utils_error,
+    use subsocial_support::{
+        ensure_content_is_valid,
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
+        ModerationError, SpacePermissionsInfo,
     };
 
     #[pallet::config]
@@ -205,11 +206,11 @@ pub mod pallet {
 
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), parent_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    ModerationError::AccountIsBlocked
                 );
                 ensure!(
                     T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                    throw_utils_error(UtilsError::ContentIsBlocked)
+                    ModerationError::ContentIsBlocked
                 );
 
                 Self::ensure_account_has_space_permission(
@@ -268,7 +269,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                ModerationError::AccountIsBlocked
             );
 
             Self::ensure_account_has_space_permission(
@@ -307,12 +308,12 @@ pub mod pallet {
 
                     ensure!(
                         T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
-                        throw_utils_error(UtilsError::ContentIsBlocked)
+                        ModerationError::ContentIsBlocked
                     );
                     if let Some(parent_id) = space.parent_id {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                            throw_utils_error(UtilsError::ContentIsBlocked)
+                            ModerationError::ContentIsBlocked
                         );
                     }
 
@@ -451,13 +452,13 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> SpaceForRolesProvider for Pallet<T> {
-        type AccountId = T::AccountId;
-
-        fn get_space(id: SpaceId) -> Result<SpaceForRoles<Self::AccountId>, DispatchError> {
+    impl<T: Config> SpacePermissionsProvider<SpacePermissionsInfoOf<T>> for Pallet<T> {
+        fn space_permissions_info(
+            id: SpaceId,
+        ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;
 
-            Ok(SpaceForRoles {
+            Ok(SpacePermissionsInfo {
                 owner: space.owner,
                 permissions: space.permissions,
             })

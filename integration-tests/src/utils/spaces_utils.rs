@@ -2,7 +2,7 @@ use frame_support::pallet_prelude::*;
 use pallet_permissions::SpacePermissions;
 
 use pallet_spaces::types::{SpacesSettings, SpaceUpdate};
-use pallet_parachain_utils::{Content, SpaceId};
+use subsocial_support::{Content, SpaceId};
 
 use crate::mock::*;
 use crate::utils::{ACCOUNT1, SPACE1};

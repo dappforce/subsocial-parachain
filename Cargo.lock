@@ -1995,16 +1995,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "df-traits"
-version = "0.1.5"
-dependencies = [
- "frame-support",
- "pallet-parachain-utils",
- "pallet-permissions",
- "sp-runtime",
-]
-
-[[package]]
 name = "digest"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3374,11 +3364,9 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
@@ -3395,6 +3383,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5437,7 +5426,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -5445,6 +5433,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5717,41 +5706,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-parachain-utils"
-version = "0.1.5"
-dependencies = [
- "frame-support",
- "frame-system",
- "jsonrpc-core",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-permissions"
 version = "0.1.5"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-parachain-utils",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
 name = "pallet-posts"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-space-follows",
  "pallet-spaces",
@@ -5761,6 +5735,7 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5786,12 +5761,12 @@ dependencies = [
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
- "pallet-parachain-utils",
  "pallet-permissions",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5827,10 +5802,8 @@ dependencies = [
 name = "pallet-reactions"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-posts",
  "pallet-spaces",
@@ -5840,6 +5813,7 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5860,11 +5834,9 @@ dependencies = [
 name = "pallet-roles"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -5874,6 +5846,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5947,46 +5920,43 @@ dependencies = [
 name = "pallet-space-follows"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
- "pallet-parachain-utils",
  "pallet-profiles",
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
 name = "pallet-space-ownership"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
- "pallet-parachain-utils",
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
 name = "pallet-spaces"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -10788,7 +10758,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "df-traits",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -10843,6 +10812,20 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "subsocial-support"
+version = "0.1.5"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "jsonrpc-core",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "strum 0.24.0",
 ]
 
 [[package]]

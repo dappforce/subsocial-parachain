@@ -10,12 +10,12 @@ use serde::Deserialize;
 use sp_runtime::{DispatchError, RuntimeDebug};
 use sp_std::prelude::*;
 
-use df_traits::moderation::IsAccountBlocked;
 use pallet_permissions::SpacePermission;
 use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
-use pallet_parachain_utils::{
-    remove_from_vec, Error as UtilsError, PostId, WhoAndWhenOf, new_who_and_when, throw_utils_error,
+use subsocial_support::{
+    traits::{IsAccountBlocked}, remove_from_vec, ModerationError, PostId, WhoAndWhenOf,
+    new_who_and_when,
 };
 
 pub use pallet::*;
@@ -173,7 +173,7 @@ pub mod pallet {
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(owner.clone(), space.id),
-                throw_utils_error(UtilsError::AccountIsBlocked)
+                ModerationError::AccountIsBlocked
             );
 
             match kind {
@@ -237,7 +237,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    ModerationError::AccountIsBlocked
                 );
             }
 
@@ -291,7 +291,7 @@ pub mod pallet {
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
-                    throw_utils_error(UtilsError::AccountIsBlocked)
+                    ModerationError::AccountIsBlocked
                 );
             }
 

@@ -9,6 +9,8 @@ use scale_info::TypeInfo;
 use frame_support::pallet_prelude::*;
 use sp_std::{vec, vec::Vec, collections::btree_set::BTreeSet};
 
+pub mod traits;
+
 pub type SpaceId = u64;
 pub type PostId = u64;
 
@@ -44,21 +46,17 @@ pub enum Content {
     /// No content.
     None,
     /// A raw vector of bytes.
-    Raw(Vec<u8>),
+    Other(Vec<u8>),
     /// IPFS CID v0 of content.
-    #[allow(clippy::upper_case_acronyms)]
     IPFS(Vec<u8>),
-    /// Hypercore protocol (former DAT) id of content.
-    Hyper(Vec<u8>),
 }
 
 impl From<Content> for Vec<u8> {
     fn from(content: Content) -> Vec<u8> {
         match content {
             Content::None => vec![],
-            Content::Raw(vec_u8) => vec_u8,
+            Content::Other(vec_u8) => vec_u8,
             Content::IPFS(vec_u8) => vec_u8,
-            Content::Hyper(vec_u8) => vec_u8,
         }
     }
 }
@@ -119,73 +117,69 @@ pub fn convert_users_vec_to_btree_set<AccountId: Ord + Clone>(
     Ok(users_set)
 }
 
-#[derive(Encode, Decode, RuntimeDebug)]
-pub enum Error {
+#[derive(Encode, Decode, RuntimeDebug, strum::IntoStaticStr)]
+pub enum ModerationError {
     /// Account is blocked in a given space.
     AccountIsBlocked,
     /// Content is blocked in a given space.
     ContentIsBlocked,
     /// Post is blocked in a given space.
     PostIsBlocked,
-    /// IPFS CID is invalid.
-    InvalidIpfsCid,
-    /// `Raw` content type is not yet supported.
-    RawContentTypeNotSupported,
-    /// `Hyper` content type is not yet supported.
-    HypercoreContentTypeNotSupported,
     /// Space handle is too short.
     HandleIsTooShort,
     /// Space handle is too long.
     HandleIsTooLong,
     /// Space handle contains invalid characters.
     HandleContainsInvalidChars,
+}
+
+impl From<ModerationError> for DispatchError {
+    fn from(err: ModerationError) -> DispatchError {
+        Self::Other(err.into())
+    }
+}
+
+#[derive(Encode, Decode, RuntimeDebug, strum::IntoStaticStr)]
+pub enum ContentError {
+    /// IPFS CID is invalid.
+    InvalidIpfsCid,
+    /// `Other` content type is not yet supported.
+    OtherContentTypeNotSupported,
     /// Content type is `None`.
     ContentIsEmpty,
 }
 
-impl From<Error> for &'static str {
-    fn from(e: Error) -> &'static str {
-        match e {
-            Error::AccountIsBlocked => "AccountIsBlocked",
-            Error::ContentIsBlocked => "ContentIsBlocked",
-            Error::PostIsBlocked => "PostIsBlocked",
-            Error::InvalidIpfsCid => "InvalidIpfsCid",
-            Error::RawContentTypeNotSupported => "RawContentTypeNotSupported",
-            Error::HypercoreContentTypeNotSupported => "HypercoreContentTypeNotSupported",
-            Error::HandleIsTooShort => "HandleIsTooShort",
-            Error::HandleIsTooLong => "HandleIsTooLong",
-            Error::HandleContainsInvalidChars => "HandleContainsInvalidChars",
-            Error::ContentIsEmpty => "ContentIsEmpty",
-        }
+impl From<ContentError> for DispatchError {
+    fn from(err: ContentError) -> DispatchError {
+        Self::Other(err.into())
     }
 }
 
-pub fn throw_utils_error(error: Error) -> DispatchError {
-    DispatchError::Other(error.into())
+/// Minimal set of fields from Space struct that are required by roles pallet.
+pub struct SpacePermissionsInfo<AccountId, SpacePermissions> {
+    pub owner: AccountId,
+    pub permissions: Option<SpacePermissions>,
 }
 
 pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
     match content {
         Content::None => Ok(()),
-        Content::Raw(_) => Err(
-            DispatchError::Other(Error::RawContentTypeNotSupported.into())
+        Content::Other(_) => Err(
+            ContentError::OtherContentTypeNotSupported.into()
         ),
         Content::IPFS(ipfs_cid) => {
             let len = ipfs_cid.len();
             // IPFS CID v0 is 46 bytes.
             // IPFS CID v1 is 59 bytes.
-            ensure!(len == 46 || len == 59, DispatchError::Other(Error::InvalidIpfsCid.into()));
+            ensure!(len == 46 || len == 59, ContentError::InvalidIpfsCid);
             Ok(())
-        }
-        Content::Hyper(_) => Err(
-            DispatchError::Other(Error::HypercoreContentTypeNotSupported.into())
-        ),
+        },
     }
 }
 
 /// Ensure that a given content is not `None`.
 pub fn ensure_content_is_some(content: &Content) -> DispatchResult {
-    ensure!(content.is_some(), DispatchError::Other(Error::ContentIsEmpty.into()));
+    ensure!(content.is_some(), ContentError::ContentIsEmpty);
     Ok(())
 }
 

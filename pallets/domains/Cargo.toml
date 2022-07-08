@@ -17,7 +17,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
-pallet-parachain-utils = { path = "../parachain-utils", default-features = false }
+subsocial-support = { path = "../support", default-features = false }
 
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
 frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
@@ -44,6 +44,6 @@ std = [
     "frame-benchmarking/std",
     "sp-runtime/std",
     "sp-std/std",
-    "pallet-parachain-utils/std",
+    "subsocial-support/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
