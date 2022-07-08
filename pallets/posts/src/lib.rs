@@ -292,7 +292,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(100_000 + T::DbWeight::get().reads_writes(5, 3))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_post())]
         pub fn update_post(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -373,7 +373,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(T::DbWeight::get().reads(1) + 50_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::move_post())]
         pub fn move_post(
             origin: OriginFor<T>,
             post_id: PostId,

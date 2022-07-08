@@ -113,4 +113,42 @@ benchmarks! {
         ensure!(post.space_id == Some(space.id), "Reply wasn't created in the right space");
         ensure!(post.extension == ext, "Post wasn't created with the right extension");
     }
+
+
+    update_post {
+        let origin = RawOrigin::Signed(whitelisted_caller());
+        let space = create_dummy_space::<T>(origin.clone())?;
+        let post = create_dummy_post::<T>(origin.clone(), space.clone())?;
+        let reply = create_dummy_reply::<T>(origin.clone(), space.clone(), post.clone())?;
+
+        let new_content = Content::IPFS(b"Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu".to_vec());
+
+        let update = PostUpdate {
+            hidden: Some(true),
+            content: Some(new_content.clone()),
+            space_id: None,
+        };
+    }: update_post(origin, reply.id, update)
+    verify {
+        let updated_post = PostById::<T>::get(reply.id)
+            .ok_or(DispatchError::Other("Post wasn't found"))?;
+
+        ensure!(updated_post != post, "Post wasn't updated");
+        ensure!(updated_post.hidden == true, "Post wasn't updated");
+        ensure!(updated_post.content == new_content, "Post wasn't updated");
+    }
+
+    move_post {
+        let origin = RawOrigin::Signed(whitelisted_caller());
+        let space = create_dummy_space::<T>(origin.clone())?;
+        let post = create_dummy_post::<T>(origin.clone(), space.clone())?;
+
+        let new_space = create_dummy_space::<T>(origin.clone())?;
+    }: move_post(origin, post.id, Some(new_space.id))
+    verify {
+        let moved_post = PostById::<T>::get(post.id)
+            .ok_or(DispatchError::Other("Post wasn't found"))?;
+
+        ensure!(moved_post.space_id == Some(new_space.id), "Post wasn't moved");
+    }
 }
