@@ -208,7 +208,8 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            let has_updates = update.parent_id.is_some() ||
+            let has_updates =
+                update.parent_id.is_some() ||
                 update.content.is_some() ||
                 update.hidden.is_some() ||
                 update.permissions.is_some();
