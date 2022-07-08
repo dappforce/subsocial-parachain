@@ -1,7 +1,6 @@
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 use sp_runtime::traits::Zero;
 
-use subsocial_support::Error as UtilsError;
 use pallet_spaces::Error as SpacesError;
 use pallet_permissions::SpacePermission as SP;
 use subsocial_support::mock_functions::*;
@@ -27,7 +26,7 @@ fn create_subspace_should_fail_when_content_is_blocked() {
                 Some(valid_content_ipfs()),
                 None,
             ),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into())
+            ModerationError::ContentIsBlocked,
         );
     });
 }
@@ -45,7 +44,7 @@ fn create_subspace_should_fail_when_account_is_blocked() {
                 None,
                 None,
             ),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into())
+            ModerationError::AccountIsBlocked,
         );
     });
 }
@@ -60,7 +59,7 @@ fn update_space_should_fail_when_account_is_blocked() {
                 None,
                 Some(update_for_space_content(updated_space_content()))
             ),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into())
+            ModerationError::AccountIsBlocked,
         );
     });
 }
@@ -75,7 +74,7 @@ fn update_space_should_fail_when_content_is_blocked() {
                 None,
                 Some(space_update(None, Some(valid_content_ipfs()), None))
             ),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into())
+            ModerationError::ContentIsBlocked,
         );
     });
 }
@@ -249,7 +248,7 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a space with invalid content
         assert_noop!(
             _create_space(None, None, Some(invalid_content_ipfs()), None),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }
@@ -500,7 +499,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(space_update(None, Some(invalid_content_ipfs()), None,))
             ),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }

@@ -5,9 +5,7 @@ use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate
 use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::{Error as SpacesError, SpaceById};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use subsocial_support::{
-    mock_functions::*, Content, Error as UtilsError, PostId, SpaceId, User,
-};
+use subsocial_support::{mock_functions::*, Content, PostId, SpaceId, User};
 
 use crate::mock::*;
 use crate::utils::*;
@@ -24,7 +22,7 @@ fn create_post_should_fail_when_content_is_blocked() {
         block_content_in_space_1();
         assert_noop!(
             _create_post(None, None, None, Some(valid_content_ipfs()),),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into()),
+            ModerationError::ContentIsBlocked,
         );
     });
 }
@@ -35,7 +33,7 @@ fn create_post_should_fail_when_account_is_blocked() {
         block_account_in_space_1();
         assert_noop!(
             _create_post(None, None, None, Some(valid_content_ipfs()),),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into()),
+            ModerationError::AccountIsBlocked,
         );
     });
 }
@@ -50,7 +48,7 @@ fn update_post_should_fail_when_content_is_blocked() {
                 None,
                 Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
             ),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into())
+            ModerationError::ContentIsBlocked,
         );
     });
 }
@@ -65,7 +63,7 @@ fn update_post_should_fail_when_account_is_blocked() {
                 None,
                 Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
             ),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into())
+            ModerationError::AccountIsBlocked,
         );
     });
 }
@@ -169,7 +167,7 @@ fn create_post_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a regular post with invalid content
         assert_noop!(
             _create_post(None, None, None, Some(invalid_content_ipfs())),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }
@@ -527,7 +525,7 @@ fn update_post_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(post_update(None, Some(invalid_content_ipfs()), None))
             ),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }

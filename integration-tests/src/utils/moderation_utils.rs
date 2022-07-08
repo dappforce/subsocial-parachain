@@ -30,9 +30,8 @@ impl Hash for EntityId {
         match self {
             EntityId::Content(content) => match content {
                 Content::None => 0.hash(state),
-                Content::Raw(content) => content.hash(state),
+                Content::Other(content) => content.hash(state),
                 Content::IPFS(content) => content.hash(state),
-                Content::Hyper(content) => content.hash(state),
             },
             EntityId::Account(account) => account.hash(state),
             EntityId::Space(space) => space.hash(state),

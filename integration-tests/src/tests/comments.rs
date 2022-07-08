@@ -5,7 +5,7 @@ use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate
 use pallet_spaces::{Error as SpacesError, SpaceById};
 use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
 use subsocial_support::{
-    mock_functions::*, Content, Error as UtilsError, PostId, SpaceId, User,
+    mock_functions::*, Content, PostId, SpaceId, User,
 };
 
 use crate::mock::*;
@@ -101,7 +101,7 @@ fn create_comment_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a comment with wrong parent
         assert_noop!(
             _create_comment(None, None, None, Some(invalid_content_ipfs())),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }
@@ -233,7 +233,7 @@ fn update_comment_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(post_update(None, Some(invalid_content_ipfs()), None))
             ),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            ContentError::InvalidIpfsCid,
         );
     });
 }
