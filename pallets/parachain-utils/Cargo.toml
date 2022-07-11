@@ -1,6 +1,6 @@
 [package]
 name = "pallet-parachain-utils"
-version = "0.1.7"
+version = "0.1.6"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
