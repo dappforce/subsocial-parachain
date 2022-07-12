@@ -123,7 +123,9 @@ impl pallet_posts::Config for TestRuntime {
     type IsPostBlocked = MockModeration;
 }
 
-impl pallet_profiles::Config for TestRuntime {}
+impl pallet_profiles::Config for TestRuntime {
+    type Event = Event;
+}
 
 impl pallet_reactions::Config for TestRuntime {
     type Event = Event;
