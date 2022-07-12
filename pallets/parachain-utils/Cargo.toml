@@ -1,6 +1,6 @@
 [package]
 name = "pallet-parachain-utils"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -28,7 +28,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 jsonrpc-core = "18.0.0"
 
 # Substrate dependencies
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
