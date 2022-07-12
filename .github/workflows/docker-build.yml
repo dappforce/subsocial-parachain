@@ -1,4 +1,4 @@
-name: node
+name: Build and deploy new release
 on:
   pull_request:
     types: 
