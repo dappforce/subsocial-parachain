@@ -1,12 +1,12 @@
-name: Test Code
+name: Check and test Code
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ "main", "staging", "feature/*" ]
+    paths: [ "*.rs", "*.toml", "*.lock" ]
   push:
-    branches:
-      - main
+    branches: [ "main", "staging", "feature/*" ]
+    paths: [ "*.rs", "*.toml", "*.lock" ]
 
 jobs:
   test-code:
@@ -45,7 +45,7 @@ jobs:
       #   run: cargo +${{ env.rustc_version }} clippy -- -D warnings
 
       - name: Check Code
-        run: cargo check
+        run: cargo check --release
 
       - name: Test Code
         run: cargo test
