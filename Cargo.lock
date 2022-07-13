@@ -3259,7 +3259,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5626,7 +5626,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-permissions"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5640,7 +5640,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-posts"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5675,7 +5675,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-profiles"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5718,7 +5718,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-reactions"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5751,7 +5751,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-roles"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5837,7 +5837,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-follows"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5851,7 +5851,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-ownership"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5864,7 +5864,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-spaces"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -10817,7 +10817,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-support"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
