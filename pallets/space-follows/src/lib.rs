@@ -4,7 +4,7 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use pallet_profiles::{Module as Profiles, SocialAccountById};
+use pallet_profiles::{Pallet as Profiles, SocialAccountById};
 use pallet_spaces::{BeforeSpaceCreated, Pallet as Spaces, types::Space, SpaceById};
 
 // pub mod rpc;
