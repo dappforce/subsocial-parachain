@@ -19,6 +19,7 @@ std = [
     'frame-system/std',
     'sp-std/std',
     'pallet-spaces/std',
+    'pallet-profiles/std',
     'subsocial-support/std',
 ]
 
@@ -28,6 +29,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 
 # Local dependencies
 pallet-spaces = { default-features = false, path = '../spaces' }
+pallet-profiles = { default-features = false, path = '../profiles' }
 subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
