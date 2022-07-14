@@ -125,6 +125,8 @@ pub mod pallet {
         pub fn unfollow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
+            Spaces::<T>::ensure_space_exists(space_id)?;
+
             ensure!(
                 Self::space_followed_by_account((follower.clone(), space_id)),
                 Error::<T>::NotSpaceFollower
