@@ -27,10 +27,6 @@ pub mod pallet {
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
-        type BeforeSpaceFollowed: BeforeSpaceFollowed<Self>;
-
-        type BeforeSpaceUnfollowed: BeforeSpaceUnfollowed<Self>;
     }
 
     #[pallet::pallet]
@@ -119,7 +115,7 @@ pub mod pallet {
                 ModerationError::AccountIsBlocked
             );
 
-            Self::add_space_follower(follower, space)?;
+            Self::add_space_follower(follower, space_id)?;
             SpaceById::<T>::insert(space_id, space);
 
             Ok(())
@@ -139,15 +135,7 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn add_space_follower(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult {
-            space.inc_followers();
-
-            T::BeforeSpaceFollowed::before_space_followed(
-                follower.clone(),
-                space,
-            )?;
-
-            let space_id = space.id;
+        fn add_space_follower(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
             SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
             SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
             SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
@@ -160,11 +148,6 @@ pub mod pallet {
         }
 
         pub fn unfollow_space_by_account(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
-            let space = &mut Spaces::require_space(space_id)?;
-            space.dec_followers();
-
-            T::BeforeSpaceUnfollowed::before_space_unfollowed(follower.clone(), space)?;
-
             SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
                 remove_from_vec(space_ids, space_id)
             });
@@ -189,7 +172,7 @@ pub mod pallet {
     impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
         fn before_space_created(creator: T::AccountId, space: &mut Space<T>) -> DispatchResult {
             // Make a space creator the first follower of this space:
-            Pallet::<T>::add_space_follower(creator, space)
+            Pallet::<T>::add_space_follower(creator, space.id)
         }
     }
 }
