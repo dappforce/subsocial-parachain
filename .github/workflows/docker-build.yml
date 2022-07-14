@@ -1,14 +1,11 @@
 name: Build and deploy a new release
 on:
-  pull_request:
-    types: 
-      - closed 
-    branches:
-      - main
+  workflow_dispatch:
+  push:
+    tags: [ "v*" ]
 
 jobs:
   build:
-    if: contains( github.event.pull_request.labels.*.name, 'CI')          
     name: Create & push Docker image
     runs-on: [ self-hosted, linux, x64, parachain ]
 
