@@ -36,10 +36,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Space was successfully assigned as a profile.
-        SpaceAsProfileAssigned {
-            account: T::AccountId,
-            space: SpaceId,
-        },
+        SpaceAsProfileAssigned { account: T::AccountId, space: SpaceId },
     }
 
     #[pallet::error]
@@ -59,23 +56,21 @@ pub mod pallet {
 
             Self::try_set_space_as_profile(&sender, space_id)?;
 
-            Self::deposit_event(Event::SpaceAsProfileAssigned {
-                account: sender,
-                space: space_id,
-            });
+            Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
             Ok(())
         }
     }
 
     impl<T: Config> Pallet<T> {
         // FIXME: cover with tests
-        pub fn try_set_space_as_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+        pub fn try_set_space_as_profile(
+            account: &T::AccountId,
+            space_id: SpaceId,
+        ) -> DispatchResult {
             let space_permissions_info =
                 T::SpacePermissionsProvider::space_permissions_info(space_id)?;
-            ensure!(
-                &space_permissions_info.owner == account,
-                Error::<T>::NotSpaceOwner
-            );
+
+            ensure!(&space_permissions_info.owner == account, Error::<T>::NotSpaceOwner);
 
             <ProfileSpaceByAccount<T>>::insert(account, space_id);
             Ok(())
