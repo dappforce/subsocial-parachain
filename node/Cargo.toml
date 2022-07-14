@@ -88,6 +88,7 @@ cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumul
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 
 [features]
+default = []
 runtime-benchmarks = [
     "subsocial-parachain-runtime/runtime-benchmarks",
     "polkadot-cli/runtime-benchmarks",
