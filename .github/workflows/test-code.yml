@@ -2,11 +2,8 @@ name: Check and test Code
 
 on:
   pull_request:
-    branches: [ "main", "staging", "feature/*" ]
-    paths: [ "*.rs", "*.toml", "*.lock" ]
   push:
-    branches: [ "main", "staging", "feature/*" ]
-    paths: [ "*.rs", "*.toml", "*.lock" ]
+    branches: [ "main", "feature/*" ]
 
 jobs:
   test-code:
