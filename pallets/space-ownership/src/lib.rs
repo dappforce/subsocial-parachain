@@ -8,6 +8,10 @@ use subsocial_support::{
     traits::IsAccountBlocked, remove_from_bounded_vec, ModerationError, SpaceId,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -15,6 +19,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use crate::weights::WeightInfo;
 
     use subsocial_support::traits::ProfileManager;
 
@@ -23,6 +28,8 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         type ProfileManager: ProfileManager<Self::AccountId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -65,7 +72,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
+        #[pallet::weight(<T as Config>::WeightInfo::transfer_space_ownership())]
         pub fn transfer_space_ownership(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -92,7 +99,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2))]
+        #[pallet::weight(<T as Config>::WeightInfo::accept_pending_ownership())]
         pub fn accept_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let new_owner = ensure_signed(origin)?;
 
@@ -134,7 +141,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(<T as Config>::WeightInfo::reject_pending_ownership())]
         pub fn reject_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
