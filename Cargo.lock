@@ -5854,7 +5854,6 @@ version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-profiles",
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",

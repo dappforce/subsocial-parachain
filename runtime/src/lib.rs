@@ -586,6 +586,7 @@ impl pallet_spaces::Config for Runtime {
 
 impl pallet_space_ownership::Config for Runtime {
 	type Event = Event;
+	type ProfileManager = Profiles;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

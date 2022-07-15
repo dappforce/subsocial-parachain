@@ -122,7 +122,7 @@ impl Config for Test {
     type IsContentBlocked = ();
 }
 
-impl SpacePermissionsProviderT<SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
+impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
     // This function should return an error every time Space doesn't exist by SpaceId
     // Currently, we have a list of valid space id's to check
     fn space_permissions_info(
@@ -133,6 +133,16 @@ impl SpacePermissionsProviderT<SpacePermissionsInfo<AccountId, SpacePermissions>
         }
 
         Err("SpaceNotFound".into())
+    }
+
+    fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult {
+        if valid_space_ids().contains(&id) {
+            if *account == ACCOUNT1 {
+                return Ok(())
+            }
+        }
+
+        Err("NotSpaceOwner".into())
     }
 }
 

@@ -59,7 +59,7 @@ pub mod pallet {
         #[pallet::constant]
         type MaxUsersToProcessPerDeleteRole: Get<u16>;
 
-        type SpacePermissionsProvider: SpacePermissionsProvider<SpacePermissionsInfoOf<Self>>;
+        type SpacePermissionsProvider: SpacePermissionsProvider<Self::AccountId, SpacePermissionsInfoOf<Self>>;
 
         type SpaceFollows: SpaceFollowsProvider<AccountId = Self::AccountId>;
 
