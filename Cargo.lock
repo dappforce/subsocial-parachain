@@ -5852,6 +5852,7 @@ dependencies = [
 name = "pallet-space-follows"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-spaces",

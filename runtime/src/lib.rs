@@ -565,6 +565,7 @@ impl pallet_roles::Config for Runtime {
 
 impl pallet_space_follows::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -661,6 +662,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_space_follows, SpaceFollows]
 	);
 }
 
