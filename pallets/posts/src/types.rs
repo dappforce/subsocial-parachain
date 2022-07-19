@@ -1,4 +1,5 @@
 use super::*;
+use sp_runtime::traits::Saturating;
 
 pub const FIRST_POST_ID: u64 = 1;
 
@@ -37,7 +38,7 @@ pub struct Post<T: Config> {
     pub score: i32,
 }
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct PostUpdate {
     /// Deprecated: This field has no effect in `fn update_post()` extrinsic.
     /// See `fn move_post()` extrinsic if you want to move a post to another space.
@@ -53,9 +54,25 @@ pub struct PostUpdate {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(untagged))]
 pub enum PostExtension {
-    RegularPost,
+    Post(RegularPost),
     Comment(Comment),
-    SharedPost(PostId),
+    SharingPost(SharingPost),
+}
+
+#[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct RegularPost {
+    /// Total visible replies count for this post.
+    pub total_replies_count: RepliesCount,
+}
+
+#[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct SharingPost {
+    /// Total visible replies count for this post.
+    pub total_replies_count: RepliesCount,
+    /// If this post is sharing another post, then the [original_post_id] is specified.
+    pub original_post_id: PostId,
 }
 
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -63,10 +80,46 @@ pub enum PostExtension {
 pub struct Comment {
     pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
+    /// The number of direct visible replies for a given comment.
+    pub replies_count: RepliesCount,
 }
 
 impl Default for PostExtension {
     fn default() -> Self {
-        PostExtension::RegularPost
+        PostExtension::Post(Default::default())
+    }
+}
+
+#[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct RepliesCount {
+    replies_count: u32,
+}
+
+pub trait HasReplies {
+    fn get(&self) -> u32;
+
+    fn set(&mut self, new_value: u32);
+
+    fn inc(&mut self);
+
+    fn dec(&mut self);
+}
+
+impl HasReplies for RepliesCount {
+    fn get(&self) -> u32 {
+        self.replies_count
+    }
+
+    fn set(&mut self, new_value: u32) {
+        self.replies_count = new_value;
+    }
+
+    fn inc(&mut self) {
+        self.replies_count.saturating_inc();
+    }
+
+    fn dec(&mut self) {
+        self.replies_count.saturating_dec();
     }
 }

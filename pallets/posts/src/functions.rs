@@ -126,16 +126,6 @@ impl<T: Config> Post<T> {
     }
 }
 
-impl Default for PostUpdate {
-    fn default() -> Self {
-        PostUpdate {
-            space_id: None,
-            content: None,
-            hidden: None,
-        }
-    }
-}
-
 impl<T: Config> Pallet<T> {
     pub fn ensure_account_can_update_post(
         editor: &T::AccountId,
