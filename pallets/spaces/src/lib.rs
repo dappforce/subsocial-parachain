@@ -47,7 +47,7 @@ pub mod pallet {
     use subsocial_support::{
         ensure_content_is_valid,
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
-        ModerationError, SpacePermissionsInfo, WhoAndWhenOf,
+        ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
 
     #[pallet::config]
@@ -315,10 +315,8 @@ pub mod pallet {
             space_id: SpaceId,
             created: WhoAndWhenOf<T>,
             owner: T::AccountId,
-            parent_id_opt: Option<SpaceId>,
             content: Content,
             hidden: bool,
-            followers_count: u32,
             permissions_opt: Option<SpacePermissions>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -326,30 +324,36 @@ pub mod pallet {
             let permissions =
                 permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
 
+            let WhoAndWhen { account, time, .. } = created;
+            let new_who_and_when =
+                WhoAndWhen { account, block: frame_system::Pallet::<T>::block_number(), time };
+
             let new_space = &mut Space {
                 id: space_id,
-                created,
-                updated: None,
+                created: new_who_and_when,
+                updated: false,
                 owner: owner.clone(),
                 parent_id: None,
                 content,
                 hidden,
                 posts_count: 0,
-                hidden_posts_count: 0,
-                followers_count,
-                permissions
+                permissions,
             };
 
             SpaceById::<T>::insert(space_id, new_space);
-            SpaceIdsByOwner::<T>::mutate(
-                &owner, |ids| {
-                    ids.try_push(space_id).expect("qed; too many spaces per account")
-                }
-            );
-            NextSpaceId::<T>::put(last_space_id);
+            SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
 
             Self::deposit_event(Event::SpaceCreated(owner, space_id));
 
+            Ok(())
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn force_set_next_space_id(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
+            ensure_root(origin)?;
+            NextSpaceId::<T>::put(space_id);
             Ok(())
         }
     }
