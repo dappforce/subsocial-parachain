@@ -289,8 +289,6 @@ pub mod pallet {
             }
 
             if is_update_applied {
-                role.updated = Some(new_who_and_when::<T>(who.clone()));
-
                 <RoleById<T>>::insert(role_id, role);
                 Self::deposit_event(Event::RoleUpdated(who, role_id));
             }

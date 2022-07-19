@@ -10,7 +10,7 @@ pub struct Post<T: Config> {
     pub id: PostId,
 
     pub created: WhoAndWhenOf<T>,
-    pub updated: Option<WhoAndWhenOf<T>>,
+    pub updated: bool,
 
     /// The current owner of a given post.
     pub owner: T::AccountId,

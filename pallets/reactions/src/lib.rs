@@ -45,7 +45,6 @@ pub struct Reaction<T: Config> {
     pub id: ReactionId,
 
     pub created: WhoAndWhenOf<T>,
-    pub updated: Option<WhoAndWhenOf<T>>,
     pub kind: ReactionKind,
 }
 
@@ -242,7 +241,6 @@ pub mod pallet {
             }
 
             reaction.kind = new_kind;
-            reaction.updated = Some(new_who_and_when::<T>(owner.clone()));
 
             match new_kind {
                 ReactionKind::Upvote => {
@@ -322,7 +320,6 @@ impl<T: Config> Pallet<T> {
         let reaction: Reaction<T> = Reaction {
             id,
             created: new_who_and_when::<T>(account),
-            updated: None,
             kind,
         };
 
