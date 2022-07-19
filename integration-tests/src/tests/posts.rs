@@ -117,9 +117,6 @@ fn create_post_should_work() {
 
         assert_eq!(post.content, post_content_ipfs());
 
-        assert_eq!(post.replies_count, 0);
-        assert_eq!(post.hidden_replies_count, 0);
-        assert_eq!(post.shares_count, 0);
         assert_eq!(post.upvotes_count, 0);
         assert_eq!(post.downvotes_count, 0);
     });

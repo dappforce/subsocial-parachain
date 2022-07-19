@@ -31,12 +31,9 @@ fn share_post_should_work() {
         assert_eq!(Posts::next_post_id(), POST3);
 
         assert_eq!(
-            Posts::shared_post_ids_by_original_post_id(POST1),
+            Posts::sharing_post_ids_by_original_post_id(POST1),
             vec![POST2]
         );
-
-        // Check whether data stored correctly
-        assert_eq!(Posts::post_by_id(POST1).unwrap().shares_count, 1);
 
         let shared_post = Posts::post_by_id(POST2).unwrap();
 
@@ -88,12 +85,9 @@ fn share_post_should_work_for_share_own_post_in_same_own_space() {
         assert_eq!(Posts::next_post_id(), POST3);
 
         assert_eq!(
-            Posts::shared_post_ids_by_original_post_id(POST1),
+            Posts::sharing_post_ids_by_original_post_id(POST1),
             vec![POST2]
         );
-
-        // Check whether data stored correctly
-        assert_eq!(Posts::post_by_id(POST1).unwrap().shares_count, 1);
 
         let shared_post = Posts::post_by_id(POST2).unwrap();
         assert_eq!(shared_post.space_id, Some(SPACE1));

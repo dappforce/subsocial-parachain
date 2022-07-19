@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 
-use pallet_posts::{Comment, PostExtension, PostUpdate};
+use pallet_posts::{Comment, PostExtension, PostUpdate, SharingPost};
 use subsocial_support::{Content, PostId, SpaceId};
 
 use crate::mock::*;
@@ -35,15 +35,18 @@ pub(crate) fn reply_content_ipfs() -> Content {
 }
 
 pub(crate) fn extension_regular_post() -> PostExtension {
-    PostExtension::RegularPost
+    PostExtension::Post(Default::default())
 }
 
 pub(crate) fn extension_comment(parent_id: Option<PostId>, root_post_id: PostId) -> PostExtension {
-    PostExtension::Comment(Comment { parent_id, root_post_id })
+    PostExtension::Comment(Comment { parent_id, root_post_id, replies_count: Default::default() })
 }
 
 pub(crate) fn extension_shared_post(post_id: PostId) -> PostExtension {
-    PostExtension::SharedPost(post_id)
+    PostExtension::SharingPost(SharingPost {
+        original_post_id: post_id,
+        total_replies_count: Default::default(),
+    })
 }
 
 pub(crate) fn _create_default_post() -> DispatchResult {
