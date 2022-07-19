@@ -38,7 +38,7 @@ frame_support::construct_runtime!(
             Timestamp: pallet_timestamp,
             Permissions: pallet_permissions,
             Posts: pallet_posts,
-            Profiles: pallet_profiles::{Pallet, Call, Storage},
+            Profiles: pallet_profiles,
             Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
