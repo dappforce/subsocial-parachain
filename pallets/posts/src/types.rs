@@ -90,10 +90,11 @@ impl Default for PostExtension {
     }
 }
 
+// TODO: maybe re-use for Space's `posts_count` as well
 #[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct RepliesCount {
-    replies_count: u32,
+    count: u32,
 }
 
 pub trait HasReplies {
@@ -108,18 +109,18 @@ pub trait HasReplies {
 
 impl HasReplies for RepliesCount {
     fn get(&self) -> u32 {
-        self.replies_count
+        self.count
     }
 
     fn set(&mut self, new_value: u32) {
-        self.replies_count = new_value;
+        self.count = new_value;
     }
 
     fn inc(&mut self) {
-        self.replies_count.saturating_inc();
+        self.count.saturating_inc();
     }
 
     fn dec(&mut self) {
-        self.replies_count.saturating_dec();
+        self.count.saturating_dec();
     }
 }
