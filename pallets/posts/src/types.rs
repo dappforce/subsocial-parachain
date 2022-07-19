@@ -28,15 +28,6 @@ pub struct Post<T: Config> {
     /// posts and its' comments should not be shown.
     pub hidden: bool,
 
-    /// The total number of replies for a given post.
-    pub replies_count: u16,
-
-    /// The number of hidden replies for a given post.
-    pub hidden_replies_count: u16,
-
-    /// The number of times a given post has been shared.
-    pub shares_count: u16,
-
     /// The number of times a given post has been upvoted.
     pub upvotes_count: u16,
 

@@ -21,9 +21,6 @@ impl<T: Config> Post<T> {
             space_id: space_id_opt,
             content,
             hidden: false,
-            replies_count: 0,
-            hidden_replies_count: 0,
-            shares_count: 0,
             upvotes_count: 0,
             downvotes_count: 0,
             score: 0,
@@ -102,32 +99,6 @@ impl<T: Config> Post<T> {
         }
 
         None
-    }
-
-    // TODO use macros to generate inc/dec fns for Space, Post.
-
-    pub fn inc_replies(&mut self) {
-        self.replies_count = self.replies_count.saturating_add(1);
-    }
-
-    pub fn dec_replies(&mut self) {
-        self.replies_count = self.replies_count.saturating_sub(1);
-    }
-
-    pub fn inc_hidden_replies(&mut self) {
-        self.hidden_replies_count = self.hidden_replies_count.saturating_add(1);
-    }
-
-    pub fn dec_hidden_replies(&mut self) {
-        self.hidden_replies_count = self.hidden_replies_count.saturating_sub(1);
-    }
-
-    pub fn inc_shares(&mut self) {
-        self.shares_count = self.shares_count.saturating_add(1);
-    }
-
-    pub fn dec_shares(&mut self) {
-        self.shares_count = self.shares_count.saturating_sub(1);
     }
 
     pub fn inc_upvotes(&mut self) {
