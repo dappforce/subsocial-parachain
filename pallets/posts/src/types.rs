@@ -34,8 +34,6 @@ pub struct Post<T: Config> {
 
     /// The number of times a given post has been downvoted.
     pub downvotes_count: u16,
-
-    pub score: i32,
 }
 
 #[derive(Encode, Decode, Default, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]

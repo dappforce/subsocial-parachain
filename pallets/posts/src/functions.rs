@@ -23,7 +23,6 @@ impl<T: Config> Post<T> {
             hidden: false,
             upvotes_count: 0,
             downvotes_count: 0,
-            score: 0,
         }
     }
 
