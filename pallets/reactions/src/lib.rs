@@ -55,6 +55,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use subsocial_support::WhoAndWhen;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config
@@ -310,6 +311,58 @@ pub mod pallet {
                 reaction.kind,
             ));
             Ok(())
+        }
+
+        #[pallet::weight((
+            100_000 + T::DbWeight::get().reads_writes(1, 3),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_create_post_reaction(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+            post_id: PostId,
+            reaction_id: ReactionId,
+            created: WhoAndWhenOf<T>,
+            reaction_kind: ReactionKind,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            let WhoAndWhen { account, time, .. } = created;
+            let new_who_and_when =
+                WhoAndWhen { account, block: frame_system::Pallet::<T>::block_number(), time };
+
+            let reaction = Reaction {
+                id: reaction_id,
+                created: new_who_and_when,
+                kind: reaction_kind,
+            };
+            ReactionById::<T>::insert(reaction_id, reaction);
+            ReactionIdsByPostId::<T>::mutate(post_id, |ids| ids.push(reaction_id));
+            PostReactionIdByAccount::<T>::insert((who.clone(), post_id), reaction_id);
+
+            Self::deposit_event(Event::PostReactionCreated(
+                who,
+                post_id,
+                reaction_id,
+                reaction_kind,
+            ));
+
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_next_reaction_id(
+            origin: OriginFor<T>,
+            reaction_id: PostId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            NextReactionId::<T>::put(reaction_id);
+            Ok(Pays::No.into())
         }
     }
 }
