@@ -134,6 +134,29 @@ pub mod pallet {
 
             Self::unfollow_space_by_account(follower, space_id)
         }
+
+        #[pallet::weight((
+            100_000 + T::DbWeight::get().reads_writes(3, 4),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_follow_space(
+            origin: OriginFor<T>,
+            follower: T::AccountId,
+            space_id: SpaceId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
+            SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
+            SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
+                space_ids.push(space_id)
+            });
+
+            Self::deposit_event(Event::SpaceFollowed(follower, space_id));
+
+            Ok(Pays::No.into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
