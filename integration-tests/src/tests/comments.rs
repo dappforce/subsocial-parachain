@@ -1,6 +1,6 @@
 use frame_support::{assert_noop, assert_ok};
 
-use pallet_posts::{Error as PostsError, HasReplies, PostExtension};
+use pallet_posts::{Error as PostsError, PostExtension};
 use subsocial_support::{
     mock_functions::*, PostId,
 };
@@ -21,7 +21,7 @@ fn create_comment_should_work() {
         let PostExtension::Post(post_ext) =
             root_post.extension else { panic!("qed; not a regular post") };
 
-        assert_eq!(post_ext.total_replies_count.get(), 1);
+        assert_eq!(post_ext.total_replies_count, 1);
 
         // Check whether data stored correctly
         let comment = Posts::post_by_id(POST2).unwrap();
@@ -36,7 +36,7 @@ fn create_comment_should_work() {
         let PostExtension::Comment(comment_ext) =
             comment.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(comment_ext.replies_count.get(), 0);
+        assert_eq!(comment_ext.replies_count, 0);
 
         assert_eq!(comment.upvotes_count, 0);
         assert_eq!(comment.downvotes_count, 0);
@@ -65,7 +65,7 @@ fn create_comment_should_work_when_comment_has_parents() {
                 comment.extension else { panic!("qed; not a comment") };
 
             // All of comments has 1 replies as they reply to each other.
-            assert_eq!(comment_ext.replies_count.get(), 1);
+            assert_eq!(comment_ext.replies_count, 1);
             assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
 
@@ -73,20 +73,20 @@ fn create_comment_should_work_when_comment_has_parents() {
         let PostExtension::Comment(last_parent_ext) =
             last_parent.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_parent_ext.replies_count.get(), 1);
+        assert_eq!(last_parent_ext.replies_count, 1);
         assert_eq!(Posts::reply_ids_by_post_id(parent_id), vec![last_comment_id]);
 
         let last_comment = Posts::post_by_id(last_comment_id).unwrap();
         let PostExtension::Comment(last_comment_ext) =
             last_comment.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_comment_ext.replies_count.get(), 0);
+        assert_eq!(last_comment_ext.replies_count, 0);
         assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
 
         let PostExtension::Post(root_post_ext) =
             Posts::post_by_id(last_comment_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
 
-        assert_eq!(root_post_ext.total_replies_count.get(), MaxCommentDepth::get());
+        assert_eq!(root_post_ext.total_replies_count, MaxCommentDepth::get());
     });
 }
 
@@ -217,7 +217,7 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
                 comment.extension else { panic!("qed; not a comment") };
 
             // All of comments has 1 replies as they reply to each other.
-            assert_eq!(comment_ext.replies_count.get(), 1);
+            assert_eq!(comment_ext.replies_count, 1);
             assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
 
@@ -225,20 +225,20 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
         let PostExtension::Comment(last_parent_ext) =
             last_parent.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_parent_ext.replies_count.get(), 0);
+        assert_eq!(last_parent_ext.replies_count, 0);
         assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
 
         let last_comment = Posts::post_by_id(last_comment_id).unwrap();
         let PostExtension::Comment(last_comment_ext) =
             last_comment.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_comment_ext.replies_count.get(), 0);
+        assert_eq!(last_comment_ext.replies_count, 0);
         assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
 
         let PostExtension::Post(root_post_ext) =
             Posts::post_by_id(last_comment_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
 
-        assert_eq!(root_post_ext.total_replies_count.get(), MaxCommentDepth::get() - 1);
+        assert_eq!(root_post_ext.total_replies_count, MaxCommentDepth::get() - 1);
     });
 }
 

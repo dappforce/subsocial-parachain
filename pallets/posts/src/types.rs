@@ -1,7 +1,7 @@
 use super::*;
-use sp_runtime::traits::Saturating;
 
 pub const FIRST_POST_ID: u64 = 1;
+pub type RepliesCount = u32;
 
 /// Information about a post's owner, its' related space, content, and visibility.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -67,7 +67,7 @@ pub struct RegularPost {
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SharingPost {
-    /// Total visible replies count for this post.
+    /// Total visible replies count for this sharing post.
     pub total_replies_count: RepliesCount,
     /// If this post is sharing another post, then the [original_post_id] is specified.
     pub original_post_id: PostId,
@@ -85,40 +85,5 @@ pub struct Comment {
 impl Default for PostExtension {
     fn default() -> Self {
         PostExtension::Post(Default::default())
-    }
-}
-
-// TODO: maybe re-use for Space's `posts_count` as well
-#[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct RepliesCount {
-    count: u32,
-}
-
-pub trait HasReplies {
-    fn get(&self) -> u32;
-
-    fn set(&mut self, new_value: u32);
-
-    fn inc(&mut self);
-
-    fn dec(&mut self);
-}
-
-impl HasReplies for RepliesCount {
-    fn get(&self) -> u32 {
-        self.count
-    }
-
-    fn set(&mut self, new_value: u32) {
-        self.count = new_value;
-    }
-
-    fn inc(&mut self) {
-        self.count.saturating_inc();
-    }
-
-    fn dec(&mut self) {
-        self.count.saturating_dec();
     }
 }

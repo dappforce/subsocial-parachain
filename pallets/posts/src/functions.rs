@@ -1,4 +1,5 @@
 use frame_support::dispatch::DispatchResult;
+use sp_runtime::traits::Saturating;
 
 use subsocial_support::{remove_from_vec, SpaceId};
 
@@ -107,17 +108,17 @@ impl<T: Config> Post<T> {
 
     pub fn inc_replies(&mut self) {
         match &mut self.extension {
-            PostExtension::Post(ext) => ext.total_replies_count.inc(),
-            PostExtension::SharingPost(ext) => ext.total_replies_count.inc(),
-            PostExtension::Comment(ext) => ext.replies_count.inc(),
+            PostExtension::Post(ext) => ext.total_replies_count.saturating_inc(),
+            PostExtension::SharingPost(ext) => ext.total_replies_count.saturating_inc(),
+            PostExtension::Comment(ext) => ext.replies_count.saturating_inc(),
         }
     }
 
     pub fn dec_replies(&mut self) {
         match &mut self.extension {
-            PostExtension::Post(ext) => ext.total_replies_count.dec(),
-            PostExtension::SharingPost(ext) => ext.total_replies_count.dec(),
-            PostExtension::Comment(ext) => ext.replies_count.dec(),
+            PostExtension::Post(ext) => ext.total_replies_count.saturating_dec(),
+            PostExtension::SharingPost(ext) => ext.total_replies_count.saturating_dec(),
+            PostExtension::Comment(ext) => ext.replies_count.saturating_dec(),
         }
     }
 
@@ -283,10 +284,8 @@ impl<T: Config> Pallet<T> {
         })
     }
 
-    pub fn get_post_replies_count(post_id: PostId) -> RepliesCount {
-        let mut replies_count = RepliesCount::default();
-        replies_count.set(Self::get_nested_replies(Self::reply_ids_by_post_id(post_id)));
-        replies_count
+    pub fn get_post_replies_count_by_id(post_id: PostId) -> RepliesCount {
+        Self::get_nested_replies(Self::reply_ids_by_post_id(post_id))
     }
 
     pub(crate) fn create_comment(
@@ -356,7 +355,7 @@ impl<T: Config> Pallet<T> {
                 f(&mut space.posts_count);
             }
         })
-            .map(|_| ())
+        .map(|_| ())
     }
 
     pub(crate) fn move_post_to_space(
@@ -419,7 +418,7 @@ impl<T: Config> Pallet<T> {
         let mut post = Self::require_post(post_id)?;
 
         if let PostExtension::Comment(comment_ext) = post.extension {
-            let comment_total_replies = Self::get_post_replies_count(post_id);
+            let comment_total_replies = Self::get_post_replies_count_by_id(post_id);
             post.extension =
                 PostExtension::Post(RegularPost { total_replies_count: comment_total_replies });
 
@@ -437,10 +436,8 @@ impl<T: Config> Pallet<T> {
             }
 
             if let PostExtension::Post(post_ext) = &mut root_post.extension {
-                let replies_count = post_ext.total_replies_count.get();
-                post_ext
-                    .total_replies_count
-                    .set(replies_count.saturating_sub(comment_total_replies.get()));
+                post_ext.total_replies_count =
+                    post_ext.total_replies_count.saturating_sub(comment_total_replies);
             }
 
             PostById::insert(root_post.id, root_post);
@@ -472,24 +469,23 @@ impl<T: Config> Pallet<T> {
         let root_post = &mut Self::require_post(comment_ext.root_post_id)?;
         let parent_comment_id: PostId = comment_ext.parent_id.unwrap_or_default();
 
-        let mut update_replies: fn(&mut RepliesCount) = RepliesCount::inc;
+        let mut update_replies: fn(&mut Post<T>) = Post::inc_replies;
         if becomes_hidden {
-            update_replies = RepliesCount::dec;
+            update_replies = Post::dec_replies;
         }
 
         // TODO: refactor this: doesn't look in the best way possible, but it works.
         if let Ok(parent_comment) = &mut Self::require_post(parent_comment_id) {
-            if let PostExtension::Comment(parent_comment_ext) = &mut parent_comment.extension {
-                update_replies(&mut parent_comment_ext.replies_count);
+            if parent_comment.is_comment() {
+                update_replies(parent_comment);
+                PostById::<T>::insert(parent_comment_id, parent_comment);
             }
-            PostById::<T>::insert(parent_comment_id, parent_comment);
         }
 
-        if let PostExtension::Post(info) = &mut root_post.extension {
-            update_replies(&mut info.total_replies_count);
+        if root_post.is_root_post() {
+            update_replies(root_post);
+            PostById::<T>::insert(root_post.id, root_post);
         }
-
-        PostById::insert(root_post.id, root_post);
 
         Ok(())
     }

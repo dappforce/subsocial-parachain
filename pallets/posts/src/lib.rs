@@ -14,13 +14,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     ensure, fail,
     traits::Get,
 };
 use frame_system::ensure_signed;
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
