@@ -45,6 +45,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use pallet_permissions::SpacePermissionsInfoOf;
+    use subsocial_support::WhoAndWhen;
 
     #[pallet::config]
     pub trait Config:
@@ -98,7 +99,7 @@ pub mod pallet {
         RoleCreated(T::AccountId, SpaceId, RoleId),
         RoleUpdated(T::AccountId, RoleId),
         RoleDeleted(T::AccountId, RoleId),
-        RoleGranted(T::AccountId, RoleId, Vec<User<T::AccountId>>),
+        RoleGranted(Option<T::AccountId>, RoleId, Vec<User<T::AccountId>>),
         RoleRevoked(T::AccountId, RoleId, Vec<User<T::AccountId>>),
     }
 
@@ -361,7 +362,7 @@ pub mod pallet {
             }
 
             Self::deposit_event(Event::RoleGranted(
-                who,
+                Some(who),
                 role_id,
                 users_set.iter().cloned().collect(),
             ));
@@ -388,6 +389,97 @@ pub mod pallet {
 
             Self::deposit_event(Event::RoleRevoked(who, role_id, users));
             Ok(())
+        }
+
+        #[pallet::weight((
+            25_000 + T::DbWeight::get().reads_writes(1, 2),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_create_role(
+            origin: OriginFor<T>,
+            created: WhoAndWhenOf<T>,
+            role_id: RoleId,
+            space_id: SpaceId,
+            disabled: bool,
+            content: Content,
+            permissions: SpacePermissionSet,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            let WhoAndWhen { account, time, .. } = created;
+            let new_who_and_when = WhoAndWhen {
+                account: account.clone(),
+                block: frame_system::Pallet::<T>::block_number(),
+                time
+            };
+
+            let new_role = Role::<T> {
+                created: new_who_and_when,
+                id: role_id,
+                space_id,
+                disabled,
+                expires_at: None,
+                content,
+                permissions,
+            };
+
+            RoleById::<T>::insert(role_id, new_role);
+            RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(role_id));
+
+            Self::deposit_event(Event::RoleCreated(account, space_id, role_id));
+
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_grant_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            users: Vec<User<T::AccountId>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            let users_set: BTreeSet<User<T::AccountId>> =
+                convert_users_vec_to_btree_set(users)?;
+
+            let space_id = Self::require_role(role_id)?.space_id;
+
+            for user in users_set.iter().cloned() {
+                <RoleIdsByUserInSpace<T>>::mutate(&user, space_id, |roles| {
+                    roles.push(role_id);
+                });
+                <UsersByRoleId<T>>::mutate(role_id, |users_set| {
+                    users_set.push(user);
+                });
+            }
+
+            Self::deposit_event(Event::RoleGranted(
+                None,
+                role_id,
+                users_set.iter().cloned().collect(),
+            ));
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_next_role_id(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            NextRoleId::<T>::put(role_id);
+
+            Ok(Pays::No.into())
         }
     }
 }
