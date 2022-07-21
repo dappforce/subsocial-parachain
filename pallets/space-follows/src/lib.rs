@@ -59,7 +59,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn spaces_followed_by_account)]
     pub type SpacesFollowedByAccount<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, Vec<SpaceId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, Vec<SpaceId>, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]

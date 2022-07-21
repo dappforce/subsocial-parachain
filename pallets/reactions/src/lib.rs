@@ -91,7 +91,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn post_reaction_id_by_account)]
     pub type PostReactionIdByAccount<T: Config> =
-        StorageMap<_, Twox64Concat, (T::AccountId, PostId), ReactionId, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, (T::AccountId, PostId), ReactionId, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
