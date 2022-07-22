@@ -60,7 +60,7 @@ pub mod pallet {
         pub fn set_space_as_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::try_set_space_as_profile(&sender, space_id)?;
+            Self::try_set_profile(&sender, space_id)?;
 
             Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
             Ok(())
@@ -74,7 +74,7 @@ pub mod pallet {
             let space_id =
                 Self::profile_space_id_by_account(&sender).ok_or(Error::<T>::NoSpaceSetAsProfile)?;
 
-            Self::try_unset_space_as_profile(&sender, space_id)?;
+            Self::try_reset_profile(&sender, space_id)?;
 
             Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
             Ok(())
@@ -83,7 +83,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         // FIXME: cover with tests
-        pub fn try_set_space_as_profile(
+        pub fn try_set_profile(
             account: &T::AccountId,
             space_id: SpaceId,
         ) -> DispatchResult {
@@ -94,7 +94,7 @@ pub mod pallet {
         }
 
         // FIXME: cover with tests
-        pub fn try_unset_space_as_profile(
+        pub fn try_reset_profile(
             account: &T::AccountId,
             space_id: SpaceId,
         ) -> DispatchResult {
@@ -114,12 +114,12 @@ pub mod pallet {
             Self::profile_space_id_by_account(account)
         }
 
-        fn try_set_space_as_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::try_set_space_as_profile(account, space_id)
+        fn try_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+            Self::try_set_profile(account, space_id)
         }
 
-        fn try_unset_space_as_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::try_unset_space_as_profile(account, space_id)
+        fn try_reset_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+            Self::try_reset_profile(account, space_id)
         }
     }
 }

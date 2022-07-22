@@ -116,7 +116,7 @@ pub mod pallet {
             SpaceById::<T>::insert(space_id, space);
 
             // FIXME: cover with tests
-            let _ = T::ProfileManager::try_unset_space_as_profile(&old_owner, space_id);
+            let _ = T::ProfileManager::try_reset_profile(&old_owner, space_id);
 
             // Remove space id from the list of spaces by old owner
             SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {
