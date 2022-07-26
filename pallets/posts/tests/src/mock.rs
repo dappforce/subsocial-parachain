@@ -7,8 +7,7 @@ use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{DispatchError, testing::Header, traits::{BlakeTwo256, IdentityLookup}};
 use sp_std::convert::{TryInto, TryFrom};
-use df_traits::{PermissionChecker, SpaceFollowsProvider};
-use pallet_parachain_utils::{SpaceId, User};
+use subsocial_support::{SpaceId, User};
 use pallet_permissions::{SpacePermission, SpacePermissionsContext};
 use crate::tests_utils::*;
 
@@ -26,7 +25,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances,
         Permissions: pallet_permissions,
         Roles: pallet_roles,
-        Profiles: pallet_profiles::{Pallet, Call, Storage},
+        Profiles: pallet_profiles,
         SpaceFollows: pallet_space_follows,
         Posts: pallet_posts,
         Reactions: pallet_reactions,
@@ -122,13 +121,16 @@ parameter_types! {
 impl pallet_roles::Config for Test {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    type Spaces = Spaces;
+    type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
 }
 
-impl pallet_profiles::Config for Test {}
+impl pallet_profiles::Config for Test {
+    type Event = Event;
+    type SpacePermissionsProvider = Spaces;
+}
 
 
 impl pallet_spaces::Config for Test {
@@ -139,14 +141,11 @@ impl pallet_spaces::Config for Test {
     type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
-    type MaxHandleLen = ConstU32<50>;
     type MaxSpacesPerAccount = ConstU32<100>;
 }
 
 impl pallet_space_follows::Config for Test {
     type Event = Event;
-    type BeforeSpaceFollowed = ();
-    type BeforeSpaceUnfollowed = ();
 }
 
 impl pallet_reactions::Config for Test {

@@ -3,9 +3,14 @@ use frame_support::{assert_noop, assert_ok};
 use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
 use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate, SpacesSettings};
-use pallet_parachain_utils::{
-    mock_functions::*, Content, Error as UtilsError, PostId, SpaceId, User,
+use pallet_spaces::types::{SpaceUpdate};
+use subsocial_support::{
+    mock_functions::*,
+    ContentError,
+    ModerationError,
+    PostId,
+    SpaceId,
+    User,
 };
 
 use crate::mock::*;

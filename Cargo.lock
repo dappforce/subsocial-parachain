@@ -5671,40 +5671,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-permissions"
-version = "0.1.5"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-parachain-utils",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-posts"
-version = "0.1.5"
-dependencies = [
- "df-traits",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-parachain-utils",
- "pallet-permissions",
- "pallet-space-follows",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -5813,26 +5779,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "subsocial-support",
-]
-
-[[package]]
-name = "pallet-roles"
-version = "0.1.5"
-dependencies = [
- "df-traits",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-parachain-utils",
- "pallet-permissions",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -5948,12 +5894,10 @@ dependencies = [
 name = "pallet-spaces-tests"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
@@ -5968,52 +5912,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-space-follows"
-version = "0.1.5"
-dependencies = [
- "df-traits",
- "frame-support",
- "frame-system",
- "pallet-parachain-utils",
- "pallet-profiles",
- "pallet-spaces",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-space-ownership"
-version = "0.1.5"
-dependencies = [
- "df-traits",
- "frame-support",
- "frame-system",
- "pallet-parachain-utils",
- "pallet-spaces",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-spaces"
-version = "0.1.5"
-dependencies = [
- "df-traits",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-parachain-utils",
- "pallet-permissions",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -10897,7 +10796,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "df-traits",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
