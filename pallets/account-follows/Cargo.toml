@@ -1,12 +1,12 @@
 [package]
-name = 'pallet-profile-follows'
+name = 'pallet-account-follows'
 version = '0.1.7'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
-description = 'Pallet to follow/unfollow accounts (profiles)'
+description = 'Pallet to follow/unfollow accounts'
 keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
 categories = ['cryptography::cryptocurrencies']
 
