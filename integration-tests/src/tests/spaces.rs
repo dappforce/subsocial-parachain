@@ -98,7 +98,6 @@ fn create_space_should_work() {
         assert_eq!(space.content, space_content_ipfs());
 
         assert_eq!(space.posts_count, 0);
-        assert_eq!(space.followers_count, 1);
 
         // // Check that the handle deposit has been reserved:
         // let reserved_balance = Balances::reserved_balance(ACCOUNT1);

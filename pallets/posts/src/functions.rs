@@ -386,9 +386,8 @@ impl<T: Config> Pallet<T> {
         mut f: F,
     ) -> DispatchResult {
         Spaces::<T>::mutate_space_by_id(space_id, |space: &mut Space<T>| {
-            f(&mut space.posts_count);
-            if post.hidden {
-                f(&mut space.hidden_posts_count);
+            if !post.hidden {
+                f(&mut space.posts_count);
             }
         })
         .map(|_| ())

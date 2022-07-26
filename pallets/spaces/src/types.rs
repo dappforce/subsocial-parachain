@@ -31,14 +31,8 @@ pub struct Space<T: Config> {
     /// space and its' posts should not be shown.
     pub hidden: bool,
 
-    /// The total number of posts in a given space.
+    /// The total number of visible posts in a given space.
     pub posts_count: u32,
-
-    /// The number of hidden posts in a given space.
-    pub hidden_posts_count: u32,
-
-    /// The number of account following a given space.
-    pub followers_count: u32,
 
     /// This allows you to override Subsocial's default permissions by enabling or disabling role
     /// permissions.
@@ -70,8 +64,6 @@ impl<T: Config> Space<T> {
             content,
             hidden: false,
             posts_count: 0,
-            hidden_posts_count: 0,
-            followers_count: 0,
             permissions,
         }
     }
@@ -95,22 +87,6 @@ impl<T: Config> Space<T> {
 
     pub fn dec_posts(&mut self) {
         self.posts_count = self.posts_count.saturating_sub(1);
-    }
-
-    pub fn inc_hidden_posts(&mut self) {
-        self.hidden_posts_count = self.hidden_posts_count.saturating_add(1);
-    }
-
-    pub fn dec_hidden_posts(&mut self) {
-        self.hidden_posts_count = self.hidden_posts_count.saturating_sub(1);
-    }
-
-    pub fn inc_followers(&mut self) {
-        self.followers_count = self.followers_count.saturating_add(1);
-    }
-
-    pub fn dec_followers(&mut self) {
-        self.followers_count = self.followers_count.saturating_sub(1);
     }
 
     pub fn try_get_parent(&self) -> Result<SpaceId, DispatchError> {

@@ -326,9 +326,9 @@ pub mod pallet {
                 if hidden != post.hidden {
                     space_opt = space_opt.map(|mut space| {
                         if hidden {
-                            space.inc_hidden_posts();
+                            space.dec_posts();
                         } else {
-                            space.dec_hidden_posts();
+                            space.inc_posts();
                         }
 
                         space

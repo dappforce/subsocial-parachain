@@ -237,15 +237,6 @@ fn check_if_post_moved_correctly(
     // Check that stats on the old space have been decreased
     let old_space = Spaces::space_by_id(old_space_id).unwrap();
     assert_eq!(old_space.posts_count, 0);
-    assert_eq!(old_space.hidden_posts_count, 0);
-
-    // Check that stats on the new space have been increased
-    let new_space = Spaces::space_by_id(new_space_id).unwrap();
-    assert_eq!(new_space.posts_count, 1);
-    assert_eq!(
-        new_space.hidden_posts_count,
-        if post.hidden { 1 } else { 0 }
-    );
 }
 
 #[test]
@@ -257,6 +248,9 @@ fn move_post_should_work() {
         let old_space_id = SPACE1;
         let expected_new_space_id = SPACE2;
         check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
+
+        // Check that stats on the new space have been increased
+        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 1);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
@@ -280,6 +274,9 @@ fn move_post_should_work_when_space_id_none() {
         assert_ok!(_move_post_1_to_space_2());
 
         check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
+
+        // Check that stats on the new space have been increased
+        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 1);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
@@ -309,6 +306,9 @@ fn move_hidden_post_should_work() {
         assert_ok!(_move_post_1_to_space_2());
 
         check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
+
+        // Check that stats on the new space haven't changed
+        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 0);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());

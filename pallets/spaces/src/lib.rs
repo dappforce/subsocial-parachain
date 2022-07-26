@@ -30,7 +30,6 @@ use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{
     traits::SpaceFollowsProvider, Content, SpaceId, new_who_and_when,
 };
-use sp_std::vec::Vec;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -39,6 +38,8 @@ pub mod pallet {
 
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
+    use sp_std::vec::Vec;
 
     use pallet_permissions::{
         Pallet as Permissions, PermissionChecker, SpacePermissionsContext, SpacePermissionsInfoOf,
@@ -370,7 +371,7 @@ pub mod pallet {
             space_id: SpaceId,
             f: F,
         ) -> Result<Space<T>, DispatchError> {
-            <SpaceById<T>>::mutate(space_id, |space_opt| {
+            <SpaceById<T>>::try_mutate(space_id, |space_opt| {
                 if let Some(ref mut space) = space_opt.clone() {
                     f(space);
                     *space_opt = Some(space.clone());

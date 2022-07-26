@@ -13,7 +13,6 @@ fn follow_space_should_work() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_ok!(_default_follow_space()); // Follow SpaceId 1 by ACCOUNT2
 
-        assert_eq!(Spaces::space_by_id(SPACE1).unwrap().followers_count, 2);
         assert_eq!(
             SpaceFollows::spaces_followed_by_account(ACCOUNT2),
             vec![SPACE1]
@@ -74,7 +73,6 @@ fn unfollow_space_should_work() {
         // Follow SpaceId 1 by ACCOUNT2
         assert_ok!(_default_unfollow_space());
 
-        assert_eq!(Spaces::space_by_id(SPACE1).unwrap().followers_count, 1);
         assert!(SpaceFollows::spaces_followed_by_account(ACCOUNT2).is_empty());
         assert_eq!(SpaceFollows::space_followers(SPACE1), vec![ACCOUNT1]);
     });
