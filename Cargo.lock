@@ -5013,6 +5013,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-account-follows"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-profiles",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -10767,6 +10780,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
+ "pallet-account-follows",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",

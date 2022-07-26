@@ -587,6 +587,10 @@ impl pallet_space_ownership::Config for Runtime {
 	type ProfileManager = Profiles;
 }
 
+impl pallet_account_follows::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -628,12 +632,13 @@ construct_runtime!(
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
-		Profiles: pallet_profiles = 72,
-		SpaceFollows: pallet_space_follows = 73,
-		SpaceOwnership: pallet_space_ownership = 74,
-		Spaces: pallet_spaces = 75,
-		Posts: pallet_posts = 76,
-		Reactions: pallet_reactions = 77,
+		AccountFollows: pallet_account_follows = 72,
+		Profiles: pallet_profiles = 73,
+		SpaceFollows: pallet_space_follows = 74,
+		SpaceOwnership: pallet_space_ownership = 75,
+		Spaces: pallet_spaces = 76,
+		Posts: pallet_posts = 77,
+		Reactions: pallet_reactions = 78,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
