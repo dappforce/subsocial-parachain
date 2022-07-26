@@ -1,56 +1,51 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure,
-    dispatch::DispatchResult,
-    traits::Get
-};
-use sp_std::prelude::*;
-use frame_system::{self as system, ensure_signed};
+// pub mod rpc;
 
-use pallet_profiles::{Module as Profiles, SocialAccountById};
-use pallet_utils::remove_from_vec;
+#[frame_support::pallet]
+pub mod pallet {
+    use super::*;
+    use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
 
-pub mod rpc;
+    use subsocial_support::remove_from_vec;
 
-/// The pallet's configuration trait.
-pub trait Config: system::Config
-    + pallet_utils::Config
-    + pallet_profiles::Config
-{
-    /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
-
-    type BeforeAccountFollowed: BeforeAccountFollowed<Self>;
-
-    type BeforeAccountUnfollowed: BeforeAccountUnfollowed<Self>;
-}
-
-// This pallet's storage items.
-decl_storage! {
-    trait Store for Module<T: Config> as ProfileFollowsModule {
-        pub AccountFollowers get(fn account_followers):
-            map hasher(blake2_128_concat) T::AccountId => Vec<T::AccountId>;
-
-        pub AccountFollowedByAccount get(fn account_followed_by_account):
-            map hasher(blake2_128_concat) (T::AccountId, T::AccountId) => bool;
-
-        pub AccountsFollowedByAccount get(fn accounts_followed_by_account):
-            map hasher(blake2_128_concat) T::AccountId => Vec<T::AccountId>;
+    /// The pallet's configuration trait.
+    #[pallet::config]
+    pub trait Config: frame_system::Config {
+        /// The overarching event type.
+        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
-}
 
-decl_event!(
-    pub enum Event<T> where
-        <T as system::Config>::AccountId,
-    {
-        AccountFollowed(/* follower */ AccountId, /* following */ AccountId),
-        AccountUnfollowed(/* follower */ AccountId, /* unfollowing */ AccountId),
+    #[pallet::pallet]
+    #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
+
+    #[pallet::storage]
+    #[pallet::getter(fn account_followers)]
+    pub(super) type AccountFollowers<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn account_followed_by_account)]
+    pub(super) type AccountFollowedByAccount<T: Config> =
+        StorageMap<_, Blake2_128Concat, (T::AccountId, T::AccountId), bool, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn accounts_followed_by_account)]
+    pub(super) type AccountsFollowedByAccount<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        AccountFollowed { follower: T::AccountId, account: T::AccountId },
+        AccountUnfollowed { follower: T::AccountId, account: T::AccountId },
     }
-);
 
-decl_error! {
-    pub enum Error for Module<T: Config> {
+    #[pallet::error]
+    pub enum Error<T> {
         /// Follower social account was not found by id.
         FollowerAccountNotFound,
         /// Social account that is being followed was not found by id.
@@ -66,89 +61,49 @@ decl_error! {
         /// Account (Alice) is not a follower of another account (Bob).
         NotAccountFollower,
     }
-}
 
-decl_module! {
-  pub struct Module<T: Config> for enum Call where origin: T::Origin {
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        pub fn follow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+            let follower = ensure_signed(origin)?;
 
-    // Initializing errors
-    type Error = Error<T>;
+            ensure!(follower != account, Error::<T>::AccountCannotFollowItself);
+            ensure!(
+                !<AccountFollowedByAccount<T>>::contains_key((follower.clone(), account.clone())),
+                Error::<T>::AlreadyAccountFollower
+            );
 
-    // Initializing events
-    fn deposit_event() = default;
+            AccountsFollowedByAccount::<T>::mutate(follower.clone(), |ids| {
+                ids.push(account.clone())
+            });
+            AccountFollowers::<T>::mutate(account.clone(), |ids| ids.push(follower.clone()));
+            AccountFollowedByAccount::<T>::insert((follower.clone(), account.clone()), true);
 
-    #[weight = 10_000 + T::DbWeight::get().reads_writes(4, 4)]
-    pub fn follow_account(origin, account: T::AccountId) -> DispatchResult {
-      let follower = ensure_signed(origin)?;
+            Self::deposit_event(Event::AccountFollowed { follower, account });
+            Ok(())
+        }
 
-      ensure!(follower != account, Error::<T>::AccountCannotFollowItself);
-      ensure!(!<AccountFollowedByAccount<T>>::contains_key((follower.clone(), account.clone())),
-        Error::<T>::AlreadyAccountFollower);
+        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        pub fn unfollow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+            let follower = ensure_signed(origin)?;
 
-      let mut follower_account = Profiles::get_or_new_social_account(follower.clone());
-      let mut followed_account = Profiles::get_or_new_social_account(account.clone());
+            ensure!(follower != account, Error::<T>::AccountCannotUnfollowItself);
+            ensure!(
+                <AccountFollowedByAccount<T>>::contains_key((follower.clone(), account.clone())),
+                Error::<T>::NotAccountFollower
+            );
 
-      follower_account.inc_following_accounts();
-      followed_account.inc_followers();
+            AccountsFollowedByAccount::<T>::mutate(follower.clone(), |account_ids| {
+                remove_from_vec(account_ids, account.clone())
+            });
+            AccountFollowers::<T>::mutate(account.clone(), |account_ids| {
+                remove_from_vec(account_ids, follower.clone())
+            });
+            AccountFollowedByAccount::<T>::remove((follower.clone(), account.clone()));
 
-      T::BeforeAccountFollowed::before_account_followed(
-        follower.clone(), follower_account.reputation, account.clone())?;
-
-      <SocialAccountById<T>>::insert(follower.clone(), follower_account);
-      <SocialAccountById<T>>::insert(account.clone(), followed_account);
-      <AccountsFollowedByAccount<T>>::mutate(follower.clone(), |ids| ids.push(account.clone()));
-      <AccountFollowers<T>>::mutate(account.clone(), |ids| ids.push(follower.clone()));
-      <AccountFollowedByAccount<T>>::insert((follower.clone(), account.clone()), true);
-
-      Self::deposit_event(RawEvent::AccountFollowed(follower, account));
-      Ok(())
-    }
-
-    #[weight = 10_000 + T::DbWeight::get().reads_writes(4, 4)]
-    pub fn unfollow_account(origin, account: T::AccountId) -> DispatchResult {
-      let follower = ensure_signed(origin)?;
-
-      ensure!(follower != account, Error::<T>::AccountCannotUnfollowItself);
-      ensure!(<AccountFollowedByAccount<T>>::contains_key((follower.clone(), account.clone())), Error::<T>::NotAccountFollower);
-
-      let mut follower_account = Profiles::social_account_by_id(follower.clone()).ok_or(Error::<T>::FollowerAccountNotFound)?;
-      let mut followed_account = Profiles::social_account_by_id(account.clone()).ok_or(Error::<T>::FollowedAccountNotFound)?;
-
-      follower_account.dec_following_accounts();
-      followed_account.dec_followers();
-
-      T::BeforeAccountUnfollowed::before_account_unfollowed(follower.clone(), account.clone())?;
-
-      <SocialAccountById<T>>::insert(follower.clone(), follower_account);
-      <SocialAccountById<T>>::insert(account.clone(), followed_account);
-      <AccountsFollowedByAccount<T>>::mutate(follower.clone(), |account_ids| remove_from_vec(account_ids, account.clone()));
-      <AccountFollowers<T>>::mutate(account.clone(), |account_ids| remove_from_vec(account_ids, follower.clone()));
-      <AccountFollowedByAccount<T>>::remove((follower.clone(), account.clone()));
-
-      Self::deposit_event(RawEvent::AccountUnfollowed(follower, account));
-      Ok(())
-    }
-  }
-}
-
-/// Handler that will be called right before the account is followed.
-pub trait BeforeAccountFollowed<T: Config> {
-    fn before_account_followed(follower: T::AccountId, follower_reputation: u32, following: T::AccountId) -> DispatchResult;
-}
-
-impl<T: Config> BeforeAccountFollowed<T> for () {
-    fn before_account_followed(_follower: T::AccountId, _follower_reputation: u32, _following: T::AccountId) -> DispatchResult {
-        Ok(())
-    }
-}
-
-/// Handler that will be called right before the account is unfollowed.
-pub trait BeforeAccountUnfollowed<T: Config> {
-    fn before_account_unfollowed(follower: T::AccountId, following: T::AccountId) -> DispatchResult;
-}
-
-impl<T: Config> BeforeAccountUnfollowed<T> for () {
-    fn before_account_unfollowed(_follower: T::AccountId, _following: T::AccountId) -> DispatchResult {
-        Ok(())
+            Self::deposit_event(Event::AccountUnfollowed { follower, account });
+            Ok(())
+        }
     }
 }
