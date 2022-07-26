@@ -391,13 +391,19 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> SpacePermissionsProvider<SpacePermissionsInfoOf<T>> for Pallet<T> {
+    impl<T: Config> SpacePermissionsProvider<T::AccountId, SpacePermissionsInfoOf<T>> for Pallet<T> {
         fn space_permissions_info(
             id: SpaceId,
         ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;
 
             Ok(SpacePermissionsInfo { owner: space.owner, permissions: space.permissions })
+        }
+
+        fn ensure_space_owner(id: SpaceId, account: &T::AccountId) -> DispatchResult {
+            let space = Pallet::<T>::require_space(id)?;
+            ensure!(space.is_owner(account), Error::<T>::NotASpaceOwner);
+            Ok(())
         }
     }
 

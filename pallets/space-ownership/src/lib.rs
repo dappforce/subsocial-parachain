@@ -16,9 +16,13 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
+    use subsocial_support::traits::ProfileManager;
+
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type ProfileManager: ProfileManager<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -110,6 +114,9 @@ pub mod pallet {
             let old_owner = space.owner;
             space.owner = new_owner.clone();
             SpaceById::<T>::insert(space_id, space);
+
+            // FIXME: cover with tests
+            let _ = T::ProfileManager::try_reset_profile(&old_owner, space_id);
 
             // Remove space id from the list of spaces by old owner
             SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {

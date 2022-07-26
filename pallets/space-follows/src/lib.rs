@@ -4,7 +4,6 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use pallet_profiles::{Pallet as Profiles, SocialAccountById};
 use pallet_spaces::{BeforeSpaceCreated, Pallet as Spaces, types::Space, SpaceById};
 
 // pub mod rpc;
@@ -25,7 +24,6 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config
         + pallet_spaces::Config
-        + pallet_profiles::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -142,12 +140,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         fn add_space_follower(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult {
-            use frame_support::StorageMap;
-
             space.inc_followers();
-
-            let mut social_account = Profiles::<T>::get_or_new_social_account(follower.clone());
-            social_account.inc_following_spaces();
 
             T::BeforeSpaceFollowed::before_space_followed(
                 follower.clone(),
@@ -160,7 +153,6 @@ pub mod pallet {
             SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
                 space_ids.push(space_id)
             });
-            SocialAccountById::<T>::insert(follower.clone(), social_account);
 
             Self::deposit_event(Event::SpaceFollowed(follower, space_id));
 
@@ -168,14 +160,8 @@ pub mod pallet {
         }
 
         pub fn unfollow_space_by_account(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
-            use frame_support::StorageMap;
-
             let space = &mut Spaces::require_space(space_id)?;
             space.dec_followers();
-
-            let mut social_account = Profiles::<T>::social_account_by_id(follower.clone())
-                .ok_or(Error::<T>::SocialAccountNotFound)?;
-            social_account.dec_following_spaces();
 
             T::BeforeSpaceUnfollowed::before_space_unfollowed(follower.clone(), space)?;
 
@@ -186,8 +172,6 @@ pub mod pallet {
                 remove_from_vec(account_ids, follower.clone())
             });
             SpaceFollowedByAccount::<T>::remove((follower.clone(), space_id));
-            SocialAccountById::<T>::insert(follower.clone(), social_account);
-            SpaceById::<T>::insert(space_id, space);
 
             Self::deposit_event(Event::SpaceUnfollowed(follower, space_id));
             Ok(())

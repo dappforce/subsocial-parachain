@@ -18,7 +18,6 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'sp-std/std',
-    'pallet-profiles/std',
     'pallet-spaces/std',
     'subsocial-support/std',
 ]
@@ -28,7 +27,6 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Local depenpdencies
-pallet-profiles = { default-features = false, path = '../profiles' }
 pallet-spaces = { default-features = false, path = '../spaces' }
 subsocial-support = { default-features = false, path = '../support' }
 

@@ -545,7 +545,10 @@ impl pallet_reactions::Config for Runtime {
 	type Event = Event;
 }
 
-impl pallet_profiles::Config for Runtime {}
+impl pallet_profiles::Config for Runtime {
+	type Event = Event;
+	type SpacePermissionsProvider = Spaces;
+}
 
 parameter_types! {
   pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
@@ -583,6 +586,7 @@ impl pallet_spaces::Config for Runtime {
 
 impl pallet_space_ownership::Config for Runtime {
 	type Event = Event;
+	type ProfileManager = Profiles;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -626,7 +630,7 @@ construct_runtime!(
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
-		Profiles: pallet_profiles::{Pallet, Storage} = 72,
+		Profiles: pallet_profiles = 72,
 		SpaceFollows: pallet_space_follows = 73,
 		SpaceOwnership: pallet_space_ownership = 74,
 		Spaces: pallet_spaces = 75,

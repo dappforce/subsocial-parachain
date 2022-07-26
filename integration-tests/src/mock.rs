@@ -123,7 +123,10 @@ impl pallet_posts::Config for TestRuntime {
     type IsPostBlocked = MockModeration;
 }
 
-impl pallet_profiles::Config for TestRuntime {}
+impl pallet_profiles::Config for TestRuntime {
+    type Event = Event;
+    type SpacePermissionsProvider = Spaces;
+}
 
 impl pallet_reactions::Config for TestRuntime {
     type Event = Event;
@@ -150,6 +153,7 @@ impl pallet_space_follows::Config for TestRuntime {
 
 impl pallet_space_ownership::Config for TestRuntime {
     type Event = Event;
+    type ProfileManager = Profiles;
 }
 
 impl pallet_spaces::Config for TestRuntime {
