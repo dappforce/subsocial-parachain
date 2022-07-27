@@ -253,31 +253,6 @@ impl<T: Config> Pallet<T> {
         ancestors
     }
 
-    pub fn try_get_post_replies(post_id: PostId) -> Vec<Post<T>> {
-        let mut replies: Vec<Post<T>> = Vec::new();
-
-        if let Some(post) = Self::post_by_id(post_id) {
-            replies.push(post);
-            for reply_id in Self::reply_ids_by_post_id(post_id).iter() {
-                replies.extend(Self::try_get_post_replies(*reply_id).iter().cloned());
-            }
-        }
-
-        replies
-    }
-
-    /// Recursively get all nested post replies (reply_ids_by_post_id)
-    pub fn get_post_replies(post_id: PostId) -> Result<Vec<Post<T>>, DispatchError> {
-        let reply_ids = Self::reply_ids_by_post_id(post_id);
-        ensure!(!reply_ids.is_empty(), Error::<T>::NoRepliesOnPost);
-
-        let mut replies: Vec<Post<T>> = Vec::new();
-        for reply_id in reply_ids.iter() {
-            replies.extend(Self::try_get_post_replies(*reply_id));
-        }
-        Ok(replies)
-    }
-
     fn get_nested_replies(reply_ids: Vec<PostId>) -> u32 {
         reply_ids.iter().fold(0, |acc, reply_id| {
             acc + Self::get_nested_replies(Self::reply_ids_by_post_id(*reply_id))
