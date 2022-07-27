@@ -192,13 +192,17 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
         let first_comment_id = 2;
         let last_comment_id = first_comment_id + (MaxCommentDepth::get() as PostId) - 1;
 
+        // Create comments from 3 to 11
         for parent_id in first_comment_id..last_comment_id {
             assert_ok!(_create_comment(None, None, Some(Some(parent_id)), None));
         }
 
+        let should_hide_id = last_comment_id - 3;
+        let should_hide_by_one_id = should_hide_id - 1;
+
         assert_ok!(_update_comment(
             None,
-            Some(last_comment_id),
+            Some(should_hide_id),
             Some(post_update(
                 None,
                 None,
@@ -206,12 +210,9 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             ))
         ));
 
-        let parent_id = last_comment_id - 1;
-        let parent_id_by_one = parent_id - 1;
-
         // We should check that counters weren't increased for all ancestor comments
-        // except the last parent.
-        for comment_id in first_comment_id..parent_id_by_one {
+        // except the last before hidden.
+        for comment_id in first_comment_id..should_hide_by_one_id {
             let comment = Posts::post_by_id(comment_id).unwrap();
             let PostExtension::Comment(comment_ext) =
                 comment.extension else { panic!("qed; not a comment") };
@@ -221,24 +222,25 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
 
-        let last_parent = Posts::post_by_id(parent_id).unwrap();
-        let PostExtension::Comment(last_parent_ext) =
-            last_parent.extension else { panic!("qed; not a comment") };
+        let should_hide_by_one = Posts::post_by_id(should_hide_by_one_id).unwrap();
+        let PostExtension::Comment(should_hide_by_one_ext) =
+            should_hide_by_one.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_parent_ext.direct_replies_count, 0);
-        assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
+        assert_eq!(should_hide_by_one_ext.direct_replies_count, 0);
+        assert!(Posts::reply_ids_by_post_id(should_hide_by_one_id).is_empty());
 
-        let last_comment = Posts::post_by_id(last_comment_id).unwrap();
-        let PostExtension::Comment(last_comment_ext) =
-            last_comment.extension else { panic!("qed; not a comment") };
+        let should_hide = Posts::post_by_id(should_hide_id).unwrap();
+        let PostExtension::Comment(should_hide_ext) =
+            should_hide.extension else { panic!("qed; not a comment") };
 
-        assert_eq!(last_comment_ext.direct_replies_count, 0);
-        assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
+        assert_eq!(should_hide_ext.direct_replies_count, 1);
+        assert_eq!(Posts::reply_ids_by_post_id(should_hide_id), vec![should_hide_id + 1]);
 
         let PostExtension::RegularPost(root_post_ext) =
-            Posts::post_by_id(last_comment_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
+            Posts::post_by_id(should_hide_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
 
-        assert_eq!(root_post_ext.total_replies_count, MaxCommentDepth::get() - 1);
+        let should_be_total = MaxCommentDepth::get() - (last_comment_id - should_hide_id) as u32;
+        assert_eq!(root_post_ext.total_replies_count, should_be_total);
     });
 }
 

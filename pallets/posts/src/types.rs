@@ -30,10 +30,10 @@ pub struct Post<T: Config> {
     pub hidden: bool,
 
     /// The number of times a given post has been upvoted.
-    pub upvotes_count: u16,
+    pub upvotes_count: u32,
 
     /// The number of times a given post has been downvoted.
-    pub downvotes_count: u16,
+    pub downvotes_count: u32,
 }
 
 #[derive(Encode, Decode, Default, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]

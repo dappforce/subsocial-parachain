@@ -253,8 +253,8 @@ impl<T: Config> Pallet<T> {
         ancestors
     }
 
-    fn get_nested_replies(reply_ids: Vec<PostId>) -> u32 {
-        reply_ids.iter().fold(0, |acc, reply_id| {
+    fn get_nested_replies(reply_ids: Vec<PostId>) -> RepliesCount {
+        reply_ids.iter().fold(reply_ids.len() as RepliesCount, |acc, reply_id| {
             acc + Self::get_nested_replies(Self::reply_ids_by_post_id(*reply_id))
         })
     }
@@ -438,27 +438,44 @@ impl<T: Config> Pallet<T> {
     /// Rewrite ancestor counters when Post hidden status changes
     /// Warning: This will affect storage state!
     pub(crate) fn update_counters_on_comment_hidden_change(
+        comment_id: PostId,
         comment_ext: &Comment,
         becomes_hidden: bool,
     ) -> DispatchResult {
-        let root_post = &mut Self::require_post(comment_ext.root_post_id)?;
+        let mut root_post = Self::require_post(comment_ext.root_post_id)?;
         let parent_comment_id: PostId = comment_ext.parent_id.unwrap_or_default();
-
-        let mut update_replies: fn(&mut Post<T>) = Post::inc_replies;
-        if becomes_hidden {
-            update_replies = Post::dec_replies;
-        }
 
         // TODO: refactor this: doesn't look in the best way possible, but it works.
         if let Ok(parent_comment) = &mut Self::require_post(parent_comment_id) {
             if parent_comment.is_comment() {
-                update_replies(parent_comment);
+                let update_counts =
+                    if becomes_hidden { Post::dec_replies } else { Post::inc_replies };
+
+                update_counts(parent_comment);
+
                 PostById::<T>::insert(parent_comment_id, parent_comment);
+                ReplyIdsByPostId::<T>::mutate(parent_comment_id, |reply_ids| {
+                    remove_from_vec(reply_ids, comment_id)
+                });
             }
         }
 
         if root_post.is_root_post() {
-            update_replies(root_post);
+            let comment_total_replies = Self::get_post_replies_count_by_id(comment_id);
+
+            let update_counts = if becomes_hidden {
+                Saturating::saturating_reduce
+            } else {
+                Saturating::saturating_accrue
+            };
+
+            match &mut root_post.extension {
+                PostExtension::RegularPost(ext) =>
+                    update_counts(&mut ext.total_replies_count, comment_total_replies),
+                PostExtension::SharedPost(ext) =>
+                    update_counts(&mut ext.total_replies_count, comment_total_replies),
+                _ => (),
+            }
             PostById::<T>::insert(root_post.id, root_post);
         }
 

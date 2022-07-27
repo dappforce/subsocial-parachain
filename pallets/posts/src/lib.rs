@@ -326,7 +326,7 @@ pub mod pallet {
                     });
 
                     if let PostExtension::Comment(comment_ext) = post.extension {
-                        Self::update_counters_on_comment_hidden_change(&comment_ext, hidden)?;
+                        Self::update_counters_on_comment_hidden_change(post.id, &comment_ext, hidden)?;
                     }
 
                     old_data.hidden = Some(post.hidden);
