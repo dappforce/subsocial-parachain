@@ -5865,12 +5865,10 @@ dependencies = [
 name = "pallet-space-follows-tests"
 version = "0.1.5"
 dependencies = [
- "df-traits",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
@@ -5885,6 +5883,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]

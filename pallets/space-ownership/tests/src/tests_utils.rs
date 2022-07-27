@@ -11,13 +11,12 @@ use pallet_permissions::{
     SpacePermissions,
     SpacePermission,
 };
-use pallet_spaces::types::{SpacesSettings, SpaceUpdate};
+use pallet_spaces::types::{SpaceUpdate};
 
-use df_traits::moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
-use pallet_parachain_utils::mock_functions::valid_content_ipfs;
-use pallet_parachain_utils::{Content, PostId, SpaceId, User};
+use subsocial_support::{mock_functions::*, ContentError, ModerationError, PostId, SpaceId, User, Content};
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
 use pallet_posts::{Comment, PostExtension, PostUpdate};
+use subsocial_support::traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
 
 use crate::mock::*;
 
@@ -102,13 +101,6 @@ impl ExtBuilder {
         ext
     }
 
-    // /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where BlockNumber is 1
-    // pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
-    //     let mut ext = Self::build_with_post_and_two_spaces();
-    //     ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
-    //     ext
-    // }
-
     /// Custom ext configuration with pending ownership transfer without Space
     pub fn build_with_pending_ownership_transfer_no_space() -> TestExternalities {
         let mut ext = Self::build_with_space();
@@ -160,15 +152,6 @@ impl ExtBuilder {
         ext.execute_with(|| Self::add_space_with_custom_permissions(permissions));
         ext
     }
-
-    /// Custom ext configuration with SpaceId 1, BlockNumber 1, and disable handles
-    pub fn build_with_space_then_disable_handles() -> TestExternalities {
-        let mut ext = Self::build_with_space();
-        ext.execute_with(|| {
-            assert_ok!(_update_space_settings_with_handles_disabled());
-        });
-        ext
-    }
 }
 
 ////// Consts
@@ -211,9 +194,8 @@ impl Hash for EntityId {
         match self {
             EntityId::Content(content) => match content {
                 Content::None => 0.hash(state),
-                Content::Raw(content) => content.hash(state),
+                Content::Other(content) => content.hash(state),
                 Content::IPFS(content) => content.hash(state),
-                Content::Hyper(content) => content.hash(state),
             },
             EntityId::Account(account) => account.hash(state),
             EntityId::Space(space) => space.hash(state),
@@ -345,21 +327,11 @@ pub(crate) fn space_update(
 ) -> SpaceUpdate {
     SpaceUpdate {
         parent_id: None,
-        handle,
         content,
         hidden,
         permissions: None,
     }
 }
-
-pub(crate) fn space_settings_with_handles_disabled() -> SpacesSettings {
-    SpacesSettings { handles_enabled: false }
-}
-
-pub(crate) fn space_settings_with_handles_enabled() -> SpacesSettings {
-    SpacesSettings { handles_enabled: true }
-}
-
 
 pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
     _create_space(None, None, None, None)
@@ -409,7 +381,6 @@ pub(crate) fn _create_space_with_parent_id(
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         parent_id_opt.unwrap_or_default(),
-        None,
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default()
     )
@@ -427,21 +398,6 @@ pub(crate) fn _update_space(
     )
 }
 
-pub(crate) fn _update_space_settings_with_handles_enabled() -> DispatchResultWithPostInfo {
-    _update_space_settings(None, Some(space_settings_with_handles_enabled()))
-}
-
-pub(crate) fn _update_space_settings_with_handles_disabled() -> DispatchResultWithPostInfo {
-    _update_space_settings(None, Some(space_settings_with_handles_disabled()))
-}
-
-/// Default origin is a root.
-pub(crate) fn _update_space_settings(origin: Option<Origin>, new_settings: Option<SpacesSettings>) -> DispatchResultWithPostInfo {
-    Spaces::update_settings(
-        origin.unwrap_or_else(Origin::root),
-        new_settings.unwrap_or_else(space_settings_with_handles_disabled)
-    )
-}
 
 ///////////// Post Utils
 
