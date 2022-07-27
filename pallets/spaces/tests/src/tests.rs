@@ -1,10 +1,10 @@
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 use sp_runtime::traits::Zero;
 
-use pallet_parachain_utils::Error as UtilsError;
 use pallet_spaces::Error as SpacesError;
 use pallet_permissions::SpacePermission as SP;
-use pallet_parachain_utils::mock_functions::*;
+use subsocial_support::mock_functions::*;
+use subsocial_support::{ContentError, ModerationError};
 
 use crate::mock::*;
 use crate::tests_utils::*;
@@ -21,7 +21,7 @@ fn create_subspace_should_fail_when_content_is_blocked() {
                 Some(valid_content_ipfs()),
                 None,
             ),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into())
+            DispatchError::from(ModerationError::ContentIsBlocked)
         );
     });
 }
@@ -39,7 +39,7 @@ fn create_subspace_should_fail_when_account_is_blocked() {
                 None,
                 None,
             ),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into())
+            DispatchError::from(ModerationError::AccountIsBlocked)
         );
     });
 }
@@ -54,7 +54,7 @@ fn update_space_should_fail_when_account_is_blocked() {
                 None,
                 Some(update_for_space_content(updated_space_content()))
             ),
-            DispatchError::Other(UtilsError::AccountIsBlocked.into())
+            DispatchError::from(ModerationError::AccountIsBlocked)
         );
     });
 }
@@ -69,7 +69,7 @@ fn update_space_should_fail_when_content_is_blocked() {
                 None,
                 Some(space_update(None, Some(valid_content_ipfs()), None))
             ),
-            DispatchError::Other(UtilsError::ContentIsBlocked.into())
+            DispatchError::from(ModerationError::ContentIsBlocked)
         );
     });
 }
@@ -96,7 +96,6 @@ fn create_space_should_work() {
         assert_eq!(space.content, space_content_ipfs());
 
         assert_eq!(space.posts_count, 0);
-        assert_eq!(space.followers_count, 1);
 
         // // Check that the handle deposit has been reserved:
         // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -184,7 +183,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -196,7 +195,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -208,7 +207,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -220,7 +219,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -243,7 +242,7 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
         // Try to catch an error creating a space with invalid content
         assert_noop!(
             _create_space(None, None, Some(invalid_content_ipfs()), None),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            DispatchError::from(ContentError::InvalidIpfsCid)
         );
     });
 }
@@ -251,7 +250,6 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
 #[test]
 fn update_space_should_work() {
     ExtBuilder::build_with_space().execute_with(|| {
-        let new_handle: Vec<u8> = b"new_handle".to_vec();
         let expected_content_ipfs = updated_space_content();
         // Space update with ID 1 should be fine
 
@@ -318,30 +316,6 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
 //         assert!(reserved_balance.is_zero());
 //     });
 // }
-
-#[test]
-fn should_update_space_content_when_handles_disabled() {
-    ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = update_for_space_content(updated_space_content());
-        assert_ok!(_update_space(None, None, Some(space_update)));
-    });
-}
-
-#[test]
-fn should_fail_to_update_space_handle_when_handles_disabled() {
-    ExtBuilder::build_with_space_then_disable_handles().execute_with(|| {
-        let space_update = space_update(
-            Some(b"Space_Handle".to_vec()).into(),
-            updated_space_content().into(),
-            None,
-        );
-
-        assert_noop!(
-            _update_space(None, None, Some(space_update)),
-            SpacesError::<Test>::HandlesAreDisabled
-        );
-    });
-}
 
 #[test]
 fn update_space_should_fail_when_no_updates_for_space_provided() {
@@ -414,7 +388,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -430,7 +404,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -446,7 +420,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
@@ -462,27 +436,10 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
+//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
 //         );
 //     });
 // }
-
-#[test]
-fn update_space_should_fail_when_handles_are_disabled() {
-    ExtBuilder::build_with_space().execute_with(|| {
-        assert_ok!(_update_space_settings_with_handles_disabled());
-        let space_update = space_update(
-            Some(b"Space_Handle".to_vec()).into(),
-            updated_space_content().into(),
-            None,
-        );
-
-        assert_noop!(
-            _update_space(None, None, Some(space_update)),
-            SpacesError::<Test>::HandlesAreDisabled
-        );
-    });
-}
 
 #[test]
 fn update_space_should_fail_when_ipfs_cid_is_invalid() {
@@ -494,7 +451,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
                 None,
                 Some(space_update(None, Some(invalid_content_ipfs()), None,))
             ),
-            DispatchError::Other(UtilsError::InvalidIpfsCid.into())
+            DispatchError::from(ContentError::InvalidIpfsCid)
         );
     });
 }
@@ -521,37 +478,6 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
             );
         },
     );
-}
-
-#[test]
-fn update_space_settings_should_work() {
-    ExtBuilder::build().execute_with(|| {
-        assert_ok!(_update_space_settings_with_handles_disabled());
-
-        let spaces_settings = Spaces::settings();
-        // Ensure that `handles_enabled` field is false
-        assert!(!spaces_settings.handles_enabled);
-    });
-}
-
-#[test]
-fn update_space_settings_should_fail_when_account_is_not_root() {
-    ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _update_space_settings(Some(Origin::signed(ACCOUNT1)), None),
-            DispatchError::BadOrigin
-        );
-    });
-}
-
-#[test]
-fn update_space_settings_should_fail_when_same_settings_provided() {
-    ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _update_space_settings_with_handles_enabled(),
-            SpacesError::<Test>::NoUpdatesForSpacesSettings
-        );
-    });
 }
 
 // TODO: refactor or remove. Deprecated tests
