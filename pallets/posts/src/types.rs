@@ -60,14 +60,14 @@ pub enum PostExtension {
 #[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct RegularPost {
-    /// Total visible replies count for this post.
+    /// A total count of visible replies to this post.
     pub total_replies_count: RepliesCount,
 }
 
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SharedPost {
-    /// Total count of visible replies to this shared post.
+    /// A total count of visible replies to this shared post.
     pub total_replies_count: RepliesCount,
     /// An id of the original post that this post is sharing.
     pub original_post_id: PostId,
@@ -78,7 +78,7 @@ pub struct SharedPost {
 pub struct Comment {
     pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
-    /// The number of direct visible replies for a given comment.
+    /// A count of direct visible replies to this comment.
     pub direct_replies_count: RepliesCount,
 }
 
