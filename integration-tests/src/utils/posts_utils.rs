@@ -39,7 +39,7 @@ pub(crate) fn extension_regular_post() -> PostExtension {
 }
 
 pub(crate) fn extension_comment(parent_id: Option<PostId>, root_post_id: PostId) -> PostExtension {
-    PostExtension::Comment(Comment { parent_id, root_post_id, replies_count: Default::default() })
+    PostExtension::Comment(Comment { parent_id, root_post_id, direct_replies_count: Default::default() })
 }
 
 pub(crate) fn extension_shared_post(post_id: PostId) -> PostExtension {

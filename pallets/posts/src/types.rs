@@ -79,7 +79,7 @@ pub struct Comment {
     pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
     /// The number of direct visible replies for a given comment.
-    pub replies_count: RepliesCount,
+    pub direct_replies_count: RepliesCount,
 }
 
 impl Default for PostExtension {

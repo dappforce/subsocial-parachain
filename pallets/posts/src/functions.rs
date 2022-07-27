@@ -110,7 +110,7 @@ impl<T: Config> Post<T> {
         match &mut self.extension {
             PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_inc(),
             PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_inc(),
-            PostExtension::Comment(ext) => ext.replies_count.saturating_inc(),
+            PostExtension::Comment(ext) => ext.direct_replies_count.saturating_inc(),
         }
     }
 
@@ -118,7 +118,7 @@ impl<T: Config> Post<T> {
         match &mut self.extension {
             PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_dec(),
             PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_dec(),
-            PostExtension::Comment(ext) => ext.replies_count.saturating_dec(),
+            PostExtension::Comment(ext) => ext.direct_replies_count.saturating_dec(),
         }
     }
 
