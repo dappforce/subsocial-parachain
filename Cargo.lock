@@ -5862,7 +5862,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-space-follows-tests"
+name = "pallet-space-ownership"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-space-ownership-tests"
 version = "0.1.5"
 dependencies = [
  "frame-support",
@@ -5882,19 +5895,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-spaces",
- "parity-scale-codec",
- "scale-info",
  "sp-std",
  "subsocial-support",
 ]
