@@ -31,7 +31,7 @@ fn share_post_should_work() {
         assert_eq!(Posts::next_post_id(), POST3);
 
         assert_eq!(
-            Posts::sharing_post_ids_by_original_post_id(POST1),
+            Posts::shared_post_ids_by_original_post_id(POST1),
             vec![POST2]
         );
 
@@ -85,7 +85,7 @@ fn share_post_should_work_for_share_own_post_in_same_own_space() {
         assert_eq!(Posts::next_post_id(), POST3);
 
         assert_eq!(
-            Posts::sharing_post_ids_by_original_post_id(POST1),
+            Posts::shared_post_ids_by_original_post_id(POST1),
             vec![POST2]
         );
 
@@ -142,7 +142,7 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
                 Some(extension_shared_post(POST2)),
                 None
             ),
-            PostsError::<TestRuntime>::CannotShareSharingPost
+            PostsError::<TestRuntime>::CannotShareSharedPost
         );
     });
 }

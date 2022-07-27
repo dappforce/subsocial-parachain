@@ -52,9 +52,9 @@ pub struct PostUpdate {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(untagged))]
 pub enum PostExtension {
-    Post(RegularPost),
+    RegularPost(RegularPost),
     Comment(Comment),
-    SharingPost(SharingPost),
+    SharedPost(SharedPost),
 }
 
 #[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -66,7 +66,7 @@ pub struct RegularPost {
 
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct SharingPost {
+pub struct SharedPost {
     /// Total visible replies count for this sharing post.
     pub total_replies_count: RepliesCount,
     /// If this post is sharing another post, then the [original_post_id] is specified.
@@ -84,6 +84,6 @@ pub struct Comment {
 
 impl Default for PostExtension {
     fn default() -> Self {
-        PostExtension::Post(Default::default())
+        PostExtension::RegularPost(Default::default())
     }
 }

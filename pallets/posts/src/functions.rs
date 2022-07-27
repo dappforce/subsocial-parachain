@@ -41,15 +41,15 @@ impl<T: Config> Post<T> {
     }
 
     pub fn is_regular_post(&self) -> bool {
-        matches!(self.extension, PostExtension::Post(_))
+        matches!(self.extension, PostExtension::RegularPost(_))
     }
 
     pub fn is_comment(&self) -> bool {
         matches!(self.extension, PostExtension::Comment(_))
     }
 
-    pub fn is_sharing_post(&self) -> bool {
-        matches!(self.extension, PostExtension::SharingPost(_))
+    pub fn is_shared_post(&self) -> bool {
+        matches!(self.extension, PostExtension::SharedPost(_))
     }
 
     pub fn get_comment_ext(&self) -> Result<Comment, DispatchError> {
@@ -59,16 +59,16 @@ impl<T: Config> Post<T> {
         }
     }
 
-    pub fn get_shared_post_id(&self) -> Result<PostId, DispatchError> {
+    pub fn get_original_post_id(&self) -> Result<PostId, DispatchError> {
         match self.extension {
-            PostExtension::SharingPost(sharing_ext) => Ok(sharing_ext.original_post_id),
-            _ => Err(Error::<T>::NotASharingPost.into()),
+            PostExtension::SharedPost(shared_ext) => Ok(shared_ext.original_post_id),
+            _ => Err(Error::<T>::NotASharedPost.into()),
         }
     }
 
     pub fn get_root_post(&self) -> Result<Post<T>, DispatchError> {
         match self.extension {
-            PostExtension::Post(_) | PostExtension::SharingPost(_) => Ok(self.clone()),
+            PostExtension::RegularPost(_) | PostExtension::SharedPost(_) => Ok(self.clone()),
             PostExtension::Comment(comment) => Pallet::<T>::require_post(comment.root_post_id),
         }
     }
@@ -108,16 +108,16 @@ impl<T: Config> Post<T> {
 
     pub fn inc_replies(&mut self) {
         match &mut self.extension {
-            PostExtension::Post(ext) => ext.total_replies_count.saturating_inc(),
-            PostExtension::SharingPost(ext) => ext.total_replies_count.saturating_inc(),
+            PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_inc(),
+            PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_inc(),
             PostExtension::Comment(ext) => ext.replies_count.saturating_inc(),
         }
     }
 
     pub fn dec_replies(&mut self) {
         match &mut self.extension {
-            PostExtension::Post(ext) => ext.total_replies_count.saturating_dec(),
-            PostExtension::SharingPost(ext) => ext.total_replies_count.saturating_dec(),
+            PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_dec(),
+            PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_dec(),
             PostExtension::Comment(ext) => ext.replies_count.saturating_dec(),
         }
     }
@@ -201,13 +201,13 @@ impl<T: Config> Pallet<T> {
     fn share_post(
         account: T::AccountId,
         original_post_id: PostId,
-        sharing_post_id: PostId,
+        shared_post_id: PostId,
     ) -> DispatchResult {
-        SharingPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
-            ids.push(sharing_post_id)
+        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+            ids.push(shared_post_id)
         });
 
-        Self::deposit_event(Event::PostShared { account, original_post_id, sharing_post_id });
+        Self::deposit_event(Event::PostShared { account, original_post_id, shared_post_id });
 
         Ok(())
     }
@@ -321,7 +321,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub(crate) fn create_sharing_post(
+    pub(crate) fn create_shared_post(
         creator: &T::AccountId,
         new_post_id: PostId,
         original_post_id: PostId,
@@ -330,7 +330,7 @@ impl<T: Config> Pallet<T> {
         let original_post =
             &mut Self::post_by_id(original_post_id).ok_or(Error::<T>::OriginalPostNotFound)?;
 
-        ensure!(!original_post.is_sharing_post(), Error::<T>::CannotShareSharingPost);
+        ensure!(!original_post.is_shared_post(), Error::<T>::CannotShareSharedPost);
 
         // Check if it's allowed to share a post from the space of original post.
         Spaces::ensure_account_has_space_permission(
@@ -386,7 +386,7 @@ impl<T: Config> Pallet<T> {
         );
 
         match post.extension {
-            PostExtension::Post(_) | PostExtension::SharingPost(_) => {
+            PostExtension::RegularPost(_) | PostExtension::SharedPost(_) => {
                 if let Some(old_space_id) = old_space_id_opt {
                     // Decrease the number of posts on the old space
                     Self::mutate_posts_count_on_space(old_space_id, post.hidden, |counter| {
@@ -420,7 +420,7 @@ impl<T: Config> Pallet<T> {
         if let PostExtension::Comment(comment_ext) = post.extension {
             let comment_total_replies = Self::get_post_replies_count_by_id(post_id);
             post.extension =
-                PostExtension::Post(RegularPost { total_replies_count: comment_total_replies });
+                PostExtension::RegularPost(RegularPost { total_replies_count: comment_total_replies });
 
             if post.hidden {
                 PostById::insert(post.id, post);
@@ -435,7 +435,7 @@ impl<T: Config> Pallet<T> {
                 PostById::insert(parent_id, parent_comment);
             }
 
-            if let PostExtension::Post(post_ext) = &mut root_post.extension {
+            if let PostExtension::RegularPost(post_ext) = &mut root_post.extension {
                 post_ext.total_replies_count =
                     post_ext.total_replies_count.saturating_sub(comment_total_replies);
             }

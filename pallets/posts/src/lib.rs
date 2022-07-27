@@ -107,8 +107,8 @@ pub mod pallet {
 
     /// Get the ids of all posts that have shared a given original post id.
     #[pallet::storage]
-    #[pallet::getter(fn sharing_post_ids_by_original_post_id)]
-    pub type SharingPostIdsByOriginalPostId<T: Config> =
+    #[pallet::getter(fn shared_post_ids_by_original_post_id)]
+    pub type SharedPostIdsByOriginalPostId<T: Config> =
         StorageMap<_, Twox64Concat, PostId, Vec<PostId>, ValueQuery>;
 
     #[pallet::event]
@@ -130,7 +130,7 @@ pub mod pallet {
         PostShared {
             account: T::AccountId,
             original_post_id: PostId,
-            sharing_post_id: PostId,
+            shared_post_id: PostId,
         },
         PostMoved {
             account: T::AccountId,
@@ -162,9 +162,9 @@ pub mod pallet {
         /// Original post not found when sharing.
         OriginalPostNotFound,
         /// Cannot share a post that that is sharing another post.
-        CannotShareSharingPost,
+        CannotShareSharedPost,
         /// This post's extension is not a `SharedPost`.
-        NotASharingPost,
+        NotASharedPost,
 
         // Comment related errors:
         /// Unknown parent comment id.
@@ -245,11 +245,11 @@ pub mod pallet {
             )?;
 
             match extension {
-                PostExtension::Post(_) => space.inc_posts(),
-                PostExtension::SharingPost(sharing_ext) => Self::create_sharing_post(
+                PostExtension::RegularPost(_) => space.inc_posts(),
+                PostExtension::SharedPost(shared_ext) => Self::create_shared_post(
                     &creator,
                     new_post_id,
-                    sharing_ext.original_post_id,
+                    shared_ext.original_post_id,
                     space,
                 )?,
                 PostExtension::Comment(comment_ext) =>

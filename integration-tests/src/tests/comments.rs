@@ -18,7 +18,7 @@ fn create_comment_should_work() {
         // Check storages
         let root_post = Posts::post_by_id(POST1).unwrap();
         assert_eq!(Posts::reply_ids_by_post_id(POST1), vec![POST2]);
-        let PostExtension::Post(post_ext) =
+        let PostExtension::RegularPost(post_ext) =
             root_post.extension else { panic!("qed; not a regular post") };
 
         assert_eq!(post_ext.total_replies_count, 1);
@@ -83,7 +83,7 @@ fn create_comment_should_work_when_comment_has_parents() {
         assert_eq!(last_comment_ext.replies_count, 0);
         assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
 
-        let PostExtension::Post(root_post_ext) =
+        let PostExtension::RegularPost(root_post_ext) =
             Posts::post_by_id(last_comment_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
 
         assert_eq!(root_post_ext.total_replies_count, MaxCommentDepth::get());
@@ -235,7 +235,7 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
         assert_eq!(last_comment_ext.replies_count, 0);
         assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
 
-        let PostExtension::Post(root_post_ext) =
+        let PostExtension::RegularPost(root_post_ext) =
             Posts::post_by_id(last_comment_ext.root_post_id).unwrap().extension else { panic!("qed; not a regular post") };
 
         assert_eq!(root_post_ext.total_replies_count, MaxCommentDepth::get() - 1);
