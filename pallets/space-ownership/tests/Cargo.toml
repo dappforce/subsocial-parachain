@@ -1,5 +1,5 @@
 [package]
-name = 'pallet-space-follows-tests'
+name = 'pallet-space-ownership-tests'
 version = '0.1.5'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
