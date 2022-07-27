@@ -67,9 +67,9 @@ pub struct RegularPost {
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SharedPost {
-    /// Total visible replies count for this sharing post.
+    /// Total count of visible replies to this shared post.
     pub total_replies_count: RepliesCount,
-    /// If this post is sharing another post, then the [original_post_id] is specified.
+    /// An id of the original post that this post is sharing.
     pub original_post_id: PostId,
 }
 

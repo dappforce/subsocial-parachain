@@ -158,10 +158,10 @@ pub mod pallet {
         /// Cannot move a post to the same space.
         CannotMoveToSameSpace,
 
-        // Sharing related errors:
-        /// Original post not found when sharing.
+        // Share related errors:
+        /// Cannot share, because the original post was not found.
         OriginalPostNotFound,
-        /// Cannot share a post that that is sharing another post.
+        /// Cannot share a post that is sharing another post.
         CannotShareSharedPost,
         /// This post's extension is not a `SharedPost`.
         NotASharedPost,
