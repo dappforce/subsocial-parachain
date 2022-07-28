@@ -28,25 +28,14 @@ pub struct Post<T: Config> {
     /// posts and its' comments should not be shown.
     pub hidden: bool,
 
-    /// The total number of replies for a given post.
-    pub replies_count: u16,
-
-    /// The number of hidden replies for a given post.
-    pub hidden_replies_count: u16,
-
-    /// The number of times a given post has been shared.
-    pub shares_count: u16,
-
     /// The number of times a given post has been upvoted.
-    pub upvotes_count: u16,
+    pub upvotes_count: u32,
 
     /// The number of times a given post has been downvoted.
-    pub downvotes_count: u16,
-
-    pub score: i32,
+    pub downvotes_count: u32,
 }
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct PostUpdate {
     /// Deprecated: This field has no effect in `fn update_post()` extrinsic.
     /// See `fn move_post()` extrinsic if you want to move a post to another space.
@@ -70,8 +59,8 @@ pub enum PostExtension {
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Comment {
-    pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
+    pub parent_id: Option<PostId>,
 }
 
 impl Default for PostExtension {

@@ -14,24 +14,24 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     ensure, fail,
     traits::Get,
 };
 use frame_system::ensure_signed;
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 use pallet_permissions::SpacePermission;
-use pallet_spaces::{Pallet as Spaces, types::Space, SpaceById};
+use pallet_spaces::{types::Space, Pallet as Spaces};
 use subsocial_support::{
+    ensure_content_is_valid, new_who_and_when,
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
-    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf, new_who_and_when,
-    ensure_content_is_valid,
+    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf,
 };
 
 pub use pallet::*;
@@ -51,12 +51,12 @@ pub trait AfterPostUpdated<T: Config> {
 pub mod pallet {
     use super::*;
 
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::IsType;
+    use frame_support::{pallet_prelude::*, traits::IsType};
     use frame_system::pallet_prelude::*;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config
+    pub trait Config:
+        frame_system::Config
         + pallet_space_follows::Config
         + pallet_spaces::Config
         + pallet_timestamp::Config
@@ -77,24 +77,6 @@ pub mod pallet {
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
-
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_runtime_upgrade() -> Weight {
-            let old_pallet_prefix = "PostsModule";
-            let new_pallet_prefix = Self::name();
-            frame_support::log::info!(
-                "Move Storage from {} to {}",
-                old_pallet_prefix,
-                new_pallet_prefix
-            );
-            frame_support::migration::move_pallet(
-                old_pallet_prefix.as_bytes(),
-                new_pallet_prefix.as_bytes(),
-            );
-            T::BlockWeights::get().max_block
-        }
-    }
 
     #[pallet::type_value]
     pub fn DefaultForNextPostId() -> PostId {
@@ -132,20 +114,35 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        PostCreated(T::AccountId, PostId),
-        PostUpdated(T::AccountId, PostId),
-        PostDeleted(T::AccountId, PostId),
-        PostShared(T::AccountId, PostId),
-        PostMoved(T::AccountId, PostId),
+        PostCreated {
+            account: T::AccountId,
+            post_id: PostId,
+        },
+        PostUpdated {
+            account: T::AccountId,
+            post_id: PostId,
+        },
+        // TODO: unused
+        PostDeleted {
+            account: T::AccountId,
+            post_id: PostId,
+        },
+        PostShared {
+            account: T::AccountId,
+            original_post_id: PostId,
+            shared_post_id: PostId,
+        },
+        PostMoved {
+            account: T::AccountId,
+            post_id: PostId,
+            from_space: Option<SpaceId>,
+            to_space: Option<SpaceId>,
+        },
     }
-
-    #[deprecated(note = "use `Event` instead")]
-    pub type RawEvent<T> = Event<T>;
 
     #[pallet::error]
     pub enum Error<T> {
         // Post related errors:
-
         /// Post was not found by id.
         PostNotFound,
         /// An account is not a post owner.
@@ -161,17 +158,15 @@ pub mod pallet {
         /// Cannot move a post to the same space.
         CannotMoveToSameSpace,
 
-        // Sharing related errors:
-
-        /// Original post not found when sharing.
+        // Share related errors:
+        /// Cannot share, because the original post was not found.
         OriginalPostNotFound,
-        /// Cannot share a post that that is sharing another post.
-        CannotShareSharingPost,
+        /// Cannot share a post that is sharing another post.
+        CannotShareSharedPost,
         /// This post's extension is not a `SharedPost`.
-        NotASharingPost,
+        NotASharedPost,
 
         // Comment related errors:
-
         /// Unknown parent comment id.
         UnknownParentComment,
         /// Post by `parent_id` is not of a `Comment` extension.
@@ -186,7 +181,6 @@ pub mod pallet {
         NotComment,
 
         // Permissions related errors:
-
         /// User has no permission to create root posts in this space.
         NoPermissionToCreatePosts,
         /// User has no permission to create comments (aka replies) in this space.
@@ -215,16 +209,11 @@ pub mod pallet {
             ensure_content_is_valid(content.clone())?;
 
             let new_post_id = Self::next_post_id();
-            let new_post: Post<T> = Post::new(
-                new_post_id,
-                creator.clone(),
-                space_id_opt,
-                extension,
-                content.clone(),
-            );
+            let new_post: Post<T> =
+                Post::new(new_post_id, creator.clone(), space_id_opt, extension, content.clone());
 
             // Get space from either space_id_opt or Comment if a comment provided
-            let space = &mut new_post.get_space()?;
+            let space = &new_post.get_space()?;
             ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
 
             ensure!(
@@ -250,23 +239,23 @@ pub mod pallet {
 
             Spaces::ensure_account_has_space_permission(
                 creator.clone(),
-                &space,
+                space,
                 permission_to_check,
                 error_on_permission_failed.into(),
             )?;
 
             match extension {
-                PostExtension::RegularPost => space.inc_posts(),
-                PostExtension::SharedPost(post_id) => {
-                    Self::create_sharing_post(&creator, new_post_id, post_id, space)?
-                }
-                PostExtension::Comment(comment_ext) => {
-                    Self::create_comment(new_post_id, comment_ext, root_post)?
-                }
+                PostExtension::SharedPost(original_post_id) => Self::create_shared_post(
+                    &creator,
+                    new_post_id,
+                    original_post_id,
+                )?,
+                PostExtension::Comment(comment_ext) =>
+                    Self::create_comment(new_post_id, comment_ext, root_post.id)?,
+                _ => (),
             }
 
             if new_post.is_root_post() {
-                SpaceById::<T>::insert(space.id, space.clone());
                 PostIdsBySpaceId::<T>::mutate(space.id, |ids| ids.push(new_post_id));
             }
 
@@ -275,7 +264,7 @@ pub mod pallet {
                 *n += 1;
             });
 
-            Self::deposit_event(Event::PostCreated(creator, new_post_id));
+            Self::deposit_event(Event::PostCreated { account: creator, post_id: new_post_id });
             Ok(())
         }
 
@@ -292,9 +281,9 @@ pub mod pallet {
             ensure!(has_updates, Error::<T>::NoUpdatesForPost);
 
             let mut post = Self::require_post(post_id)?;
-            let mut space_opt = post.try_get_space();
+            let space_opt = &post.try_get_space();
 
-            if let Some(space) = &space_opt {
+            if let Some(space) = space_opt {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
                     ModerationError::AccountIsBlocked
@@ -309,7 +298,7 @@ pub mod pallet {
                 if content != post.content {
                     ensure_content_is_valid(content.clone())?;
 
-                    if let Some(space) = &space_opt {
+                    if let Some(space) = space_opt {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
                             ModerationError::ContentIsBlocked
@@ -324,20 +313,6 @@ pub mod pallet {
 
             if let Some(hidden) = update.hidden {
                 if hidden != post.hidden {
-                    space_opt = space_opt.map(|mut space| {
-                        if hidden {
-                            space.dec_posts();
-                        } else {
-                            space.inc_posts();
-                        }
-
-                        space
-                    });
-
-                    if let PostExtension::Comment(comment_ext) = post.extension {
-                        Self::update_counters_on_comment_hidden_change(&comment_ext, hidden)?;
-                    }
-
                     old_data.hidden = Some(post.hidden);
                     post.hidden = hidden;
                     is_update_applied = true;
@@ -348,14 +323,10 @@ pub mod pallet {
             if is_update_applied {
                 post.updated = Some(new_who_and_when::<T>(editor.clone()));
 
-                if let Some(space) = space_opt {
-                    SpaceById::<T>::insert(space.id, space);
-                }
-
                 <PostById<T>>::insert(post.id, post.clone());
                 T::AfterPostUpdated::after_post_updated(editor.clone(), &post, old_data);
 
-                Self::deposit_event(Event::PostUpdated(editor, post_id));
+                Self::deposit_event(Event::PostUpdated { account: editor, post_id });
             }
             Ok(())
         }
@@ -370,13 +341,10 @@ pub mod pallet {
 
             let post = &mut Self::require_post(post_id)?;
 
-            ensure!(
-                new_space_id != post.space_id,
-                Error::<T>::CannotMoveToSameSpace
-            );
+            ensure!(new_space_id != post.space_id, Error::<T>::CannotMoveToSameSpace);
 
             if let Some(space) = post.try_get_space() {
-                Self::ensure_account_can_update_post(&who, &post, &space)?;
+                Self::ensure_account_can_update_post(&who, post, &space)?;
             } else {
                 post.ensure_owner(&who)?;
             }
@@ -389,15 +357,17 @@ pub mod pallet {
                 Self::delete_post_from_space(post_id)?;
             }
 
-            let historical_data = PostUpdate {
-                space_id: old_space_id,
-                content: None,
-                hidden: None,
-            };
+            let historical_data =
+                PostUpdate { space_id: old_space_id, content: None, hidden: None };
 
-            T::AfterPostUpdated::after_post_updated(who.clone(), &post, historical_data);
+            T::AfterPostUpdated::after_post_updated(who.clone(), post, historical_data);
 
-            Self::deposit_event(Event::PostMoved(who, post_id));
+            Self::deposit_event(Event::PostMoved {
+                account: who,
+                post_id,
+                from_space: old_space_id,
+                to_space: new_space_id,
+            });
             Ok(())
         }
     }

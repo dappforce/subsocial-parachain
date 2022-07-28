@@ -91,13 +91,11 @@ fn create_space_should_work() {
 
         assert_eq!(space.created.account, ACCOUNT1);
         assert!(space.updated.is_none());
-        assert_eq!(space.hidden, false);
+        assert!(!space.hidden);
 
         assert_eq!(space.owner, ACCOUNT1);
         // assert_eq!(space.handle, Some(space_handle()));
         assert_eq!(space.content, space_content_ipfs());
-
-        assert_eq!(space.posts_count, 0);
 
         // // Check that the handle deposit has been reserved:
         // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -268,7 +266,7 @@ fn update_space_should_work() {
         let space = Spaces::space_by_id(SPACE1).unwrap();
         // assert_eq!(space.handle, Some(new_handle.clone()));
         assert_eq!(space.content, expected_content_ipfs);
-        assert_eq!(space.hidden, true);
+        assert!(space.hidden);
 
         // assert_eq!(find_space_id_by_handle(space_handle()), None);
         // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));

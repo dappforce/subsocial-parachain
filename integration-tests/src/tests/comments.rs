@@ -16,10 +16,7 @@ fn create_comment_should_work() {
         assert_ok!(_create_default_comment()); // PostId 2 by ACCOUNT1 which is permitted by default
 
         // Check storages
-        let root_post = Posts::post_by_id(POST1).unwrap();
         assert_eq!(Posts::reply_ids_by_post_id(POST1), vec![POST2]);
-        assert_eq!(root_post.replies_count, 1);
-        assert_eq!(root_post.hidden_replies_count, 0);
 
         // Check whether data stored correctly
         let comment = Posts::post_by_id(POST2).unwrap();
@@ -30,9 +27,7 @@ fn create_comment_should_work() {
         assert_eq!(comment.created.account, ACCOUNT1);
         assert!(comment.updated.is_none());
         assert_eq!(comment.content, comment_content_ipfs());
-        assert_eq!(comment.replies_count, 0);
-        assert_eq!(comment.hidden_replies_count, 0);
-        assert_eq!(comment.shares_count, 0);
+
         assert_eq!(comment.upvotes_count, 0);
         assert_eq!(comment.downvotes_count, 0);
     });
@@ -41,32 +36,27 @@ fn create_comment_should_work() {
 #[test]
 fn create_comment_should_work_when_comment_has_parents() {
     ExtBuilder::build_with_comment().execute_with(|| {
-        let first_comment_id: PostId = 2;
-        let penultimate_comment_id: PostId = 8;
-        let last_comment_id: PostId = 9;
+        let first_comment_id = 2;
+        let last_comment_id = first_comment_id + (MaxCommentDepth::get() as PostId) - 1;
 
-        for parent_id in first_comment_id..last_comment_id as PostId {
-            // last created = `last_comment_id`; last parent = `penultimate_comment_id`
+        // Create
+        for parent_id in first_comment_id..last_comment_id {
             assert_ok!(_create_comment(None, None, Some(Some(parent_id)), None));
         }
 
-        for comment_id in first_comment_id..penultimate_comment_id as PostId {
-            let comment = Posts::post_by_id(comment_id).unwrap();
-            let replies_should_be = last_comment_id - comment_id;
-            assert_eq!(comment.replies_count, replies_should_be as u16);
-            assert_eq!(
-                Posts::reply_ids_by_post_id(comment_id),
-                vec![comment_id + 1]
-            );
+        let parent_id = last_comment_id - 1;
+        let parent_id_by_one = parent_id - 1;
 
-            assert_eq!(comment.hidden_replies_count, 0);
+        // We should check that counters were increased by 1 for all ancestor comments
+        // except the last parent.
+        for comment_id in first_comment_id..parent_id_by_one {
+            // All of comments has 1 reply as they respond to each other.
+            assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
 
-        let last_comment = Posts::post_by_id(last_comment_id).unwrap();
-        assert_eq!(last_comment.replies_count, 0);
-        assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
+        assert_eq!(Posts::reply_ids_by_post_id(parent_id), vec![last_comment_id]);
 
-        assert_eq!(last_comment.hidden_replies_count, 0);
+        assert!(Posts::reply_ids_by_post_id(last_comment_id).is_empty());
     });
 }
 
@@ -169,18 +159,20 @@ fn update_comment_should_work() {
 #[test]
 fn update_comment_hidden_should_work_when_comment_has_parents() {
     ExtBuilder::build_with_comment().execute_with(|| {
-        let first_comment_id: PostId = 2;
-        let penultimate_comment_id: PostId = 8;
-        let last_comment_id: PostId = 9;
+        let first_comment_id = 2;
+        let last_comment_id = first_comment_id + (MaxCommentDepth::get() as PostId) - 1;
 
-        for parent_id in first_comment_id..last_comment_id as PostId {
-            // last created = `last_comment_id`; last parent = `penultimate_comment_id`
+        // Create comments from 3 to 11
+        for parent_id in first_comment_id..last_comment_id {
             assert_ok!(_create_comment(None, None, Some(Some(parent_id)), None));
         }
 
+        let should_hide_id = last_comment_id - 3;
+        let should_hide_by_one_id = should_hide_id - 1;
+
         assert_ok!(_update_comment(
             None,
-            Some(last_comment_id),
+            Some(should_hide_id),
             Some(post_update(
                 None,
                 None,
@@ -188,12 +180,15 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             ))
         ));
 
-        for comment_id in first_comment_id..penultimate_comment_id as PostId {
-            let comment = Posts::post_by_id(comment_id).unwrap();
-            assert_eq!(comment.hidden_replies_count, 1);
+        // We should check that counters weren't increased for all ancestor comments
+        // except the last before hidden.
+        for comment_id in first_comment_id..should_hide_by_one_id {
+            // All of comments has 1 replies as they reply to each other.
+            assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
-        let last_comment = Posts::post_by_id(last_comment_id).unwrap();
-        assert_eq!(last_comment.hidden_replies_count, 0);
+
+        assert_eq!(Posts::reply_ids_by_post_id(should_hide_by_one_id), vec![should_hide_by_one_id + 1]);
+        assert_eq!(Posts::reply_ids_by_post_id(should_hide_id), vec![should_hide_id + 1]);
     });
 }
 

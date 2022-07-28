@@ -31,9 +31,6 @@ pub struct Space<T: Config> {
     /// space and its' posts should not be shown.
     pub hidden: bool,
 
-    /// The total number of visible posts in a given space.
-    pub posts_count: u32,
-
     /// This allows you to override Subsocial's default permissions by enabling or disabling role
     /// permissions.
     pub permissions: Option<SpacePermissions>,
@@ -63,7 +60,6 @@ impl<T: Config> Space<T> {
             parent_id,
             content,
             hidden: false,
-            posts_count: 0,
             permissions,
         }
     }
@@ -79,14 +75,6 @@ impl<T: Config> Space<T> {
     pub fn ensure_space_owner(&self, account: T::AccountId) -> DispatchResult {
         ensure!(self.is_owner(&account), Error::<T>::NotASpaceOwner);
         Ok(())
-    }
-
-    pub fn inc_posts(&mut self) {
-        self.posts_count = self.posts_count.saturating_add(1);
-    }
-
-    pub fn dec_posts(&mut self) {
-        self.posts_count = self.posts_count.saturating_sub(1);
     }
 
     pub fn try_get_parent(&self) -> Result<SpaceId, DispatchError> {

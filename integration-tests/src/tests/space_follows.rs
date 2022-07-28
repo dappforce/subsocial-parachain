@@ -21,10 +21,7 @@ fn follow_space_should_work() {
             SpaceFollows::space_followers(SPACE1),
             vec![ACCOUNT1, ACCOUNT2]
         );
-        assert_eq!(
-            SpaceFollows::space_followed_by_account((ACCOUNT2, SPACE1)),
-            true
-        );
+        assert!(SpaceFollows::space_followed_by_account((ACCOUNT2, SPACE1)));
     });
 }
 
