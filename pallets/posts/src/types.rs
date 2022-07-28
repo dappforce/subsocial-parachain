@@ -59,8 +59,8 @@ pub enum PostExtension {
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Comment {
-    pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
+    pub parent_id: Option<PostId>,
 }
 
 impl Default for PostExtension {
