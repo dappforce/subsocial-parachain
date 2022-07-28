@@ -309,7 +309,11 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(1, 3))]
+        #[pallet::weight((
+            1_000_000 + T::DbWeight::get().reads_writes(1, 3),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
         pub fn force_create_space(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -318,7 +322,7 @@ pub mod pallet {
             content: Content,
             hidden: bool,
             permissions_opt: Option<SpacePermissions>,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
             let permissions =
@@ -347,14 +351,18 @@ pub mod pallet {
 
             Self::deposit_event(Event::SpaceCreated(owner, space_id));
 
-            Ok(())
+            Ok(Pays::No.into())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn force_set_next_space_id(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_next_space_id(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             NextSpaceId::<T>::put(space_id);
-            Ok(())
+            Ok(Pays::No.into())
         }
     }
 
