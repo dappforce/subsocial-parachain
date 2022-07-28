@@ -25,7 +25,7 @@ fn create_comment_should_work() {
         assert!(comment_ext.parent_id.is_none());
         assert_eq!(comment_ext.root_post_id, POST1);
         assert_eq!(comment.created.account, ACCOUNT1);
-        assert!(comment.updated.is_none());
+        assert!(!comment.updated);
         assert_eq!(comment.content, comment_content_ipfs());
 
         assert_eq!(comment.upvotes_count, 0);

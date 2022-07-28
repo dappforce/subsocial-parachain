@@ -321,7 +321,7 @@ pub mod pallet {
 
             // Update this post only if at least one field should be updated:
             if is_update_applied {
-                post.updated = Some(new_who_and_when::<T>(editor.clone()));
+                post.updated = true;
 
                 <PostById<T>>::insert(post.id, post.clone());
                 T::AfterPostUpdated::after_post_updated(editor.clone(), &post, old_data);

@@ -28,7 +28,7 @@ pub use pallet::*;
 
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{
-    traits::SpaceFollowsProvider, Content, SpaceId, new_who_and_when,
+    traits::SpaceFollowsProvider, Content, SpaceId,
 };
 
 #[frame_support::pallet]
@@ -299,7 +299,7 @@ pub mod pallet {
 
             // Update this space only if at least one field should be updated:
             if is_update_applied {
-                space.updated = Some(new_who_and_when::<T>(owner.clone()));
+                space.updated = true;
 
                 SpaceById::<T>::insert(space_id, space.clone());
                 T::AfterSpaceUpdated::after_space_updated(owner.clone(), &space, old_data);

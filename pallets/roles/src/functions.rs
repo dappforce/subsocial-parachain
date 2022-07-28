@@ -131,7 +131,6 @@ impl<T: Config> Role<T> {
 
         let new_role = Role::<T> {
             created: new_who_and_when::<T>(created_by),
-            updated: None,
             id: role_id,
             space_id,
             disabled: false,
