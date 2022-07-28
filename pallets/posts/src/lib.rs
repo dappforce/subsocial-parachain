@@ -31,7 +31,7 @@ use pallet_spaces::{types::Space, Pallet as Spaces};
 use subsocial_support::{
     ensure_content_is_valid, new_who_and_when,
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
-    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf,
+    Content, ModerationError, PostId, SpaceId, WhoAndWhen, WhoAndWhenOf,
 };
 
 pub use pallet::*;
@@ -369,6 +369,91 @@ pub mod pallet {
                 to_space: new_space_id,
             });
             Ok(())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().reads_writes(2, 2),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_create_post(
+            origin: OriginFor<T>,
+            post_id: PostId,
+            created: WhoAndWhenOf<T>,
+            owner: T::AccountId,
+            extension: PostExtension,
+            space_id: Option<SpaceId>,
+            content: Content,
+            hidden: bool,
+            upvotes_count: u32,
+            downvotes_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            let WhoAndWhen { account, time, .. } = created;
+            let new_who_and_when =
+                WhoAndWhen { account, block: frame_system::Pallet::<T>::block_number(), time };
+
+            let new_post = Post::<T> {
+                id: post_id,
+                created: new_who_and_when,
+                updated: false,
+                owner: owner.clone(),
+                extension,
+                space_id,
+                content,
+                hidden,
+                upvotes_count,
+                downvotes_count,
+            };
+
+            if new_post.is_root_post() {
+                if let Ok(space) = new_post.get_space() {
+                    PostIdsBySpaceId::<T>::mutate(space.id, |ids| ids.push(post_id));
+                }
+            }
+
+            match new_post.extension {
+                PostExtension::Comment(ext) => {
+                    let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
+                    ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
+                        reply_ids.push(post_id)
+                    });
+                },
+                PostExtension::SharedPost(original_post_id) => {
+                    SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+                        ids.push(post_id)
+                    });
+
+                    Self::deposit_event(Event::PostShared {
+                        account: owner.clone(),
+                        original_post_id,
+                        shared_post_id: post_id,
+                    });
+                },
+                _ => (),
+            }
+
+            PostById::insert(post_id, new_post);
+
+            Self::deposit_event(Event::PostCreated { account: owner, post_id });
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_next_post_id(
+            origin: OriginFor<T>,
+            post_id: PostId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            NextPostId::<T>::put(post_id);
+
+            Ok(Pays::No.into())
         }
     }
 }
