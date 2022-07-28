@@ -35,18 +35,15 @@ pub(crate) fn reply_content_ipfs() -> Content {
 }
 
 pub(crate) fn extension_regular_post() -> PostExtension {
-    PostExtension::RegularPost(Default::default())
+    PostExtension::RegularPost
 }
 
 pub(crate) fn extension_comment(parent_id: Option<PostId>, root_post_id: PostId) -> PostExtension {
-    PostExtension::Comment(Comment { parent_id, root_post_id, direct_replies_count: Default::default() })
+    PostExtension::Comment(Comment { parent_id, root_post_id })
 }
 
 pub(crate) fn extension_shared_post(post_id: PostId) -> PostExtension {
-    PostExtension::SharedPost(SharedPost {
-        original_post_id: post_id,
-        total_replies_count: Default::default(),
-    })
+    PostExtension::SharedPost(SharedPost { original_post_id: post_id })
 }
 
 pub(crate) fn _create_default_post() -> DispatchResult {

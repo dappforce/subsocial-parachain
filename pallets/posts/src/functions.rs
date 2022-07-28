@@ -41,7 +41,7 @@ impl<T: Config> Post<T> {
     }
 
     pub fn is_regular_post(&self) -> bool {
-        matches!(self.extension, PostExtension::RegularPost(_))
+        matches!(self.extension, PostExtension::RegularPost)
     }
 
     pub fn is_comment(&self) -> bool {
@@ -68,7 +68,7 @@ impl<T: Config> Post<T> {
 
     pub fn get_root_post(&self) -> Result<Post<T>, DispatchError> {
         match self.extension {
-            PostExtension::RegularPost(_) | PostExtension::SharedPost(_) => Ok(self.clone()),
+            PostExtension::RegularPost | PostExtension::SharedPost(_) => Ok(self.clone()),
             PostExtension::Comment(comment) => Pallet::<T>::require_post(comment.root_post_id),
         }
     }
@@ -106,36 +106,20 @@ impl<T: Config> Post<T> {
         }
     }
 
-    pub fn inc_replies(&mut self) {
-        match &mut self.extension {
-            PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_inc(),
-            PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_inc(),
-            PostExtension::Comment(ext) => ext.direct_replies_count.saturating_inc(),
-        }
-    }
-
-    pub fn dec_replies(&mut self) {
-        match &mut self.extension {
-            PostExtension::RegularPost(ext) => ext.total_replies_count.saturating_dec(),
-            PostExtension::SharedPost(ext) => ext.total_replies_count.saturating_dec(),
-            PostExtension::Comment(ext) => ext.direct_replies_count.saturating_dec(),
-        }
-    }
-
     pub fn inc_upvotes(&mut self) {
-        self.upvotes_count = self.upvotes_count.saturating_add(1);
+        self.upvotes_count.saturating_inc();
     }
 
     pub fn dec_upvotes(&mut self) {
-        self.upvotes_count = self.upvotes_count.saturating_sub(1);
+        self.upvotes_count.saturating_dec();
     }
 
     pub fn inc_downvotes(&mut self) {
-        self.downvotes_count = self.downvotes_count.saturating_add(1);
+        self.downvotes_count.saturating_inc();
     }
 
     pub fn dec_downvotes(&mut self) {
-        self.downvotes_count = self.downvotes_count.saturating_sub(1);
+        self.downvotes_count.saturating_dec();
     }
 
     pub fn is_public(&self) -> bool {
@@ -253,25 +237,15 @@ impl<T: Config> Pallet<T> {
         ancestors
     }
 
-    fn get_nested_replies(reply_ids: Vec<PostId>) -> RepliesCount {
-        reply_ids.iter().fold(reply_ids.len() as RepliesCount, |acc, reply_id| {
-            acc + Self::get_nested_replies(Self::reply_ids_by_post_id(*reply_id))
-        })
-    }
-
-    pub fn get_post_replies_count_by_id(post_id: PostId) -> RepliesCount {
-        Self::get_nested_replies(Self::reply_ids_by_post_id(post_id))
-    }
-
     pub(crate) fn create_comment(
         new_post_id: PostId,
         comment_ext: Comment,
-        root_post: &mut Post<T>,
+        root_post_id: PostId,
     ) -> DispatchResult {
-        let mut commented_post_id = root_post.id;
+        let mut commented_post_id = root_post_id;
 
         if let Some(parent_id) = comment_ext.parent_id {
-            let mut parent_comment =
+            let parent_comment =
                 Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
 
             ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
@@ -282,15 +256,9 @@ impl<T: Config> Pallet<T> {
                 Error::<T>::MaxCommentDepthReached
             );
 
-            parent_comment.inc_replies();
-
             commented_post_id = parent_id;
-            PostById::insert(parent_id, parent_comment);
         }
 
-        root_post.inc_replies();
-
-        PostById::insert(root_post.id, root_post);
         ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| reply_ids.push(new_post_id));
 
         Ok(())
@@ -300,7 +268,6 @@ impl<T: Config> Pallet<T> {
         creator: &T::AccountId,
         new_post_id: PostId,
         original_post_id: PostId,
-        space: &mut Space<T>,
     ) -> DispatchResult {
         let original_post =
             &mut Self::post_by_id(original_post_id).ok_or(Error::<T>::OriginalPostNotFound)?;
@@ -315,22 +282,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::NoPermissionToShare.into(),
         )?;
 
-        space.inc_posts();
-
         Self::share_post(creator.clone(), original_post_id, new_post_id)
-    }
-
-    fn mutate_posts_count_on_space<F: FnMut(&mut u32) + Copy>(
-        space_id: SpaceId,
-        is_post_hidden: bool,
-        mut f: F,
-    ) -> DispatchResult {
-        Spaces::<T>::mutate_space_by_id(space_id, |space: &mut Space<T>| {
-            if !is_post_hidden {
-                f(&mut space.posts_count);
-            }
-        })
-        .map(|_| ())
     }
 
     pub(crate) fn move_post_to_space(
@@ -361,22 +313,12 @@ impl<T: Config> Pallet<T> {
         );
 
         match post.extension {
-            PostExtension::RegularPost(_) | PostExtension::SharedPost(_) => {
+            PostExtension::RegularPost | PostExtension::SharedPost(_) => {
                 if let Some(old_space_id) = old_space_id_opt {
-                    // Decrease the number of posts on the old space
-                    Self::mutate_posts_count_on_space(old_space_id, post.hidden, |counter| {
-                        *counter = counter.saturating_sub(1)
-                    })?;
-
                     PostIdsBySpaceId::<T>::mutate(old_space_id, |post_ids| {
                         remove_from_vec(post_ids, post.id)
                     });
                 }
-
-                // Increase the number of posts on the new space
-                Self::mutate_posts_count_on_space(new_space_id, post.hidden, |counter| {
-                    *counter = counter.saturating_add(1)
-                })?;
 
                 PostIdsBySpaceId::<T>::mutate(new_space_id, |post_ids| post_ids.push(post.id));
 
@@ -392,92 +334,16 @@ impl<T: Config> Pallet<T> {
     pub fn delete_post_from_space(post_id: PostId) -> DispatchResult {
         let mut post = Self::require_post(post_id)?;
 
-        if let PostExtension::Comment(comment_ext) = post.extension {
-            let comment_total_replies = Self::get_post_replies_count_by_id(post_id);
-            post.extension =
-                PostExtension::RegularPost(RegularPost { total_replies_count: comment_total_replies });
-
-            if post.hidden {
-                PostById::insert(post.id, post);
-                return Ok(())
-            }
-
-            let root_post = &mut Self::require_post(comment_ext.root_post_id)?;
-            let parent_id = comment_ext.parent_id.unwrap_or_default();
-
-            if let Ok(mut parent_comment) = Self::require_post(parent_id) {
-                parent_comment.dec_replies();
-                PostById::insert(parent_id, parent_comment);
-            }
-
-            if let PostExtension::RegularPost(post_ext) = &mut root_post.extension {
-                post_ext.total_replies_count =
-                    post_ext.total_replies_count.saturating_sub(comment_total_replies);
-            }
-
-            PostById::insert(root_post.id, root_post);
+        if post.is_comment() {
+            post.extension = PostExtension::RegularPost;
         } else {
-            // If post is not a comment:
-
             let space_id = post.get_space_id()?;
-
-            // Decrease the number of posts on the space
-            Self::mutate_posts_count_on_space(space_id, post.hidden, |counter| {
-                *counter = counter.saturating_sub(1)
-            })?;
 
             post.space_id = None;
             PostIdsBySpaceId::<T>::mutate(space_id, |post_ids| remove_from_vec(post_ids, post_id));
         }
 
         PostById::insert(post.id, post);
-
-        Ok(())
-    }
-
-    /// Rewrite ancestor counters when Post hidden status changes
-    /// Warning: This will affect storage state!
-    pub(crate) fn update_counters_on_comment_hidden_change(
-        comment_id: PostId,
-        comment_ext: &Comment,
-        becomes_hidden: bool,
-    ) -> DispatchResult {
-        let mut root_post = Self::require_post(comment_ext.root_post_id)?;
-        let parent_comment_id: PostId = comment_ext.parent_id.unwrap_or_default();
-
-        // TODO: refactor this: doesn't look in the best way possible, but it works.
-        if let Ok(parent_comment) = &mut Self::require_post(parent_comment_id) {
-            if parent_comment.is_comment() {
-                let update_counts =
-                    if becomes_hidden { Post::dec_replies } else { Post::inc_replies };
-
-                update_counts(parent_comment);
-
-                PostById::<T>::insert(parent_comment_id, parent_comment);
-                ReplyIdsByPostId::<T>::mutate(parent_comment_id, |reply_ids| {
-                    remove_from_vec(reply_ids, comment_id)
-                });
-            }
-        }
-
-        if root_post.is_root_post() {
-            let comment_total_replies = Self::get_post_replies_count_by_id(comment_id);
-
-            let update_counts = if becomes_hidden {
-                Saturating::saturating_reduce
-            } else {
-                Saturating::saturating_accrue
-            };
-
-            match &mut root_post.extension {
-                PostExtension::RegularPost(ext) =>
-                    update_counts(&mut ext.total_replies_count, comment_total_replies),
-                PostExtension::SharedPost(ext) =>
-                    update_counts(&mut ext.total_replies_count, comment_total_replies),
-                _ => (),
-            }
-            PostById::<T>::insert(root_post.id, root_post);
-        }
 
         Ok(())
     }

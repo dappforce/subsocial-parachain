@@ -27,7 +27,7 @@ use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 use pallet_permissions::SpacePermission;
-use pallet_spaces::{types::Space, Pallet as Spaces, SpaceById};
+use pallet_spaces::{types::Space, Pallet as Spaces};
 use subsocial_support::{
     ensure_content_is_valid, new_who_and_when,
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
@@ -213,7 +213,7 @@ pub mod pallet {
                 Post::new(new_post_id, creator.clone(), space_id_opt, extension, content.clone());
 
             // Get space from either space_id_opt or Comment if a comment provided
-            let space = &mut new_post.get_space()?;
+            let space = &new_post.get_space()?;
             ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
 
             ensure!(
@@ -245,19 +245,17 @@ pub mod pallet {
             )?;
 
             match extension {
-                PostExtension::RegularPost(_) => space.inc_posts(),
                 PostExtension::SharedPost(shared_ext) => Self::create_shared_post(
                     &creator,
                     new_post_id,
                     shared_ext.original_post_id,
-                    space,
                 )?,
                 PostExtension::Comment(comment_ext) =>
-                    Self::create_comment(new_post_id, comment_ext, root_post)?,
+                    Self::create_comment(new_post_id, comment_ext, root_post.id)?,
+                _ => (),
             }
 
             if new_post.is_root_post() {
-                SpaceById::<T>::insert(space.id, space.clone());
                 PostIdsBySpaceId::<T>::mutate(space.id, |ids| ids.push(new_post_id));
             }
 
@@ -283,9 +281,9 @@ pub mod pallet {
             ensure!(has_updates, Error::<T>::NoUpdatesForPost);
 
             let mut post = Self::require_post(post_id)?;
-            let mut space_opt = post.try_get_space();
+            let space_opt = &post.try_get_space();
 
-            if let Some(space) = &space_opt {
+            if let Some(space) = space_opt {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
                     ModerationError::AccountIsBlocked
@@ -300,7 +298,7 @@ pub mod pallet {
                 if content != post.content {
                     ensure_content_is_valid(content.clone())?;
 
-                    if let Some(space) = &space_opt {
+                    if let Some(space) = space_opt {
                         ensure!(
                             T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
                             ModerationError::ContentIsBlocked
@@ -315,20 +313,6 @@ pub mod pallet {
 
             if let Some(hidden) = update.hidden {
                 if hidden != post.hidden {
-                    space_opt = space_opt.map(|mut space| {
-                        if hidden {
-                            space.dec_posts();
-                        } else {
-                            space.inc_posts();
-                        }
-
-                        space
-                    });
-
-                    if let PostExtension::Comment(comment_ext) = post.extension {
-                        Self::update_counters_on_comment_hidden_change(post.id, &comment_ext, hidden)?;
-                    }
-
                     old_data.hidden = Some(post.hidden);
                     post.hidden = hidden;
                     is_update_applied = true;
@@ -338,10 +322,6 @@ pub mod pallet {
             // Update this post only if at least one field should be updated:
             if is_update_applied {
                 post.updated = Some(new_who_and_when::<T>(editor.clone()));
-
-                if let Some(space) = space_opt {
-                    SpaceById::<T>::insert(space.id, space);
-                }
 
                 <PostById<T>>::insert(post.id, post.clone());
                 T::AfterPostUpdated::after_post_updated(editor.clone(), &post, old_data);

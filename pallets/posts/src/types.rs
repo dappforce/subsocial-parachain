@@ -1,7 +1,6 @@
 use super::*;
 
 pub const FIRST_POST_ID: u64 = 1;
-pub type RepliesCount = u32;
 
 /// Information about a post's owner, its' related space, content, and visibility.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -52,23 +51,14 @@ pub struct PostUpdate {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(untagged))]
 pub enum PostExtension {
-    RegularPost(RegularPost),
+    RegularPost,
     Comment(Comment),
     SharedPost(SharedPost),
-}
-
-#[derive(Encode, Decode, Default, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct RegularPost {
-    /// A total count of visible replies to this post.
-    pub total_replies_count: RepliesCount,
 }
 
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SharedPost {
-    /// A total count of visible replies to this shared post.
-    pub total_replies_count: RepliesCount,
     /// An id of the original post that this post is sharing.
     pub original_post_id: PostId,
 }
@@ -78,12 +68,10 @@ pub struct SharedPost {
 pub struct Comment {
     pub parent_id: Option<PostId>,
     pub root_post_id: PostId,
-    /// A count of direct visible replies to this comment.
-    pub direct_replies_count: RepliesCount,
 }
 
 impl Default for PostExtension {
     fn default() -> Self {
-        PostExtension::RegularPost(Default::default())
+        PostExtension::RegularPost
     }
 }
