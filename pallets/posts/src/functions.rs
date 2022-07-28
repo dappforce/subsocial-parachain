@@ -61,7 +61,7 @@ impl<T: Config> Post<T> {
 
     pub fn get_original_post_id(&self) -> Result<PostId, DispatchError> {
         match self.extension {
-            PostExtension::SharedPost(shared_ext) => Ok(shared_ext.original_post_id),
+            PostExtension::SharedPost(original_post_id) => Ok(original_post_id),
             _ => Err(Error::<T>::NotASharedPost.into()),
         }
     }

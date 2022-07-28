@@ -245,10 +245,10 @@ pub mod pallet {
             )?;
 
             match extension {
-                PostExtension::SharedPost(shared_ext) => Self::create_shared_post(
+                PostExtension::SharedPost(original_post_id) => Self::create_shared_post(
                     &creator,
                     new_post_id,
-                    shared_ext.original_post_id,
+                    original_post_id,
                 )?,
                 PostExtension::Comment(comment_ext) =>
                     Self::create_comment(new_post_id, comment_ext, root_post.id)?,

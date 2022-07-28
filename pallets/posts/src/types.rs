@@ -53,14 +53,7 @@ pub struct PostUpdate {
 pub enum PostExtension {
     RegularPost,
     Comment(Comment),
-    SharedPost(SharedPost),
-}
-
-#[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct SharedPost {
-    /// An id of the original post that this post is sharing.
-    pub original_post_id: PostId,
+    SharedPost(PostId),
 }
 
 #[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
