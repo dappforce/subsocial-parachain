@@ -12,6 +12,8 @@ pub mod pallet {
 
     use subsocial_support::remove_from_vec;
 
+    use sp_std::vec::Vec;
+
     /// The pallet's configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config {
