@@ -45,7 +45,7 @@ pub mod pallet {
         Pallet as Permissions, PermissionChecker, SpacePermissionsContext, SpacePermissionsInfoOf,
     };
     use subsocial_support::{
-        ensure_content_is_valid,
+        ensure_content_is_valid, remove_from_bounded_vec,
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
@@ -340,14 +340,28 @@ pub mod pallet {
                 parent_id: None,
                 content,
                 hidden,
-                posts_count: 0,
                 permissions,
             };
 
+            let add_new_space_id_by_owner = |owner: &T::AccountId, space_id: SpaceId| {
+                SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
+                    ids.try_push(space_id).expect("qed; too many spaces per account")
+                });
+            };
+
+            // To prevent incorrect [SpaceIdsByOwner] insertion,
+            // we check if the space already exists.
+            match Self::require_space(space_id) {
+                Ok(space) if !space.is_owner(&owner) => {
+                    SpaceIdsByOwner::<T>::mutate(&space.owner, |ids| {
+                        remove_from_bounded_vec(ids, space_id)
+                    });
+                    add_new_space_id_by_owner(&owner, space_id);
+                },
+                _ => add_new_space_id_by_owner(&owner, space_id),
+            }
+
             SpaceById::<T>::insert(space_id, new_space);
-            SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
-                ids.try_push(space_id).expect("qed; too many spaces per account")
-            });
 
             Self::deposit_event(Event::SpaceCreated(owner, space_id));
 
