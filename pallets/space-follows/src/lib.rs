@@ -147,6 +147,11 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
+            ensure!(
+                !Self::space_followed_by_account((follower.clone(), space_id)),
+                Error::<T>::AlreadySpaceFollower
+            );
+
             SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
             SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
             SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
