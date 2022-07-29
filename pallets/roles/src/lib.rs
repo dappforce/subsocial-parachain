@@ -38,6 +38,11 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+mod weights;
+
+pub use crate::weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -66,6 +71,9 @@ pub mod pallet {
         type IsAccountBlocked: IsAccountBlocked<Self::AccountId>;
 
         type IsContentBlocked: IsContentBlocked;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]

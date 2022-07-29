@@ -15,6 +15,7 @@ use frame_support::{
     dispatch::{DispatchResult, DispatchError},
     traits::Everything,
 };
+use frame_support::traits::ConstU32;
 
 use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
 use subsocial_support::{
@@ -37,6 +38,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Roles: roles::{Pallet, Call, Storage, Event<T>},
+        Spaces: pallet_spaces::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -116,10 +118,25 @@ parameter_types! {
 impl Config for Test {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
+    #[cfg(feature = "runtime-benchmarks")]
+    type SpacePermissionsProvider = Spaces;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
+    type WeightInfo = ();
+}
+
+impl pallet_spaces::Config for Test {
+    type Event = Event;
+    type Roles = Roles;
+    type SpaceFollows = Roles;
+    type BeforeSpaceCreated = ();
+    type AfterSpaceUpdated = ();
+    type IsAccountBlocked = ();
+    type IsContentBlocked = ();
+    type MaxSpacesPerAccount = ConstU32<100>;
 }
 
 impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
@@ -132,7 +149,7 @@ impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpaceP
             return Ok(SpacePermissionsInfo { owner: ACCOUNT1, permissions: None })
         }
 
-        Err("SpaceNotFound".into())
+        Err("mock:SpaceNotFound".into())
     }
 
     fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult {
@@ -142,7 +159,7 @@ impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpaceP
             }
         }
 
-        Err("NotSpaceOwner".into())
+        Err("mock:NotSpaceOwner".into())
     }
 }
 

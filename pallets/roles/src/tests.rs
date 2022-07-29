@@ -70,7 +70,7 @@ fn create_role_should_fail_with_space_not_found() {
                 None, // Without time_to_live
                 None, // With default content
                 None // With default permission set
-            ), "SpaceNotFound"
+            ), "mock:SpaceNotFound"
         );
     });
 }

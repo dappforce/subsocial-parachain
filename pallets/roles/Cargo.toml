@@ -12,6 +12,10 @@ categories = ['cryptography::cryptocurrencies']
 
 [features]
 default = ['std']
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "pallet-spaces",
+]
 std = [
     'codec/std',
     'scale-info/std',
@@ -39,6 +43,8 @@ frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polk
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
+pallet-spaces = { optional = true, default-features = false, path = '../spaces' }
 
 [dev-dependencies]
 serde = { version = '1.0.137' }
@@ -46,3 +52,4 @@ serde = { version = '1.0.137' }
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+pallet-spaces = { default-features = false, path = '../spaces' }

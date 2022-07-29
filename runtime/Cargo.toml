@@ -173,6 +173,7 @@ runtime-benchmarks = [
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
+	"pallet-roles/runtime-benchmarks",
 ]
 
 try-runtime = [
