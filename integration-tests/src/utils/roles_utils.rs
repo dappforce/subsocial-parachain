@@ -1,6 +1,7 @@
 use frame_support::pallet_prelude::*;
 
 use pallet_permissions::SpacePermission;
+use pallet_roles::UsersByRoleId;
 use subsocial_support::{Content, SpaceId, User};
 
 use crate::mock::*;
@@ -17,7 +18,6 @@ pub(crate) const ROLE2: RoleId = 2;
 pub(crate) fn default_role_content_ipfs() -> Content {
     Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4".to_vec())
 }
-
 
 
 pub fn _create_default_role() -> DispatchResult {
@@ -66,8 +66,10 @@ pub fn _delete_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
 ) -> DispatchResult {
+    let role_id = role_id.unwrap_or(ROLE1);
     Roles::delete_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        role_id.unwrap_or(ROLE1),
+        role_id,
+        UsersByRoleId::<TestRuntime>::get(role_id).len() as u32,
     )
 }

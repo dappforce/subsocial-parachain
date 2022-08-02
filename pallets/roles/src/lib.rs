@@ -140,6 +140,9 @@ pub mod pallet {
         /// See `MaxUsersToProcessPerDeleteRole` parameter of this trait.
         TooManyUsersToDeleteRole,
 
+        /// The user count sent doesn't match the real user count.
+        IncorrectUserCount,
+
         /// Cannot disable a role that is already disabled.
         RoleAlreadyDisabled,
 
@@ -307,8 +310,8 @@ pub mod pallet {
 
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(<T as Config>::WeightInfo::delete_role())]
-        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId) -> DispatchResult {
+        #[pallet::weight(<T as Config>::WeightInfo::delete_role(*user_count))]
+        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId, user_count: u32) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             let role = Self::require_role(role_id)?;
@@ -316,6 +319,10 @@ pub mod pallet {
             Self::ensure_role_manager(who.clone(), role.space_id)?;
 
             let users = Self::users_by_role_id(role_id);
+            ensure!(
+                users.len() as u32 == user_count,
+                Error::<T>::IncorrectUserCount,
+            );
             ensure!(
                 users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
                 Error::<T>::TooManyUsersToDeleteRole
@@ -340,7 +347,7 @@ pub mod pallet {
 
         /// Grant a given role to a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(<T as Config>::WeightInfo::grant_role())]
+        #[pallet::weight(<T as Config>::WeightInfo::grant_role(users.len() as u32))]
         pub fn grant_role(
             origin: OriginFor<T>,
             role_id: RoleId,
@@ -380,7 +387,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(<T as Config>::WeightInfo::revoke_role())]
+        #[pallet::weight(<T as Config>::WeightInfo::revoke_role(users.len() as u32))]
         pub fn revoke_role(
             origin: OriginFor<T>,
             role_id: RoleId,

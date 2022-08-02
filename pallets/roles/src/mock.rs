@@ -353,8 +353,10 @@ pub(crate) fn _delete_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>
 ) -> DispatchResult {
+    let role_id = role_id.unwrap_or(ROLE1);
     Roles::delete_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        role_id.unwrap_or(ROLE1)
+        role_id,
+        UsersByRoleId::<Test>::get(role_id).len() as u32,
     )
 }

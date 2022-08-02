@@ -36,14 +36,26 @@ fn create_dummy_space<T: Config + pallet_spaces::Config>(origin: RawOrigin<T::Ac
 }
 
 
+fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
+    let mut users_to_grant = Vec::<User<T::AccountId>>::new();
+
+    for i in 0..num_of_users {
+        let user = account("user", i * 2 - 1, i * 2);
+        users_to_grant.push(User::Account(user));
+    }
+
+    users_to_grant
+}
+
 fn create_dummy_role<T: Config>(
     origin: RawOrigin<T::AccountId>,
     space_id: SpaceId,
-) -> Result<Role<T>, DispatchError> {
+    num_of_users: u32,
+) -> Result<(Role<T>, Vec<User<T::AccountId>>), DispatchError> {
     let role_id = NextRoleId::<T>::get();
 
     Pallet::<T>::create_role(
-        origin.into(),
+        origin.clone().into(),
         space_id,
         Some(100u32.into()),
         Content::None,
@@ -53,7 +65,18 @@ fn create_dummy_role<T: Config>(
     let role = RoleById::<T>::get(role_id)
         .ok_or(DispatchError::Other("Role not found"))?;
 
-    Ok(role)
+    let users_to_grant = dummy_list_of_users::<T>(num_of_users);
+
+
+    if !users_to_grant.is_empty() {
+        Pallet::<T>::grant_role(
+            origin.into(),
+            role.id,
+            users_to_grant.clone(),
+        )?;
+    }
+
+    Ok((role, users_to_grant))
 }
 
 benchmarks! {
@@ -78,7 +101,7 @@ benchmarks! {
     update_role {
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let role = create_dummy_role::<T>(caller_origin.clone(), space.id)?;
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, 10)?;
 
         ensure!(!role.disabled, "Role should be enabled");
 
@@ -94,21 +117,23 @@ benchmarks! {
     }
 
     delete_role {
+        let x in 0..T::MaxUsersToProcessPerDeleteRole::get().into();
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let role = create_dummy_role::<T>(caller_origin.clone(), space.id)?;
-    }: _(caller_origin, role.id)
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, x)?;
+    }: _(caller_origin, role.id, x)
     verify {
         let deleted = RoleById::<T>::get(role.id).is_none();
         ensure!(deleted, "Role should be deleted");
     }
 
     grant_role {
+        let x in 1..500;
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let role = create_dummy_role::<T>(caller_origin.clone(), space.id)?;
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, 0)?;
 
-        let users_to_grant = vec![User::Account(account::<T::AccountId>("Acc2", 2, 0))];
+        let users_to_grant = dummy_list_of_users::<T>(x);
     }: _(caller_origin, role.id, users_to_grant.clone())
     verify {
         let granted_users = UsersByRoleId::<T>::get(role.id);
@@ -116,12 +141,11 @@ benchmarks! {
     }
 
     revoke_role {
+        let x in 1..500;
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let role = create_dummy_role::<T>(caller_origin.clone(), space.id)?;
-        let users_to_grant = vec![User::Account(account::<T::AccountId>("Acc2", 2, 0))];
-        Pallet::<T>::grant_role(caller_origin.clone().into(), role.id, users_to_grant.clone())?;
-    }: _(caller_origin, role.id, users_to_grant)
+        let (role, users_to_revoke) = create_dummy_role::<T>(caller_origin.clone(), space.id, x)?;
+    }: _(caller_origin, role.id, users_to_revoke)
     verify {
         let granted_users = UsersByRoleId::<T>::get(role.id);
         ensure!(granted_users.is_empty(), "Role should have zero users");
