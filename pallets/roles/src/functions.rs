@@ -15,7 +15,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Get `Role` by id from the storage or return `RoleNotFound` error.
-    pub fn require_role(role_id: SpaceId) -> Result<Role<T>, DispatchError> {
+    pub fn require_role(role_id: RoleId) -> Result<Role<T>, DispatchError> {
         Ok(Self::role_by_id(role_id).ok_or(Error::<T>::RoleNotFound)?)
     }
 
