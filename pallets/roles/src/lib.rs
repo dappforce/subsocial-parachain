@@ -380,7 +380,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::weight(<T as Config>::WeightInfo::revoke_role())]
         pub fn revoke_role(
             origin: OriginFor<T>,
             role_id: RoleId,

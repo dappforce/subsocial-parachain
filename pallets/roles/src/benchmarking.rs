@@ -115,6 +115,18 @@ benchmarks! {
         ensure!(granted_users == users_to_grant, "Role should be deleted");
     }
 
+    revoke_role {
+        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
+        let space = create_dummy_space::<T>(caller_origin.clone())?;
+        let role = create_dummy_role::<T>(caller_origin.clone(), space.id)?;
+        let users_to_grant = vec![User::Account(account::<T::AccountId>("Acc2", 2, 0))];
+        Pallet::<T>::grant_role(caller_origin.clone().into(), role.id, users_to_grant.clone())?;
+    }: _(caller_origin, role.id, users_to_grant)
+    verify {
+        let granted_users = UsersByRoleId::<T>::get(role.id);
+        ensure!(granted_users.is_empty(), "Role should have zero users");
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::mock::ExtBuilder::build(),

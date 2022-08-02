@@ -42,6 +42,7 @@ pub trait WeightInfo {
     fn update_role() -> Weight;
     fn delete_role() -> Weight;
     fn grant_role() -> Weight;
+    fn revoke_role() -> Weight;
 }
 
 /// Weights for pallet_roles using the Substrate node and recommended hardware.
@@ -61,7 +62,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:1 w:0)
             // Storage: Timestamp Now (r:1 w:0)
         fn update_role() -> Weight {
-        (21_000_000 as Weight)
+        (20_000_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(3 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
@@ -79,6 +80,15 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Roles UsersByRoleId (r:1 w:1)
             // Storage: Roles RoleIdsByUserInSpace (r:1 w:1)
         fn grant_role() -> Weight {
+        (25_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(4 as Weight))
+            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+        }
+            // Storage: Roles RoleById (r:1 w:0)
+            // Storage: Spaces SpaceById (r:1 w:0)
+            // Storage: Roles UsersByRoleId (r:1 w:1)
+            // Storage: Roles RoleIdsByUserInSpace (r:1 w:1)
+        fn revoke_role() -> Weight {
         (26_000_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(4 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
@@ -101,7 +111,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:1 w:0)
             // Storage: Timestamp Now (r:1 w:0)
         fn update_role() -> Weight {
-        (21_000_000 as Weight)
+        (20_000_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(3 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }
@@ -119,6 +129,15 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Roles UsersByRoleId (r:1 w:1)
             // Storage: Roles RoleIdsByUserInSpace (r:1 w:1)
         fn grant_role() -> Weight {
+        (25_000_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        }
+            // Storage: Roles RoleById (r:1 w:0)
+            // Storage: Spaces SpaceById (r:1 w:0)
+            // Storage: Roles UsersByRoleId (r:1 w:1)
+            // Storage: Roles RoleIdsByUserInSpace (r:1 w:1)
+        fn revoke_role() -> Weight {
         (26_000_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(4 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
