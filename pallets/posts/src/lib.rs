@@ -29,7 +29,7 @@ use sp_std::prelude::*;
 use pallet_permissions::SpacePermission;
 use pallet_spaces::{types::Space, Pallet as Spaces};
 use subsocial_support::{
-    ensure_content_is_valid, new_who_and_when,
+    ensure_content_is_valid, new_who_and_when, remove_from_vec,
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
     Content, ModerationError, PostId, SpaceId, WhoAndWhen, WhoAndWhenOf,
 };
@@ -193,6 +193,10 @@ pub mod pallet {
         NoPermissionToUpdateOwnPosts,
         /// A comment owner is not allowed to update their own comments in this space.
         NoPermissionToUpdateOwnComments,
+
+        /// `force_create_post_reaction` failed, because reaction already exists.
+        /// Consider removing reaction first with `force_remove_post_reaction`.
+        PostAlreadyExists,
     }
 
     #[pallet::call]
@@ -372,7 +376,7 @@ pub mod pallet {
         }
 
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(2, 2),
+            50_000 + T::DbWeight::get().reads_writes(4, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -382,13 +386,15 @@ pub mod pallet {
             created: WhoAndWhenOf<T>,
             owner: T::AccountId,
             extension: PostExtension,
-            space_id: Option<SpaceId>,
+            space_id_opt: Option<SpaceId>,
             content: Content,
             hidden: bool,
             upvotes_count: u32,
             downvotes_count: u32,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
+
+            ensure!(Self::require_post(post_id).is_err(), Error::<T>::PostAlreadyExists);
 
             let WhoAndWhen { account, time, .. } = created;
             let new_who_and_when =
@@ -400,7 +406,7 @@ pub mod pallet {
                 updated: false,
                 owner: owner.clone(),
                 extension,
-                space_id,
+                space_id: space_id_opt,
                 content,
                 hidden,
                 upvotes_count,
@@ -408,8 +414,8 @@ pub mod pallet {
             };
 
             if new_post.is_root_post() {
-                if let Ok(space) = new_post.get_space() {
-                    PostIdsBySpaceId::<T>::mutate(space.id, |ids| ids.push(post_id));
+                if let Some(space_id) = new_post.space_id {
+                    PostIdsBySpaceId::<T>::mutate(space_id, |ids| ids.push(post_id));
                 }
             }
 
@@ -441,6 +447,46 @@ pub mod pallet {
         }
 
         #[pallet::weight((
+            10_000 + T::DbWeight::get().reads_writes(2, 2),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_remove_post(
+            origin: OriginFor<T>,
+            post_id: PostId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            match Self::require_post(post_id) {
+                Ok(old_post) => {
+                    match old_post.extension {
+                        PostExtension::RegularPost =>
+                            if let Some(space_id) = old_post.space_id {
+                                PostIdsBySpaceId::<T>::mutate(space_id, |ids| {
+                                    remove_from_vec(ids, post_id)
+                                });
+                            },
+                        PostExtension::Comment(ext) => {
+                            let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
+                            ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
+                                remove_from_vec(reply_ids, post_id)
+                            });
+                        },
+                        PostExtension::SharedPost(original_post_id) => {
+                            SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+                                remove_from_vec(ids, post_id)
+                            });
+                        },
+                    }
+                    PostById::<T>::remove(post_id);
+                },
+                _ => (),
+            }
+
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
             10_000 + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
@@ -450,9 +496,7 @@ pub mod pallet {
             post_id: PostId,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-
             NextPostId::<T>::put(post_id);
-
             Ok(Pays::No.into())
         }
     }

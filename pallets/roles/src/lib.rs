@@ -406,9 +406,9 @@ pub mod pallet {
 
             if let Ok(role) = Self::require_role(role_id) {
                 if role.space_id != space_id {
-                    RoleIdsBySpaceId::<T>::mutate(role.space_id, |role_ids|
+                    RoleIdsBySpaceId::<T>::mutate(role.space_id, |role_ids| {
                         remove_from_vec(role_ids, role_id)
-                    );
+                    });
                 }
             }
 
@@ -432,23 +432,27 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let users_set: BTreeSet<User<T::AccountId>> =
-                convert_users_vec_to_btree_set(users)?;
+            let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
 
             let space_id = Self::require_role(role_id)?.space_id;
 
             // TODO: maybe refactor storages to be BTreeSet
             for user in users_set.iter().cloned() {
-                let _ = <RoleIdsByUserInSpace<T>>::try_mutate(&user, space_id, |roles| {
-                    ensure!(!roles.contains(&role_id), Error::<T>::UserAlreadyGrantedARole);
-                    roles.push(role_id);
-                    Ok(Pays::No.into())
-                });
-                let _ = <UsersByRoleId<T>>::mutate(role_id, |users| {
-                    ensure!(!users.contains(&user), Error::<T>::UserAlreadyGrantedARole);
-                    users.push(user);
-                    Ok(Pays::No.into())
-                });
+                let _ = <RoleIdsByUserInSpace<T>>::try_mutate(
+                    &user,
+                    space_id,
+                    |roles| -> DispatchResultWithPostInfo {
+                        ensure!(!roles.contains(&role_id), Error::<T>::UserAlreadyGrantedARole);
+                        roles.push(role_id);
+                        Ok(Pays::No.into())
+                    },
+                );
+                let _ =
+                    <UsersByRoleId<T>>::mutate(role_id, |users| -> DispatchResultWithPostInfo {
+                        ensure!(!users.contains(&user), Error::<T>::UserAlreadyGrantedARole);
+                        users.push(user);
+                        Ok(Pays::No.into())
+                    });
             }
 
             Self::deposit_event(Event::RoleGranted(
