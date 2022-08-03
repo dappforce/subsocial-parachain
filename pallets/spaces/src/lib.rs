@@ -358,7 +358,8 @@ pub mod pallet {
                     });
                     add_new_space_id_by_owner(&owner, space_id);
                 },
-                _ => add_new_space_id_by_owner(&owner, space_id),
+                Err(_) => add_new_space_id_by_owner(&owner, space_id),
+                _ => (),
             }
 
             SpaceById::<T>::insert(space_id, new_space);
