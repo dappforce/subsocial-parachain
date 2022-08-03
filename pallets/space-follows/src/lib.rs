@@ -115,7 +115,7 @@ pub mod pallet {
                 ModerationError::AccountIsBlocked
             );
 
-            Self::add_space_follower(follower, space_id)?;
+            Self::add_space_follower(follower, space_id);
             SpaceById::<T>::insert(space_id, space);
 
             Ok(())
@@ -152,20 +152,14 @@ pub mod pallet {
                 Error::<T>::AlreadySpaceFollower
             );
 
-            SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
-            SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
-            SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
-                space_ids.push(space_id)
-            });
-
-            Self::deposit_event(Event::SpaceFollowed(follower, space_id));
+            Self::add_space_follower(follower, space_id);
 
             Ok(Pays::No.into())
         }
     }
 
     impl<T: Config> Pallet<T> {
-        fn add_space_follower(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
+        fn add_space_follower(follower: T::AccountId, space_id: SpaceId) {
             SpaceFollowers::<T>::mutate(space_id, |followers| followers.push(follower.clone()));
             SpaceFollowedByAccount::<T>::insert((follower.clone(), space_id), true);
             SpacesFollowedByAccount::<T>::mutate(follower.clone(), |space_ids| {
@@ -173,8 +167,6 @@ pub mod pallet {
             });
 
             Self::deposit_event(Event::SpaceFollowed(follower, space_id));
-
-            Ok(())
         }
 
         pub fn unfollow_space_by_account(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
@@ -202,7 +194,8 @@ pub mod pallet {
     impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
         fn before_space_created(creator: T::AccountId, space: &mut Space<T>) -> DispatchResult {
             // Make a space creator the first follower of this space:
-            Pallet::<T>::add_space_follower(creator, space.id)
+            Pallet::<T>::add_space_follower(creator, space.id);
+            Ok(())
         }
     }
 }
