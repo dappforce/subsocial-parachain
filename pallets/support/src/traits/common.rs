@@ -24,8 +24,5 @@ pub trait ProfileManager<AccountId> {
         space_id: SpaceId,
     ) -> DispatchResult;
 
-    fn try_reset_profile(
-        account: &AccountId,
-        space_id: SpaceId,
-    ) -> DispatchResult;
+    fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId) -> DispatchResult;
 }

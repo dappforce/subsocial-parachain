@@ -36,8 +36,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Social account was not found by id.
-        SocialAccountNotFound,
         /// Account is already a space follower.
         AlreadySpaceFollower,
         /// Account is not a space follower.
