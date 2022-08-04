@@ -42,11 +42,6 @@ pub use types::*;
 
 // pub mod rpc;
 
-#[impl_trait_for_tuples::impl_for_tuples(10)]
-pub trait AfterPostUpdated<T: Config> {
-    fn after_post_updated(account: T::AccountId, post: &Post<T>, old_data: PostUpdate);
-}
-
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -67,8 +62,6 @@ pub mod pallet {
         /// Max comments depth
         #[pallet::constant]
         type MaxCommentDepth: Get<u32>;
-
-        type AfterPostUpdated: AfterPostUpdated<Self>;
 
         type IsPostBlocked: IsPostBlocked<PostId>;
     }
@@ -121,16 +114,6 @@ pub mod pallet {
         PostUpdated {
             account: T::AccountId,
             post_id: PostId,
-        },
-        // TODO: unused
-        PostDeleted {
-            account: T::AccountId,
-            post_id: PostId,
-        },
-        PostShared {
-            account: T::AccountId,
-            original_post_id: PostId,
-            shared_post_id: PostId,
         },
         PostMoved {
             account: T::AccountId,
@@ -296,7 +279,6 @@ pub mod pallet {
             }
 
             let mut is_update_applied = false;
-            let mut old_data = PostUpdate::default();
 
             if let Some(content) = update.content {
                 if content != post.content {
@@ -309,15 +291,14 @@ pub mod pallet {
                         );
                     }
 
-                    old_data.content = Some(post.content.clone());
                     post.content = content;
+                    post.edited = true;
                     is_update_applied = true;
                 }
             }
 
             if let Some(hidden) = update.hidden {
                 if hidden != post.hidden {
-                    old_data.hidden = Some(post.hidden);
                     post.hidden = hidden;
                     is_update_applied = true;
                 }
@@ -325,11 +306,7 @@ pub mod pallet {
 
             // Update this post only if at least one field should be updated:
             if is_update_applied {
-                post.updated = true;
-
-                <PostById<T>>::insert(post.id, post.clone());
-                T::AfterPostUpdated::after_post_updated(editor.clone(), &post, old_data);
-
+                <PostById<T>>::insert(post.id, post);
                 Self::deposit_event(Event::PostUpdated { account: editor, post_id });
             }
             Ok(())
@@ -360,11 +337,6 @@ pub mod pallet {
             } else {
                 Self::delete_post_from_space(post_id)?;
             }
-
-            let historical_data =
-                PostUpdate { space_id: old_space_id, content: None, hidden: None };
-
-            T::AfterPostUpdated::after_post_updated(who.clone(), post, historical_data);
 
             Self::deposit_event(Event::PostMoved {
                 account: who,
@@ -403,7 +375,7 @@ pub mod pallet {
             let new_post = Post::<T> {
                 id: post_id,
                 created: new_who_and_when,
-                updated: false,
+                edited: false,
                 owner: owner.clone(),
                 extension,
                 space_id: space_id_opt,
@@ -430,12 +402,6 @@ pub mod pallet {
                     SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
                         ids.push(post_id)
                     });
-
-                    Self::deposit_event(Event::PostShared {
-                        account: owner.clone(),
-                        original_post_id,
-                        shared_post_id: post_id,
-                    });
                 },
                 _ => (),
             }
@@ -447,7 +413,7 @@ pub mod pallet {
         }
 
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(2, 2),
+            10_000 + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -457,30 +423,30 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            match Self::require_post(post_id) {
-                Ok(old_post) => {
-                    match old_post.extension {
-                        PostExtension::RegularPost =>
-                            if let Some(space_id) = old_post.space_id {
-                                PostIdsBySpaceId::<T>::mutate(space_id, |ids| {
-                                    remove_from_vec(ids, post_id)
-                                });
-                            },
-                        PostExtension::Comment(ext) => {
-                            let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
-                            ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
-                                remove_from_vec(reply_ids, post_id)
-                            });
-                        },
-                        PostExtension::SharedPost(original_post_id) => {
-                            SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
-                                remove_from_vec(ids, post_id)
-                            });
-                        },
+            if let Ok(old_post) = Self::require_post(post_id) {
+                if old_post.is_root_post() {
+                    if let Some(space_id) = old_post.space_id {
+                        PostIdsBySpaceId::<T>::mutate(space_id, |ids| {
+                            remove_from_vec(ids, post_id)
+                        });
                     }
-                    PostById::<T>::remove(post_id);
-                },
-                _ => (),
+                }
+
+                match old_post.extension {
+                    PostExtension::Comment(ext) => {
+                        let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
+                        ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
+                            remove_from_vec(reply_ids, post_id)
+                        });
+                    },
+                    PostExtension::SharedPost(original_post_id) => {
+                        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+                            remove_from_vec(ids, post_id)
+                        });
+                    },
+                    _ => (),
+                }
+                PostById::<T>::remove(post_id);
             }
 
             Ok(Pays::No.into())

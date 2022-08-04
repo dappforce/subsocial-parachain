@@ -109,7 +109,7 @@ fn create_post_should_work() {
         let post = Posts::post_by_id(POST1).unwrap();
 
         assert_eq!(post.created.account, ACCOUNT1);
-        assert!(!post.updated);
+        assert!(!post.edited);
         assert!(!post.hidden);
 
         assert_eq!(post.space_id, Some(SPACE1));

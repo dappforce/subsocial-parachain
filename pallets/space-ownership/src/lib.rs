@@ -36,7 +36,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         /// The current space owner cannot transfer ownership to themself.
-        CannotTranferToCurrentOwner,
+        CannotTransferToCurrentOwner,
         /// Account is already an owner of a space.
         AlreadyASpaceOwner,
         /// There is no pending ownership transfer for a given space.
@@ -76,7 +76,7 @@ pub mod pallet {
             let space = Spaces::<T>::require_space(space_id)?;
             space.ensure_space_owner(who.clone())?;
 
-            ensure!(who != transfer_to, Error::<T>::CannotTranferToCurrentOwner);
+            ensure!(who != transfer_to, Error::<T>::CannotTransferToCurrentOwner);
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
                 ModerationError::AccountIsBlocked
@@ -116,7 +116,7 @@ pub mod pallet {
             SpaceById::<T>::insert(space_id, space);
 
             // FIXME: cover with tests
-            let _ = T::ProfileManager::try_reset_profile(&old_owner, space_id);
+            let _ = T::ProfileManager::unlink_space_from_profile(&old_owner, space_id);
 
             // Remove space id from the list of spaces by old owner
             SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {

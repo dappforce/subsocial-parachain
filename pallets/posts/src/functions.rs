@@ -16,7 +16,7 @@ impl<T: Config> Post<T> {
         Post {
             id,
             created: new_who_and_when::<T>(created_by.clone()),
-            updated: false,
+            edited: false,
             owner: created_by,
             extension,
             space_id: space_id_opt,
@@ -182,20 +182,6 @@ impl<T: Config> Pallet<T> {
         Ok(Self::post_by_id(post_id).ok_or(Error::<T>::PostNotFound)?)
     }
 
-    fn share_post(
-        account: T::AccountId,
-        original_post_id: PostId,
-        shared_post_id: PostId,
-    ) -> DispatchResult {
-        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
-            ids.push(shared_post_id)
-        });
-
-        Self::deposit_event(Event::PostShared { account, original_post_id, shared_post_id });
-
-        Ok(())
-    }
-
     pub fn is_root_post_hidden(post_id: PostId) -> Result<bool, DispatchError> {
         let post = Self::require_post(post_id)?;
         let root_post = post.get_root_post()?;
@@ -282,7 +268,10 @@ impl<T: Config> Pallet<T> {
             Error::<T>::NoPermissionToShare.into(),
         )?;
 
-        Self::share_post(creator.clone(), original_post_id, new_post_id)
+        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+            ids.push(new_post_id)
+        });
+        Ok(())
     }
 
     pub(crate) fn move_post_to_space(

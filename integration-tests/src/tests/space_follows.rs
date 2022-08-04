@@ -19,7 +19,7 @@ fn follow_space_should_work() {
         );
         assert_eq!(
             SpaceFollows::space_followers(SPACE1),
-            vec![ACCOUNT1, ACCOUNT2]
+            vec![ACCOUNT2]
         );
         assert!(SpaceFollows::space_followed_by_account((ACCOUNT2, SPACE1)));
     });
@@ -71,7 +71,7 @@ fn unfollow_space_should_work() {
         assert_ok!(_default_unfollow_space());
 
         assert!(SpaceFollows::spaces_followed_by_account(ACCOUNT2).is_empty());
-        assert_eq!(SpaceFollows::space_followers(SPACE1), vec![ACCOUNT1]);
+        assert!(SpaceFollows::space_followers(SPACE1).is_empty());
     });
 }
 

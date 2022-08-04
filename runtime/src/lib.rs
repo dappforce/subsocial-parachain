@@ -537,7 +537,6 @@ parameter_types! {
 impl pallet_posts::Config for Runtime {
 	type Event = Event;
 	type MaxCommentDepth = MaxCommentDepth;
-	type AfterPostUpdated = ()/*PostHistory*/;
 	type IsPostBlocked = ()/*Moderation*/;
 }
 
@@ -575,8 +574,6 @@ impl pallet_spaces::Config for Runtime {
 	type Event = Event;
 	type Roles = Roles;
 	type SpaceFollows = SpaceFollows;
-	type BeforeSpaceCreated = SpaceFollows;
-	type AfterSpaceUpdated = ();
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;
