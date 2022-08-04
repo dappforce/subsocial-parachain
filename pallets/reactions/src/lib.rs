@@ -115,7 +115,7 @@ pub mod pallet {
         /// New reaction kind is the same as old one on this post/comment.
         SameReaction,
         /// `force_create_post_reaction` failed, because reaction already exists.
-        /// Consider removing reaction first with `force_remove_post_reaction`.
+        /// Consider removing reaction first with `force_delete_post_reaction`.
         ReactionAlreadyExists,
         /// Reaction not found on post by provided [post_id] and [reaction_id].
         ReactionNotFoundOnPost,
@@ -341,7 +341,7 @@ pub mod pallet {
             DispatchClass::Operational,
             Pays::Yes,
         ))]
-        pub fn force_remove_post_reaction(
+        pub fn force_delete_post_reaction(
             origin: OriginFor<T>,
             reaction_id: ReactionId,
             post_id: PostId,

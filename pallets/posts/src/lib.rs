@@ -195,7 +195,7 @@ pub mod pallet {
         NoPermissionToUpdateOwnComments,
 
         /// `force_create_post_reaction` failed, because reaction already exists.
-        /// Consider removing reaction first with `force_remove_post_reaction`.
+        /// Consider removing reaction first with `force_delete_post_reaction`.
         PostAlreadyExists,
     }
 

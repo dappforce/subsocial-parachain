@@ -88,13 +88,18 @@ pub mod pallet {
         pub fn force_set_space_as_profile(
             origin: OriginFor<T>,
             account: T::AccountId,
-            space_id: SpaceId,
+            space_id_opt: Option<SpaceId>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            <ProfileSpaceIdByAccount<T>>::insert(&account, space_id);
+            match space_id_opt {
+                Some(space_id) => {
+                    <ProfileSpaceIdByAccount<T>>::insert(&account, space_id);
+                    Self::deposit_event(Event::SpaceAsProfileAssigned { account, space: space_id });
+                },
+                None => <ProfileSpaceIdByAccount<T>>::remove(&account),
+            }
 
-            Self::deposit_event(Event::SpaceAsProfileAssigned { account, space: space_id });
             Ok(Pays::No.into())
         }
     }
