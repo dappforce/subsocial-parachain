@@ -17,6 +17,7 @@ pub struct Space<T: Config> {
     pub id: SpaceId,
 
     pub created: WhoAndWhenOf<T>,
+    /// True, if the content of this space was edited.
     pub edited: bool,
 
     /// The current owner of a given space.

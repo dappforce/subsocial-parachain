@@ -10,6 +10,7 @@ pub struct Post<T: Config> {
     pub id: PostId,
 
     pub created: WhoAndWhenOf<T>,
+    /// True, if the content of this post was edited.
     pub edited: bool,
 
     /// The current owner of a given post.
