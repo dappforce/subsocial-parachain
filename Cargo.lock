@@ -5657,7 +5657,6 @@ version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "pallet-permissions",
  "pallet-space-follows",
  "pallet-spaces",

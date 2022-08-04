@@ -537,7 +537,6 @@ parameter_types! {
 impl pallet_posts::Config for Runtime {
 	type Event = Event;
 	type MaxCommentDepth = MaxCommentDepth;
-	type AfterPostUpdated = ()/*PostHistory*/;
 	type IsPostBlocked = ()/*Moderation*/;
 }
 

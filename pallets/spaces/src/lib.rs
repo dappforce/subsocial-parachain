@@ -201,6 +201,8 @@ pub mod pallet {
                 Error::<T>::NoPermissionToUpdateSpace.into(),
             )?;
 
+            let mut is_update_applied = false;
+
             if let Some(content) = update.content {
                 if content != space.content {
                     ensure_content_is_valid(content.clone())?;
@@ -212,13 +214,14 @@ pub mod pallet {
 
                     space.content = content;
                     space.edited = true;
+                    is_update_applied = true;
                 }
             }
 
             if let Some(hidden) = update.hidden {
                 if hidden != space.hidden {
                     space.hidden = hidden;
-                    space.edited = true;
+                    is_update_applied = true;
                 }
             }
 
@@ -230,12 +233,12 @@ pub mod pallet {
                         space.permissions = overrides_opt;
                     }
 
-                    space.edited = true;
+                    is_update_applied = true;
                 }
             }
 
             // Update this space only if at least one field should be updated:
-            if space.edited {
+            if is_update_applied {
                 SpaceById::<T>::insert(space_id, space);
                 Self::deposit_event(Event::SpaceUpdated(owner, space_id));
             }

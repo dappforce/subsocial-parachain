@@ -119,7 +119,6 @@ parameter_types! {
 impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
-    type AfterPostUpdated = ();
     type IsPostBlocked = MockModeration;
 }
 
