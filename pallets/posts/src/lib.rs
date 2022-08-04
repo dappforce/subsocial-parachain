@@ -194,8 +194,8 @@ pub mod pallet {
         /// A comment owner is not allowed to update their own comments in this space.
         NoPermissionToUpdateOwnComments,
 
-        /// `force_create_post_reaction` failed, because reaction already exists.
-        /// Consider removing reaction first with `force_delete_post_reaction`.
+        /// `force_create_post` failed, because this post already exists.
+        /// Consider removing the post with `force_remove_post` first.
         PostAlreadyExists,
     }
 
