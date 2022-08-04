@@ -61,10 +61,6 @@ pub mod pallet {
 
         type SpaceFollows: SpaceFollowsProvider<AccountId = Self::AccountId>;
 
-        type BeforeSpaceCreated: BeforeSpaceCreated<Self>;
-
-        type AfterSpaceUpdated: AfterSpaceUpdated<Self>;
-
         type IsAccountBlocked: IsAccountBlocked<Self::AccountId>;
 
         type IsContentBlocked: IsContentBlocked;
@@ -166,8 +162,6 @@ pub mod pallet {
             let new_space =
                 &mut Space::new(space_id, owner.clone(), content, permissions);
 
-            T::BeforeSpaceCreated::before_space_created(owner.clone(), new_space)?;
-
             SpaceById::<T>::insert(space_id, new_space);
             SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
                 ids.try_push(space_id).expect("qed; too many spaces per account")
@@ -207,9 +201,6 @@ pub mod pallet {
                 Error::<T>::NoPermissionToUpdateSpace.into(),
             )?;
 
-            let mut is_update_applied = false;
-            let mut old_data = SpaceUpdate::default();
-
             if let Some(content) = update.content {
                 if content != space.content {
                     ensure_content_is_valid(content.clone())?;
@@ -219,41 +210,33 @@ pub mod pallet {
                         ModerationError::ContentIsBlocked
                     );
 
-                    old_data.content = Some(space.content);
                     space.content = content;
-                    is_update_applied = true;
+                    space.updated = true;
                 }
             }
 
             if let Some(hidden) = update.hidden {
                 if hidden != space.hidden {
-                    old_data.hidden = Some(space.hidden);
                     space.hidden = hidden;
-                    is_update_applied = true;
+                    space.updated = true;
                 }
             }
 
             if let Some(overrides_opt) = update.permissions {
                 if space.permissions != overrides_opt {
-                    old_data.permissions = Some(space.permissions);
-
                     if let Some(overrides) = overrides_opt.clone() {
                         space.permissions = Some(Permissions::<T>::override_permissions(overrides));
                     } else {
                         space.permissions = overrides_opt;
                     }
 
-                    is_update_applied = true;
+                    space.updated = true;
                 }
             }
 
             // Update this space only if at least one field should be updated:
-            if is_update_applied {
-                space.updated = true;
-
-                SpaceById::<T>::insert(space_id, space.clone());
-                T::AfterSpaceUpdated::after_space_updated(owner.clone(), &space, old_data);
-
+            if space.updated {
+                SpaceById::<T>::insert(space_id, space);
                 Self::deposit_event(Event::SpaceUpdated(owner, space_id));
             }
             Ok(())
@@ -418,20 +401,5 @@ pub mod pallet {
             ensure!(space.is_owner(account), Error::<T>::NotASpaceOwner);
             Ok(())
         }
-    }
-
-    pub trait BeforeSpaceCreated<T: Config> {
-        fn before_space_created(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult;
-    }
-
-    impl<T: Config> BeforeSpaceCreated<T> for () {
-        fn before_space_created(_follower: T::AccountId, _space: &mut Space<T>) -> DispatchResult {
-            Ok(())
-        }
-    }
-
-    #[impl_trait_for_tuples::impl_for_tuples(10)]
-    pub trait AfterSpaceUpdated<T: Config> {
-        fn after_space_updated(sender: T::AccountId, space: &Space<T>, old_data: SpaceUpdate);
     }
 }

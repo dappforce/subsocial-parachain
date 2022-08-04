@@ -575,8 +575,6 @@ impl pallet_spaces::Config for Runtime {
 	type Event = Event;
 	type Roles = Roles;
 	type SpaceFollows = SpaceFollows;
-	type BeforeSpaceCreated = SpaceFollows;
-	type AfterSpaceUpdated = ();
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;

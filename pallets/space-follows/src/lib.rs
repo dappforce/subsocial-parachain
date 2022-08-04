@@ -4,7 +4,7 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use pallet_spaces::{BeforeSpaceCreated, Pallet as Spaces, types::Space};
+use pallet_spaces::{Pallet as Spaces, types::Space};
 
 // pub mod rpc;
 
@@ -163,14 +163,6 @@ pub mod pallet {
 
         fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool {
             Pallet::<T>::space_followed_by_account((account, space_id))
-        }
-    }
-
-    impl<T: Config> BeforeSpaceCreated<T> for Pallet<T> {
-        fn before_space_created(creator: T::AccountId, space: &mut Space<T>) -> DispatchResult {
-            // Make a space creator the first follower of this space:
-            Pallet::<T>::add_space_follower(creator, space.id);
-            Ok(())
         }
     }
 }

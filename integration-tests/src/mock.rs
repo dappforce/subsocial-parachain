@@ -158,8 +158,6 @@ impl pallet_spaces::Config for TestRuntime {
     type Event = Event;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
-    type BeforeSpaceCreated = SpaceFollows;
-    type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
