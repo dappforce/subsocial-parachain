@@ -123,7 +123,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             ensure!(
-                Self::account_followed_by_account((follower.clone(), following.clone())),
+                !Self::account_followed_by_account((follower.clone(), following.clone())),
                 Error::<T>::AlreadyAccountFollower
             );
 
