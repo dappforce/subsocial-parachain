@@ -80,7 +80,7 @@ pub mod pallet {
         RoleCreated(T::AccountId, SpaceId, RoleId),
         RoleUpdated(T::AccountId, RoleId),
         RoleDeleted(T::AccountId, RoleId),
-        RoleGranted(Option<T::AccountId>, RoleId, Vec<User<T::AccountId>>),
+        RoleGranted(T::AccountId, RoleId, Vec<User<T::AccountId>>),
         RoleRevoked(T::AccountId, RoleId, Vec<User<T::AccountId>>),
     }
 
@@ -115,9 +115,6 @@ pub mod pallet {
 
         /// Cannot enable a role that is already enabled.
         RoleAlreadyEnabled,
-
-        /// The role is already granted to this user.
-        UserAlreadyGrantedARole,
     }
 
     #[pallet::type_value]
@@ -342,7 +339,7 @@ pub mod pallet {
             }
 
             Self::deposit_event(Event::RoleGranted(
-                Some(who),
+                who,
                 role_id,
                 users_set.iter().cloned().collect(),
             ));
@@ -432,31 +429,27 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
+            let space_id = Self::require_role(role_id)?.space_id;
+            let space = T::SpacePermissionsProvider::space_permissions_info(space_id)?;
+
             let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
 
-            let space_id = Self::require_role(role_id)?.space_id;
-
-            // TODO: maybe refactor storages to be BTreeSet
-            for user in users_set.iter().cloned() {
-                let _ = <RoleIdsByUserInSpace<T>>::try_mutate(
-                    &user,
-                    space_id,
-                    |roles| -> DispatchResultWithPostInfo {
-                        ensure!(!roles.contains(&role_id), Error::<T>::UserAlreadyGrantedARole);
-                        roles.push(role_id);
-                        Ok(Pays::No.into())
-                    },
-                );
-                let _ =
-                    <UsersByRoleId<T>>::mutate(role_id, |users| -> DispatchResultWithPostInfo {
-                        ensure!(!users.contains(&user), Error::<T>::UserAlreadyGrantedARole);
-                        users.push(user);
-                        Ok(Pays::No.into())
+            for user in users_set.iter() {
+                if !Self::users_by_role_id(role_id).contains(user) {
+                    <UsersByRoleId<T>>::mutate(role_id, |users| {
+                        users.push(user.clone());
                     });
+                }
+                if !Self::role_ids_by_user_in_space(user.clone(), space_id).contains(&role_id)
+                {
+                    <RoleIdsByUserInSpace<T>>::mutate(user.clone(), space_id, |roles| {
+                        roles.push(role_id);
+                    })
+                }
             }
 
             Self::deposit_event(Event::RoleGranted(
-                None,
+                space.owner,
                 role_id,
                 users_set.iter().cloned().collect(),
             ));
