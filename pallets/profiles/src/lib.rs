@@ -42,10 +42,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Profile's space id was updated for this account.
-        ProfileUpdated {
-            account: T::AccountId,
-            space_id: Option<SpaceId>,
-        },
+        ProfileUpdated { account: T::AccountId, space_id: Option<SpaceId> },
     }
 
     #[pallet::error]

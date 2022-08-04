@@ -7,10 +7,7 @@ impl<T: Config> Pallet<T> {
     /// Check that there is a `Role` with such `role_id` in the storage
     /// or return`RoleNotFound` error.
     pub fn ensure_role_exists(role_id: RoleId) -> DispatchResult {
-        ensure!(
-            <RoleById<T>>::contains_key(role_id),
-            Error::<T>::RoleNotFound
-        );
+        ensure!(<RoleById<T>>::contains_key(role_id), Error::<T>::RoleNotFound);
         Ok(())
     }
 
@@ -51,7 +48,7 @@ impl<T: Config> Pallet<T> {
                 // No need to check if a user is follower, if they already are an owner:
                 is_follower =
                     is_owner || T::SpaceFollows::is_space_follower(account.clone(), space_id);
-            }
+            },
             User::Space(_) => (/* Not implemented yet. */),
         }
 
@@ -94,7 +91,7 @@ impl<T: Config> Pallet<T> {
         for role_id in role_ids {
             if let Some(role) = Self::role_by_id(role_id) {
                 if role.disabled {
-                    continue;
+                    continue
                 }
 
                 let mut is_expired = false;
@@ -105,7 +102,7 @@ impl<T: Config> Pallet<T> {
                 }
 
                 if !is_expired && role.permissions.contains(&permission) {
-                    return Ok(());
+                    return Ok(())
                 }
             }
         }
@@ -144,9 +141,9 @@ impl<T: Config> Role<T> {
 
     pub fn set_disabled(&mut self, disable: bool) -> DispatchResult {
         if self.disabled && disable {
-            return Err(Error::<T>::RoleAlreadyDisabled.into());
+            return Err(Error::<T>::RoleAlreadyDisabled.into())
         } else if !self.disabled && !disable {
-            return Err(Error::<T>::RoleAlreadyEnabled.into());
+            return Err(Error::<T>::RoleAlreadyEnabled.into())
         }
 
         self.disabled = disable;

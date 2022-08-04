@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::ensure_signed;
+use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::Deserialize;
@@ -14,8 +14,8 @@ use pallet_permissions::SpacePermission;
 use pallet_posts::{Pallet as Posts, PostById};
 use pallet_spaces::Pallet as Spaces;
 use subsocial_support::{
-    traits::{IsAccountBlocked}, remove_from_vec, ModerationError, PostId, WhoAndWhenOf,
-    new_who_and_when,
+    new_who_and_when, remove_from_vec, traits::IsAccountBlocked, ModerationError, PostId,
+    WhoAndWhenOf,
 };
 
 pub use pallet::*;
@@ -58,8 +58,7 @@ pub mod pallet {
     use subsocial_support::WhoAndWhen;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config
-    {
+    pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
@@ -168,7 +167,7 @@ pub mod pallet {
                         Error::<T>::NoPermissionToUpvote.into(),
                     )?;
                     post.inc_upvotes();
-                }
+                },
                 ReactionKind::Downvote => {
                     Spaces::ensure_account_has_space_permission(
                         owner.clone(),
@@ -177,7 +176,7 @@ pub mod pallet {
                         Error::<T>::NoPermissionToDownvote.into(),
                     )?;
                     post.inc_downvotes();
-                }
+                },
             }
 
             PostById::<T>::insert(post_id, post.clone());
@@ -185,12 +184,7 @@ pub mod pallet {
             ReactionIdsByPostId::<T>::mutate(post.id, |ids| ids.push(reaction_id));
             PostReactionIdByAccount::<T>::insert((owner.clone(), post_id), reaction_id);
 
-            Self::deposit_event(Event::PostReactionCreated(
-                owner,
-                post_id,
-                reaction_id,
-                kind,
-            ));
+            Self::deposit_event(Event::PostReactionCreated(owner, post_id, reaction_id, kind));
             Ok(())
         }
 
@@ -211,10 +205,7 @@ pub mod pallet {
             let mut reaction = Self::require_reaction(reaction_id)?;
             let post = &mut Posts::require_post(post_id)?;
 
-            ensure!(
-                owner == reaction.created.account,
-                Error::<T>::NotReactionOwner
-            );
+            ensure!(owner == reaction.created.account, Error::<T>::NotReactionOwner);
             ensure!(reaction.kind != new_kind, Error::<T>::SameReaction);
 
             if let Some(space_id) = post.try_get_space_id() {
@@ -230,22 +221,17 @@ pub mod pallet {
                 ReactionKind::Upvote => {
                     post.inc_upvotes();
                     post.dec_downvotes();
-                }
+                },
                 ReactionKind::Downvote => {
                     post.inc_downvotes();
                     post.dec_upvotes();
-                }
+                },
             }
 
             ReactionById::<T>::insert(reaction_id, reaction);
             PostById::<T>::insert(post_id, post);
 
-            Self::deposit_event(Event::PostReactionUpdated(
-                owner,
-                post_id,
-                reaction_id,
-                new_kind,
-            ));
+            Self::deposit_event(Event::PostReactionUpdated(owner, post_id, reaction_id, new_kind));
             Ok(())
         }
 
@@ -266,10 +252,7 @@ pub mod pallet {
             let reaction = Self::require_reaction(reaction_id)?;
             let post = &mut Posts::require_post(post_id)?;
 
-            ensure!(
-                owner == reaction.created.account,
-                Error::<T>::NotReactionOwner
-            );
+            ensure!(owner == reaction.created.account, Error::<T>::NotReactionOwner);
             if let Some(space_id) = post.try_get_space_id() {
                 ensure!(
                     T::IsAccountBlocked::is_allowed_account(owner.clone(), space_id),
@@ -317,11 +300,8 @@ pub mod pallet {
             let new_who_and_when =
                 WhoAndWhen { account, block: frame_system::Pallet::<T>::block_number(), time };
 
-            let reaction = Reaction {
-                id: reaction_id,
-                created: new_who_and_when,
-                kind: reaction_kind,
-            };
+            let reaction =
+                Reaction { id: reaction_id, created: new_who_and_when, kind: reaction_kind };
             ReactionById::<T>::insert(reaction_id, reaction);
             ReactionIdsByPostId::<T>::mutate(post_id, |ids| ids.push(reaction_id));
             PostReactionIdByAccount::<T>::insert((who.clone(), post_id), reaction_id);
@@ -388,14 +368,12 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
     pub fn insert_new_reaction(account: T::AccountId, kind: ReactionKind) -> ReactionId {
         let id = Self::next_reaction_id();
-        let reaction: Reaction<T> = Reaction {
-            id,
-            created: new_who_and_when::<T>(account),
-            kind,
-        };
+        let reaction: Reaction<T> = Reaction { id, created: new_who_and_when::<T>(account), kind };
 
         ReactionById::<T>::insert(id, reaction);
-        NextReactionId::<T>::mutate(|n| { *n += 1; });
+        NextReactionId::<T>::mutate(|n| {
+            *n += 1;
+        });
 
         id
     }

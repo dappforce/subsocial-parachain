@@ -4,7 +4,7 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use pallet_spaces::{Pallet as Spaces, types::Space};
+use pallet_spaces::{types::Space, Pallet as Spaces};
 
 // pub mod rpc;
 
@@ -14,17 +14,15 @@ pub mod pallet {
 
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use subsocial_support::{
-        traits::{IsAccountBlocked, SpaceFollowsProvider},
-        ModerationError, SpaceId, remove_from_vec,
-    };
     use sp_std::vec::Vec;
+    use subsocial_support::{
+        remove_from_vec,
+        traits::{IsAccountBlocked, SpaceFollowsProvider},
+        ModerationError, SpaceId,
+    };
 
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config
-        + pallet_spaces::Config
-    {
+    pub trait Config: frame_system::Config + pallet_spaces::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
@@ -62,14 +60,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceFollowed(
-            /* follower */ T::AccountId,
-            /* following */ SpaceId,
-        ),
-        SpaceUnfollowed(
-            /* follower */ T::AccountId,
-            /* unfollowing */ SpaceId,
-        ),
+        SpaceFollowed(/* follower */ T::AccountId, /* following */ SpaceId),
+        SpaceUnfollowed(/* follower */ T::AccountId, /* unfollowing */ SpaceId),
     }
 
     #[pallet::call]
@@ -169,17 +161,11 @@ pub mod pallet {
 
 /// Handler that will be called right before the space is followed.
 pub trait BeforeSpaceFollowed<T: Config> {
-    fn before_space_followed(
-        follower: T::AccountId,
-        space: &mut Space<T>,
-    ) -> DispatchResult;
+    fn before_space_followed(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult;
 }
 
 impl<T: Config> BeforeSpaceFollowed<T> for () {
-    fn before_space_followed(
-        _follower: T::AccountId,
-        _space: &mut Space<T>,
-    ) -> DispatchResult {
+    fn before_space_followed(_follower: T::AccountId, _space: &mut Space<T>) -> DispatchResult {
         Ok(())
     }
 }
