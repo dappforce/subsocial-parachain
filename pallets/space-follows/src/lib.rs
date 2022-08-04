@@ -4,7 +4,7 @@ pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
 
-use pallet_spaces::{types::Space, Pallet as Spaces};
+use pallet_spaces::Pallet as Spaces;
 
 // pub mod rpc;
 
@@ -60,8 +60,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceFollowed(/* follower */ T::AccountId, /* following */ SpaceId),
-        SpaceUnfollowed(/* follower */ T::AccountId, /* unfollowing */ SpaceId),
+        SpaceFollowed { follower: T::AccountId, space_id: SpaceId },
+        SpaceUnfollowed { follower: T::AccountId, space_id: SpaceId },
     }
 
     #[pallet::call]
@@ -133,7 +133,7 @@ pub mod pallet {
                 space_ids.push(space_id)
             });
 
-            Self::deposit_event(Event::SpaceFollowed(follower, space_id));
+            Self::deposit_event(Event::SpaceFollowed { follower, space_id });
         }
 
         pub fn remove_space_follower(follower: T::AccountId, space_id: SpaceId) -> DispatchResult {
@@ -145,7 +145,7 @@ pub mod pallet {
             });
             SpaceFollowedByAccount::<T>::remove((follower.clone(), space_id));
 
-            Self::deposit_event(Event::SpaceUnfollowed(follower, space_id));
+            Self::deposit_event(Event::SpaceUnfollowed { follower, space_id });
             Ok(())
         }
     }
@@ -156,27 +156,5 @@ pub mod pallet {
         fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool {
             Pallet::<T>::space_followed_by_account((account, space_id))
         }
-    }
-}
-
-/// Handler that will be called right before the space is followed.
-pub trait BeforeSpaceFollowed<T: Config> {
-    fn before_space_followed(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult;
-}
-
-impl<T: Config> BeforeSpaceFollowed<T> for () {
-    fn before_space_followed(_follower: T::AccountId, _space: &mut Space<T>) -> DispatchResult {
-        Ok(())
-    }
-}
-
-/// Handler that will be called right before the space is unfollowed.
-pub trait BeforeSpaceUnfollowed<T: Config> {
-    fn before_space_unfollowed(follower: T::AccountId, space: &mut Space<T>) -> DispatchResult;
-}
-
-impl<T: Config> BeforeSpaceUnfollowed<T> for () {
-    fn before_space_unfollowed(_follower: T::AccountId, _space: &mut Space<T>) -> DispatchResult {
-        Ok(())
     }
 }
