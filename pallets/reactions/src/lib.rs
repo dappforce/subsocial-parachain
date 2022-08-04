@@ -96,9 +96,24 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        PostReactionCreated(T::AccountId, PostId, ReactionId, ReactionKind),
-        PostReactionUpdated(T::AccountId, PostId, ReactionId, ReactionKind),
-        PostReactionDeleted(T::AccountId, PostId, ReactionId, ReactionKind),
+        PostReactionCreated {
+            account: T::AccountId,
+            post_id: PostId,
+            reaction_id: ReactionId,
+            reaction_kind: ReactionKind,
+        },
+        PostReactionUpdated {
+            account: T::AccountId,
+            post_id: PostId,
+            reaction_id: ReactionId,
+            reaction_kind: ReactionKind,
+        },
+        PostReactionDeleted {
+            account: T::AccountId,
+            post_id: PostId,
+            reaction_id: ReactionId,
+            reaction_kind: ReactionKind,
+        },
     }
 
     #[pallet::error]
@@ -184,7 +199,12 @@ pub mod pallet {
             ReactionIdsByPostId::<T>::mutate(post.id, |ids| ids.push(reaction_id));
             PostReactionIdByAccount::<T>::insert((owner.clone(), post_id), reaction_id);
 
-            Self::deposit_event(Event::PostReactionCreated(owner, post_id, reaction_id, kind));
+            Self::deposit_event(Event::PostReactionCreated {
+                account: owner,
+                post_id,
+                reaction_id,
+                reaction_kind: kind,
+            });
             Ok(())
         }
 
@@ -231,7 +251,12 @@ pub mod pallet {
             ReactionById::<T>::insert(reaction_id, reaction);
             PostById::<T>::insert(post_id, post);
 
-            Self::deposit_event(Event::PostReactionUpdated(owner, post_id, reaction_id, new_kind));
+            Self::deposit_event(Event::PostReactionUpdated {
+                account: owner,
+                post_id,
+                reaction_id,
+                reaction_kind: new_kind,
+            });
             Ok(())
         }
 
@@ -270,12 +295,12 @@ pub mod pallet {
             ReactionIdsByPostId::<T>::mutate(post.id, |ids| remove_from_vec(ids, reaction_id));
             PostReactionIdByAccount::<T>::remove((owner.clone(), post_id));
 
-            Self::deposit_event(Event::PostReactionDeleted(
-                owner,
+            Self::deposit_event(Event::PostReactionDeleted {
+                account: owner,
                 post_id,
                 reaction_id,
-                reaction.kind,
-            ));
+                reaction_kind: reaction.kind,
+            });
             Ok(())
         }
 
@@ -306,12 +331,12 @@ pub mod pallet {
             ReactionIdsByPostId::<T>::mutate(post_id, |ids| ids.push(reaction_id));
             PostReactionIdByAccount::<T>::insert((who.clone(), post_id), reaction_id);
 
-            Self::deposit_event(Event::PostReactionCreated(
-                who,
+            Self::deposit_event(Event::PostReactionCreated {
+                account: who,
                 post_id,
                 reaction_id,
                 reaction_kind,
-            ));
+            });
 
             Ok(Pays::No.into())
         }

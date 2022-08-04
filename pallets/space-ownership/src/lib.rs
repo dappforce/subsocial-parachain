@@ -54,13 +54,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceOwnershipTransferCreated(
-            /* current owner */ T::AccountId,
-            SpaceId,
-            /* new owner */ T::AccountId,
-        ),
-        SpaceOwnershipTransferAccepted(T::AccountId, SpaceId),
-        SpaceOwnershipTransferRejected(T::AccountId, SpaceId),
+        SpaceOwnershipTransferCreated {
+            current_owner: T::AccountId,
+            space_id: SpaceId,
+            new_owner: T::AccountId,
+        },
+        SpaceOwnershipTransferAccepted {
+            account: T::AccountId,
+            space_id: SpaceId,
+        },
+        SpaceOwnershipTransferRejected {
+            account: T::AccountId,
+            space_id: SpaceId,
+        },
     }
 
     #[pallet::call]
@@ -84,7 +90,11 @@ pub mod pallet {
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
-            Self::deposit_event(Event::SpaceOwnershipTransferCreated(who, space_id, transfer_to));
+            Self::deposit_event(Event::SpaceOwnershipTransferCreated {
+                current_owner: who,
+                space_id,
+                new_owner: transfer_to,
+            });
             Ok(())
         }
 
@@ -125,7 +135,10 @@ pub mod pallet {
             // TODO add a new owner as a space follower? See
             // T::BeforeSpaceCreated::before_space_created(new_owner.clone(), space)?;
 
-            Self::deposit_event(Event::SpaceOwnershipTransferAccepted(new_owner, space_id));
+            Self::deposit_event(Event::SpaceOwnershipTransferAccepted {
+                account: new_owner,
+                space_id,
+            });
             Ok(())
         }
 
@@ -143,7 +156,7 @@ pub mod pallet {
 
             PendingSpaceOwner::<T>::remove(space_id);
 
-            Self::deposit_event(Event::SpaceOwnershipTransferRejected(who, space_id));
+            Self::deposit_event(Event::SpaceOwnershipTransferRejected { account: who, space_id });
             Ok(())
         }
     }
