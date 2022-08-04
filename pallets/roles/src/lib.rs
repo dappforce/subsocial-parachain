@@ -11,19 +11,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::{self as system, ensure_signed};
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
 use pallet_permissions::{
-    Pallet as Permissions, SpacePermission, SpacePermissionSet, PermissionChecker,
+    Pallet as Permissions, PermissionChecker, SpacePermission, SpacePermissionSet,
 };
 use subsocial_support::{
+    convert_users_vec_to_btree_set, ensure_content_is_valid, new_who_and_when,
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
-    Content, ModerationError, SpaceId, User, WhoAndWhenOf, new_who_and_when,
-    ensure_content_is_valid, convert_users_vec_to_btree_set,
+    Content, ModerationError, SpaceId, User, WhoAndWhenOf,
 };
 
 pub use pallet::*;
@@ -60,7 +60,10 @@ pub mod pallet {
         #[pallet::constant]
         type MaxUsersToProcessPerDeleteRole: Get<u16>;
 
-        type SpacePermissionsProvider: SpacePermissionsProvider<Self::AccountId, SpacePermissionsInfoOf<Self>>;
+        type SpacePermissionsProvider: SpacePermissionsProvider<
+            Self::AccountId,
+            SpacePermissionsInfoOf<Self>,
+        >;
 
         type SpaceFollows: SpaceFollowsProvider<AccountId = Self::AccountId>;
 
@@ -188,25 +191,21 @@ pub mod pallet {
             Self::ensure_role_manager(who.clone(), space_id)?;
 
             let permissions_set = permissions.into_iter().collect();
-            let new_role = Role::<T>::new(
-                who.clone(),
-                space_id,
-                time_to_live,
-                content,
-                permissions_set,
-            )?;
+            let new_role =
+                Role::<T>::new(who.clone(), space_id, time_to_live, content, permissions_set)?;
 
             // TODO review strange code:
-            let next_role_id = new_role
-                .id
-                .checked_add(1)
-                .ok_or(Error::<T>::RoleIdOverflow)?;
+            let next_role_id = new_role.id.checked_add(1).ok_or(Error::<T>::RoleIdOverflow)?;
             NextRoleId::<T>::put(next_role_id);
 
             RoleById::<T>::insert(new_role.id, new_role.clone());
             RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
 
-            Self::deposit_event(Event::RoleCreated { account: who, space_id, role_id: new_role.id });
+            Self::deposit_event(Event::RoleCreated {
+                account: who,
+                space_id,
+                role_id: new_role.id,
+            });
             Ok(())
         }
 
@@ -220,9 +219,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let has_updates = update.disabled.is_some()
-                || update.content.is_some()
-                || update.permissions.is_some();
+            let has_updates = update.disabled.is_some() ||
+                update.content.is_some() ||
+                update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesProvided);
 
@@ -254,10 +253,8 @@ pub mod pallet {
 
             if let Some(permissions) = update.permissions {
                 if !permissions.is_empty() {
-                    let permissions_diff: Vec<_> = permissions
-                        .symmetric_difference(&role.permissions)
-                        .cloned()
-                        .collect();
+                    let permissions_diff: Vec<_> =
+                        permissions.symmetric_difference(&role.permissions).cloned().collect();
 
                     if !permissions_diff.is_empty() {
                         role.permissions = permissions;
@@ -289,9 +286,8 @@ pub mod pallet {
                 Error::<T>::TooManyUsersToDeleteRole
             );
 
-            let role_idx_by_space_opt = Self::role_ids_by_space_id(role.space_id)
-                .iter()
-                .position(|x| *x == role_id);
+            let role_idx_by_space_opt =
+                Self::role_ids_by_space_id(role.space_id).iter().position(|x| *x == role_id);
 
             if let Some(role_idx) = role_idx_by_space_opt {
                 RoleIdsBySpaceId::<T>::mutate(role.space_id, |n| n.swap_remove(role_idx));
@@ -317,8 +313,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
-            let users_set: BTreeSet<User<T::AccountId>> =
-                convert_users_vec_to_btree_set(users)?;
+            let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
 
             let role = Self::require_role(role_id)?;
 
@@ -388,7 +383,7 @@ pub mod pallet {
             let new_who_and_when = WhoAndWhen {
                 account: account.clone(),
                 block: frame_system::Pallet::<T>::block_number(),
-                time
+                time,
             };
 
             let new_role = Role::<T> {
@@ -440,8 +435,7 @@ pub mod pallet {
                         users.push(user.clone());
                     });
                 }
-                if !Self::role_ids_by_user_in_space(user.clone(), space_id).contains(&role_id)
-                {
+                if !Self::role_ids_by_user_in_space(user.clone(), space_id).contains(&role_id) {
                     <RoleIdsByUserInSpace<T>>::mutate(user.clone(), space_id, |roles| {
                         roles.push(role_id);
                     })

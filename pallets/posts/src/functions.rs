@@ -268,9 +268,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::NoPermissionToShare.into(),
         )?;
 
-        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
-            ids.push(new_post_id)
-        });
+        SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| ids.push(new_post_id));
         Ok(())
     }
 

@@ -27,9 +27,7 @@ pub mod types;
 pub use pallet::*;
 
 use pallet_permissions::{SpacePermission, SpacePermissions};
-use subsocial_support::{
-    traits::SpaceFollowsProvider, Content, SpaceId,
-};
+use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -159,8 +157,7 @@ pub mod pallet {
                 permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
 
             let space_id = Self::next_space_id();
-            let new_space =
-                &mut Space::new(space_id, owner.clone(), content, permissions);
+            let new_space = &mut Space::new(space_id, owner.clone(), content, permissions);
 
             SpaceById::<T>::insert(space_id, new_space);
             SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
@@ -181,9 +178,7 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             let has_updates =
-                update.content.is_some() ||
-                update.hidden.is_some() ||
-                update.permissions.is_some();
+                update.content.is_some() || update.hidden.is_some() || update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
 
@@ -309,7 +304,10 @@ pub mod pallet {
             DispatchClass::Operational,
             Pays::Yes,
         ))]
-        pub fn force_set_next_space_id(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResultWithPostInfo {
+        pub fn force_set_next_space_id(
+            origin: OriginFor<T>,
+            space_id: SpaceId,
+        ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             NextSpaceId::<T>::put(space_id);
             Ok(Pays::No.into())
@@ -391,9 +389,7 @@ pub mod pallet {
     }
 
     impl<T: Config> SpacePermissionsProvider<T::AccountId, SpacePermissionsInfoOf<T>> for Pallet<T> {
-        fn space_permissions_info(
-            id: SpaceId,
-        ) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
+        fn space_permissions_info(id: SpaceId) -> Result<SpacePermissionsInfoOf<T>, DispatchError> {
             let space = Pallet::<T>::require_space(id)?;
 
             Ok(SpacePermissionsInfo { owner: space.owner, permissions: space.permissions })

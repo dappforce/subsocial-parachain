@@ -5,7 +5,7 @@ use sp_std::prelude::*;
 
 use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
 use subsocial_support::{
-    traits::IsAccountBlocked, remove_from_bounded_vec, ModerationError, SpaceId,
+    remove_from_bounded_vec, traits::IsAccountBlocked, ModerationError, SpaceId,
 };
 
 pub use pallet::*;
@@ -84,11 +84,7 @@ pub mod pallet {
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
-            Self::deposit_event(Event::SpaceOwnershipTransferCreated(
-                who,
-                space_id,
-                transfer_to,
-            ));
+            Self::deposit_event(Event::SpaceOwnershipTransferCreated(who, space_id, transfer_to));
             Ok(())
         }
 
@@ -99,12 +95,10 @@ pub mod pallet {
             let mut space = Spaces::require_space(space_id)?;
             ensure!(!space.is_owner(&new_owner), Error::<T>::AlreadyASpaceOwner);
 
-            let transfer_to = Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
+            let transfer_to =
+                Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
 
-            ensure!(
-                new_owner == transfer_to,
-                Error::<T>::NotAllowedToAcceptOwnershipTransfer
-            );
+            ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
 
             Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
 
@@ -128,7 +122,8 @@ pub mod pallet {
                 ids.try_push(space_id).expect("qed; too many spaces per account")
             });
 
-            // TODO add a new owner as a space follower? See T::BeforeSpaceCreated::before_space_created(new_owner.clone(), space)?;
+            // TODO add a new owner as a space follower? See
+            // T::BeforeSpaceCreated::before_space_created(new_owner.clone(), space)?;
 
             Self::deposit_event(Event::SpaceOwnershipTransferAccepted(new_owner, space_id));
             Ok(())
