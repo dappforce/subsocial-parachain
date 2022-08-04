@@ -116,7 +116,7 @@ pub mod pallet {
         /// Cannot enable a role that is already enabled.
         RoleAlreadyEnabled,
 
-        /// Role already granted to this user.
+        /// The role is already granted to this user.
         UserAlreadyGrantedARole,
     }
 
