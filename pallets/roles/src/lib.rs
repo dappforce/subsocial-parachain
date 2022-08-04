@@ -77,11 +77,11 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        RoleCreated(T::AccountId, SpaceId, RoleId),
-        RoleUpdated(T::AccountId, RoleId),
-        RoleDeleted(T::AccountId, RoleId),
-        RoleGranted(T::AccountId, RoleId, Vec<User<T::AccountId>>),
-        RoleRevoked(T::AccountId, RoleId, Vec<User<T::AccountId>>),
+        RoleCreated { who: T::AccountId, space_id: SpaceId, role_id: RoleId },
+        RoleUpdated { who: T::AccountId, role_id: RoleId },
+        RoleDeleted { who: T::AccountId, role_id: RoleId },
+        RoleGranted { who: T::AccountId, role_id: RoleId, users: Vec<User<T::AccountId>> },
+        RoleRevoked { who: T::AccountId, role_id: RoleId, users: Vec<User<T::AccountId>> },
     }
 
     #[pallet::error]
@@ -206,7 +206,7 @@ pub mod pallet {
             RoleById::<T>::insert(new_role.id, new_role.clone());
             RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
 
-            Self::deposit_event(Event::RoleCreated(who, space_id, new_role.id));
+            Self::deposit_event(Event::RoleCreated { who, space_id, role_id: new_role.id });
             Ok(())
         }
 
@@ -268,7 +268,7 @@ pub mod pallet {
 
             if is_update_applied {
                 <RoleById<T>>::insert(role_id, role);
-                Self::deposit_event(Event::RoleUpdated(who, role_id));
+                Self::deposit_event(Event::RoleUpdated { who, role_id });
             }
             Ok(())
         }
@@ -302,7 +302,7 @@ pub mod pallet {
             <RoleById<T>>::remove(role_id);
             <UsersByRoleId<T>>::remove(role_id);
 
-            Self::deposit_event(Event::RoleDeleted(who, role_id));
+            Self::deposit_event(Event::RoleDeleted { who, role_id });
             Ok(())
         }
 
@@ -338,11 +338,11 @@ pub mod pallet {
                 }
             }
 
-            Self::deposit_event(Event::RoleGranted(
+            Self::deposit_event(Event::RoleGranted {
                 who,
                 role_id,
-                users_set.iter().cloned().collect(),
-            ));
+                users: users_set.iter().cloned().collect(),
+            });
             Ok(())
         }
 
@@ -364,7 +364,7 @@ pub mod pallet {
 
             role.revoke_from_users(users.clone());
 
-            Self::deposit_event(Event::RoleRevoked(who, role_id, users));
+            Self::deposit_event(Event::RoleRevoked { who, role_id, users });
             Ok(())
         }
 
@@ -412,7 +412,7 @@ pub mod pallet {
             RoleById::<T>::insert(role_id, new_role);
             RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(role_id));
 
-            Self::deposit_event(Event::RoleCreated(account, space_id, role_id));
+            Self::deposit_event(Event::RoleCreated { who: account, space_id, role_id });
 
             Ok(Pays::No.into())
         }
@@ -448,11 +448,11 @@ pub mod pallet {
                 }
             }
 
-            Self::deposit_event(Event::RoleGranted(
-                space.owner,
+            Self::deposit_event(Event::RoleGranted {
+                who: space.owner,
                 role_id,
-                users_set.iter().cloned().collect(),
-            ));
+                users: users_set.iter().cloned().collect(),
+            });
             Ok(Pays::No.into())
         }
 
