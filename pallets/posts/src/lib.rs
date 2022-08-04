@@ -29,9 +29,9 @@ use sp_std::prelude::*;
 use pallet_permissions::SpacePermission;
 use pallet_spaces::{types::Space, Pallet as Spaces};
 use subsocial_support::{
-    ensure_content_is_valid, new_who_and_when,
+    ensure_content_is_valid, new_who_and_when, remove_from_vec,
     traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked},
-    Content, ModerationError, PostId, SpaceId, WhoAndWhenOf,
+    Content, ModerationError, PostId, SpaceId, WhoAndWhen, WhoAndWhenOf,
 };
 
 pub use pallet::*;
@@ -193,6 +193,10 @@ pub mod pallet {
         NoPermissionToUpdateOwnPosts,
         /// A comment owner is not allowed to update their own comments in this space.
         NoPermissionToUpdateOwnComments,
+
+        /// `force_create_post` failed, because this post already exists.
+        /// Consider removing the post with `force_remove_post` first.
+        PostAlreadyExists,
     }
 
     #[pallet::call]
@@ -369,6 +373,131 @@ pub mod pallet {
                 to_space: new_space_id,
             });
             Ok(())
+        }
+
+        #[pallet::weight((
+            50_000 + T::DbWeight::get().reads_writes(4, 3),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_create_post(
+            origin: OriginFor<T>,
+            post_id: PostId,
+            created: WhoAndWhenOf<T>,
+            owner: T::AccountId,
+            extension: PostExtension,
+            space_id_opt: Option<SpaceId>,
+            content: Content,
+            hidden: bool,
+            upvotes_count: u32,
+            downvotes_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            ensure!(Self::require_post(post_id).is_err(), Error::<T>::PostAlreadyExists);
+
+            let WhoAndWhen { account, time, .. } = created;
+            let new_who_and_when =
+                WhoAndWhen { account, block: frame_system::Pallet::<T>::block_number(), time };
+
+            let new_post = Post::<T> {
+                id: post_id,
+                created: new_who_and_when,
+                updated: false,
+                owner: owner.clone(),
+                extension,
+                space_id: space_id_opt,
+                content,
+                hidden,
+                upvotes_count,
+                downvotes_count,
+            };
+
+            if new_post.is_root_post() {
+                if let Some(space_id) = new_post.space_id {
+                    PostIdsBySpaceId::<T>::mutate(space_id, |ids| ids.push(post_id));
+                }
+            }
+
+            match new_post.extension {
+                PostExtension::Comment(ext) => {
+                    let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
+                    ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
+                        reply_ids.push(post_id)
+                    });
+                },
+                PostExtension::SharedPost(original_post_id) => {
+                    SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+                        ids.push(post_id)
+                    });
+
+                    Self::deposit_event(Event::PostShared {
+                        account: owner.clone(),
+                        original_post_id,
+                        shared_post_id: post_id,
+                    });
+                },
+                _ => (),
+            }
+
+            PostById::insert(post_id, new_post);
+
+            Self::deposit_event(Event::PostCreated { account: owner, post_id });
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().reads_writes(2, 2),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_remove_post(
+            origin: OriginFor<T>,
+            post_id: PostId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            match Self::require_post(post_id) {
+                Ok(old_post) => {
+                    match old_post.extension {
+                        PostExtension::RegularPost =>
+                            if let Some(space_id) = old_post.space_id {
+                                PostIdsBySpaceId::<T>::mutate(space_id, |ids| {
+                                    remove_from_vec(ids, post_id)
+                                });
+                            },
+                        PostExtension::Comment(ext) => {
+                            let commented_post_id = ext.parent_id.unwrap_or(ext.root_post_id);
+                            ReplyIdsByPostId::<T>::mutate(commented_post_id, |reply_ids| {
+                                remove_from_vec(reply_ids, post_id)
+                            });
+                        },
+                        PostExtension::SharedPost(original_post_id) => {
+                            SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
+                                remove_from_vec(ids, post_id)
+                            });
+                        },
+                    }
+                    PostById::<T>::remove(post_id);
+                },
+                _ => (),
+            }
+
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_next_post_id(
+            origin: OriginFor<T>,
+            post_id: PostId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            NextPostId::<T>::put(post_id);
+            Ok(Pays::No.into())
         }
     }
 }

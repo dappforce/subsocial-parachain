@@ -71,13 +71,36 @@ pub mod pallet {
         pub fn unset_space_as_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            let space_id =
-                Self::profile_space_id_by_account(&sender).ok_or(Error::<T>::NoSpaceSetAsProfile)?;
+            let space_id = Self::profile_space_id_by_account(&sender)
+                .ok_or(Error::<T>::NoSpaceSetAsProfile)?;
 
             Self::try_reset_profile(&sender, space_id)?;
 
             Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
             Ok(())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_space_as_profile(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+            space_id_opt: Option<SpaceId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            match space_id_opt {
+                Some(space_id) => {
+                    <ProfileSpaceIdByAccount<T>>::insert(&account, space_id);
+                    Self::deposit_event(Event::SpaceAsProfileAssigned { account, space: space_id });
+                },
+                None => <ProfileSpaceIdByAccount<T>>::remove(&account),
+            }
+
+            Ok(Pays::No.into())
         }
     }
 
