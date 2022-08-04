@@ -122,16 +122,6 @@ pub mod pallet {
             account: T::AccountId,
             post_id: PostId,
         },
-        // TODO: unused
-        PostDeleted {
-            account: T::AccountId,
-            post_id: PostId,
-        },
-        PostShared {
-            account: T::AccountId,
-            original_post_id: PostId,
-            shared_post_id: PostId,
-        },
         PostMoved {
             account: T::AccountId,
             post_id: PostId,
@@ -429,12 +419,6 @@ pub mod pallet {
                 PostExtension::SharedPost(original_post_id) => {
                     SharedPostIdsByOriginalPostId::<T>::mutate(original_post_id, |ids| {
                         ids.push(post_id)
-                    });
-
-                    Self::deposit_event(Event::PostShared {
-                        account: owner.clone(),
-                        original_post_id,
-                        shared_post_id: post_id,
                     });
                 },
                 _ => (),
