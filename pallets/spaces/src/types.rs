@@ -17,7 +17,7 @@ pub struct Space<T: Config> {
     pub id: SpaceId,
 
     pub created: WhoAndWhenOf<T>,
-    pub updated: bool,
+    pub edited: bool,
 
     /// The current owner of a given space.
     pub owner: T::AccountId,
@@ -51,7 +51,7 @@ impl<T: Config> Space<T> {
         Space {
             id,
             created: new_who_and_when::<T>(created_by.clone()),
-            updated: false,
+            edited: false,
             owner: created_by,
             content,
             hidden: false,

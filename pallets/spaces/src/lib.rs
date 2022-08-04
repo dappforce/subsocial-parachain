@@ -211,14 +211,14 @@ pub mod pallet {
                     );
 
                     space.content = content;
-                    space.updated = true;
+                    space.edited = true;
                 }
             }
 
             if let Some(hidden) = update.hidden {
                 if hidden != space.hidden {
                     space.hidden = hidden;
-                    space.updated = true;
+                    space.edited = true;
                 }
             }
 
@@ -230,12 +230,12 @@ pub mod pallet {
                         space.permissions = overrides_opt;
                     }
 
-                    space.updated = true;
+                    space.edited = true;
                 }
             }
 
             // Update this space only if at least one field should be updated:
-            if space.updated {
+            if space.edited {
                 SpaceById::<T>::insert(space_id, space);
                 Self::deposit_event(Event::SpaceUpdated(owner, space_id));
             }
@@ -268,7 +268,7 @@ pub mod pallet {
             let new_space = &mut Space {
                 id: space_id,
                 created: new_who_and_when,
-                updated: false,
+                edited: false,
                 owner: owner.clone(),
                 content,
                 hidden,

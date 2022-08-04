@@ -57,7 +57,7 @@ fn create_space_should_work() {
         let space = Spaces::space_by_id(SPACE1).unwrap();
 
         assert_eq!(space.created.account, ACCOUNT1);
-        assert!(!space.updated);
+        assert!(!space.edited);
         assert!(!space.hidden);
 
         assert_eq!(space.owner, ACCOUNT1);

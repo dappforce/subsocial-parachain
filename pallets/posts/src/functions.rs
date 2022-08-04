@@ -16,7 +16,7 @@ impl<T: Config> Post<T> {
         Post {
             id,
             created: new_who_and_when::<T>(created_by.clone()),
-            updated: false,
+            edited: false,
             owner: created_by,
             extension,
             space_id: space_id_opt,

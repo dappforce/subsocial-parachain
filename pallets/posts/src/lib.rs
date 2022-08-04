@@ -315,7 +315,7 @@ pub mod pallet {
 
             // Update this post only if at least one field should be updated:
             if is_update_applied {
-                post.updated = true;
+                post.edited = true;
 
                 <PostById<T>>::insert(post.id, post.clone());
                 T::AfterPostUpdated::after_post_updated(editor.clone(), &post, old_data);
@@ -393,7 +393,7 @@ pub mod pallet {
             let new_post = Post::<T> {
                 id: post_id,
                 created: new_who_and_when,
-                updated: false,
+                edited: false,
                 owner: owner.clone(),
                 extension,
                 space_id: space_id_opt,
