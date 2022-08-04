@@ -14,39 +14,6 @@ use crate::utils::roles_utils::*;
 use crate::utils::space_follows_utils::*;
 
 #[test]
-fn create_subspace_should_fail_when_content_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_content_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                Some(valid_content_ipfs()),
-                None,
-            ),
-            ModerationError::ContentIsBlocked,
-        );
-    });
-}
-
-
-#[test]
-fn create_subspace_should_fail_when_account_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_account_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                None,
-                None,
-            ),
-            ModerationError::AccountIsBlocked,
-        );
-    });
-}
-
-#[test]
 fn update_space_should_fail_when_account_is_blocked() {
     ExtBuilder::build_with_post().execute_with(|| {
         block_account_in_space_1();

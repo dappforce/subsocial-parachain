@@ -151,43 +151,20 @@ pub mod pallet {
         #[pallet::weight(500_000 + T::DbWeight::get().reads_writes(5, 4))]
         pub fn create_space(
             origin: OriginFor<T>,
-            parent_id_opt: Option<SpaceId>,
             content: Content,
             permissions_opt: Option<SpacePermissions>,
         ) -> DispatchResultWithPostInfo {
             let owner = ensure_signed(origin)?;
 
             ensure_content_is_valid(content.clone())?;
-
             Self::ensure_space_limit_not_reached(&owner)?;
-
-            // TODO: add tests for this case
-            if let Some(parent_id) = parent_id_opt {
-                let parent_space = Self::require_space(parent_id)?;
-
-                ensure!(
-                    T::IsAccountBlocked::is_allowed_account(owner.clone(), parent_id),
-                    ModerationError::AccountIsBlocked
-                );
-                ensure!(
-                    T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                    ModerationError::ContentIsBlocked
-                );
-
-                Self::ensure_account_has_space_permission(
-                    owner.clone(),
-                    &parent_space,
-                    SpacePermission::CreateSubspaces,
-                    Error::<T>::NoPermissionToCreateSubspaces.into(),
-                )?;
-            }
 
             let permissions =
                 permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
 
             let space_id = Self::next_space_id();
             let new_space =
-                &mut Space::new(space_id, parent_id_opt, owner.clone(), content, permissions);
+                &mut Space::new(space_id, owner.clone(), content, permissions);
 
             T::BeforeSpaceCreated::before_space_created(owner.clone(), new_space)?;
 
@@ -210,7 +187,6 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             let has_updates =
-                update.parent_id.is_some() ||
                 update.content.is_some() ||
                 update.hidden.is_some() ||
                 update.permissions.is_some();
@@ -234,26 +210,6 @@ pub mod pallet {
             let mut is_update_applied = false;
             let mut old_data = SpaceUpdate::default();
 
-            // TODO: add tests for this case
-            if let Some(parent_id_opt) = update.parent_id {
-                if parent_id_opt != space.parent_id {
-                    if let Some(parent_id) = parent_id_opt {
-                        let parent_space = Self::require_space(parent_id)?;
-
-                        Self::ensure_account_has_space_permission(
-                            owner.clone(),
-                            &parent_space,
-                            SpacePermission::CreateSubspaces,
-                            Error::<T>::NoPermissionToCreateSubspaces.into(),
-                        )?;
-                    }
-
-                    old_data.parent_id = Some(space.parent_id);
-                    space.parent_id = parent_id_opt;
-                    is_update_applied = true;
-                }
-            }
-
             if let Some(content) = update.content {
                 if content != space.content {
                     ensure_content_is_valid(content.clone())?;
@@ -262,12 +218,6 @@ pub mod pallet {
                         T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
                         ModerationError::ContentIsBlocked
                     );
-                    if let Some(parent_id) = space.parent_id {
-                        ensure!(
-                            T::IsContentBlocked::is_allowed_content(content.clone(), parent_id),
-                            ModerationError::ContentIsBlocked
-                        );
-                    }
 
                     old_data.content = Some(space.content);
                     space.content = content;
@@ -337,7 +287,6 @@ pub mod pallet {
                 created: new_who_and_when,
                 updated: false,
                 owner: owner.clone(),
-                parent_id: None,
                 content,
                 hidden,
                 permissions,
@@ -390,7 +339,7 @@ pub mod pallet {
                 for id in FIRST_SPACE_ID..=RESERVED_SPACE_COUNT {
                     spaces.push((
                         id,
-                        Space::<T>::new(id, None, endowed_account.clone(), Content::None, None),
+                        Space::<T>::new(id, endowed_account.clone(), Content::None, None),
                     ));
                 }
                 spaces.iter().for_each(|(space_id, space)| {
@@ -428,14 +377,6 @@ pub mod pallet {
             };
 
             T::Roles::ensure_account_has_space_permission(account, ctx, permission, error)
-        }
-
-        pub fn try_move_space_to_root(space_id: SpaceId) -> DispatchResult {
-            let mut space = Self::require_space(space_id)?;
-            space.parent_id = None;
-
-            SpaceById::<T>::insert(space_id, space);
-            Ok(())
         }
 
         pub fn mutate_space_by_id<F: FnOnce(&mut Space<T>)>(

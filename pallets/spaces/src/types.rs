@@ -23,8 +23,6 @@ pub struct Space<T: Config> {
     pub owner: T::AccountId,
 
     // The next fields can be updated by the owner:
-    pub(super) parent_id: Option<SpaceId>,
-
     pub content: Content,
 
     /// Hidden field is used to recommend to end clients (web and mobile apps) that a particular
@@ -38,7 +36,6 @@ pub struct Space<T: Config> {
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct SpaceUpdate {
-    pub parent_id: Option<Option<SpaceId>>,
     pub content: Option<Content>,
     pub hidden: Option<bool>,
     pub permissions: Option<Option<SpacePermissions>>,
@@ -47,7 +44,6 @@ pub struct SpaceUpdate {
 impl<T: Config> Space<T> {
     pub fn new(
         id: SpaceId,
-        parent_id: Option<SpaceId>,
         created_by: T::AccountId,
         content: Content,
         permissions: Option<SpacePermissions>,
@@ -57,7 +53,6 @@ impl<T: Config> Space<T> {
             created: new_who_and_when::<T>(created_by.clone()),
             updated: false,
             owner: created_by,
-            parent_id,
             content,
             hidden: false,
             permissions,
@@ -75,10 +70,6 @@ impl<T: Config> Space<T> {
     pub fn ensure_space_owner(&self, account: T::AccountId) -> DispatchResult {
         ensure!(self.is_owner(&account), Error::<T>::NotASpaceOwner);
         Ok(())
-    }
-
-    pub fn try_get_parent(&self) -> Result<SpaceId, DispatchError> {
-        self.parent_id.ok_or_else(|| Error::<T>::SpaceIsAtRoot.into())
     }
 
     pub fn is_public(&self) -> bool {
