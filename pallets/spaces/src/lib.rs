@@ -75,9 +75,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceCreated(T::AccountId, SpaceId),
-        SpaceUpdated(T::AccountId, SpaceId),
-        SpaceDeleted(T::AccountId, SpaceId),
+        SpaceCreated { account: T::AccountId, space_id: SpaceId },
+        SpaceUpdated { account: T::AccountId, space_id: SpaceId },
     }
 
     #[pallet::error]
@@ -165,7 +164,7 @@ pub mod pallet {
             });
             NextSpaceId::<T>::mutate(|n| *n += 1);
 
-            Self::deposit_event(Event::SpaceCreated(owner, space_id));
+            Self::deposit_event(Event::SpaceCreated { account: owner, space_id });
             Ok(().into())
         }
 
@@ -235,7 +234,7 @@ pub mod pallet {
             // Update this space only if at least one field should be updated:
             if is_update_applied {
                 SpaceById::<T>::insert(space_id, space);
-                Self::deposit_event(Event::SpaceUpdated(owner, space_id));
+                Self::deposit_event(Event::SpaceUpdated { account: owner, space_id });
             }
             Ok(())
         }
@@ -294,7 +293,7 @@ pub mod pallet {
 
             SpaceById::<T>::insert(space_id, new_space);
 
-            Self::deposit_event(Event::SpaceCreated(owner, space_id));
+            Self::deposit_event(Event::SpaceCreated { account: owner, space_id });
 
             Ok(Pays::No.into())
         }
