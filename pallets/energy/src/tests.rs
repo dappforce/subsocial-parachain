@@ -269,6 +269,7 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
     ExtBuilder::default()
         .conversion_ratio(1.25)
         .update_origin(update_origin)
+        .energy_existential_deposit(10)
         .build().execute_with(|| {
         let caller = account_with_balance(1, 1_000_000_000);
         let receiver = account(2);
