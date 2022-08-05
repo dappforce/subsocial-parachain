@@ -60,6 +60,9 @@ pub mod pallet {
         /// pay the transaction fees.
         type FallbackOnChargeTransaction: OnChargeTransaction<Self, Balance=BalanceOf<Self>>;
 
+        /// The minimum amount of energy required to keep an account.
+        type ExistentialDeposit: Get<Self::Balance>;
+
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -171,7 +174,7 @@ pub mod pallet {
                 .checked_mul_int(burn_amount)
                 .ok_or(ArithmeticError::Overflow)?;
 
-            Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
+            let current_balance = Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
             let _ = T::Currency::withdraw(
                 &caller,
@@ -179,7 +182,7 @@ pub mod pallet {
                 withdraw_reason,
                 ExistenceRequirement::KeepAlive,
             )?;
-            Self::capture_energy(&target, captured_energy_amount);
+            Self::capture_energy(current_balance, &target, captured_energy_amount);
 
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
@@ -197,25 +200,31 @@ pub mod pallet {
         fn ensure_can_capture_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
-        ) -> DispatchResult {
+        ) -> Result<BalanceOf<T>, DispatchError> {
             ensure!(
                 Self::total_energy().checked_add(&amount).is_some(),
                 ArithmeticError::Overflow,
             );
+            let energy_balance = Self::energy_balance(target);
             ensure!(
-                Self::energy_balance(target).checked_add(&amount).is_some(),
+                energy_balance.checked_add(&amount).is_some(),
                 ArithmeticError::Overflow,
             );
-            Ok(())
+            Ok(energy_balance)
         }
 
         /// Capture energy for [account].
-        fn capture_energy(target: &T::AccountId, amount: BalanceOf<T>) {
+        fn capture_energy(current_balance: BalanceOf<T>, target: &T::AccountId, amount: BalanceOf<T>) {
+            if current_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
+                frame_system::Pallet::<T>::inc_providers(target);
+            }
+
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
             EnergyBalance::<T>::mutate(target, |energy| {
                 *energy = energy.saturating_add(amount);
+                energy.clone()
             });
         }
 
@@ -223,26 +232,38 @@ pub mod pallet {
         fn ensure_can_consume_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
-        ) -> DispatchResult {
+        ) -> Result<BalanceOf<T>, DispatchError> {
             ensure!(
                 Self::total_energy().checked_sub(&amount).is_some(),
                 ArithmeticError::Underflow,
             );
+            let energy_balance = Self::energy_balance(target);
             ensure!(
-                Self::energy_balance(target).checked_sub(&amount).is_some(),
+                energy_balance.checked_sub(&amount).is_some(),
                 ArithmeticError::Underflow,
             );
-            Ok(())
+            Ok(energy_balance)
         }
 
         /// Consume energy for [account].
-        fn consume_energy(target: &T::AccountId, amount: BalanceOf<T>) {
+        fn consume_energy(current_balance: BalanceOf<T>, target: &T::AccountId, mut amount: BalanceOf<T>) {
+            if current_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
+                frame_system::Pallet::<T>::dec_providers(target);
+
+                amount = current_balance;
+            }
+
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            EnergyBalance::<T>::mutate(target, |energy| {
-                *energy = energy.saturating_sub(amount);
-            });
+            if amount == current_balance {
+                EnergyBalance::<T>::remove(target);
+            } else {
+                EnergyBalance::<T>::mutate(target, |energy| {
+                    *energy = energy.saturating_sub(amount);
+                    energy.clone()
+                });
+            }
         }
     }
 
@@ -284,8 +305,8 @@ pub mod pallet {
             }
 
             match Self::ensure_can_consume_energy(who, fee) {
-                Ok(()) => {
-                    Self::consume_energy(who, fee);
+                Ok(current_balance) => {
+                    Self::consume_energy(current_balance, who, fee);
                     Ok(LiquidityInfo::Energy(fee))
                 }
                 Err(_) => Err(InvalidTransaction::Payment.into()),
@@ -312,7 +333,8 @@ pub mod pallet {
                 ),
                 LiquidityInfo::Energy(paid) => {
                     let refund_amount = paid.saturating_sub(corrected_fee);
-                    let _ = Self::capture_energy(who, refund_amount);
+                    let current_balance = Self::energy_balance(who);
+                    let _ = Self::capture_energy(current_balance, who, refund_amount);
 
                     // we don't do anything with the fees + tip.
                     // TODO: maybe we tip using SUB?

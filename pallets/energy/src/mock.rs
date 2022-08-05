@@ -197,6 +197,7 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
 parameter_types! {
 	pub static ConversionRatio: FixedI64 = FixedI64::one();
     pub static TestUpdateOrigin: AccountId = 1235;
+    pub static EnergyExistentialDeposit: Balance = 1;
 }
 
 pub struct EnsureAccount<Account, AccountId>(PhantomData<(Account, AccountId)>);
@@ -228,6 +229,7 @@ impl pallet_energy::Config for Test {
     type DefaultConversionRatio = ConversionRatio;
     type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
     type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
+    type ExistentialDeposit = EnergyExistentialDeposit;
     type WeightInfo = ();
 }
 

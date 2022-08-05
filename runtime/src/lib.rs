@@ -616,6 +616,7 @@ impl pallet_energy::Config for Runtime {
 	type DefaultConversionRatio = DefaultEnergyConversionRatio;
 	type UpdateOrigin = EnsureRoot<AccountId>;
 	type FallbackOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
