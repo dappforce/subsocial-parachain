@@ -100,7 +100,7 @@ impl frame_system::Config for Test {
 
 
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 0;
+    pub static ExistentialDeposit: u64 = 0;
 }
 
 impl pallet_balances::Config for Test {
@@ -348,6 +348,7 @@ pub(crate) fn set_energy_balance(id: AccountId, new_balance: Balance) {
 pub struct ExtBuilder {
     conversion_ratio: f64,
     update_origin: AccountId,
+    energy_existential_deposit: Balance,
 }
 
 impl Default for ExtBuilder {
@@ -355,11 +356,17 @@ impl Default for ExtBuilder {
         ExtBuilder {
             conversion_ratio: 1.0,
             update_origin: 1235,
+            energy_existential_deposit: 1,
         }
     }
 }
 
 impl ExtBuilder {
+    pub(crate) fn energy_existential_deposit(mut self, new: Balance) -> Self {
+        self.energy_existential_deposit = new;
+        self
+    }
+
     pub(crate) fn update_origin(mut self, update_origin: AccountId) -> Self {
         self.update_origin = update_origin;
         self
@@ -373,6 +380,7 @@ impl ExtBuilder {
     fn set_configs(&self) {
         CONVERSION_RATIO.with(|x| *x.borrow_mut() = FixedI64::from_float(self.conversion_ratio));
         TEST_UPDATE_ORIGIN.with(|x| *x.borrow_mut() = self.update_origin);
+        ENERGY_EXISTENTIAL_DEPOSIT.with(|x| *x.borrow_mut() = self.energy_existential_deposit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {

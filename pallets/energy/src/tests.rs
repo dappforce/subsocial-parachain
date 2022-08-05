@@ -285,6 +285,8 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
             "Stored conversion ratio should be 1.25",
         );
 
+        assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 0);
+
         assert_ok!(
             Energy::generate_energy(
                 Origin::signed(caller),
@@ -292,6 +294,9 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
                 100,
             ),
         );
+
+        assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 1);
+
 
         assert_energy_balance!(receiver, 125);
 
