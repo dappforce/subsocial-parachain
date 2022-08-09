@@ -1,0 +1,50 @@
+# Relaychain Configuration
+relaychain:
+  image: parity/polkadot:v0.9.24
+  chain: rococo-local
+  runtimeGenesisConfig: # additonal genesis override
+    configuration:
+      config:
+        validation_upgrade_cooldown: 5
+        validation_upgrade_delay: 5
+  env: # environment variables for all relaychain nodes
+    RUST_LOG: parachain::candidate-backing=trace
+  flags: # additional CLI flags for all relaychain nodes
+    - --rpc-methods=unsafe
+  nodes: # nodes config
+    - name: alice
+      wsPort: 9944
+      rpcPort: 9933
+      port: 30333
+      flags: # additional CLI flags for this node
+        - --force-authoring
+    - name: bob
+
+# Parachain Configuration
+parachains:
+  # Config for first parachain
+  - image: dappforce/subsocial-parachain:rococo
+    chain:
+      base: local-rococo
+      collators: # override collators
+        - alice
+        - bob
+      sudo: alice
+    id: 2100
+    parachain: true
+    flags: # CLI flags for this parachain nodes
+      - --rpc-methods=unsafe
+      - --force-authoring
+      - --execution=wasm
+    relaychainFlags: # CLI flags for the relaychain port
+      - --execution=wasm
+    nodes: # nodes config
+      - wsPort: 8844
+        rpcPort: 8833
+        port: 40333
+        flags: # additional CLI flags for this node
+          - --alice
+        relaychainFlags: # additional CLI flags for relaychain part
+          - --name=relaychain-alice
+      - flags:
+          - --bob
