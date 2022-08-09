@@ -12,12 +12,7 @@ pub mod xcm_config;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
-};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -262,9 +257,22 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
 
+		let is_social_call =
+			matches!(c,
+				Call::Roles(..) |
+				Call::AccountFollows(..) |
+				Call::Profiles(..) |
+				Call::SpaceFollows(..) |
+				Call::SpaceOwnership(..) |
+				Call::Spaces(..) |
+				Call::Posts(..) |
+				Call::Reactions(..)
+			);
+
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
+			_ if is_social_call => false,
 			_ => true,
 		}
 	}
@@ -529,6 +537,70 @@ impl pallet_domains::Config for Runtime {
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
+use pallet_permissions::default_permissions::DefaultSpacePermissions;
+
+impl pallet_permissions::Config for Runtime {
+	type DefaultSpacePermissions = DefaultSpacePermissions;
+}
+
+parameter_types! {
+  pub const MaxCommentDepth: u32 = 10;
+}
+
+impl pallet_posts::Config for Runtime {
+	type Event = Event;
+	type MaxCommentDepth = MaxCommentDepth;
+	type IsPostBlocked = ()/*Moderation*/;
+}
+
+impl pallet_reactions::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_profiles::Config for Runtime {
+	type Event = Event;
+	type SpacePermissionsProvider = Spaces;
+}
+
+parameter_types! {
+  pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
+}
+
+impl pallet_roles::Config for Runtime {
+	type Event = Event;
+	type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
+	type SpacePermissionsProvider = Spaces;
+	type SpaceFollows = SpaceFollows;
+	type IsAccountBlocked = ()/*Moderation*/;
+	type IsContentBlocked = ()/*Moderation*/;
+}
+
+impl pallet_space_follows::Config for Runtime {
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const MaxSpacesPerAccount: u32 = 4096;
+}
+
+impl pallet_spaces::Config for Runtime {
+	type Event = Event;
+	type Roles = Roles;
+	type SpaceFollows = SpaceFollows;
+	type IsAccountBlocked = ()/*Moderation*/;
+	type IsContentBlocked = ()/*Moderation*/;
+	type MaxSpacesPerAccount = MaxSpacesPerAccount;
+}
+
+impl pallet_space_ownership::Config for Runtime {
+	type Event = Event;
+	type ProfileManager = Profiles;
+}
+
+impl pallet_account_follows::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -567,6 +639,16 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
+
+		Permissions: pallet_permissions = 70,
+		Roles: pallet_roles = 71,
+		AccountFollows: pallet_account_follows = 72,
+		Profiles: pallet_profiles = 73,
+		SpaceFollows: pallet_space_follows = 74,
+		SpaceOwnership: pallet_space_ownership = 75,
+		Spaces: pallet_spaces = 76,
+		Posts: pallet_posts = 77,
+		Reactions: pallet_reactions = 78,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

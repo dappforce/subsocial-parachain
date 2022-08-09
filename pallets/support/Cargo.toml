@@ -1,5 +1,5 @@
 [package]
-name = "pallet-parachain-utils"
+name = "subsocial-support"
 version = "0.1.7"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
@@ -13,6 +13,7 @@ categories = ["cryptography::cryptocurrencies"]
 [features]
 default = ["std"]
 std = [
+    "strum/std",
     "codec/std",
     "scale-info/std",
     "frame-support/std",
@@ -22,6 +23,8 @@ std = [
 ]
 
 [dependencies]
+strum = { version = "0.24", default-features = false, features = ["derive"] }
+
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 

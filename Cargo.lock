@@ -3258,6 +3258,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-reactions",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-space-ownership",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4987,6 +5013,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-account-follows"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-profiles",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -5289,7 +5328,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-parachain-utils",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -5297,6 +5335,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5599,16 +5638,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-parachain-utils"
+name = "pallet-permissions"
 version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "jsonrpc-core",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-posts"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-permissions",
+ "pallet-space-follows",
+ "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
+ "serde",
+ "sp-runtime",
  "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5625,6 +5683,20 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-profiles"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-permissions",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5657,6 +5729,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-reactions"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-recovery"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -5669,6 +5759,25 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-roles"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-permissions",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -5736,6 +5845,48 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-space-follows"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-space-ownership"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-spaces"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-permissions",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -10628,13 +10779,22 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
+ "pallet-account-follows",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-domains",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
  "pallet-randomness-collective-flip",
+ "pallet-reactions",
+ "pallet-roles",
  "pallet-session",
+ "pallet-space-follows",
+ "pallet-space-ownership",
+ "pallet-spaces",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -10665,6 +10825,20 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "subsocial-support"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "jsonrpc-core",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "strum 0.24.0",
 ]
 
 [[package]]
