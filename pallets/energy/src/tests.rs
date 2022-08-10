@@ -153,6 +153,7 @@ fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
 #[test]
 fn test_generate_energy_will_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
+        .sub_existential_deposit(0)
         .conversion_ratio(10f64)
         .build().execute_with(|| {
         let caller = account_with_balance(1, 100);
