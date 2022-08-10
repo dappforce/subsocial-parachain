@@ -1,6 +1,7 @@
 use frame_support::{assert_noop, assert_ok, pallet};
 use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
 use frame_support::pallet_prelude::{DispatchClass, Pays};
+use frame_support::traits::fungible::Transfer;
 use frame_support::weights::{extract_actual_weight, PostDispatchInfo};
 use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::DispatchError;
@@ -13,6 +14,7 @@ use crate::mock::*;
 use pallet_energy::EnergyBalance;
 use pallet_energy::Event as EnergyEvent;
 use pallet_energy::Call as EnergyCall;
+use crate::mock::*;
 
 ///// tests for Energy::update_conversion_ratio()
 
@@ -540,5 +542,88 @@ fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
             corrected_fee_with_tip: 63, // 50 + 13
             already_withdrawn: _, // ignored
         }));
+    });
+}
+
+
+///// tests for ED and providers
+
+#[test]
+fn test_existential_deposit_and_providers() {
+    let update_origin = account(1);
+    ExtBuilder::default()
+        .sub_existential_deposit(10)
+        .energy_existential_deposit(100)
+        .build().execute_with(|| {
+        let treasury = account(0);
+        set_sub_balance(treasury, 1_000_000_000);
+        set_energy_balance(treasury, 1_000_000_000);
+
+        let account1 = account(1);
+        assert_eq!(System::providers(&account1), 0);
+
+        assert_ok!(pallet_balances::Pallet::<Test>::transfer(Origin::signed(treasury), account1, 1000));
+
+        assert_eq!(System::providers(&account1), 1);
+
+        assert_ok!(Energy::generate_energy(
+            Origin::signed(account1),
+            account1,
+            10,
+        ));
+
+        // still under 100 NRG
+        assert_eq!(System::providers(&account1), 1);
+
+        assert_ok!(Energy::generate_energy(
+            Origin::signed(treasury),
+            account1,
+            90,
+        ));
+
+        // increased because the account now have 100 NRG
+        assert_eq!(System::providers(&account1), 2);
+
+        assert_ok!(
+            charge_transaction(
+                &account1,
+                90,
+                90,
+                0,
+                || {},
+            ),
+        );
+
+        // back to zero because the account now have 10 NRG
+        assert_eq!(System::providers(&account1), 1);
+
+        assert_ok!(Energy::generate_energy(
+            Origin::signed(account1),
+            account1,
+            900,
+        ));
+
+        assert_balance!(account1, 90);
+        assert_energy_balance!(account1, 900);
+        assert_eq!(System::providers(&account1), 2);
+
+        assert_ok!(pallet_balances::Pallet::<Test>::transfer_all(Origin::signed(account1), treasury, false));
+
+        assert_balance!(account1, 0);
+        assert_eq!(System::providers(&account1), 1);
+
+        assert_ok!(
+            charge_transaction(
+                &account1,
+                850,
+                850,
+                0,
+                || {},
+            ),
+        );
+
+
+        assert_energy_balance!(account1, 0); // the remaining 50 NRG is burned
+        assert_eq!(System::providers(&account1), 0);
     });
 }
