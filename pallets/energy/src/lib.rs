@@ -26,7 +26,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement, tokens::Balance};
     use pallet_transaction_payment::OnChargeTransaction;
-    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
+    use sp_runtime::{ArithmeticError, FixedI64, FixedPointOperand, FixedPointNumber};
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
@@ -49,11 +49,11 @@ pub mod pallet {
             + MaxEncodedLen
             + FixedPointOperand;
 
-        /// The ratio between the burned SUB and the captured energy.
-        /// The ratio must be a positive number.
-        type DefaultConversionRatio: Get<FixedI64>;
 
-        /// The origin which may update the conversion ratio.
+        /// How much 1 NRG is worth in SUB.
+        type DefaultValueCoefficient: Get<FixedI64>;
+
+        /// The origin which may update the value coefficient ratio.
         type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
@@ -86,10 +86,10 @@ pub mod pallet {
             /// The amount of energy that was generated.
             generated_energy: BalanceOf<T>,
         },
-        /// Energy conversion ratio has been updated.
-        ConversionRatioUpdated {
-            /// The new conversion ratio.
-            new_ratio: FixedI64,
+        /// Energy value coefficient has been updated.
+        ValueCoefficientRatioUpdated {
+            /// The new value coefficient.
+            new_coefficient: FixedI64,
         },
     }
 
@@ -97,18 +97,18 @@ pub mod pallet {
     pub enum Error<T> {
         /// Not enough SUB balance to burn and generate energy.
         NotEnoughBalance,
-        /// Conversion ratio is not a positive number.
-        ConversionRatioIsNotPositive,
+        /// Value coefficient is not a positive number.
+        ValueCoefficientIsNotPositive,
     }
 
-    /// Supplies the [ConversionRatio] with [T::DefaultConversionRatio] if empty.
+    /// Supplies the [ValueCoefficient] with [T::DefaultValueCoefficient] if empty.
     #[pallet::type_value]
-    pub(crate) fn ConversionRatioOnEmpty<T: Config>() -> FixedI64 { T::DefaultConversionRatio::get() }
+    pub(crate) fn ValueCoefficientOnEmpty<T: Config>() -> FixedI64 { T::DefaultValueCoefficient::get() }
 
-    /// The current conversion ratio.
+    /// The current value coefficient.
     #[pallet::storage]
-    #[pallet::getter(fn conversion_ratio)]
-    pub(crate) type ConversionRatio<T: Config> = StorageValue<_, FixedI64, ValueQuery, ConversionRatioOnEmpty<T>>;
+    #[pallet::getter(fn value_coefficient)]
+    pub(crate) type ValueCoefficient<T: Config> = StorageValue<_, FixedI64, ValueQuery, ValueCoefficientOnEmpty<T>>;
 
     /// Total energy generated.
     #[pallet::storage]
@@ -129,19 +129,19 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
 
-        /// Updates the conversion ratio. Only callable by the `UpdateOrigin`.
-        #[pallet::weight(<T as Config>::WeightInfo::update_conversion_ratio())]
-        pub fn update_conversion_ratio(
+        /// Updates the value coefficient. Only callable by the `UpdateOrigin`.
+        #[pallet::weight(<T as Config>::WeightInfo::update_value_coefficient())]
+        pub fn update_value_coefficient(
             origin: OriginFor<T>,
-            new_ratio: FixedI64,
+            new_coefficient: FixedI64,
         ) -> DispatchResult {
             let _ = T::UpdateOrigin::ensure_origin(origin)?;
 
-            ensure!(new_ratio > Zero::zero(), Error::<T>::ConversionRatioIsNotPositive);
+            ensure!(new_coefficient > Zero::zero(), Error::<T>::ValueCoefficientIsNotPositive);
 
-            ConversionRatio::<T>::put(new_ratio);
+            ValueCoefficient::<T>::put(new_coefficient);
 
-            Self::deposit_event(Event::ConversionRatioUpdated { new_ratio });
+            Self::deposit_event(Event::ValueCoefficientRatioUpdated { new_coefficient });
 
             Ok(())
         }
@@ -170,9 +170,7 @@ pub mod pallet {
                 caller_balance_after_burn,
             )?;
 
-            let captured_energy_amount = Self::conversion_ratio()
-                .checked_mul_int(burn_amount)
-                .ok_or(ArithmeticError::Overflow)?;
+            let captured_energy_amount = burn_amount;
 
             let current_balance = Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
@@ -299,15 +297,20 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            if Self::energy_balance(&who) < fee {
+            let corrected_fee = Self::value_coefficient()
+                .reciprocal()
+                .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
+                .saturating_mul_int(fee);
+
+            if Self::energy_balance(&who) < corrected_fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
                     .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
 
-            match Self::ensure_can_consume_energy(who, fee) {
+            match Self::ensure_can_consume_energy(who, corrected_fee) {
                 Ok(current_balance) => {
-                    Self::consume_energy(current_balance, who, fee);
-                    Ok(LiquidityInfo::Energy(fee))
+                    Self::consume_energy(current_balance, who, corrected_fee);
+                    Ok(LiquidityInfo::Energy(corrected_fee))
                 }
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
@@ -333,8 +336,11 @@ pub mod pallet {
                 ),
                 LiquidityInfo::Energy(paid) => {
                     let refund_amount = paid.saturating_sub(corrected_fee);
+                    let corrected_refund_amount = Self::value_coefficient()
+                        .saturating_mul_int(refund_amount);
+
                     let current_balance = Self::energy_balance(who);
-                    let _ = Self::capture_energy(current_balance, who, refund_amount);
+                    let _ = Self::capture_energy(current_balance, who, corrected_refund_amount);
 
                     // we don't do anything with the fees + tip.
                     // TODO: maybe we tip using SUB?

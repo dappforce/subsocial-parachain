@@ -12372,3 +12372,8 @@ dependencies = [
  "cc",
  "libc",
 ]
+
+[[patch.unused]]
+name = "pallet-parachain-staking"
+version = "3.0.0"
+source = "git+https://github.com/TarekkMA/moonbeam?branch=tarekkma/upgrade-to-polkadot-24#9b978412848da5996860dbf22dbcfbe18b39123f"

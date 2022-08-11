@@ -38,7 +38,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_energy.
 pub trait WeightInfo {
-    fn update_conversion_ratio() -> Weight;
+    fn update_value_coefficient() -> Weight;
     fn generate_energy() -> Weight;
 }
 
@@ -46,7 +46,7 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
         impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             // Storage: Energy ConversionRatio (r:0 w:1)
-        fn update_conversion_ratio() -> Weight {
+        fn update_value_coefficient() -> Weight {
         (23_000_000 as Weight)
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
@@ -64,7 +64,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
     // For backwards compatibility and tests
     impl WeightInfo for () {
             // Storage: Energy ConversionRatio (r:0 w:1)
-        fn update_conversion_ratio() -> Weight {
+        fn update_value_coefficient() -> Weight {
         (23_000_000 as Weight)
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }

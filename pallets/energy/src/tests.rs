@@ -1,11 +1,11 @@
-use frame_support::{assert_noop, assert_ok, pallet};
+use frame_support::{assert_noop, assert_ok};
 use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
 use frame_support::pallet_prelude::{DispatchClass, Pays};
 use frame_support::traits::fungible::Transfer;
 use frame_support::weights::{extract_actual_weight, PostDispatchInfo};
-use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
+use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::DispatchError;
-use sp_runtime::traits::{SignedExtension, Dispatchable, Bounded};
+use sp_runtime::traits::{SignedExtension, Dispatchable};
 use sp_runtime::{FixedI64, FixedPointNumber};
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 use crate::{Error, WeightInfo};
@@ -14,15 +14,14 @@ use crate::mock::*;
 use pallet_energy::EnergyBalance;
 use pallet_energy::Event as EnergyEvent;
 use pallet_energy::Call as EnergyCall;
-use crate::mock::*;
 
-///// tests for Energy::update_conversion_ratio()
+///// tests for Energy::update_value_coefficient()
 
 #[test]
-fn test_update_conversion_ratio_will_fail_when_unsigned() {
+fn test_update_value_coefficient_will_fail_when_unsigned() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::none(),
                 FixedI64::from_float(1.5),
             ),
@@ -32,13 +31,13 @@ fn test_update_conversion_ratio_will_fail_when_unsigned() {
 }
 
 #[test]
-fn test_update_conversion_ratio_will_fail_when_caller_is_not_update_origin() {
+fn test_update_value_coefficient_will_fail_when_caller_is_not_update_origin() {
     ExtBuilder::default()
         .update_origin(1)
         .build().execute_with(|| {
         let not_update_origin = 2;
         assert_noop!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(not_update_origin),
                 FixedI64::from_float(1.5),
             ),
@@ -48,62 +47,62 @@ fn test_update_conversion_ratio_will_fail_when_caller_is_not_update_origin() {
 }
 
 #[test]
-fn test_update_conversion_ratio_will_fail_when_new_ratio_is_negative() {
+fn test_update_value_coefficient_will_fail_when_new_ratio_is_negative() {
     let update_origin = account(1);
     ExtBuilder::default()
         .update_origin(update_origin)
         .build().execute_with(|| {
         assert_noop!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(update_origin),
                 FixedI64::from_float(-4.0),
             ),
-            Error::<Test>::ConversionRatioIsNotPositive,
+            Error::<Test>::ValueCoefficientIsNotPositive,
         );
     });
 }
 
 #[test]
-fn test_update_conversion_ratio_will_work_as_expected() {
+fn test_update_value_coefficient_will_work_as_expected() {
     let update_origin = account(1);
     ExtBuilder::default()
-        .conversion_ratio(987.654)
+        .value_coefficient(987.654)
         .update_origin(update_origin)
         .build().execute_with(|| {
 
         assert_eq!(
-            Energy::conversion_ratio(),
+            Energy::value_coefficient(),
             FixedI64::from_float(987.654),
-            "Default conversion ratio should be 987.654"
+            "Default value coefficient should be 987.654"
         );
 
         assert_ok!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(update_origin),
                 FixedI64::from_float(1.12354),
             ),
         );
 
         assert_eq!(
-            Energy::conversion_ratio(),
+            Energy::value_coefficient(),
             FixedI64::from_float(1.12354)
         );
 
-        System::assert_last_event(EnergyEvent::ConversionRatioUpdated {
-            new_ratio: FixedI64::from_float(1.12354),
+        System::assert_last_event(EnergyEvent::ValueCoefficientRatioUpdated {
+            new_coefficient: FixedI64::from_float(1.12354),
         }.into());
     });
 }
 
 #[test]
-fn test_update_conversion_ratio_will_have_correct_weight() {
+fn test_update_value_coefficient_will_have_correct_weight() {
     let update_origin = account(1);
     ExtBuilder::default()
-        .conversion_ratio(1.25)
+        .value_coefficient(1.25)
         .update_origin(update_origin)
         .build().execute_with(|| {
-        let call: Call = EnergyCall::<Test>::update_conversion_ratio {
-            new_ratio: FixedI64::from_float(1.5),
+        let call: Call = EnergyCall::<Test>::update_value_coefficient {
+            new_coefficient: FixedI64::from_float(1.5),
         }.into();
 
         let info = call.get_dispatch_info();
@@ -113,7 +112,7 @@ fn test_update_conversion_ratio_will_have_correct_weight() {
 
         assert_eq!(
             extract_actual_weight(&result, &info),
-            <Test as pallet_energy::Config>::WeightInfo::update_conversion_ratio(),
+            <Test as pallet_energy::Config>::WeightInfo::update_value_coefficient(),
         );
     });
 }
@@ -154,7 +153,7 @@ fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
 fn test_generate_energy_will_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
         .sub_existential_deposit(0)
-        .conversion_ratio(10f64)
+        .value_coefficient(10f64)
         .build().execute_with(|| {
         let caller = account_with_balance(1, 100);
         let receiver = account(10);
@@ -189,7 +188,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
 #[test]
 fn test_generate_energy_will_increment_total_energy() {
     ExtBuilder::default()
-        .conversion_ratio(1.25)
+        .value_coefficient(1.25)
         .build().execute_with(|| {
         let caller = account_with_balance(
             1, 1000,
@@ -242,7 +241,7 @@ fn test_generate_energy_will_increment_total_energy() {
 #[test]
 fn test_generate_energy_will_have_correct_weight() {
     ExtBuilder::default()
-        .conversion_ratio(1.25)
+        .value_coefficient(1.25)
         .build().execute_with(|| {
         let caller = account_with_balance(1, 1000);
         let receiver = account(2);
@@ -264,13 +263,13 @@ fn test_generate_energy_will_have_correct_weight() {
     });
 }
 
-//// tests on both Energy::update_conversion_ratio() and Energy::generate_energy()
+//// tests on both Energy::update_value_coefficient() and Energy::generate_energy()
 
 #[test]
-fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls() {
+fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls() {
     let update_origin = account(1);
     ExtBuilder::default()
-        .conversion_ratio(1.25)
+        .value_coefficient(1.25)
         .update_origin(update_origin)
         .energy_existential_deposit(10)
         .build().execute_with(|| {
@@ -278,15 +277,15 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
         let receiver = account(2);
 
         assert_eq!(
-            <Test as pallet_energy::Config>::DefaultConversionRatio::get().to_float(),
+            <Test as pallet_energy::Config>::DefaultValueCoefficient::get().to_float(),
             1.25,
-            "Default conversion ratio should be 1.25",
+            "Default value coefficient should be 1.25",
         );
 
         assert_eq!(
-            Energy::conversion_ratio().to_float(),
+            Energy::value_coefficient().to_float(),
             1.25,
-            "Stored conversion ratio should be 1.25",
+            "Stored value coefficient should be 1.25",
         );
 
         assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 0);
@@ -305,16 +304,16 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
         assert_energy_balance!(receiver, 125);
 
         assert_ok!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(update_origin),
                 FixedI64::checked_from_rational(50, 100).unwrap(), // 50%
             ),
         );
 
         assert_eq!(
-            Energy::conversion_ratio().to_float(),
+            Energy::value_coefficient().to_float(),
             0.5,
-            "Stored conversion ratio should be 0.5",
+            "Stored value coefficient should be 0.5",
         );
 
         assert_ok!(
@@ -328,16 +327,16 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
         assert_energy_balance!(receiver, 200);
 
         assert_ok!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(update_origin),
                 FixedI64::checked_from_rational(12345, 10000).unwrap(), // 123.45%
             ),
         );
 
         assert_eq!(
-            Energy::conversion_ratio().to_float(),
+            Energy::value_coefficient().to_float(),
             1.2345,
-            "Stored conversion ratio should be 1.2345",
+            "Stored value coefficient should be 1.2345",
         );
 
         assert_ok!(
@@ -351,16 +350,16 @@ fn test_update_conversion_ratio_should_reflect_on_future_generate_energy_calls()
         assert_energy_balance!(receiver, 864350);
 
         assert_ok!(
-            Energy::update_conversion_ratio(
+            Energy::update_value_coefficient(
                 Origin::signed(update_origin),
                 FixedI64::checked_from_rational(333_333_334, 1_000_000_000).unwrap(), // 33.3333334%
             ),
         );
 
         assert_eq!(
-            Energy::conversion_ratio().to_float(),
+            Energy::value_coefficient().to_float(),
             0.333333334,
-            "Stored conversion ratio should be 0.333333334",
+            "Stored value coefficient should be 0.333333334",
         );
 
         assert_ok!(

@@ -606,14 +606,14 @@ impl pallet_account_follows::Config for Runtime {
 
 
 parameter_types! {
-	pub DefaultEnergyConversionRatio: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
+	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
 }
 
 impl pallet_energy::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type Balance = Balance;
-	type DefaultConversionRatio = DefaultEnergyConversionRatio;
+	type DefaultValueCoefficient = DefaultValueCoefficient;
 	type UpdateOrigin = EnsureRoot<AccountId>;
 	type FallbackOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type ExistentialDeposit = ExistentialDeposit;

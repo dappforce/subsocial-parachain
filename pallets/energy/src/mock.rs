@@ -195,7 +195,7 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
 }
 
 parameter_types! {
-	pub static ConversionRatio: FixedI64 = FixedI64::one();
+	pub static ValueCoefficient: FixedI64 = FixedI64::one();
     pub static TestUpdateOrigin: AccountId = 1235;
     pub static EnergyExistentialDeposit: Balance = 1;
 }
@@ -226,7 +226,7 @@ impl pallet_energy::Config for Test {
     type Event = Event;
     type Currency = Balances;
     type Balance = <Test as pallet_balances::Config>::Balance;
-    type DefaultConversionRatio = ConversionRatio;
+    type DefaultValueCoefficient = ValueCoefficient;
     type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
     type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
     type ExistentialDeposit = EnergyExistentialDeposit;
@@ -346,7 +346,7 @@ pub(crate) fn set_energy_balance(id: AccountId, new_balance: Balance) {
 }
 
 pub struct ExtBuilder {
-    conversion_ratio: f64,
+    value_coefficient: f64,
     update_origin: AccountId,
     existential_deposit: Balance,
     energy_existential_deposit: Balance,
@@ -355,7 +355,7 @@ pub struct ExtBuilder {
 impl Default for ExtBuilder {
     fn default() -> Self {
         ExtBuilder {
-            conversion_ratio: 1.0,
+            value_coefficient: 1.0,
             update_origin: 1235,
             energy_existential_deposit: 1,
             existential_deposit: 1,
@@ -379,13 +379,13 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn conversion_ratio(mut self, conversion_ratio: f64) -> Self {
-        self.conversion_ratio = conversion_ratio;
+    pub(crate) fn value_coefficient(mut self, value_coefficient: f64) -> Self {
+        self.value_coefficient = value_coefficient;
         self
     }
 
     fn set_configs(&self) {
-        CONVERSION_RATIO.with(|x| *x.borrow_mut() = FixedI64::from_float(self.conversion_ratio));
+        VALUE_COEFFICIENT.with(|x| *x.borrow_mut() = FixedI64::from_float(self.value_coefficient));
         TEST_UPDATE_ORIGIN.with(|x| *x.borrow_mut() = self.update_origin);
         ENERGY_EXISTENTIAL_DEPOSIT.with(|x| *x.borrow_mut() = self.energy_existential_deposit);
         EXISTENTIAL_DEPOSIT.with(|x| *x.borrow_mut() = self.existential_deposit);
