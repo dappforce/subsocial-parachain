@@ -4,6 +4,10 @@
 
 extern crate core;
 
+pub use pallet::*;
+
+pub use crate::weights::WeightInfo;
+
 #[cfg(test)]
 mod mock;
 
@@ -15,21 +19,17 @@ mod benchmarking;
 
 pub mod weights;
 
-pub use crate::weights::WeightInfo;
-
-pub use pallet::*;
-
-
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
+    use frame_support::traits::{Currency, ExistenceRequirement, tokens::Balance, WithdrawReasons};
     use frame_system::pallet_prelude::*;
-    use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement, tokens::Balance};
     use pallet_transaction_payment::OnChargeTransaction;
-    use sp_runtime::{ArithmeticError, FixedI64, FixedPointOperand, FixedPointNumber};
+    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
     use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
+
     use crate::*;
 
     pub(crate) type BalanceOf<T> = <T as Config>::Balance;
@@ -44,10 +44,10 @@ pub mod pallet {
 
         /// The balance type.
         type Balance: Balance
-            + MaybeSerializeDeserialize
-            + Debug
-            + MaxEncodedLen
-            + FixedPointOperand;
+        + MaybeSerializeDeserialize
+        + Debug
+        + MaxEncodedLen
+        + FixedPointOperand;
 
 
         /// How much 1 NRG is worth in SUB.
@@ -125,9 +125,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-
         /// Updates the value coefficient. Only callable by the `UpdateOrigin`.
-        #[pallet::weight(<T as Config>::WeightInfo::update_value_coefficient())]
+        #[pallet::weight(< T as Config >::WeightInfo::update_value_coefficient())]
         pub fn update_value_coefficient(
             origin: OriginFor<T>,
             new_coefficient: FixedI64,
@@ -144,7 +143,7 @@ pub mod pallet {
         }
 
         /// Generate energy for a target account by burning balance from the caller.
-        #[pallet::weight(<T as Config>::WeightInfo::generate_energy())]
+        #[pallet::weight(< T as Config >::WeightInfo::generate_energy())]
         pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
