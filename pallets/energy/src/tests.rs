@@ -172,14 +172,13 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
         );
         assert_balance!(caller, 0);
         assert_total_issuance!(0);
-        assert_energy_balance!(receiver, 1000);
-        assert_total_energy!(1000);
+        assert_energy_balance!(receiver, 100);
+        assert_total_energy!(100);
 
         System::assert_last_event(EnergyEvent::EnergyGenerated {
             generator: caller,
             receiver,
             burnt_balance: 100,
-            generated_energy: 1000,
         }.into());
     });
 }
@@ -228,13 +227,9 @@ fn test_generate_energy_will_increment_total_energy() {
 
         assert_total_issuance!(710);
         assert_balance!(caller, 710);
-        // 35 * 1.25 = 43.75, 55 * 1.25 = 68.75
-        // 43 + 68 = 111
-        assert_energy_balance!(receiver1, 111);
-        assert_energy_balance!(receiver2, 250);
-        // 200 * 1.25 = 250
-        assert_total_energy!(361);
-        dbg!()
+        assert_energy_balance!(receiver1, 90);
+        assert_energy_balance!(receiver2, 200);
+        assert_total_energy!(290);
     });
 }
 
@@ -301,7 +296,7 @@ fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls(
         assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 1);
 
 
-        assert_energy_balance!(receiver, 125);
+        assert_energy_balance!(receiver, 100);
 
         assert_ok!(
             Energy::update_value_coefficient(
@@ -324,7 +319,7 @@ fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls(
             ),
         );
 
-        assert_energy_balance!(receiver, 200);
+        assert_energy_balance!(receiver, 250);
 
         assert_ok!(
             Energy::update_value_coefficient(
@@ -347,7 +342,7 @@ fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls(
             ),
         );
 
-        assert_energy_balance!(receiver, 864350);
+        assert_energy_balance!(receiver, 700250);
 
         assert_ok!(
             Energy::update_value_coefficient(
@@ -370,7 +365,7 @@ fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls(
             ),
         );
 
-        assert_energy_balance!(receiver, 1_000_000);
+        assert_energy_balance!(receiver, 1107200);
     });
 }
 

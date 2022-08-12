@@ -83,8 +83,6 @@ pub mod pallet {
             receiver: T::AccountId,
             /// The amount of balance that was burnt.
             burnt_balance: BalanceOf<T>,
-            /// The amount of energy that was generated.
-            generated_energy: BalanceOf<T>,
         },
         /// Energy value coefficient has been updated.
         ValueCoefficientRatioUpdated {
@@ -186,7 +184,6 @@ pub mod pallet {
                 generator: caller,
                 receiver: target,
                 burnt_balance: burn_amount,
-                generated_energy: captured_energy_amount,
             });
 
             Ok(())
