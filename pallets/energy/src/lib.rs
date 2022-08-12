@@ -22,11 +22,13 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
-    use frame_support::traits::{Currency, ExistenceRequirement, tokens::Balance, WithdrawReasons};
+    use frame_support::traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons};
     use frame_system::pallet_prelude::*;
     use pallet_transaction_payment::OnChargeTransaction;
+    use sp_runtime::traits::{
+        CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero,
+    };
     use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
-    use sp_runtime::traits::{CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
 
@@ -40,15 +42,14 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency type.
-        type Currency: Currency<Self::AccountId, Balance=Self::Balance>;
+        type Currency: Currency<Self::AccountId, Balance = Self::Balance>;
 
         /// The balance type.
         type Balance: Balance
-        + MaybeSerializeDeserialize
-        + Debug
-        + MaxEncodedLen
-        + FixedPointOperand;
-
+            + MaybeSerializeDeserialize
+            + Debug
+            + MaxEncodedLen
+            + FixedPointOperand;
 
         /// How much 1 NRG is worth in SUB.
         type DefaultValueCoefficient: Get<FixedI64>;
@@ -58,7 +59,7 @@ pub mod pallet {
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
-        type FallbackOnChargeTransaction: OnChargeTransaction<Self, Balance=BalanceOf<Self>>;
+        type FallbackOnChargeTransaction: OnChargeTransaction<Self, Balance = BalanceOf<Self>>;
 
         /// The minimum amount of energy required to keep an account.
         type ExistentialDeposit: Get<Self::Balance>;
@@ -100,12 +101,15 @@ pub mod pallet {
 
     /// Supplies the [ValueCoefficient] with [T::DefaultValueCoefficient] if empty.
     #[pallet::type_value]
-    pub(crate) fn ValueCoefficientOnEmpty<T: Config>() -> FixedI64 { T::DefaultValueCoefficient::get() }
+    pub(crate) fn ValueCoefficientOnEmpty<T: Config>() -> FixedI64 {
+        T::DefaultValueCoefficient::get()
+    }
 
     /// The current value coefficient.
     #[pallet::storage]
     #[pallet::getter(fn value_coefficient)]
-    pub(crate) type ValueCoefficient<T: Config> = StorageValue<_, FixedI64, ValueQuery, ValueCoefficientOnEmpty<T>>;
+    pub(crate) type ValueCoefficient<T: Config> =
+        StorageValue<_, FixedI64, ValueQuery, ValueCoefficientOnEmpty<T>>;
 
     /// Total energy generated.
     #[pallet::storage]
@@ -115,13 +119,8 @@ pub mod pallet {
     /// Energy credited to each account.
     #[pallet::storage]
     #[pallet::getter(fn energy_balance)]
-    pub(crate) type EnergyBalance<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::AccountId,
-        BalanceOf<T>,
-        ValueQuery,
-    >;
+    pub(crate) type EnergyBalance<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -153,9 +152,8 @@ pub mod pallet {
             let target = T::Lookup::lookup(target)?;
 
             let caller_balance = T::Currency::free_balance(&caller);
-            let caller_balance_after_burn = caller_balance
-                .checked_sub(&burn_amount)
-                .ok_or(Error::<T>::NotEnoughBalance)?;
+            let caller_balance_after_burn =
+                caller_balance.checked_sub(&burn_amount).ok_or(Error::<T>::NotEnoughBalance)?;
 
             let withdraw_reason = WithdrawReasons::all();
 
@@ -194,20 +192,18 @@ pub mod pallet {
             target: &T::AccountId,
             amount: BalanceOf<T>,
         ) -> Result<BalanceOf<T>, DispatchError> {
-            ensure!(
-                Self::total_energy().checked_add(&amount).is_some(),
-                ArithmeticError::Overflow,
-            );
+            ensure!(Self::total_energy().checked_add(&amount).is_some(), ArithmeticError::Overflow,);
             let energy_balance = Self::energy_balance(target);
-            ensure!(
-                energy_balance.checked_add(&amount).is_some(),
-                ArithmeticError::Overflow,
-            );
+            ensure!(energy_balance.checked_add(&amount).is_some(), ArithmeticError::Overflow,);
             Ok(energy_balance)
         }
 
         /// Capture energy for [account].
-        fn capture_energy(current_balance: BalanceOf<T>, target: &T::AccountId, amount: BalanceOf<T>) {
+        fn capture_energy(
+            current_balance: BalanceOf<T>,
+            target: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) {
             if current_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::inc_providers(target);
             }
@@ -231,15 +227,16 @@ pub mod pallet {
                 ArithmeticError::Underflow,
             );
             let energy_balance = Self::energy_balance(target);
-            ensure!(
-                energy_balance.checked_sub(&amount).is_some(),
-                ArithmeticError::Underflow,
-            );
+            ensure!(energy_balance.checked_sub(&amount).is_some(), ArithmeticError::Underflow,);
             Ok(energy_balance)
         }
 
         /// Consume energy for [account].
-        fn consume_energy(current_balance: BalanceOf<T>, target: &T::AccountId, mut amount: BalanceOf<T>) {
+        fn consume_energy(
+            current_balance: BalanceOf<T>,
+            target: &T::AccountId,
+            mut amount: BalanceOf<T>,
+        ) {
             if current_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::dec_providers(target);
 
@@ -259,7 +256,6 @@ pub mod pallet {
             }
         }
     }
-
 
     /// Keeps track of how the user paid for the transaction.
     pub enum LiquidityInfo<T: Config> {
@@ -298,15 +294,21 @@ pub mod pallet {
                 .saturating_mul_int(fee);
 
             if Self::energy_balance(&who) < adjusted_fee {
-                return T::FallbackOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
-                    .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
+                return T::FallbackOnChargeTransaction::withdraw_fee(
+                    who,
+                    call,
+                    dispatch_info,
+                    fee,
+                    tip,
+                )
+                .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
 
             match Self::ensure_can_consume_energy(who, adjusted_fee) {
                 Ok(current_balance) => {
                     Self::consume_energy(current_balance, who, adjusted_fee);
                     Ok(LiquidityInfo::Energy(adjusted_fee))
-                }
+                },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
         }
@@ -321,14 +323,16 @@ pub mod pallet {
         ) -> Result<(), TransactionValidityError> {
             match already_withdrawn {
                 LiquidityInfo::Nothing => Ok(()),
-                LiquidityInfo::Fallback(fallback_info) => T::FallbackOnChargeTransaction::correct_and_deposit_fee(
-                    who,
-                    dispatch_info,
-                    post_info,
-                    corrected_fee,
-                    tip,
-                    fallback_info,
-                ),
+                LiquidityInfo::Fallback(fallback_info) => {
+                    T::FallbackOnChargeTransaction::correct_and_deposit_fee(
+                        who,
+                        dispatch_info,
+                        post_info,
+                        corrected_fee,
+                        tip,
+                        fallback_info,
+                    )
+                },
                 LiquidityInfo::Energy(paid) => {
                     let adjusted_corrected_fee = Self::value_coefficient()
                         .reciprocal()
@@ -344,7 +348,7 @@ pub mod pallet {
                     // TODO: maybe we tip using SUB?
 
                     Ok(())
-                }
+                },
             }
         }
     }

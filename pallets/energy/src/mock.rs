@@ -1,30 +1,48 @@
 use codec::Decode;
-use sp_std::marker::PhantomData;
-use sp_std::cell::RefCell;
-use frame_support::{
-    assert_ok, dispatch::DispatchResult, parameter_types,
-    traits::{Currency, Everything},
-};
 use frame_support::dispatch::RawOrigin;
 use frame_support::pallet_prelude::{DispatchClass, Pays, Weight};
 use frame_support::traits::{ConstU8, EnsureOrigin, Get, Imbalance, IsType, SortedMembers};
-use frame_support::weights::{ConstantMultiplier, WeightToFeeCoefficients, WeightToFeeCoefficient, WeightToFeePolynomial, DispatchInfo, WeightToFee};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
-use pallet_transaction_payment::{ChargeTransactionPayment, CurrencyAdapter, MultiplierUpdate, OnChargeTransaction};
-use frame_system::{limits::{BlockLength, BlockWeights}, EnsureRoot, EnsureSignedBy, Account};
+use frame_support::weights::{
+    ConstantMultiplier, DispatchInfo, WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
+    WeightToFeePolynomial,
+};
+use frame_support::{
+    assert_ok,
+    dispatch::DispatchResult,
+    parameter_types,
+    traits::{Currency, Everything},
+};
 use frame_system::pallet_prelude::OriginFor;
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    Account, EnsureRoot, EnsureSignedBy,
+};
 use pallet_balances::NegativeImbalance;
+use pallet_transaction_payment::{
+    ChargeTransactionPayment, CurrencyAdapter, MultiplierUpdate, OnChargeTransaction,
+};
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{Perbill, testing::Header, traits::{BlakeTwo256, IdentityLookup}, FixedI64};
-use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, One};
+use sp_runtime::traits::{DispatchInfoOf, One, PostDispatchInfoOf};
 use sp_runtime::transaction_validity::TransactionValidityError;
-use sp_std::convert::{TryInto, TryFrom};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
+    FixedI64, Perbill,
+};
+use sp_std::cell::RefCell;
+use sp_std::convert::{TryFrom, TryInto};
+use sp_std::marker::PhantomData;
+
+pub(crate) use assert_balance;
+pub(crate) use assert_energy_balance;
+pub(crate) use assert_total_energy;
+pub(crate) use assert_total_issuance;
 
 pub(crate) use crate as pallet_energy;
 use crate::{EnergyBalance, TotalEnergy};
-
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -34,16 +52,16 @@ pub(super) type Balance = u64;
 type BlockNumber = u64;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system,
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system,
         Balances: pallet_balances,
-		TransactionPayment: pallet_transaction_payment,
-		Energy: pallet_energy,
-	}
+        TransactionPayment: pallet_transaction_payment,
+        Energy: pallet_energy,
+    }
 );
 
 // fn a () {
@@ -57,18 +75,18 @@ frame_support::construct_runtime!(
 // }
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 42;
-	pub MockBlockWeights: BlockWeights = BlockWeights::builder()
-		.base_block(0)
-		.for_class(DispatchClass::all(), |weights| {
-		    weights.base_extrinsic = 0;
-			weights.max_extrinsic = 1_000_000_000.into();
-			weights.max_total = 1_000_000_000_000.into();
-			weights.reserved = None;
-		})
-		.avg_block_initialization(Perbill::zero())
-		.build_or_panic();
+    pub const BlockHashCount: u64 = 250;
+    pub const SS58Prefix: u8 = 42;
+    pub MockBlockWeights: BlockWeights = BlockWeights::builder()
+        .base_block(0)
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = 0;
+            weights.max_extrinsic = 1_000_000_000.into();
+            weights.max_total = 1_000_000_000_000.into();
+            weights.reserved = None;
+        })
+        .avg_block_initialization(Perbill::zero())
+        .build_or_panic();
 }
 
 impl frame_system::Config for Test {
@@ -98,7 +116,6 @@ impl frame_system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-
 parameter_types! {
     pub static ExistentialDeposit: u64 = 1;
 }
@@ -115,7 +132,6 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-
 /// It returns the input weight as the result.
 ///
 /// Equals to: f(x) = x
@@ -125,11 +141,11 @@ impl WeightToFeePolynomial for IdentityWeightToFeePolynomial {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::zero(),
-			coeff_integer: 1,
-		}]
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::zero(),
+            coeff_integer: 1,
+        }]
     }
 }
 
@@ -142,17 +158,17 @@ impl WeightToFeePolynomial for ZeroWeightToFeePolynomial {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         smallvec![WeightToFeeCoefficient {
-			degree: 0,
-			negative: false,
-			coeff_frac: Perbill::zero(),
-			coeff_integer: 0,
-		}]
+            degree: 0,
+            negative: false,
+            coeff_frac: Perbill::zero(),
+            coeff_integer: 0,
+        }]
     }
 }
 
 parameter_types! {
-	pub const TransactionByteFee: Balance = 0;
-	pub const OperationalFeeMultiplier: u8 = 0;
+    pub const TransactionByteFee: Balance = 0;
+    pub const OperationalFeeMultiplier: u8 = 0;
 }
 
 impl pallet_transaction_payment::Config for Test {
@@ -175,11 +191,7 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
         ExtBuilder::default().build().execute_with(|| {
             pallet_transaction_payment::Pallet::<Test>::compute_fee(
                 len,
-                &DispatchInfo {
-                    weight,
-                    class: DispatchClass::Normal,
-                    pays_fee: Pays::Yes,
-                },
+                &DispatchInfo { weight, class: DispatchClass::Normal, pays_fee: Pays::Yes },
                 tip,
             )
         })
@@ -195,18 +207,18 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
 }
 
 parameter_types! {
-	pub static ValueCoefficient: FixedI64 = FixedI64::one();
+    pub static ValueCoefficient: FixedI64 = FixedI64::one();
     pub static TestUpdateOrigin: AccountId = 1235;
     pub static EnergyExistentialDeposit: Balance = 1;
 }
 
 pub struct EnsureAccount<Account, AccountId>(PhantomData<(Account, AccountId)>);
 
-impl<O, Account, AccountId>
-EnsureOrigin<O> for EnsureAccount<Account, AccountId>
-    where O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>,
-          AccountId: PartialEq + Clone + Ord + Decode,
-          Account: Get<AccountId>
+impl<O, Account, AccountId> EnsureOrigin<O> for EnsureAccount<Account, AccountId>
+where
+    O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>,
+    AccountId: PartialEq + Clone + Ord + Decode,
+    Account: Get<AccountId>,
 {
     type Success = AccountId;
     fn try_origin(o: O) -> Result<Self::Success, O> {
@@ -279,9 +291,10 @@ pub(crate) fn clear_corrected_and_deposit_fee_args() {
 pub struct ProxiedOnChargeTransaction<Real>(PhantomData<Real>);
 
 impl<Real> OnChargeTransaction<Test> for ProxiedOnChargeTransaction<Real>
-    where Real: OnChargeTransaction<Test>,
-          Real::Balance: IsType<Balance>,
-          Real::LiquidityInfo: IsType<Option<NegativeImbalance<Test>>>,
+where
+    Real: OnChargeTransaction<Test>,
+    Real::Balance: IsType<Balance>,
+    Real::LiquidityInfo: IsType<Option<NegativeImbalance<Test>>>,
 {
     type Balance = Real::Balance;
     type LiquidityInfo = Real::LiquidityInfo;
@@ -314,7 +327,14 @@ impl<Real> OnChargeTransaction<Test> for ProxiedOnChargeTransaction<Real>
             corrected_fee_with_tip: corrected_fee.into(),
             already_withdrawn: already_withdrawn.into_ref().as_ref().map(|val| val.peek().clone()),
         });
-        Real::correct_and_deposit_fee(who, dispatch_info, post_info, corrected_fee, tip, already_withdrawn)
+        Real::correct_and_deposit_fee(
+            who,
+            dispatch_info,
+            post_info,
+            corrected_fee,
+            tip,
+            already_withdrawn,
+        )
     }
 }
 
@@ -368,7 +388,7 @@ impl ExtBuilder {
         self.existential_deposit = existential_deposit;
         self
     }
-    
+
     pub(crate) fn energy_existential_deposit(mut self, new: Balance) -> Self {
         self.energy_existential_deposit = new;
         self
@@ -397,9 +417,7 @@ impl ExtBuilder {
         clear_withdraw_fee_args();
         clear_corrected_and_deposit_fee_args();
 
-        let storage = &mut frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
+        let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
@@ -414,30 +432,22 @@ macro_rules! assert_total_energy {
     ($expected_total_energy:expr) => {
         let total_energy = Energy::total_energy();
         assert_eq!(
-            total_energy,
-            $expected_total_energy,
+            total_energy, $expected_total_energy,
             "Expected total energy to be {}, but found {}",
-            $expected_total_energy,
-            total_energy,
+            $expected_total_energy, total_energy,
         );
     };
 }
-pub(crate) use assert_total_energy;
-
 macro_rules! assert_total_issuance {
     ($expected_issuance:expr) => {
-    let total_issuance = Balances::total_issuance();
+        let total_issuance = Balances::total_issuance();
         assert_eq!(
-            total_issuance,
-            $expected_issuance,
+            total_issuance, $expected_issuance,
             "Expected total issuance to be {}, but found {}",
-            $expected_issuance,
-            total_issuance,
+            $expected_issuance, total_issuance,
         );
     };
 }
-pub(crate) use assert_total_issuance;
-
 macro_rules! assert_energy_balance {
     ($account:expr, $expected_energy_balance:expr) => {
         let energy_balance = EnergyBalance::<Test>::get($account);
@@ -453,8 +463,6 @@ macro_rules! assert_energy_balance {
         );
     };
 }
-pub(crate) use assert_energy_balance;
-
 macro_rules! assert_balance {
     ($account:expr, $expected_balance:expr) => {
         let balance = Balances::free_balance($account);
@@ -469,4 +477,3 @@ macro_rules! assert_balance {
         );
     };
 }
-pub(crate) use assert_balance;

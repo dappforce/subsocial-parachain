@@ -1,14 +1,14 @@
 #![cfg(feature = "runtime-benchmarks")]
 
-use super::*;
-
+use frame_benchmarking::account;
 use frame_benchmarking::benchmarks;
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
+use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_runtime::FixedI64;
-use frame_benchmarking::account;
 use sp_runtime::FixedPointNumber;
-use sp_runtime::traits::{StaticLookup, Bounded};
+
+use super::*;
 
 benchmarks! {
     update_value_coefficient {
