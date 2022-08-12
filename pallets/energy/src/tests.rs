@@ -258,117 +258,6 @@ fn test_generate_energy_will_have_correct_weight() {
     });
 }
 
-//// tests on both Energy::update_value_coefficient() and Energy::generate_energy()
-
-#[test]
-fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls() {
-    let update_origin = account(1);
-    ExtBuilder::default()
-        .value_coefficient(1.25)
-        .update_origin(update_origin)
-        .energy_existential_deposit(10)
-        .build().execute_with(|| {
-        let caller = account_with_balance(1, 1_000_000_000);
-        let receiver = account(2);
-
-        assert_eq!(
-            <Test as pallet_energy::Config>::DefaultValueCoefficient::get().to_float(),
-            1.25,
-            "Default value coefficient should be 1.25",
-        );
-
-        assert_eq!(
-            Energy::value_coefficient().to_float(),
-            1.25,
-            "Stored value coefficient should be 1.25",
-        );
-
-        assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 0);
-
-        assert_ok!(
-            Energy::generate_energy(
-                Origin::signed(caller),
-                receiver,
-                100,
-            ),
-        );
-
-        assert_eq!(frame_system::Pallet::<Test>::providers(&receiver), 1);
-
-
-        assert_energy_balance!(receiver, 100);
-
-        assert_ok!(
-            Energy::update_value_coefficient(
-                Origin::signed(update_origin),
-                FixedI64::checked_from_rational(50, 100).unwrap(), // 50%
-            ),
-        );
-
-        assert_eq!(
-            Energy::value_coefficient().to_float(),
-            0.5,
-            "Stored value coefficient should be 0.5",
-        );
-
-        assert_ok!(
-            Energy::generate_energy(
-                Origin::signed(caller),
-                receiver,
-                150,
-            ),
-        );
-
-        assert_energy_balance!(receiver, 250);
-
-        assert_ok!(
-            Energy::update_value_coefficient(
-                Origin::signed(update_origin),
-                FixedI64::checked_from_rational(12345, 10000).unwrap(), // 123.45%
-            ),
-        );
-
-        assert_eq!(
-            Energy::value_coefficient().to_float(),
-            1.2345,
-            "Stored value coefficient should be 1.2345",
-        );
-
-        assert_ok!(
-            Energy::generate_energy(
-                Origin::signed(caller),
-                receiver,
-                700000,
-            ),
-        );
-
-        assert_energy_balance!(receiver, 700250);
-
-        assert_ok!(
-            Energy::update_value_coefficient(
-                Origin::signed(update_origin),
-                FixedI64::checked_from_rational(333_333_334, 1_000_000_000).unwrap(), // 33.3333334%
-            ),
-        );
-
-        assert_eq!(
-            Energy::value_coefficient().to_float(),
-            0.333333334,
-            "Stored value coefficient should be 0.333333334",
-        );
-
-        assert_ok!(
-            Energy::generate_energy(
-                Origin::signed(caller),
-                receiver,
-                406950,
-            ),
-        );
-
-        assert_energy_balance!(receiver, 1107200);
-    });
-}
-
 
 
 ///// tests for Energy::OnChargeTransaction
@@ -549,6 +438,104 @@ fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
             corrected_fee_with_tip: 63, // 50 + 13
             already_withdrawn: _, // ignored
         }));
+    });
+}
+
+
+#[test]
+fn test_update_value_coefficient_should_reflect_on_future_charge_transcations() {
+    let update_origin = account(1);
+
+    ExtBuilder::default()
+        .value_coefficient(1.25)
+        .update_origin(update_origin)
+        .energy_existential_deposit(10)
+        .build().execute_with(|| {
+        let caller = account(1);
+
+
+        let charge_transaction = |val| {
+            assert_ok!(
+                charge_transaction(
+                    &caller,
+                    val,
+                    val,
+                    0,
+                    ||  {},
+                ),
+            );
+        };
+
+        assert_eq!(
+            <Test as pallet_energy::Config>::DefaultValueCoefficient::get().to_float(),
+            1.25,
+            "Default value coefficient should be 1.25",
+        );
+
+        assert_eq!(
+            Energy::value_coefficient().to_float(),
+            1.25,
+            "Stored value coefficient should be 1.25",
+        );
+
+        set_energy_balance(caller, 1_000_000);
+        charge_transaction(100);
+
+        assert_energy_balance!(caller, 1_000_000 - 80);
+
+        assert_ok!(
+            Energy::update_value_coefficient(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(50, 100).unwrap(), // 50%
+            ),
+        );
+
+        assert_eq!(
+            Energy::value_coefficient().to_float(),
+            0.5,
+            "Stored value coefficient should be 0.5",
+        );
+
+        set_energy_balance(caller, 1_000_000);
+        charge_transaction(150);
+
+        assert_energy_balance!(caller, 1_000_000 - 300);
+
+        assert_ok!(
+            Energy::update_value_coefficient(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(12345, 10000).unwrap(), // 123.45%
+            ),
+        );
+
+        assert_eq!(
+            Energy::value_coefficient().to_float(),
+            1.2345,
+            "Stored value coefficient should be 1.2345",
+        );
+
+        set_energy_balance(caller, 1_000_000);
+        charge_transaction(700000);
+
+        assert_energy_balance!(caller, 1_000_000 - 567031);
+
+        assert_ok!(
+            Energy::update_value_coefficient(
+                Origin::signed(update_origin),
+                FixedI64::checked_from_rational(333_333_334, 1_000_000_000).unwrap(), // 33.3333334%
+            ),
+        );
+
+        assert_eq!(
+            Energy::value_coefficient().to_float(),
+            0.333333334,
+            "Stored value coefficient should be 0.333333334",
+        );
+
+        set_energy_balance(caller, 2_000_000);
+        charge_transaction(406950);
+
+        assert_energy_balance!(caller, 2_000_000 - 1220849);
     });
 }
 
