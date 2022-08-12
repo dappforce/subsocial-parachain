@@ -294,20 +294,20 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            let corrected_fee = Self::value_coefficient()
+            let adjusted_fee = Self::value_coefficient()
                 .reciprocal()
                 .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
                 .saturating_mul_int(fee);
 
-            if Self::energy_balance(&who) < corrected_fee {
+            if Self::energy_balance(&who) < adjusted_fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
                     .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
             }
 
-            match Self::ensure_can_consume_energy(who, corrected_fee) {
+            match Self::ensure_can_consume_energy(who, adjusted_fee) {
                 Ok(current_balance) => {
-                    Self::consume_energy(current_balance, who, corrected_fee);
-                    Ok(LiquidityInfo::Energy(corrected_fee))
+                    Self::consume_energy(current_balance, who, adjusted_fee);
+                    Ok(LiquidityInfo::Energy(adjusted_fee))
                 }
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
@@ -332,12 +332,15 @@ pub mod pallet {
                     fallback_info,
                 ),
                 LiquidityInfo::Energy(paid) => {
-                    let refund_amount = paid.saturating_sub(corrected_fee);
-                    let corrected_refund_amount = Self::value_coefficient()
-                        .saturating_mul_int(refund_amount);
+                    let adjusted_corrected_fee = Self::value_coefficient()
+                        .reciprocal()
+                        .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
+                        .saturating_mul_int(corrected_fee);
+
+                    let refund_amount = paid.saturating_sub(adjusted_corrected_fee);
 
                     let current_balance = Self::energy_balance(who);
-                    let _ = Self::capture_energy(current_balance, who, corrected_refund_amount);
+                    let _ = Self::capture_energy(current_balance, who, refund_amount);
 
                     // we don't do anything with the fees + tip.
                     // TODO: maybe we tip using SUB?

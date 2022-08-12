@@ -373,6 +373,10 @@ fn test_update_value_coefficient_should_reflect_on_future_generate_energy_calls(
 
 ///// tests for Energy::OnChargeTransaction
 
+macro_rules! div_coff {
+    ($val:expr, $coff:expr) => {(($val as f64 / $coff as f64) as Balance)};
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 enum ChargeTransactionError {
     PreDispatch_Payment,
@@ -433,7 +437,9 @@ fn charge_transaction<PreValidator: FnOnce()>(
 
 #[test]
 fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .value_coefficient(1.25)
+        .build().execute_with(|| {
         let caller = account(1);
         set_sub_balance(caller, 0);
         set_energy_balance(caller, 0);
@@ -455,7 +461,9 @@ fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
 
 #[test]
 fn test_charge_transaction_should_pay_with_energy_if_enough() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .value_coefficient(2f64)
+        .build().execute_with(|| {
         let caller = account(1);
         set_sub_balance(caller, 1000);
         set_energy_balance(caller, 1000);
@@ -467,13 +475,13 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
                 100,
                 20,
                 ||  {
-                    assert_energy_balance!(caller, 1000 - 150 - 20); // subtract the expected fees + tip
+                    assert_energy_balance!(caller, 1000 - div_coff!(150 + 20, 2)); // subtract the expected (fees + tip) / coefficient
                     assert_balance!(caller, 1000); // no change
                     assert!(get_captured_withdraw_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
                 },
             ),
         );
-        assert_energy_balance!(caller, 1000 - 100 - 20); // subtract the actual fees + tip
+        assert_energy_balance!(caller, 1000 - div_coff!(100 + 20, 2)); // subtract the actual (fees + tip) / coefficient
         assert_balance!(caller, 1000); // no change
         assert!(get_corrected_and_deposit_fee_args().is_none(), "Shouldn't go through the fallback OnChargeTransaction");
     });
@@ -482,7 +490,9 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
 
 #[test]
 fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .value_coefficient(10f64)
+        .build().execute_with(|| {
         let caller = account(1);
         set_sub_balance(caller, 1000);
         set_energy_balance(caller, 1000);
@@ -508,10 +518,12 @@ fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
 
 #[test]
 fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder::default()
+        .value_coefficient(3.36f64)
+        .build().execute_with(|| {
         let caller = account(1);
         set_sub_balance(caller, 1000);
-        set_energy_balance(caller, 100);
+        set_energy_balance(caller, 50);
 
         assert_ok!(
             charge_transaction(
@@ -520,7 +532,7 @@ fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
                 50,
                 13,
                 ||  {
-                    assert_energy_balance!(caller, 100); // no change
+                    assert_energy_balance!(caller, 50); // no change
                     assert_balance!(caller, 1000 - 200 - 13); // subtract the expected fees + tip
                     assert_eq!(get_captured_withdraw_fee_args().unwrap(), WithdrawFeeArgs {
                         who: caller.clone(),
@@ -530,7 +542,7 @@ fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
                 },
             ),
         );
-        assert_energy_balance!(caller, 100); // no change
+        assert_energy_balance!(caller, 50); // no change
         assert_balance!(caller, 1000 - 50 - 13); // subtract the actual fees + tip
         assert!(matches!(get_corrected_and_deposit_fee_args().unwrap(), CorrectAndDepositFeeArgs {
             who: caller,

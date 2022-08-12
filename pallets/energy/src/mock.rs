@@ -441,6 +441,7 @@ pub(crate) use assert_total_issuance;
 macro_rules! assert_energy_balance {
     ($account:expr, $expected_energy_balance:expr) => {
         let energy_balance = EnergyBalance::<Test>::get($account);
+        dbg!(energy_balance);
         assert_eq!(
             energy_balance,
             $expected_energy_balance,
