@@ -36,11 +36,6 @@ use sp_std::cell::RefCell;
 use sp_std::convert::{TryFrom, TryInto};
 use sp_std::marker::PhantomData;
 
-pub(crate) use assert_balance;
-pub(crate) use assert_energy_balance;
-pub(crate) use assert_total_energy;
-pub(crate) use assert_total_issuance;
-
 pub(crate) use crate as pallet_energy;
 use crate::{EnergyBalance, TotalEnergy};
 
@@ -477,3 +472,8 @@ macro_rules! assert_balance {
         );
     };
 }
+
+pub(crate) use assert_balance;
+pub(crate) use assert_energy_balance;
+pub(crate) use assert_total_energy;
+pub(crate) use assert_total_issuance;
