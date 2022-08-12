@@ -82,7 +82,7 @@ pub mod pallet {
             /// The account that received the energy.
             receiver: T::AccountId,
             /// The amount of balance that was burnt.
-            burnt_balance: BalanceOf<T>,
+            balance_burnt: BalanceOf<T>,
         },
         /// Energy value coefficient has been updated.
         ValueCoefficientRatioUpdated {
@@ -179,7 +179,7 @@ pub mod pallet {
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
                 receiver: target,
-                burnt_balance: burn_amount,
+                balance_burnt: burn_amount,
             });
 
             Ok(())
