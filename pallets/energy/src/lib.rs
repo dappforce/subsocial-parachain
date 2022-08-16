@@ -164,7 +164,8 @@ pub mod pallet {
 
             let captured_energy_amount = burn_amount;
 
-            let current_balance = Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
+            let current_energy_balance =
+                Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
             let _ = T::Currency::withdraw(
                 &caller,
@@ -172,7 +173,7 @@ pub mod pallet {
                 withdraw_reason,
                 ExistenceRequirement::KeepAlive,
             )?;
-            Self::capture_energy(current_balance, &target, captured_energy_amount);
+            Self::capture_energy(current_energy_balance, &target, captured_energy_amount);
 
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
