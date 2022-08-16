@@ -230,7 +230,7 @@ pub mod pallet {
                 ArithmeticError::Underflow,
             );
             let energy_balance = Self::energy_balance(target);
-            ensure!(energy_balance.checked_sub(&amount).is_some(), ArithmeticError::Underflow,);
+            ensure!(energy_balance.checked_sub(&amount).is_some(), ArithmeticError::Underflow);
             Ok(energy_balance)
         }
 
