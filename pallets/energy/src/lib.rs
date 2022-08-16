@@ -83,7 +83,7 @@ pub mod pallet {
             balance_burned: BalanceOf<T>,
         },
         /// Energy value coefficient has been updated.
-        ValueCoefficientRatioUpdated {
+        ValueCoefficientUpdated {
             /// The new value coefficient.
             new_coefficient: FixedI64,
         },
@@ -123,7 +123,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Updates the value coefficient. Only callable by the `UpdateOrigin`.
-        #[pallet::weight(< T as Config >::WeightInfo::update_value_coefficient())]
+        #[pallet::weight(<T as Config>::WeightInfo::update_value_coefficient())]
         pub fn update_value_coefficient(
             origin: OriginFor<T>,
             new_coefficient: FixedI64,
@@ -134,13 +134,13 @@ pub mod pallet {
 
             ValueCoefficient::<T>::put(new_coefficient);
 
-            Self::deposit_event(Event::ValueCoefficientRatioUpdated { new_coefficient });
+            Self::deposit_event(Event::ValueCoefficientUpdated { new_coefficient });
 
             Ok(())
         }
 
         /// Generate energy for a target account by burning balance from the caller.
-        #[pallet::weight(< T as Config >::WeightInfo::generate_energy())]
+        #[pallet::weight(<T as Config>::WeightInfo::generate_energy())]
         pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,

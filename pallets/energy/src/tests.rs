@@ -78,7 +78,7 @@ fn test_update_value_coefficient_will_work_as_expected() {
             assert_eq!(Energy::value_coefficient(), FixedI64::from_float(1.12354));
 
             System::assert_last_event(
-                EnergyEvent::ValueCoefficientRatioUpdated {
+                EnergyEvent::ValueCoefficientUpdated {
                     new_coefficient: FixedI64::from_float(1.12354),
                 }
                 .into(),
