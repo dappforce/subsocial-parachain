@@ -2,8 +2,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate core;
-
 pub use pallet::*;
 
 pub use crate::weights::WeightInfo;
@@ -81,8 +79,8 @@ pub mod pallet {
             generator: T::AccountId,
             /// The account that received the energy.
             receiver: T::AccountId,
-            /// The amount of balance that was burnt.
-            balance_burnt: BalanceOf<T>,
+            /// The amount of balance that was burned.
+            balance_burned: BalanceOf<T>,
         },
         /// Energy value coefficient has been updated.
         ValueCoefficientRatioUpdated {
@@ -179,7 +177,7 @@ pub mod pallet {
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
                 receiver: target,
-                balance_burnt: burn_amount,
+                balance_burned: burn_amount,
             });
 
             Ok(())

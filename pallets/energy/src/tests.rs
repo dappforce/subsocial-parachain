@@ -153,7 +153,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
             assert_total_energy!(100);
 
             System::assert_last_event(
-                EnergyEvent::EnergyGenerated { generator: caller, receiver, balance_burnt: 100 }
+                EnergyEvent::EnergyGenerated { generator: caller, receiver, balance_burned: 100 }
                     .into(),
             );
         });
