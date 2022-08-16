@@ -164,8 +164,7 @@ pub mod pallet {
 
             let captured_energy_amount = burn_amount;
 
-            let current_energy_balance =
-                Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
+            Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
             let _ = T::Currency::withdraw(
                 &caller,
@@ -174,7 +173,7 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )?;
 
-            Self::capture_energy(current_energy_balance, &target, captured_energy_amount);
+            Self::capture_energy(&target, captured_energy_amount);
 
             Self::deposit_event(Event::EnergyGenerated {
                 generator: caller,
@@ -192,20 +191,18 @@ pub mod pallet {
         fn ensure_can_capture_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
-        ) -> Result<BalanceOf<T>, DispatchError> {
+        ) -> DispatchResult {
             ensure!(Self::total_energy().checked_add(&amount).is_some(), ArithmeticError::Overflow);
             let energy_balance = Self::energy_balance(target);
             ensure!(energy_balance.checked_add(&amount).is_some(), ArithmeticError::Overflow);
-            Ok(energy_balance)
+            Ok(())
         }
 
         /// Capture energy for [account]. Increases energy balance by [amount] and also increases
         /// account providers if current energy balance is above [T::ExistentialDeposit].
-        fn capture_energy(
-            current_energy_balance: BalanceOf<T>,
-            target: &T::AccountId,
-            amount: BalanceOf<T>,
-        ) {
+        fn capture_energy(target: &T::AccountId, amount: BalanceOf<T>) {
+            let current_energy_balance = Self::energy_balance(target);
+
             if current_energy_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::inc_providers(target);
             }
@@ -223,23 +220,21 @@ pub mod pallet {
         fn ensure_can_consume_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
-        ) -> Result<BalanceOf<T>, DispatchError> {
+        ) -> DispatchResult {
             ensure!(
                 Self::total_energy().checked_sub(&amount).is_some(),
                 ArithmeticError::Underflow,
             );
             let energy_balance = Self::energy_balance(target);
             ensure!(energy_balance.checked_sub(&amount).is_some(), ArithmeticError::Underflow);
-            Ok(energy_balance)
+            Ok(())
         }
 
         /// Consume energy for [account]. Decreases energy balance by [amount] and also decrease
         /// account providers if current energy balance is below [T::ExistentialDeposit].
-        fn consume_energy(
-            current_energy_balance: BalanceOf<T>,
-            target: &T::AccountId,
-            mut amount: BalanceOf<T>,
-        ) {
+        fn consume_energy(target: &T::AccountId, mut amount: BalanceOf<T>) {
+            let current_energy_balance = Self::energy_balance(target);
+
             if current_energy_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::dec_providers(target);
 
@@ -309,8 +304,8 @@ pub mod pallet {
             }
 
             match Self::ensure_can_consume_energy(who, adjusted_fee) {
-                Ok(current_balance) => {
-                    Self::consume_energy(current_balance, who, adjusted_fee);
+                Ok(()) => {
+                    Self::consume_energy(who, adjusted_fee);
                     Ok(LiquidityInfo::Energy(adjusted_fee))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
@@ -345,8 +340,7 @@ pub mod pallet {
 
                     let refund_amount = paid.saturating_sub(adjusted_corrected_fee);
 
-                    let current_balance = Self::energy_balance(who);
-                    let _ = Self::capture_energy(current_balance, who, refund_amount);
+                    let _ = Self::capture_energy(who, refund_amount);
 
                     // we don't do anything with the fees + tip.
                     // TODO: maybe we tip using SUB?
