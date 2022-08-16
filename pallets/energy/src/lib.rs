@@ -252,6 +252,17 @@ pub mod pallet {
                 });
             }
         }
+
+        /// Calculate the value of energy that is equivalent to [amount] of sub.
+        ///
+        /// Example: If we need to pay 10 SUB, and coefficient is 1.25, then the amount of
+        /// energy spent on fees will be: 10 / 1.25 = 8
+        pub(crate) fn sub_to_nrg(amount: BalanceOf<T>) -> BalanceOf<T> {
+            Self::value_coefficient()
+                .reciprocal()
+                .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
+                .saturating_mul_int(amount)
+        }
     }
 
     /// Keeps track of how the user paid for the transaction.
@@ -285,12 +296,7 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            // Example: If we need to pay 10 SUB, and coefficient is 1.25, then the amount of
-            // energy spent on fees will be: 10 / 1.25 = 8
-            let adjusted_fee = Self::value_coefficient()
-                .reciprocal()
-                .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
-                .saturating_mul_int(fee);
+            let adjusted_fee = Self::sub_to_nrg(fee);
 
             if Self::energy_balance(&who) < adjusted_fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(
@@ -333,10 +339,7 @@ pub mod pallet {
                     )
                 },
                 LiquidityInfo::Energy(paid) => {
-                    let adjusted_corrected_fee = Self::value_coefficient()
-                        .reciprocal()
-                        .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
-                        .saturating_mul_int(corrected_fee);
+                    let adjusted_corrected_fee = Self::sub_to_nrg(corrected_fee);
 
                     let refund_amount = paid.saturating_sub(adjusted_corrected_fee);
 
