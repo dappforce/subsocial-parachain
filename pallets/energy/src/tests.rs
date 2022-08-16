@@ -519,4 +519,8 @@ fn test_sub_to_nrg() {
     ExtBuilder::default().value_coefficient(0.5).build().execute_with(|| {
         assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(33), 66);
     });
+
+    ExtBuilder::default().value_coefficient(0.1).build().execute_with(|| {
+        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(33), 330);
+    });
 }
