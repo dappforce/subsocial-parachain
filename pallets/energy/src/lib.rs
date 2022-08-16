@@ -198,13 +198,14 @@ pub mod pallet {
             Ok(energy_balance)
         }
 
-        /// Capture energy for [account].
+        /// Capture energy for [account]. Increases energy balance by [amount]. and also increases
+        /// account providers if current energy balance is above [T::ExistentialDeposit].
         fn capture_energy(
-            current_balance: BalanceOf<T>,
+            current_energy_balance: BalanceOf<T>,
             target: &T::AccountId,
             amount: BalanceOf<T>,
         ) {
-            if current_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
+            if current_energy_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::inc_providers(target);
             }
 
@@ -232,22 +233,23 @@ pub mod pallet {
             Ok(energy_balance)
         }
 
-        /// Consume energy for [account].
+        /// Consume energy for [account]. Decreases energy balance by [amount]. and also decrease
+        /// account providers if current energy balance is below [T::ExistentialDeposit].
         fn consume_energy(
-            current_balance: BalanceOf<T>,
+            current_energy_balance: BalanceOf<T>,
             target: &T::AccountId,
             mut amount: BalanceOf<T>,
         ) {
-            if current_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
+            if current_energy_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
                 frame_system::Pallet::<T>::dec_providers(target);
 
-                amount = current_balance;
+                amount = current_energy_balance;
             }
 
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            if amount == current_balance {
+            if amount == current_energy_balance {
                 EnergyBalance::<T>::remove(target);
             } else {
                 EnergyBalance::<T>::mutate(target, |energy| {
