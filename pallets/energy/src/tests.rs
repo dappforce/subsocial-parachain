@@ -499,3 +499,24 @@ fn test_existential_deposit_and_providers() {
             assert_eq!(System::providers(&account1), 0);
         });
 }
+
+///// test sub_to_nrg
+
+#[test]
+fn test_sub_to_nrg() {
+    ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
+        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(100), 80);
+    });
+
+    ExtBuilder::default().value_coefficient(1.5).build().execute_with(|| {
+        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(200), 133);
+    });
+
+    ExtBuilder::default().value_coefficient(10.0).build().execute_with(|| {
+        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(500), 50);
+    });
+
+    ExtBuilder::default().value_coefficient(0.5).build().execute_with(|| {
+        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(33), 66);
+    });
+}
