@@ -173,6 +173,7 @@ pub mod pallet {
                 withdraw_reason,
                 ExistenceRequirement::KeepAlive,
             )?;
+
             Self::capture_energy(current_energy_balance, &target, captured_energy_amount);
 
             Self::deposit_event(Event::EnergyGenerated {
