@@ -123,7 +123,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Updates the value coefficient. Only callable by the `UpdateOrigin`.
-        #[pallet::weight(<T as Config>::WeightInfo::update_value_coefficient())]
+        #[pallet::weight(< T as Config >::WeightInfo::update_value_coefficient())]
         pub fn update_value_coefficient(
             origin: OriginFor<T>,
             new_coefficient: FixedI64,
@@ -140,7 +140,7 @@ pub mod pallet {
         }
 
         /// Generate energy for a target account by burning balance from the caller.
-        #[pallet::weight(<T as Config>::WeightInfo::generate_energy())]
+        #[pallet::weight(< T as Config >::WeightInfo::generate_energy())]
         pub fn generate_energy(
             origin: OriginFor<T>,
             target: <T::Lookup as StaticLookup>::Source,
@@ -190,9 +190,9 @@ pub mod pallet {
             target: &T::AccountId,
             amount: BalanceOf<T>,
         ) -> Result<BalanceOf<T>, DispatchError> {
-            ensure!(Self::total_energy().checked_add(&amount).is_some(), ArithmeticError::Overflow,);
+            ensure!(Self::total_energy().checked_add(&amount).is_some(), ArithmeticError::Overflow);
             let energy_balance = Self::energy_balance(target);
-            ensure!(energy_balance.checked_add(&amount).is_some(), ArithmeticError::Overflow,);
+            ensure!(energy_balance.checked_add(&amount).is_some(), ArithmeticError::Overflow);
             Ok(energy_balance)
         }
 
