@@ -215,7 +215,6 @@ pub mod pallet {
             });
             EnergyBalance::<T>::mutate(target, |energy| {
                 *energy = energy.saturating_add(amount);
-                energy.clone()
             });
         }
 
@@ -255,7 +254,6 @@ pub mod pallet {
             } else {
                 EnergyBalance::<T>::mutate(target, |energy| {
                     *energy = energy.saturating_sub(amount);
-                    energy.clone()
                 });
             }
         }
