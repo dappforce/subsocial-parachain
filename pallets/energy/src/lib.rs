@@ -198,7 +198,7 @@ pub mod pallet {
             Ok(energy_balance)
         }
 
-        /// Capture energy for [account]. Increases energy balance by [amount]. and also increases
+        /// Capture energy for [account]. Increases energy balance by [amount] and also increases
         /// account providers if current energy balance is above [T::ExistentialDeposit].
         fn capture_energy(
             current_energy_balance: BalanceOf<T>,
@@ -233,7 +233,7 @@ pub mod pallet {
             Ok(energy_balance)
         }
 
-        /// Consume energy for [account]. Decreases energy balance by [amount]. and also decrease
+        /// Consume energy for [account]. Decreases energy balance by [amount] and also decrease
         /// account providers if current energy balance is below [T::ExistentialDeposit].
         fn consume_energy(
             current_energy_balance: BalanceOf<T>,
