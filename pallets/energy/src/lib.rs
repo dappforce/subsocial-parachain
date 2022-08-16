@@ -290,6 +290,8 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
+            // Example: If we need to pay 10 SUB, and coefficient is 1.25, then the amount of
+            // energy spent on fees will be: 10 / 1.25 = 8
             let adjusted_fee = Self::value_coefficient()
                 .reciprocal()
                 .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
