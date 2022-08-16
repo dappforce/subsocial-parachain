@@ -186,7 +186,8 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Ensure that [account] can capture the given [amount] of energy.
+        /// Ensure that [account] can capture the given [amount] of energy, and returns current
+        /// energy balance.
         fn ensure_can_capture_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
@@ -216,7 +217,8 @@ pub mod pallet {
             });
         }
 
-        /// Ensure that [account] can consume the given [amount] of energy.
+        /// Ensure that [account] can consume the given [amount] of energy, and returns current
+        /// energy balance.
         fn ensure_can_consume_energy(
             target: &T::AccountId,
             amount: BalanceOf<T>,
