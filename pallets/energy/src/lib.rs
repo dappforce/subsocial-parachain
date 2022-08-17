@@ -59,7 +59,7 @@ pub mod pallet {
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
-        type NativeOnChargeTransaction: OnChargeTransaction<Self, Balance = BalanceOf<Self>>;
+        type FallbackOnChargeTransaction: OnChargeTransaction<Self, Balance = BalanceOf<Self>>;
 
         /// The minimum amount of energy required to keep an account.
         type ExistentialDeposit: Get<Self::Balance>;
@@ -320,7 +320,7 @@ pub mod pallet {
         /// Transaction have been paid using energy.
         Energy(BalanceOf<T>),
         /// Transaction have been paid using the fallback method.
-        Fallback(<T::NativeOnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo),
+        Fallback(<T::FallbackOnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo),
     }
 
     impl<T: Config> Default for LiquidityInfo<T> {
@@ -347,7 +347,7 @@ pub mod pallet {
             let adjusted_fee = Self::sub_to_nrg(fee);
 
             if Self::energy_balance(&who) < adjusted_fee {
-                return T::NativeOnChargeTransaction::withdraw_fee(
+                return T::FallbackOnChargeTransaction::withdraw_fee(
                     who,
                     call,
                     dispatch_info,
@@ -377,7 +377,7 @@ pub mod pallet {
             match already_withdrawn {
                 LiquidityInfo::Nothing => Ok(()),
                 LiquidityInfo::Fallback(fallback_info) => {
-                    T::NativeOnChargeTransaction::correct_and_deposit_fee(
+                    T::FallbackOnChargeTransaction::correct_and_deposit_fee(
                         who,
                         dispatch_info,
                         post_info,
