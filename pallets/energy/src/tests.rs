@@ -284,16 +284,16 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
         set_energy_balance(caller, 1000);
 
         assert_ok!(charge_transaction(&caller, 150, 100, 20, || {
-            assert_energy_balance!(caller, 1000 - div_coff!(150 + 20, 2)); // subtract the expected (fees + tip) / coefficient
-            assert_balance!(caller, 1000); // no change
+            assert_energy_balance!(caller, 1000 - div_coff!(150, 2)); // subtract the expected (fees + tip) / coefficient
+            assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
             assert!(
                 get_captured_withdraw_fee_args().is_none(),
                 "Shouldn't go through the fallback OnChargeTransaction"
             );
         },),);
-        assert_energy_balance!(caller, 1000 - div_coff!(100 + 20, 2));
+        assert_energy_balance!(caller, 1000 - div_coff!(100, 2));
         // subtract the actual (fees + tip) / coefficient
-        assert_balance!(caller, 1000); // no change
+        assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
         assert!(
             get_corrected_and_deposit_fee_args().is_none(),
             "Shouldn't go through the fallback OnChargeTransaction"

@@ -344,7 +344,8 @@ pub mod pallet {
                 return Ok(LiquidityInfo::Nothing);
             }
 
-            let adjusted_fee = Self::sub_to_nrg(fee);
+            let fee_without_tip = fee.saturating_sub(tip);
+            let adjusted_fee = Self::sub_to_nrg(fee_without_tip);
 
             if Self::energy_balance(&who) < adjusted_fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(
@@ -355,6 +356,16 @@ pub mod pallet {
                     tip,
                 )
                 .map(|fallback_info| LiquidityInfo::Fallback(fallback_info));
+            }
+
+            if !tip.is_zero() {
+                let _ = T::Currency::withdraw(
+                    who,
+                    tip,
+                    WithdrawReasons::TIP,
+                    ExistenceRequirement::KeepAlive,
+                )
+                .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment.into() })?;
             }
 
             match Self::ensure_can_consume_energy(who, adjusted_fee) {
@@ -387,14 +398,12 @@ pub mod pallet {
                     )
                 },
                 LiquidityInfo::Energy(paid) => {
-                    let adjusted_corrected_fee = Self::sub_to_nrg(corrected_fee);
+                    let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
+                    let adjusted_corrected_fee = Self::sub_to_nrg(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(adjusted_corrected_fee);
 
                     let _ = Self::capture_energy(who, refund_amount);
-
-                    // we don't do anything with the fees + tip.
-                    // TODO: maybe we tip using SUB?
 
                     Ok(())
                 },
