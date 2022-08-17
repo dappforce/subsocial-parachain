@@ -463,22 +463,36 @@ fn test_existential_deposit_and_providers() {
 
             assert_eq!(System::providers(&account1), 1);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 10,));
+            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 10));
 
             // still under 100 NRG
             assert_eq!(System::providers(&account1), 1);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 90,));
+            assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 90));
 
             // increased because the account now have 100 NRG
             assert_eq!(System::providers(&account1), 2);
 
-            assert_ok!(charge_transaction(&account1, 90, 90, 0, || {},),);
+            assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 100));
 
-            // back to zero because the account now have 10 NRG
+            // same because account have already increased provider count
+            assert_eq!(System::providers(&account1), 2);
+
+            assert_ok!(charge_transaction(&account1, 90, 90, 0, || {}));
+
+            assert_eq!(System::providers(&account1), 2);
+
+            assert_ok!(charge_transaction(&account1, 100, 100, 0, || {}));
+
+            // decreased because the account now have 10 NRG
             assert_eq!(System::providers(&account1), 1);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 900,));
+            assert_ok!(charge_transaction(&account1, 5, 5, 0, || {}));
+
+            // should not be decreased since it was decreased by the previous transaction
+            assert_eq!(System::providers(&account1), 1);
+
+            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 900));
 
             assert_balance!(account1, 90);
             assert_energy_balance!(account1, 900);
