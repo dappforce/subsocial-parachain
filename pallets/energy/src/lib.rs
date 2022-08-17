@@ -26,7 +26,9 @@ pub mod pallet {
     use sp_runtime::traits::{
         CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero,
     };
-    use sp_runtime::{ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand};
+    use sp_runtime::{
+        ArithmeticError, DispatchResultWithInfo, FixedI64, FixedPointNumber, FixedPointOperand,
+    };
     use sp_std::convert::TryInto;
     use sp_std::fmt::Debug;
 
@@ -87,6 +89,9 @@ pub mod pallet {
             /// The new value coefficient.
             new_coefficient: FixedI64,
         },
+        /// An account was removed whose balance was non-zero but below
+        /// ExistentialDeposit, resulting in an outright loss.
+        DustLost { who: T::AccountId, amount: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -95,6 +100,8 @@ pub mod pallet {
         NotEnoughBalance,
         /// Value coefficient is not a positive number.
         ValueCoefficientIsNotPositive,
+        /// Value too low to create account due to existential deposit
+        ExistentialDeposit,
     }
 
     /// Supplies the [ValueCoefficient] with [T::DefaultValueCoefficient] if empty.
@@ -163,6 +170,15 @@ pub mod pallet {
             )?;
 
             let captured_energy_amount = burn_amount;
+            let current_energy_balance = Self::energy_balance(&target);
+            let new_energy_balance = current_energy_balance
+                .checked_add(&captured_energy_amount)
+                .ok_or(Error::<T>::NotEnoughBalance)?;
+
+            ensure!(
+                new_energy_balance >= T::ExistentialDeposit::get(),
+                Error::<T>::ExistentialDeposit
+            );
 
             Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
@@ -201,17 +217,12 @@ pub mod pallet {
         /// Capture energy for [account]. Increases energy balance by [amount] and also increases
         /// account providers if current energy balance is above [T::ExistentialDeposit].
         fn capture_energy(target: &T::AccountId, amount: BalanceOf<T>) {
-            let current_energy_balance = Self::energy_balance(target);
-
-            if current_energy_balance.saturating_add(amount) >= T::ExistentialDeposit::get() {
-                frame_system::Pallet::<T>::inc_providers(target);
-            }
-
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
-            EnergyBalance::<T>::mutate(target, |energy| {
+            Self::try_mutate_energy_balance(target, |energy| -> DispatchResult {
                 *energy = energy.saturating_add(amount);
+                Ok(())
             });
         }
 
@@ -233,24 +244,61 @@ pub mod pallet {
         /// Consume energy for [account]. Decreases energy balance by [amount] and also decrease
         /// account providers if current energy balance is below [T::ExistentialDeposit].
         fn consume_energy(target: &T::AccountId, mut amount: BalanceOf<T>) {
-            let current_energy_balance = Self::energy_balance(target);
-
-            if current_energy_balance.saturating_sub(amount) < T::ExistentialDeposit::get() {
-                frame_system::Pallet::<T>::dec_providers(target);
-
-                amount = current_energy_balance;
-            }
-
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            if amount == current_energy_balance {
-                EnergyBalance::<T>::remove(target);
-            } else {
-                EnergyBalance::<T>::mutate(target, |energy| {
-                    *energy = energy.saturating_sub(amount);
-                });
-            }
+            Self::try_mutate_energy_balance(target, |energy| -> DispatchResult {
+                *energy = energy.saturating_sub(amount);
+                Ok(())
+            });
+        }
+
+        pub(crate) fn try_mutate_energy_balance<R, E>(
+            who: &T::AccountId,
+            f: impl FnOnce(&mut BalanceOf<T>) -> sp_std::result::Result<R, E>,
+        ) -> sp_std::result::Result<R, E> {
+            EnergyBalance::<T>::try_mutate_exists(who, |maybe_energy_balance| {
+                let existed = maybe_energy_balance.is_some();
+                let mut energy_balance = maybe_energy_balance.unwrap_or_default();
+                f(&mut energy_balance).map(move |result| {
+                    let mut maybe_dust: Option<T::Balance> = None;
+
+                    *maybe_energy_balance = if energy_balance < T::ExistentialDeposit::get() {
+                        // if ED is not zero, but account total is zero, account will be reaped
+                        if energy_balance.is_zero() {
+                            None
+                        } else {
+                            maybe_dust = Some(energy_balance);
+                            Some(energy_balance)
+                        }
+                    } else {
+                        // Note: if ED is zero, account will never be reaped
+                        Some(energy_balance)
+                    };
+                    (existed, maybe_energy_balance.is_some(), maybe_dust, result)
+                })
+            })
+            .map(|(existed, exists, maybe_dust, result)| {
+                if existed && !exists {
+                    // If existed before, decrease account provider.
+                    // Ignore the result, because if it failed then there are remaining consumers,
+                    // and the account storage in frame_system shouldn't be reaped.
+                    let _ = frame_system::Pallet::<T>::dec_providers(who);
+                } else if !existed && exists {
+                    // if new, increase account provider
+                    frame_system::Pallet::<T>::inc_providers(who);
+                }
+
+                if let Some(dust_amount) = maybe_dust {
+                    // consume dust amount.
+                    // TODO: maybe do something with dust amount?
+                    Self::consume_energy(who, dust_amount);
+
+                    Self::deposit_event(Event::DustLost { who: who.clone(), amount: dust_amount });
+                }
+
+                result
+            })
         }
 
         /// Calculate the value of energy that is equivalent to [amount] of sub.
