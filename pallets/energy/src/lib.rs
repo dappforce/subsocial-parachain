@@ -359,6 +359,7 @@ pub mod pallet {
             }
 
             if !tip.is_zero() {
+                // TODO: maybe do something with tip?
                 let _ = T::Currency::withdraw(
                     who,
                     tip,
