@@ -3,6 +3,7 @@
 use frame_benchmarking::account;
 use frame_benchmarking::benchmarks;
 use frame_support::traits::Currency;
+use frame_support::traits::EnsureOrigin;
 use frame_system::RawOrigin;
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_runtime::FixedI64;
@@ -29,13 +30,13 @@ benchmarks! {
     }: _(RawOrigin::Signed(generator.clone()), T::Lookup::unlookup(receiver.clone()), burn_amount)
     verify {
         let conversion_ratio = ValueCoefficient::<T>::get();
-        let energy = conversion_ratio.checked_mul_int(burn_amount).unwrap();
+        let energy = burn_amount;
         assert_eq!(Pallet::<T>::energy_balance(&receiver), energy);
     }
 
     impl_benchmark_test_suite!(
         Pallet,
-        crate::mock::ExtBuilder::default().conversion_ratio(1.5).update_origin(1).build(),
+        crate::mock::ExtBuilder::default().value_coefficient(1.5).update_origin(1).build(),
         crate::mock::Test,
     );
 }
