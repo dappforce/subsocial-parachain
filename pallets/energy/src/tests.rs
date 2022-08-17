@@ -302,6 +302,29 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
 }
 
 #[test]
+fn test_charge_transaction_should_fail_when_no_sub_to_pay_tip() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(1);
+        set_sub_balance(caller, 10);
+        set_energy_balance(caller, 1000);
+
+        assert_eq!(
+            charge_transaction(&caller, 150, 100, 20, || panic!(
+                "should not be called, because there was a pre_dispatch error"
+            ))
+            .unwrap_err(),
+            ChargeTransactionError::PreDispatch_Payment
+        );
+        assert_energy_balance!(caller, 1000);
+        assert_balance!(caller, 10);
+        assert!(
+            get_corrected_and_deposit_fee_args().is_none(),
+            "Shouldn't go through the fallback OnChargeTransaction"
+        );
+    });
+}
+
+#[test]
 fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
     ExtBuilder::default().value_coefficient(10f64).build().execute_with(|| {
         let caller = account(1);
