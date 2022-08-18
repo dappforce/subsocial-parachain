@@ -173,7 +173,7 @@ pub mod pallet {
             let current_energy_balance = Self::energy_balance(&target);
             let new_energy_balance = current_energy_balance
                 .checked_add(&captured_energy_amount)
-                .ok_or(Error::<T>::NotEnoughBalance)?;
+                .ok_or(ArithmeticError::Overflow)?;
 
             ensure!(
                 new_energy_balance >= T::ExistentialDeposit::get(),
