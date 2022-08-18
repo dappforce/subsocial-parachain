@@ -27,7 +27,7 @@ fn create_dummy_space<T: Config>() -> Space<T> {
     let space = Space::new(id, whitelisted_caller::<T::AccountId>(), Content::None, None);
     SpaceById::<T>::insert(id, space);
 
-    SpaceById::<T>::get(id).expect("Expected space to exist")
+    SpaceById::<T>::get(id).expect("qed; space should exist")
 }
 
 benchmarks! {
