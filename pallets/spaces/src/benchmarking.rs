@@ -9,14 +9,10 @@ use frame_support::pallet_prelude::Get;
 use frame_system::RawOrigin;
 use sp_std::vec;
 
-use crate::Config;
 use crate::types::*;
+use crate::Config;
 
-use pallet_permissions::{
-    default_permissions::DefaultSpacePermissions,
-    SpacePermissionSet,
-};
-
+use pallet_permissions::{default_permissions::DefaultSpacePermissions, SpacePermissionSet};
 
 fn dummy_space_content() -> Content {
     Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD4".to_vec())
@@ -34,13 +30,7 @@ fn get_new_space_id<T: Config>() -> SpaceId {
 
 fn create_dummy_space<T: Config>() -> Space<T> {
     let id = get_new_space_id::<T>();
-    let space = Space::new(
-        id,
-        None,
-        whitelisted_caller::<T::AccountId>(),
-        Content::None,
-        None,
-    );
+    let space = Space::new(id, whitelisted_caller::<T::AccountId>(), Content::None, None);
     SpaceById::<T>::insert(id, space);
 
     SpaceById::<T>::get(id).expect("Expected space to exist")
@@ -53,10 +43,9 @@ benchmarks! {
         let parent_space = create_dummy_space::<T>();
         let new_space_id = get_next_space_id::<T>();
 
-        let parent_id_opt = Some(parent_space.id);
         let content = Content::None;
         let permissions_opt = None;
-    }: _(RawOrigin::Signed(caller), parent_id_opt, content, permissions_opt)
+    }: _(RawOrigin::Signed(caller), content, permissions_opt)
     verify {
         ensure!(SpaceById::<T>::get(new_space_id).is_some(), "Expected to find the created space");
     }
@@ -67,12 +56,10 @@ benchmarks! {
         let space = create_dummy_space::<T>();
         let new_parent_space = create_dummy_space::<T>();
 
-        assert!(space.parent_id.is_none());
         assert!(space.content.is_none());
         assert!(space.permissions.is_none());
 
         let space_update = SpaceUpdate {
-            parent_id: Some(Some(new_parent_space.id)),
             content: dummy_space_content().into(),
             hidden: None,
             permissions: Some(Some(<T as pallet_permissions::Config>::DefaultSpacePermissions::get())),
@@ -80,7 +67,6 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller), space.id, space_update)
     verify {
         let space_from_storage = SpaceById::<T>::get(space.id).expect("Expected space to exist");
-        assert!(space_from_storage.parent_id.is_some());
         assert!(space_from_storage.content.is_some());
         assert!(space_from_storage.permissions.is_some());
     }

@@ -30,7 +30,6 @@ pub(crate) fn space_update(
     hidden: Option<bool>,
 ) -> SpaceUpdate {
     SpaceUpdate {
-        parent_id: None,
         content,
         hidden,
         permissions: None,
@@ -46,44 +45,15 @@ pub(crate) fn _create_space(
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
 ) -> DispatchResultWithPostInfo {
-    _create_space_without_parent_id(
-        origin,
-        None,
-        content,
-        permissions,
+    Spaces::create_space(
+        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        content.unwrap_or_else(space_content_ipfs),
+        permissions.unwrap_or_default()
     )
 }
 
 pub(crate) fn _create_space_with_content(content: Content) -> DispatchResultWithPostInfo {
     _create_space(None, Some(content), None)
-}
-
-pub(crate) fn _create_subspace(
-    origin: Option<Origin>,
-    parent_id_opt: Option<Option<SpaceId>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>
-) -> DispatchResultWithPostInfo {
-    _create_space_without_parent_id(
-        origin,
-        parent_id_opt,
-        content,
-        permissions,
-    )
-}
-
-pub(crate) fn _create_space_without_parent_id(
-    origin: Option<Origin>,
-    parent_id_opt: Option<Option<SpaceId>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>
-) -> DispatchResultWithPostInfo {
-    Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        parent_id_opt.unwrap_or_default(),
-        content.unwrap_or_else(space_content_ipfs),
-        permissions.unwrap_or_default()
-    )
 }
 
 pub(crate) fn _update_space(
