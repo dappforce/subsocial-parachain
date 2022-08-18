@@ -16,6 +16,7 @@ pub mod weights;
 pub mod pallet {
     use super::*;
 
+    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
@@ -24,7 +25,6 @@ pub mod pallet {
         traits::{IsAccountBlocked, SpaceFollowsProvider},
         ModerationError, SpaceId,
     };
-    use crate::weights::WeightInfo;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
