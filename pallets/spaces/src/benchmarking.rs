@@ -9,15 +9,11 @@ use crate::{types::*, Config};
 use super::*;
 
 fn dummy_space_content() -> Content {
-    Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD4".to_vec())
-}
-
-fn get_next_space_id<T: Config>() -> SpaceId {
-    NextSpaceId::<T>::get()
+    subsocial_support::mock_functions::valid_content_ipfs()
 }
 
 fn get_new_space_id<T: Config>() -> SpaceId {
-    let space_id = get_next_space_id::<T>();
+    let space_id = NextSpaceId::<T>::get();
     NextSpaceId::<T>::mutate(|n| *n += 1);
     space_id
 }
@@ -35,9 +31,9 @@ benchmarks! {
         let caller = whitelisted_caller::<T::AccountId>();
 
         let parent_space = create_dummy_space::<T>();
-        let new_space_id = get_next_space_id::<T>();
+        let new_space_id = NextSpaceId::<T>::get();
 
-        let content = Content::None;
+        let content = dummy_space_content();
         let permissions_opt = None;
     }: _(RawOrigin::Signed(caller), content, permissions_opt)
     verify {
