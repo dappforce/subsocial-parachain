@@ -25,11 +25,12 @@ pub use pallet::*;
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
-// pub mod rpc;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-pub mod types;
 pub mod weights;
+
+// pub mod rpc;
+pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {

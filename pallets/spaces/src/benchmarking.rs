@@ -37,7 +37,7 @@ benchmarks! {
         let permissions_opt = None;
     }: _(RawOrigin::Signed(caller), content, permissions_opt)
     verify {
-        ensure!(SpaceById::<T>::get(new_space_id).is_some(), "Expected to find the created space");
+        ensure!(SpaceById::<T>::get(new_space_id).is_some(), "Created space should exist");
     }
 
     update_space {
@@ -56,7 +56,7 @@ benchmarks! {
         };
     }: _(RawOrigin::Signed(caller), space.id, space_update)
     verify {
-        let space_from_storage = SpaceById::<T>::get(space.id).expect("Expected space to exist");
+        let space_from_storage = SpaceById::<T>::get(space.id).expect("Updated space should exist");
         assert!(space_from_storage.content.is_some());
         assert!(space_from_storage.permissions.is_some());
     }
