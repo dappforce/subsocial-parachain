@@ -51,7 +51,7 @@ benchmarks! {
 
         let space_update = SpaceUpdate {
             content: dummy_space_content().into(),
-            hidden: None,
+            hidden: true.into(),
             permissions: Some(Some(<T as pallet_permissions::Config>::DefaultSpacePermissions::get())),
         };
     }: _(RawOrigin::Signed(caller), space.id, space_update)
