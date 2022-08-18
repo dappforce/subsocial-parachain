@@ -1,15 +1,12 @@
 //! Spaces pallet benchmarking.
 
-use super::*;
-
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{ensure, pallet_prelude::Get};
 use frame_system::RawOrigin;
-use sp_std::vec;
 
 use crate::{types::*, Config};
 
-use pallet_permissions::{default_permissions::DefaultSpacePermissions, SpacePermissionSet};
+use super::*;
 
 fn dummy_space_content() -> Content {
     Content::IPFS(b"QmRAQB6YaCaidP37UdDnjFY5aQuiBrbqdyoW1CaDgwxkD4".to_vec())
