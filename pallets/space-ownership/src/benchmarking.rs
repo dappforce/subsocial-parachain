@@ -19,7 +19,6 @@ fn create_dummy_space<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Spac
 
     pallet_spaces::Pallet::<T>::create_space(
         origin.clone().into(),
-        None,
         Content::None,
         None,
     ).map_err(|e| e.error)?;

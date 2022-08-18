@@ -28,6 +28,8 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         type ProfileManager: ProfileManager<Self::AccountId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
