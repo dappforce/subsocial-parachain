@@ -136,10 +136,8 @@ impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpaceP
     }
 
     fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult {
-        if valid_space_ids().contains(&id) {
-            if *account == ACCOUNT1 {
-                return Ok(())
-            }
+        if valid_space_ids().contains(&id) && *account == ACCOUNT1 {
+            return Ok(())
         }
 
         Err("NotSpaceOwner".into())

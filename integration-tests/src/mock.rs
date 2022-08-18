@@ -119,9 +119,7 @@ parameter_types! {
 impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
-    type AfterPostUpdated = ();
     type IsPostBlocked = MockModeration;
-    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for TestRuntime {
@@ -159,8 +157,6 @@ impl pallet_spaces::Config for TestRuntime {
     type Event = Event;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
-    type BeforeSpaceCreated = SpaceFollows;
-    type AfterSpaceUpdated = ();
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
