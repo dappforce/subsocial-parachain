@@ -42,8 +42,8 @@ pub(crate) fn extension_comment(parent_id: Option<PostId>, root_post_id: PostId)
     PostExtension::Comment(Comment { parent_id, root_post_id })
 }
 
-pub(crate) fn extension_shared_post(post_id: PostId) -> PostExtension {
-    PostExtension::SharedPost(post_id)
+pub(crate) fn extension_shared_post(original_post_id: PostId) -> PostExtension {
+    PostExtension::SharedPost(original_post_id)
 }
 
 pub(crate) fn _create_default_post() -> DispatchResult {
