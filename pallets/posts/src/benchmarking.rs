@@ -1,26 +1,20 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use sp_std::vec;
-use frame_system::RawOrigin;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use subsocial_support::Content;
-use frame_support::{
-    dispatch::DispatchError,
-    traits::Currency,
-};
+use frame_support::{dispatch::DispatchError, traits::Currency};
+use frame_system::RawOrigin;
 use pallet_spaces::types::Space;
+use sp_std::vec;
+use subsocial_support::Content;
 
-
-fn create_dummy_space<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Space<T>, DispatchError> {
+fn create_dummy_space<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(
-        origin.clone().into(),
-        None,
-        Content::None,
-        None,
-    ).map_err(|e| e.error)?;
+    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), None, Content::None, None)
+        .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
         .ok_or(DispatchError::Other("Space not found"))?;
@@ -28,8 +22,10 @@ fn create_dummy_space<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Spac
     Ok(space)
 }
 
-
-fn create_dummy_post<T: Config>(origin: RawOrigin<T::AccountId>, space: Space<T>) -> Result<Post<T>, DispatchError> {
+fn create_dummy_post<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+    space: Space<T>,
+) -> Result<Post<T>, DispatchError> {
     let post_id = NextPostId::<T>::get();
 
     Pallet::<T>::create_post(
@@ -39,27 +35,26 @@ fn create_dummy_post<T: Config>(origin: RawOrigin<T::AccountId>, space: Space<T>
         Content::None,
     )?;
 
-    let post = PostById::<T>::get(post_id)
-        .ok_or(DispatchError::Other("Post wasn't created"))?;
+    let post = PostById::<T>::get(post_id).ok_or(DispatchError::Other("Post wasn't created"))?;
 
     Ok(post)
 }
 
-fn create_dummy_reply<T: Config>(origin: RawOrigin<T::AccountId>, space: Space<T>, post: Post<T>) -> Result<Post<T>, DispatchError> {
+fn create_dummy_reply<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+    space: Space<T>,
+    post: Post<T>,
+) -> Result<Post<T>, DispatchError> {
     let post_id = NextPostId::<T>::get();
 
     Pallet::<T>::create_post(
         origin.clone().into(),
         Some(space.id),
-        PostExtension::Comment(Comment {
-            parent_id: None,
-            root_post_id: post.id,
-        }),
+        PostExtension::Comment(Comment { parent_id: None, root_post_id: post.id }),
         Content::None,
     )?;
 
-    let post = PostById::<T>::get(post_id)
-        .ok_or(DispatchError::Other("Reply wasn't created"))?;
+    let post = PostById::<T>::get(post_id).ok_or(DispatchError::Other("Reply wasn't created"))?;
 
     Ok(post)
 }

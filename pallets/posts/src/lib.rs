@@ -51,9 +51,9 @@ pub mod types;
 pub mod pallet {
     use super::*;
 
+    use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::IsType};
     use frame_system::pallet_prelude::*;
-    use crate::weights::WeightInfo;
 
     #[pallet::config]
     pub trait Config:
