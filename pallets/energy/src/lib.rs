@@ -280,12 +280,12 @@ pub mod pallet {
             })
             .map(|(existed, exists, maybe_residue, result)| {
                 if existed && !exists {
-                    // If existed before, decrease account provider.
-                    // Ignore the result, because if it failed then there are remaining consumers,
-                    // and the account storage in frame_system shouldn't be reaped.
+                    // If the account existed before, decrease the number of account providers.
+                    // Ignore the result, because if it has failed then there are remaining
+                    // consumers, and the account storage in frame_system shouldn't be reaped.
                     let _ = frame_system::Pallet::<T>::dec_providers(who);
                 } else if !existed && exists {
-                    // if new, increase account provider
+                    // If the account is new, increase the number of account providers.
                     frame_system::Pallet::<T>::inc_providers(who);
                 }
 
