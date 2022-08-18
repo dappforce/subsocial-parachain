@@ -348,9 +348,9 @@ pub mod pallet {
             }
 
             let fee_without_tip = fee.saturating_sub(tip);
-            let adjusted_fee = Self::sub_to_nrg(fee_without_tip);
+            let adjusted_energy_fee = Self::sub_to_nrg(fee_without_tip);
 
-            if Self::energy_balance(&who) < adjusted_fee {
+            if Self::energy_balance(&who) < adjusted_energy_fee {
                 return T::FallbackOnChargeTransaction::withdraw_fee(
                     who,
                     call,
@@ -372,10 +372,10 @@ pub mod pallet {
                 .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment.into() })?;
             }
 
-            match Self::ensure_can_consume_energy(who, adjusted_fee) {
+            match Self::ensure_can_consume_energy(who, adjusted_energy_fee) {
                 Ok(()) => {
-                    Self::consume_energy(who, adjusted_fee);
-                    Ok(LiquidityInfo::Energy(adjusted_fee))
+                    Self::consume_energy(who, adjusted_energy_fee);
+                    Ok(LiquidityInfo::Energy(adjusted_energy_fee))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
@@ -403,9 +403,9 @@ pub mod pallet {
                 },
                 LiquidityInfo::Energy(paid) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
-                    let adjusted_corrected_fee = Self::sub_to_nrg(corrected_fee_without_tip);
+                    let adjusted_corrected_energy_fee = Self::sub_to_nrg(corrected_fee_without_tip);
 
-                    let refund_amount = paid.saturating_sub(adjusted_corrected_fee);
+                    let refund_amount = paid.saturating_sub(adjusted_corrected_energy_fee);
 
                     let _ = Self::capture_energy(who, refund_amount);
 
