@@ -132,6 +132,21 @@ fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
 }
 
 #[test]
+fn test_generate_energy_will_fail_when_energy_balance_below_existential_deposit() {
+    ExtBuilder::default().energy_existential_deposit(100).build().execute_with(|| {
+        let caller = account_with_balance(1, 1000);
+        let receiver = account(10);
+
+        assert_noop!(
+            Energy::generate_energy(Origin::signed(caller), receiver, 10),
+            Error::<Test>::BalanceBelowExistentialDeposit
+        );
+
+        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver, 100));
+    });
+}
+
+#[test]
 fn test_generate_energy_will_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
         .sub_existential_deposit(0)

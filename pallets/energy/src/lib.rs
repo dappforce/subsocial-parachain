@@ -101,7 +101,7 @@ pub mod pallet {
         /// Value coefficient is not a positive number.
         ValueCoefficientIsNotPositive,
         /// Value too low to create account due to existential deposit
-        ExistentialDeposit,
+        BalanceBelowExistentialDeposit,
     }
 
     /// Supplies the [ValueCoefficient] with [T::DefaultValueCoefficient] if empty.
@@ -177,7 +177,7 @@ pub mod pallet {
 
             ensure!(
                 new_energy_balance >= T::ExistentialDeposit::get(),
-                Error::<T>::ExistentialDeposit
+                Error::<T>::BalanceBelowExistentialDeposit
             );
 
             Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
