@@ -17,9 +17,9 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use crate::weights::WeightInfo;
 
     use subsocial_support::traits::ProfileManager;
 

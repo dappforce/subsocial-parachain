@@ -3,25 +3,20 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use sp_std::vec;
+use frame_benchmarking::{account, benchmarks, whitelist, whitelisted_caller};
+use frame_support::{dispatch::DispatchError, ensure, traits::Currency};
 use frame_system::RawOrigin;
-use frame_benchmarking::{benchmarks, whitelisted_caller, account, whitelist};
-use frame_support::{
-    dispatch::DispatchError,
-    traits::Currency,
-    ensure,
-};
 use pallet_spaces::types::Space;
+use sp_std::vec;
 use subsocial_support::Content;
 
-fn create_dummy_space<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Space<T>, DispatchError> {
+fn create_dummy_space<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(
-        origin.clone().into(),
-        Content::None,
-        None,
-    ).map_err(|e| e.error)?;
+    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), Content::None, None)
+        .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
         .ok_or(DispatchError::Other("Space not found"))?;
