@@ -1,7 +1,7 @@
 //! Spaces pallet benchmarking.
 
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{ensure, pallet_prelude::Get};
+use frame_support::{assert_ok, ensure, pallet_prelude::Get};
 use frame_system::RawOrigin;
 
 use crate::{types::*, Config};
@@ -12,16 +12,9 @@ fn dummy_space_content() -> Content {
     subsocial_support::mock_functions::valid_content_ipfs()
 }
 
-fn get_new_space_id<T: Config>() -> SpaceId {
-    let space_id = NextSpaceId::<T>::get();
-    NextSpaceId::<T>::mutate(|n| *n += 1);
-    space_id
-}
-
-fn create_dummy_space<T: Config>() -> Space<T> {
-    let id = get_new_space_id::<T>();
-    let space = Space::new(id, whitelisted_caller::<T::AccountId>(), Content::None, None);
-    SpaceById::<T>::insert(id, space);
+fn create_dummy_space<T: Config>(caller: T::AccountId) -> Space<T> {
+    assert_ok!(Pallet::<T>::create_space(RawOrigin::Signed(caller).into(), Content::None, None));
+    let id = Pallet::<T>::next_space_id() - 1;
 
     SpaceById::<T>::get(id).expect("qed; space should exist")
 }
@@ -30,7 +23,7 @@ benchmarks! {
     create_space {
         let caller = whitelisted_caller::<T::AccountId>();
 
-        let parent_space = create_dummy_space::<T>();
+        let parent_space = create_dummy_space::<T>(caller.clone());
         let new_space_id = NextSpaceId::<T>::get();
 
         let content = dummy_space_content();
@@ -43,8 +36,8 @@ benchmarks! {
     update_space {
         let caller = whitelisted_caller::<T::AccountId>();
 
-        let space = create_dummy_space::<T>();
-        let new_parent_space = create_dummy_space::<T>();
+        let space = create_dummy_space::<T>(caller.clone());
+        let new_parent_space = create_dummy_space::<T>(caller.clone());
 
         assert!(space.content.is_none());
         assert!(space.permissions.is_none());
