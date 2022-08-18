@@ -235,7 +235,7 @@ impl pallet_energy::Config for Test {
     type Balance = <Test as pallet_balances::Config>::Balance;
     type DefaultValueCoefficient = ValueCoefficient;
     type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
-    type FallbackOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
+    type NativeOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
     type ExistentialDeposit = EnergyExistentialDeposit;
     type WeightInfo = ();
 }
