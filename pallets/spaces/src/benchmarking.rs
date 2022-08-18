@@ -2,15 +2,12 @@
 
 use super::*;
 
-use frame_benchmarking::benchmarks;
-use frame_benchmarking::whitelisted_caller;
-use frame_support::ensure;
-use frame_support::pallet_prelude::Get;
+use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_support::{ensure, pallet_prelude::Get};
 use frame_system::RawOrigin;
 use sp_std::vec;
 
-use crate::types::*;
-use crate::Config;
+use crate::{types::*, Config};
 
 use pallet_permissions::{default_permissions::DefaultSpacePermissions, SpacePermissionSet};
 

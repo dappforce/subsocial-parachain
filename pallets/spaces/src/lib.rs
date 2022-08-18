@@ -22,9 +22,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // pub mod rpc;
-pub mod types;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod types;
 mod weights;
 
 pub use crate::weights::WeightInfo;
