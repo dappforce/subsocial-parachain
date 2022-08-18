@@ -29,7 +29,6 @@ benchmarks! {
         let burn_amount = 700_000u32.into();
     }: _(RawOrigin::Signed(generator.clone()), T::Lookup::unlookup(receiver.clone()), burn_amount)
     verify {
-        let conversion_ratio = ValueCoefficient::<T>::get();
         let energy = burn_amount;
         assert_eq!(Pallet::<T>::energy_balance(&receiver), energy);
     }
