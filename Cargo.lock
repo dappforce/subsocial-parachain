@@ -5655,6 +5655,7 @@ dependencies = [
 name = "pallet-posts"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-permissions",
