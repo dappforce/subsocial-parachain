@@ -91,7 +91,7 @@ pub mod pallet {
         },
         /// An account was removed whose balance was non-zero but below
         /// ExistentialDeposit, resulting in an outright loss.
-        ResidueLost { account: T::AccountId, amount: BalanceOf<T> },
+        DustLost { account: T::AccountId, amount: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -261,24 +261,24 @@ pub mod pallet {
                 let existed = maybe_energy_balance.is_some();
                 let mut energy_balance = maybe_energy_balance.unwrap_or_default();
                 f(&mut energy_balance).map(move |result| {
-                    let mut maybe_residue: Option<T::Balance> = None;
+                    let mut maybe_dust: Option<T::Balance> = None;
 
                     *maybe_energy_balance = if energy_balance < T::ExistentialDeposit::get() {
                         // if ED is not zero, but account total is zero, account will be reaped
                         if energy_balance.is_zero() {
                             None
                         } else {
-                            maybe_residue = Some(energy_balance);
+                            maybe_dust = Some(energy_balance);
                             Some(energy_balance)
                         }
                     } else {
                         // Note: if ED is zero, account will never be reaped
                         Some(energy_balance)
                     };
-                    (existed, maybe_energy_balance.is_some(), maybe_residue, result)
+                    (existed, maybe_energy_balance.is_some(), maybe_dust, result)
                 })
             })
-            .map(|(existed, exists, maybe_residue, result)| {
+            .map(|(existed, exists, maybe_dust, result)| {
                 if existed && !exists {
                     // If the account existed before, decrease the number of account providers.
                     // Ignore the result, because if it has failed then there are remaining
@@ -289,14 +289,14 @@ pub mod pallet {
                     frame_system::Pallet::<T>::inc_providers(who);
                 }
 
-                if let Some(residue_amount) = maybe_residue {
-                    // consume residue amount.
-                    // TODO: maybe do something with residue amount?
-                    Self::consume_energy(who, residue_amount);
+                if let Some(dust_amount) = maybe_dust {
+                    // consume dust amount.
+                    // TODO: maybe do something with dust amount?
+                    Self::consume_energy(who, dust_amount);
 
-                    Self::deposit_event(Event::ResidueLost {
+                    Self::deposit_event(Event::DustLost {
                         account: who.clone(),
-                        amount: residue_amount,
+                        amount: dust_amount,
                     });
                 }
 
