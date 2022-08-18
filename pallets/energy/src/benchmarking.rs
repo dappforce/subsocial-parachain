@@ -18,7 +18,7 @@ benchmarks! {
     }: _<T::Origin>(origin, coefficient)
     verify {
         let stored_coefficient = ValueCoefficient::<T>::get();
-        assert_eq!(coefficient, stored_ratio);
+        assert_eq!(coefficient, stored_coefficient);
     }
 
     generate_energy {
