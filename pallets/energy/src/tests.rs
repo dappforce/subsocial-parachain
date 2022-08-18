@@ -537,6 +537,10 @@ fn test_existential_deposit_and_providers() {
 
             assert_ok!(charge_transaction(&account1, 850, 850, 0, || {},),);
 
+            System::assert_last_event(
+                EnergyEvent::ResidueLost { account: account1, amount: 50 }.into(),
+            );
+
             assert_energy_balance!(account1, 0); // the remaining 50 NRG is burned
             assert_eq!(System::providers(&account1), 0);
         });
