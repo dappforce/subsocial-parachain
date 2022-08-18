@@ -164,10 +164,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 12,
+	spec_version: 13,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 2,
 	state_version: 0,
 };
 
@@ -257,9 +257,22 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
 
+		let is_social_call =
+			matches!(c,
+				Call::Roles(..) |
+				Call::AccountFollows(..) |
+				Call::Profiles(..) |
+				Call::SpaceFollows(..) |
+				Call::SpaceOwnership(..) |
+				Call::Spaces(..) |
+				Call::Posts(..) |
+				Call::Reactions(..)
+			);
+
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
+			_ if is_social_call => false,
 			_ => true,
 		}
 	}
@@ -537,7 +550,6 @@ parameter_types! {
 impl pallet_posts::Config for Runtime {
 	type Event = Event;
 	type MaxCommentDepth = MaxCommentDepth;
-	type AfterPostUpdated = ()/*PostHistory*/;
 	type IsPostBlocked = ()/*Moderation*/;
 }
 
@@ -565,7 +577,7 @@ impl pallet_roles::Config for Runtime {
 
 impl pallet_space_follows::Config for Runtime {
 	type Event = Event;
-	type WeightInfo = ();
+	type WeightInfo = pallet_space_follows::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -576,8 +588,6 @@ impl pallet_spaces::Config for Runtime {
 	type Event = Event;
 	type Roles = Roles;
 	type SpaceFollows = SpaceFollows;
-	type BeforeSpaceCreated = SpaceFollows;
-	type AfterSpaceUpdated = ();
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;

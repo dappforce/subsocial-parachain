@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 use frame_support::pallet_prelude::*;
-use sp_std::{vec, vec::Vec, collections::btree_set::BTreeSet};
+use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 pub mod traits;
 
@@ -21,18 +21,17 @@ pub struct WhoAndWhen<AccountId, BlockNumber, Moment> {
     pub time: Moment,
 }
 
-pub type WhoAndWhenOf<T> =
-    WhoAndWhen<
-        <T as frame_system::Config>::AccountId,
-        <T as frame_system::Config>::BlockNumber,
-        <T as pallet_timestamp::Config>::Moment,
-    >;
+pub type WhoAndWhenOf<T> = WhoAndWhen<
+    <T as frame_system::Config>::AccountId,
+    <T as frame_system::Config>::BlockNumber,
+    <T as pallet_timestamp::Config>::Moment,
+>;
 
 pub fn new_who_and_when<T>(
-    account: T::AccountId
+    account: T::AccountId,
 ) -> WhoAndWhen<T::AccountId, T::BlockNumber, T::Moment>
 where
-    T: frame_system::Config + pallet_timestamp::Config
+    T: frame_system::Config + pallet_timestamp::Config,
 {
     WhoAndWhen {
         account,
@@ -106,7 +105,7 @@ impl<AccountId> User<AccountId> {
 }
 
 pub fn convert_users_vec_to_btree_set<AccountId: Ord + Clone>(
-    users_vec: Vec<User<AccountId>>
+    users_vec: Vec<User<AccountId>>,
 ) -> Result<BTreeSet<User<AccountId>>, DispatchError> {
     let mut users_set: BTreeSet<User<AccountId>> = BTreeSet::new();
 
@@ -164,9 +163,7 @@ pub struct SpacePermissionsInfo<AccountId, SpacePermissions> {
 pub fn ensure_content_is_valid(content: Content) -> DispatchResult {
     match content {
         Content::None => Ok(()),
-        Content::Other(_) => Err(
-            ContentError::OtherContentTypeNotSupported.into()
-        ),
+        Content::Other(_) => Err(ContentError::OtherContentTypeNotSupported.into()),
         Content::IPFS(ipfs_cid) => {
             let len = ipfs_cid.len();
             // IPFS CID v0 is 46 bytes.
