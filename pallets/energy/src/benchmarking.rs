@@ -13,12 +13,12 @@ use super::*;
 
 benchmarks! {
     update_value_coefficient {
-        let ratio = FixedI64::checked_from_rational(2_65, 100).unwrap();
         let origin = T::UpdateOrigin::successful_origin();
-    }: _<T::Origin>(origin, ratio)
+        let coefficient = FixedI64::checked_from_rational(2_65, 100).unwrap();
+    }: _<T::Origin>(origin, coefficient)
     verify {
-        let stored_ratio = ValueCoefficient::<T>::get();
-        assert_eq!(ratio, stored_ratio);
+        let stored_coefficient = ValueCoefficient::<T>::get();
+        assert_eq!(coefficient, stored_ratio);
     }
 
     generate_energy {
