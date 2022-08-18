@@ -91,7 +91,7 @@ pub mod pallet {
         },
         /// An account was removed whose balance was non-zero but below
         /// ExistentialDeposit, resulting in an outright loss.
-        DustLost { account: T::AccountId, amount: BalanceOf<T> },
+        ResidueLost { account: T::AccountId, amount: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -294,7 +294,7 @@ pub mod pallet {
                     // TODO: maybe do something with dust amount?
                     Self::consume_energy(who, dust_amount);
 
-                    Self::deposit_event(Event::DustLost {
+                    Self::deposit_event(Event::ResidueLost {
                         account: who.clone(),
                         amount: dust_amount,
                     });
