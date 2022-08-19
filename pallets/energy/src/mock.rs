@@ -424,6 +424,7 @@ macro_rules! assert_total_energy {
         );
     };
 }
+/// Asserts the total issuance of native token is equal to the given value.
 macro_rules! assert_total_issuance {
     ($expected_issuance:expr) => {
         let total_issuance = Balances::total_issuance();
@@ -449,6 +450,7 @@ macro_rules! assert_energy_balance {
         );
     };
 }
+/// Asserts the balance of an account is equal to the given value.
 macro_rules! assert_balance {
     ($account:expr, $expected_balance:expr) => {
         let balance = Balances::free_balance($account);
