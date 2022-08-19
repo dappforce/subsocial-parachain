@@ -549,7 +549,7 @@ fn test_existential_deposit_and_providers() {
 ///// test native_token_to_energy
 
 #[test]
-fn test_sub_to_nrg() {
+fn test_native_token_to_energy() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(100), 80);
     });
