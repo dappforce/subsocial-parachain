@@ -59,16 +59,6 @@ frame_support::construct_runtime!(
     }
 );
 
-// fn a () {
-// 	let MockBlockWeights: BlockWeights = BlockWeights::builder()
-// 		.base_block(0)
-// 		.for_class(DispatchClass::all(), |weights| {
-// 			weights.max_total = 1_000_000_000_000.into();
-// 		})
-// 		.avg_block_initialization(Perbill::zero())
-// 		.build_or_panic();
-// }
-
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
