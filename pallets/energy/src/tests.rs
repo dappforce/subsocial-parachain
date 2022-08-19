@@ -70,16 +70,17 @@ fn test_update_value_coefficient_will_work_as_expected() {
                 "Default value coefficient should be 987.654"
             );
 
+            let coff = 1.12354;
             assert_ok!(Energy::update_value_coefficient(
                 Origin::signed(update_origin),
-                FixedI64::from_float(1.12354),
+                FixedI64::from_float(coff),
             ),);
 
-            assert_eq!(Energy::value_coefficient(), FixedI64::from_float(1.12354));
+            assert_eq!(Energy::value_coefficient(), FixedI64::from_float(coff));
 
             System::assert_last_event(
                 EnergyEvent::ValueCoefficientUpdated {
-                    new_coefficient: FixedI64::from_float(1.12354),
+                    new_coefficient: FixedI64::from_float(coff),
                 }
                 .into(),
             );
