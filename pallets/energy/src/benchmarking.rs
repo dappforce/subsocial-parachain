@@ -8,6 +8,7 @@ use frame_system::RawOrigin;
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_runtime::FixedI64;
 use sp_runtime::FixedPointNumber;
+use frame_support::traits::Get;
 
 use super::*;
 
@@ -26,7 +27,7 @@ benchmarks! {
         let generator_balance = BalanceOf::<T>::max_value();
         <T as Config>::Currency::make_free_balance_be(&generator, generator_balance.clone());
         let receiver: T::AccountId = account("receiver", 36, 0);
-        let burn_amount = 700_000u32.into();
+        let burn_amount = T::ExistentialDeposit::get().into();
     }: _(RawOrigin::Signed(generator.clone()), T::Lookup::unlookup(receiver.clone()), burn_amount)
     verify {
         let energy = burn_amount;
