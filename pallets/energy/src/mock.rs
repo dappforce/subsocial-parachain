@@ -418,7 +418,7 @@ macro_rules! assert_total_energy {
     ($expected_total_energy:expr) => {
         let total_energy = Energy::total_energy();
         assert_eq!(
-            total_energy, $expected_total_energy,
+            $expected_total_energy, total_energy,
             "Expected total energy to be {}, but found {}",
             $expected_total_energy, total_energy,
         );
@@ -428,7 +428,7 @@ macro_rules! assert_total_issuance {
     ($expected_issuance:expr) => {
         let total_issuance = Balances::total_issuance();
         assert_eq!(
-            total_issuance, $expected_issuance,
+            $expected_issuance, total_issuance,
             "Expected total issuance to be {}, but found {}",
             $expected_issuance, total_issuance,
         );
