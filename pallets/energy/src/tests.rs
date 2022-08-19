@@ -176,7 +176,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
 }
 
 #[test]
-fn test_generate_energy_will_increment_total_energy() {
+fn test_generate_energy_will_increase_total_energy() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account_with_balance(1, 1000);
         let receiver1 = account(2);
