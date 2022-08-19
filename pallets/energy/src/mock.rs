@@ -65,6 +65,7 @@ parameter_types! {
     pub MockBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(0)
         .for_class(DispatchClass::all(), |weights| {
+            // we set it to 0 to have a predictable and easy to write weight to fee function
             weights.base_extrinsic = 0;
             weights.max_extrinsic = 1_000_000_000.into();
             weights.max_total = 1_000_000_000_000.into();
