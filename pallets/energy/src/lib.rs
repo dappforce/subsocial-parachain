@@ -52,6 +52,7 @@ pub mod pallet {
             + FixedPointOperand;
 
         /// How much 1 energy is worth in native tokens.
+        /// TODO: change to FixedU64 when this is merged https://github.com/paritytech/substrate/pull/11555
         type DefaultValueCoefficient: Get<FixedI64>;
 
         /// The origin which may update the value coefficient ratio.
