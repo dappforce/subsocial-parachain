@@ -27,6 +27,8 @@ benchmarks! {
         let generator_balance = BalanceOf::<T>::max_value();
         <T as Config>::Currency::make_free_balance_be(&generator, generator_balance.clone());
         let receiver: T::AccountId = account("receiver", 36, 0);
+
+        // The minimum amount of energy that can be generated is T::ExistentialDeposit
         let burn_amount = T::ExistentialDeposit::get().into();
     }: _(RawOrigin::Signed(generator.clone()), T::Lookup::unlookup(receiver.clone()), burn_amount)
     verify {
