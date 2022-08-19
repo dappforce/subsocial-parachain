@@ -339,11 +339,11 @@ pub(crate) fn account(id: AccountId) -> AccountId {
 
 pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
     let account = account(id);
-    set_sub_balance(account, balance);
+    set_native_balance(account, balance);
     account
 }
 
-pub(crate) fn set_sub_balance(id: AccountId, balance: Balance) {
+pub(crate) fn set_native_balance(id: AccountId, balance: Balance) {
     let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&id, balance);
 }
 
@@ -379,7 +379,7 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub(crate) fn sub_existential_deposit(mut self, existential_deposit: Balance) -> Self {
+    pub(crate) fn native_existential_deposit(mut self, existential_deposit: Balance) -> Self {
         self.existential_deposit = existential_deposit;
         self
     }

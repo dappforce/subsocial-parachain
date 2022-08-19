@@ -51,7 +51,7 @@ pub mod pallet {
             + MaxEncodedLen
             + FixedPointOperand;
 
-        /// How much 1 NRG is worth in SUB.
+        /// How much 1 NRG is worth in native tokens.
         type DefaultValueCoefficient: Get<FixedI64>;
 
         /// The origin which may update the value coefficient ratio.
@@ -96,7 +96,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Not enough SUB balance to burn and generate energy.
+        /// Not enough native balance to burn and generate energy.
         NotEnoughBalance,
         /// Value coefficient is not a positive number.
         ValueCoefficientIsNotPositive,
@@ -301,11 +301,11 @@ pub mod pallet {
             })
         }
 
-        /// Calculate the value of energy that is equivalent to [amount] of sub.
+        /// Calculate the value of energy that is equivalent to [amount] of native token.
         ///
         /// Example: If we need to pay 10 SUB, and coefficient is 1.25, then the amount of
         /// energy spent on fees will be: 10 / 1.25 = 8
-        pub(crate) fn sub_to_nrg(amount: BalanceOf<T>) -> BalanceOf<T> {
+        pub(crate) fn native_token_to_nrg(amount: BalanceOf<T>) -> BalanceOf<T> {
             Self::value_coefficient()
                 .reciprocal()
                 .unwrap() // SAFETY: value_coefficient is always positive. we check for it.
@@ -345,7 +345,7 @@ pub mod pallet {
             }
 
             let fee_without_tip = fee.saturating_sub(tip);
-            let energy_fee = Self::sub_to_nrg(fee_without_tip);
+            let energy_fee = Self::native_token_to_nrg(fee_without_tip);
 
             // if we don't have enough energy then fallback to paying with native token.
             if Self::energy_balance(&who) < energy_fee {
@@ -401,7 +401,7 @@ pub mod pallet {
                 },
                 LiquidityInfo::Energy(paid) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
-                    let corrected_energy_fee = Self::sub_to_nrg(corrected_fee_without_tip);
+                    let corrected_energy_fee = Self::native_token_to_nrg(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
 

@@ -149,7 +149,7 @@ fn test_generate_energy_will_fail_when_energy_balance_below_existential_deposit(
 #[test]
 fn test_generate_energy_will_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
-        .sub_existential_deposit(0)
+        .native_existential_deposit(0)
         .value_coefficient(10f64)
         .build()
         .execute_with(|| {
@@ -276,7 +276,7 @@ fn charge_transaction<PreValidator: FnOnce()>(
 fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account(1);
-        set_sub_balance(caller, 0);
+        set_native_balance(caller, 0);
         set_energy_balance(caller, 0);
 
         assert_eq!(
@@ -295,7 +295,7 @@ fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
 fn test_charge_transaction_should_pay_with_energy_if_enough() {
     ExtBuilder::default().value_coefficient(2f64).build().execute_with(|| {
         let caller = account(1);
-        set_sub_balance(caller, 1000);
+        set_native_balance(caller, 1000);
         set_energy_balance(caller, 1000);
 
         assert_ok!(charge_transaction(&caller, 150, 100, 20, || {
@@ -320,7 +320,7 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
 fn test_charge_transaction_should_fail_when_no_sub_to_pay_tip() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account(1);
-        set_sub_balance(caller, 10);
+        set_native_balance(caller, 10);
         set_energy_balance(caller, 1000);
 
         assert_eq!(
@@ -343,7 +343,7 @@ fn test_charge_transaction_should_fail_when_no_sub_to_pay_tip() {
 fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
     ExtBuilder::default().value_coefficient(10f64).build().execute_with(|| {
         let caller = account(1);
-        set_sub_balance(caller, 1000);
+        set_native_balance(caller, 1000);
         set_energy_balance(caller, 1000);
 
         assert_ok!(charge_transaction(&caller, 0, 0, 0, || {
@@ -368,7 +368,7 @@ fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
 fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
     ExtBuilder::default().value_coefficient(3.36f64).build().execute_with(|| {
         let caller = account(1);
-        set_sub_balance(caller, 1000);
+        set_native_balance(caller, 1000);
         set_energy_balance(caller, 50);
 
         assert_ok!(charge_transaction(&caller, 200, 50, 13, || {
@@ -481,12 +481,12 @@ fn test_update_value_coefficient_should_reflect_on_future_charge_transcations() 
 #[test]
 fn test_existential_deposit_and_providers() {
     ExtBuilder::default()
-        .sub_existential_deposit(10)
+        .native_existential_deposit(10)
         .energy_existential_deposit(100)
         .build()
         .execute_with(|| {
             let treasury = account(0);
-            set_sub_balance(treasury, 1_000_000_000);
+            set_native_balance(treasury, 1_000_000_000);
             set_energy_balance(treasury, 1_000_000_000);
 
             let account1 = account(1);
@@ -551,22 +551,22 @@ fn test_existential_deposit_and_providers() {
 #[test]
 fn test_sub_to_nrg() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(100), 80);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(100), 80);
     });
 
     ExtBuilder::default().value_coefficient(1.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(200), 133);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(200), 133);
     });
 
     ExtBuilder::default().value_coefficient(10.0).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(500), 50);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(500), 50);
     });
 
     ExtBuilder::default().value_coefficient(0.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(33), 66);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(33), 66);
     });
 
     ExtBuilder::default().value_coefficient(0.1).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::sub_to_nrg(33), 330);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(33), 330);
     });
 }
