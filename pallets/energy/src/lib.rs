@@ -220,9 +220,8 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
-            Self::try_mutate_energy_balance(target, |energy| -> DispatchResult {
-                *energy = energy.saturating_add(amount);
-                Ok(())
+            Self::try_mutate_energy_balance(target, |current_energy_balance| -> Result<BalanceOf<T>, ()> {
+                Ok(current_energy_balance.saturating_add(amount))
             });
         }
 
@@ -247,38 +246,38 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            Self::try_mutate_energy_balance(target, |energy| -> DispatchResult {
-                *energy = energy.saturating_sub(amount);
-                Ok(())
+            Self::try_mutate_energy_balance(target, |current_energy_balance| -> Result<BalanceOf<T>, ()> {
+                Ok(current_energy_balance.saturating_sub(amount))
             });
         }
 
-        pub(crate) fn try_mutate_energy_balance<R, E>(
+        pub(crate) fn try_mutate_energy_balance<E>(
             who: &T::AccountId,
-            f: impl FnOnce(&mut BalanceOf<T>) -> sp_std::result::Result<R, E>,
-        ) -> sp_std::result::Result<R, E> {
+            mutator: impl FnOnce(BalanceOf<T>) -> sp_std::result::Result<BalanceOf<T>, E>,
+        ) -> sp_std::result::Result<(), E> {
             EnergyBalance::<T>::try_mutate_exists(who, |maybe_energy_balance| {
                 let existed = maybe_energy_balance.is_some();
-                let mut energy_balance = maybe_energy_balance.unwrap_or_default();
-                f(&mut energy_balance).map(move |result| {
-                    let mut maybe_dust: Option<T::Balance> = None;
+                let current_energy_balance = maybe_energy_balance.unwrap_or_default();
+                let new_energy_balance = mutator(current_energy_balance)?;
 
-                    *maybe_energy_balance = if energy_balance < T::ExistentialDeposit::get() {
-                        // if ED is not zero, but account total is zero, account will be reaped
-                        if energy_balance.is_zero() {
-                            None
-                        } else {
-                            maybe_dust = Some(energy_balance);
-                            Some(energy_balance)
-                        }
+                let mut maybe_dust: Option<T::Balance> = None;
+
+                *maybe_energy_balance = if new_energy_balance < T::ExistentialDeposit::get() {
+                    // if ED is not zero, but account total is zero, account will be reaped
+                    if new_energy_balance.is_zero() {
+                        None
                     } else {
-                        // Note: if ED is zero, account will never be reaped
-                        Some(energy_balance)
-                    };
-                    (existed, maybe_energy_balance.is_some(), maybe_dust, result)
-                })
+                        maybe_dust = Some(new_energy_balance);
+                        Some(new_energy_balance)
+                    }
+                } else {
+                    // Note: if ED is zero, account will never be reaped
+                    Some(new_energy_balance)
+                };
+
+                return Ok((existed, maybe_energy_balance.is_some(), maybe_dust))
             })
-            .map(|(existed, exists, maybe_dust, result)| {
+            .map(|(existed, exists, maybe_dust)| {
                 if existed && !exists {
                     // If the account existed before, decrease the number of account providers.
                     // Ignore the result, because if it has failed then there are remaining
@@ -299,8 +298,6 @@ pub mod pallet {
                         amount: dust_amount,
                     });
                 }
-
-                result
             })
         }
 
