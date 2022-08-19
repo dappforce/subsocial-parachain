@@ -541,32 +541,32 @@ fn test_existential_deposit_and_providers() {
                 EnergyEvent::DustLost { account: account1, amount: 50 }.into(),
             );
 
-            assert_energy_balance!(account1, 0); // the remaining 50 NRG is burned
+            assert_energy_balance!(account1, 0); // the remaining 50 energy is burned
             assert_eq!(System::providers(&account1), 0);
         });
 }
 
-///// test sub_to_nrg
+///// test native_token_to_energy
 
 #[test]
 fn test_sub_to_nrg() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(100), 80);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(100), 80);
     });
 
     ExtBuilder::default().value_coefficient(1.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(200), 133);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(200), 133);
     });
 
     ExtBuilder::default().value_coefficient(10.0).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(500), 50);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(500), 50);
     });
 
     ExtBuilder::default().value_coefficient(0.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(33), 66);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(33), 66);
     });
 
     ExtBuilder::default().value_coefficient(0.1).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_nrg(33), 330);
+        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(33), 330);
     });
 }
