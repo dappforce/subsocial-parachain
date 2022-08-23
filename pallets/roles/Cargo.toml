@@ -35,16 +35,16 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 
 # Local dependencies
 pallet-permissions = { default-features = false, path = '../permissions' }
+pallet-spaces = { optional = true, default-features = false, path = '../spaces' }
 subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
+frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
-frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
-pallet-spaces = { optional = true, default-features = false, path = '../spaces' }
 
 [dev-dependencies]
 serde = { version = '1.0.137' }

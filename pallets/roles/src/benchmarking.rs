@@ -24,7 +24,6 @@ fn create_dummy_space<T: Config + pallet_spaces::Config>(origin: RawOrigin<T::Ac
 
     pallet_spaces::Pallet::<T>::create_space(
         origin.into(),
-        None,
         Content::None,
         None,
     ).map_err(|e| e.error)?;
@@ -39,7 +38,7 @@ fn create_dummy_space<T: Config + pallet_spaces::Config>(origin: RawOrigin<T::Ac
 fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
     let mut users_to_grant = Vec::<User<T::AccountId>>::new();
 
-    for i in 0..num_of_users {
+    for i in 1..num_of_users+1 {
         let user = account("user", i * 2 - 1, i * 2);
         users_to_grant.push(User::Account(user));
     }
@@ -137,7 +136,9 @@ benchmarks! {
     }: _(caller_origin, role.id, users_to_grant.clone())
     verify {
         let granted_users = UsersByRoleId::<T>::get(role.id);
-        ensure!(granted_users == users_to_grant, "Role should be deleted");
+        for user in users_to_grant {
+            ensure!(granted_users.contains(&user), "Role should be granted");
+        }
     }
 
     revoke_role {

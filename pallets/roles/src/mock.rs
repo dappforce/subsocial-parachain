@@ -132,8 +132,6 @@ impl pallet_spaces::Config for Test {
     type Event = Event;
     type Roles = Roles;
     type SpaceFollows = Roles;
-    type BeforeSpaceCreated = ();
-    type AfterSpaceUpdated = ();
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
     type MaxSpacesPerAccount = ConstU32<100>;
