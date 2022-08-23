@@ -19,7 +19,7 @@ use crate::{Error, WeightInfo};
 ///// tests for Energy::update_value_coefficient()
 
 #[test]
-fn test_update_value_coefficient_will_fail_when_unsigned() {
+fn update_value_coefficient_should_fail_when_unsigned() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             Energy::update_value_coefficient(Origin::none(), FixedI64::from_float(1.5),),
@@ -29,7 +29,7 @@ fn test_update_value_coefficient_will_fail_when_unsigned() {
 }
 
 #[test]
-fn test_update_value_coefficient_will_fail_when_caller_is_not_update_origin() {
+fn update_value_coefficient_should_fail_when_caller_is_not_update_origin() {
     ExtBuilder::default().update_origin(1).build().execute_with(|| {
         let not_update_origin = 2;
         assert_noop!(
@@ -43,7 +43,7 @@ fn test_update_value_coefficient_will_fail_when_caller_is_not_update_origin() {
 }
 
 #[test]
-fn test_update_value_coefficient_will_fail_when_new_ratio_is_negative() {
+fn update_value_coefficient_should_fail_when_new_ratio_is_negative() {
     let update_origin = account(1);
     ExtBuilder::default().update_origin(update_origin).build().execute_with(|| {
         assert_noop!(
@@ -57,7 +57,7 @@ fn test_update_value_coefficient_will_fail_when_new_ratio_is_negative() {
 }
 
 #[test]
-fn test_update_value_coefficient_will_work_as_expected() {
+fn update_value_coefficient_should_work_as_expected() {
     let update_origin = account(1);
     ExtBuilder::default()
         .value_coefficient(987.654)
@@ -88,7 +88,7 @@ fn test_update_value_coefficient_will_work_as_expected() {
 }
 
 #[test]
-fn test_update_value_coefficient_will_have_correct_weight() {
+fn update_value_coefficient_should_have_correct_weight() {
     let update_origin = account(1);
     ExtBuilder::default()
         .value_coefficient(1.25)
@@ -115,14 +115,14 @@ fn test_update_value_coefficient_will_have_correct_weight() {
 ///// tests for Energy::generate_energy()
 
 #[test]
-fn test_generate_energy_will_fail_when_unsigned() {
+fn generate_energy_should_fail_when_unsigned() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(Energy::generate_energy(Origin::none(), 1, 10,), DispatchError::BadOrigin);
     });
 }
 
 #[test]
-fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
+fn generate_energy_should_fail_when_caller_have_not_enough_balance() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account_with_balance(1, 0);
         assert_noop!(
@@ -133,7 +133,7 @@ fn test_generate_energy_will_fail_when_caller_have_not_enough_balance() {
 }
 
 #[test]
-fn test_generate_energy_will_fail_when_energy_balance_below_existential_deposit() {
+fn generate_energy_should_fail_when_energy_balance_below_existential_deposit() {
     ExtBuilder::default().energy_existential_deposit(100).build().execute_with(|| {
         let caller = account_with_balance(1, 1000);
         let receiver = account(10);
@@ -148,7 +148,7 @@ fn test_generate_energy_will_fail_when_energy_balance_below_existential_deposit(
 }
 
 #[test]
-fn test_generate_energy_will_work_when_caller_have_enough_balance() {
+fn generate_energy_should_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
         .native_existential_deposit(0)
         .value_coefficient(10f64)
@@ -176,7 +176,7 @@ fn test_generate_energy_will_work_when_caller_have_enough_balance() {
 }
 
 #[test]
-fn test_generate_energy_will_increase_total_energy() {
+fn generate_energy_should_increase_total_energy() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account_with_balance(1, 1000);
         let receiver1 = account(2);
@@ -203,7 +203,7 @@ fn test_generate_energy_will_increase_total_energy() {
 }
 
 #[test]
-fn test_generate_energy_will_have_correct_weight() {
+fn generate_energy_should_have_correct_weight() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account_with_balance(1, 1000);
         let receiver = account(2);
@@ -274,7 +274,7 @@ fn charge_transaction<PreValidator: FnOnce()>(
 }
 
 #[test]
-fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
+fn charge_transaction_should_fail_when_no_energy_and_no_sub() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 0);
@@ -293,7 +293,7 @@ fn test_charge_transaction_should_fail_when_no_energy_and_no_sub() {
 }
 
 #[test]
-fn test_charge_transaction_should_pay_with_energy_if_enough() {
+fn charge_transaction_should_pay_with_energy_if_enough() {
     ExtBuilder::default().value_coefficient(2f64).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 1000);
@@ -318,7 +318,7 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
 }
 
 #[test]
-fn test_charge_transaction_should_fail_when_no_sub_to_pay_tip() {
+fn charge_transaction_should_fail_when_no_sub_to_pay_tip() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 10);
@@ -341,7 +341,7 @@ fn test_charge_transaction_should_fail_when_no_sub_to_pay_tip() {
 }
 
 #[test]
-fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
+fn charge_transaction_should_pay_nothing_if_fee_is_zero() {
     ExtBuilder::default().value_coefficient(10f64).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 1000);
@@ -366,7 +366,7 @@ fn test_charge_transaction_should_pay_nothing_if_fee_is_zero() {
 }
 
 #[test]
-fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
+fn charge_transaction_should_pay_with_sub_if_energy_no_enough() {
     ExtBuilder::default().value_coefficient(3.36f64).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 1000);
@@ -395,7 +395,7 @@ fn test_charge_transaction_should_pay_with_sub_if_energy_no_enough() {
 }
 
 #[test]
-fn test_update_value_coefficient_should_reflect_on_future_charge_transcations() {
+fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
     let update_origin = account(1);
 
     ExtBuilder::default()
@@ -480,7 +480,7 @@ fn test_update_value_coefficient_should_reflect_on_future_charge_transcations() 
 ///// tests for ED and providers
 
 #[test]
-fn test_existential_deposit_and_providers() {
+fn existential_deposit_and_providers() {
     ExtBuilder::default()
         .native_existential_deposit(10)
         .energy_existential_deposit(100)
@@ -550,7 +550,7 @@ fn test_existential_deposit_and_providers() {
 ///// test native_token_to_energy
 
 #[test]
-fn test_native_token_to_energy() {
+fn native_token_to_energy() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(100), 80);
     });
