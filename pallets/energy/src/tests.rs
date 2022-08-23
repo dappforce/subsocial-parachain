@@ -148,6 +148,21 @@ fn generate_energy_should_fail_when_energy_balance_below_existential_deposit() {
 }
 
 #[test]
+fn generate_energy_should_work_when_energy_balance_equal_to_existential_deposit() {
+    ExtBuilder::default().energy_existential_deposit(100).build().execute_with(|| {
+        let caller = account_with_balance(1, 1000);
+        let receiver = account(10);
+
+        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver, 100));
+
+        assert_total_energy!(100);
+        assert_energy_balance!(receiver, 100);
+        assert_balance!(caller, 900);
+    });
+}
+
+
+#[test]
 fn generate_energy_should_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
         .native_existential_deposit(0)
@@ -190,8 +205,10 @@ fn generate_energy_should_increase_total_energy() {
 
         assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver1, 35,),);
         assert_total_issuance!(965);
+        assert_total_energy!(35);
         assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver1, 55,),);
         assert_total_issuance!(910);
+        assert_total_energy!(90);
         assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver2, 200,),);
 
         assert_total_issuance!(710);
@@ -225,7 +242,7 @@ fn generate_energy_should_have_correct_weight() {
 
 ///// tests for Energy::OnChargeTransaction
 
-macro_rules! div_coff {
+macro_rules! div_coeff {
     ($val:expr, $coff:expr) => {
         (($val as f64 / $coff as f64) as Balance)
     };
@@ -233,8 +250,8 @@ macro_rules! div_coff {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 enum ChargeTransactionError {
-    PreDispatch_Payment,
-    PostDispatch_Payment,
+    PreDispatchPayment,
+    PostDispatchPayment,
     Other,
 }
 
@@ -253,7 +270,7 @@ fn charge_transaction<PreValidator: FnOnce()>(
         .pre_dispatch(caller, &call, &info, 0)
         .map_err(|err| {
             if let TransactionValidityError::Invalid(InvalidTransaction::Payment) = err {
-                ChargeTransactionError::PreDispatch_Payment
+                ChargeTransactionError::PreDispatchPayment
             } else {
                 ChargeTransactionError::Other
             }
@@ -264,7 +281,7 @@ fn charge_transaction<PreValidator: FnOnce()>(
     ChargeTransactionPayment::<Test>::post_dispatch(Some(pre), &info, &post_info, 0, &Ok(()))
         .map_err(|err| {
             if let TransactionValidityError::Invalid(InvalidTransaction::Payment) = err {
-                ChargeTransactionError::PostDispatch_Payment
+                ChargeTransactionError::PostDispatchPayment
             } else {
                 ChargeTransactionError::Other
             }
@@ -285,7 +302,7 @@ fn charge_transaction_should_fail_when_no_energy_and_no_sub() {
                 "should not be called, because there was a pre_dispatch error"
             ),)
             .unwrap_err(),
-            ChargeTransactionError::PreDispatch_Payment,
+            ChargeTransactionError::PreDispatchPayment,
         );
 
         assert!(get_corrected_and_deposit_fee_args().is_none());
@@ -300,14 +317,14 @@ fn charge_transaction_should_pay_with_energy_if_enough() {
         set_energy_balance(caller, 1000);
 
         assert_ok!(charge_transaction(&caller, 150, 100, 20, || {
-            assert_energy_balance!(caller, 1000 - div_coff!(150, 2)); // subtract the expected fees / coefficient
+            assert_energy_balance!(caller, 1000 - div_coeff!(150, 2)); // subtract the expected fees / coefficient
             assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
             assert!(
                 get_captured_withdraw_fee_args().is_none(),
                 "Shouldn't go through the fallback OnChargeTransaction"
             );
         },),);
-        assert_energy_balance!(caller, 1000 - div_coff!(100, 2));
+        assert_energy_balance!(caller, 1000 - div_coeff!(100, 2));
         // subtract the actual (fees + tip) / coefficient
         assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
         assert!(
@@ -329,7 +346,7 @@ fn charge_transaction_should_fail_when_no_sub_to_pay_tip() {
                 "should not be called, because there was a pre_dispatch error"
             ))
             .unwrap_err(),
-            ChargeTransactionError::PreDispatch_Payment
+            ChargeTransactionError::PreDispatchPayment
         );
         assert_energy_balance!(caller, 1000);
         assert_balance!(caller, 10);
