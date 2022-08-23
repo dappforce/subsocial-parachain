@@ -3,25 +3,21 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use sp_std::vec;
-use frame_system::RawOrigin;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use subsocial_support::Content;
+use frame_support::{dispatch::DispatchError, traits::Currency};
+use frame_system::RawOrigin;
 use pallet_posts::{Post, PostExtension};
-use frame_support::{
-    dispatch::DispatchError,
-    traits::Currency,
-};
 use pallet_spaces::types::Space;
+use sp_std::vec;
+use subsocial_support::Content;
 
-fn create_dummy_space<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Space<T>, DispatchError> {
+fn create_dummy_space<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(
-        origin.clone().into(),
-        Content::None,
-        None,
-    ).map_err(|e| e.error)?;
+    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), Content::None, None)
+        .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
         .ok_or(DispatchError::Other("Space not found"))?;
@@ -33,37 +29,32 @@ fn create_dummy_post<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Post<
     let post_id = pallet_posts::NextPostId::<T>::get();
     let space = create_dummy_space::<T>(origin.clone())?;
 
-
     pallet_posts::Pallet::<T>::create_post(
         origin.clone().into(),
         Some(space.id),
         PostExtension::RegularPost,
-Content::None,
+        Content::None,
     )?;
 
-    let post = pallet_posts::PostById::<T>::get(post_id)
-        .ok_or(DispatchError::Other("Post not found"))?;
+    let post =
+        pallet_posts::PostById::<T>::get(post_id).ok_or(DispatchError::Other("Post not found"))?;
 
     Ok(post)
 }
 
-fn create_dummy_post_reaction<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<(Post<T>, Reaction<T>), DispatchError> {
+fn create_dummy_post_reaction<T: Config>(
+    origin: RawOrigin<T::AccountId>,
+) -> Result<(Post<T>, Reaction<T>), DispatchError> {
     let post = create_dummy_post::<T>(origin.clone())?;
     let reaction_id = NextReactionId::<T>::get();
 
-    Pallet::<T>::create_post_reaction(
-        origin.clone().into(),
-        post.id,
-        ReactionKind::Upvote,
-    )?;
+    Pallet::<T>::create_post_reaction(origin.clone().into(), post.id, ReactionKind::Upvote)?;
 
-    let reaction = ReactionById::<T>::get(reaction_id)
-        .ok_or(DispatchError::Other("Reaction not found"))?;
+    let reaction =
+        ReactionById::<T>::get(reaction_id).ok_or(DispatchError::Other("Reaction not found"))?;
 
     Ok((post, reaction))
 }
-
-
 
 benchmarks! {
     create_post_reaction {
