@@ -300,7 +300,7 @@ fn test_charge_transaction_should_pay_with_energy_if_enough() {
         set_energy_balance(caller, 1000);
 
         assert_ok!(charge_transaction(&caller, 150, 100, 20, || {
-            assert_energy_balance!(caller, 1000 - div_coff!(150, 2)); // subtract the expected (fees + tip) / coefficient
+            assert_energy_balance!(caller, 1000 - div_coff!(150, 2)); // subtract the expected fees / coefficient
             assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
             assert!(
                 get_captured_withdraw_fee_args().is_none(),
