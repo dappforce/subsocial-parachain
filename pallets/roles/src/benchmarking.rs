@@ -3,30 +3,21 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use sp_std::vec;
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
+use frame_support::{dispatch::DispatchError, traits::Currency};
 use frame_system::RawOrigin;
-use frame_benchmarking::{benchmarks, whitelisted_caller};
-use subsocial_support::{Content, User};
-use frame_support::{
-    dispatch::DispatchError,
-    traits::Currency,
-};
-use sp_std::{
-    collections::btree_set::BTreeSet,
-    prelude::Vec,
-};
 use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
 use pallet_spaces::types::Space;
-use frame_benchmarking::account;
+use sp_std::{collections::btree_set::BTreeSet, prelude::Vec, vec};
+use subsocial_support::{Content, User};
 
-fn create_dummy_space<T: Config + pallet_spaces::Config>(origin: RawOrigin<T::AccountId>) -> Result<Space<T>, DispatchError> {
+fn create_dummy_space<T: Config + pallet_spaces::Config>(
+    origin: RawOrigin<T::AccountId>,
+) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(
-        origin.into(),
-        Content::None,
-        None,
-    ).map_err(|e| e.error)?;
+    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)
+        .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
         .ok_or(DispatchError::Other("Space not found"))?;
@@ -34,11 +25,10 @@ fn create_dummy_space<T: Config + pallet_spaces::Config>(origin: RawOrigin<T::Ac
     Ok(space)
 }
 
-
 fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
     let mut users_to_grant = Vec::<User<T::AccountId>>::new();
 
-    for i in 1..num_of_users+1 {
+    for i in 1..num_of_users + 1 {
         let user = account("user", i * 2 - 1, i * 2);
         users_to_grant.push(User::Account(user));
     }
@@ -61,18 +51,12 @@ fn create_dummy_role<T: Config>(
         vec![SP::ManageRoles],
     )?;
 
-    let role = RoleById::<T>::get(role_id)
-        .ok_or(DispatchError::Other("Role not found"))?;
+    let role = RoleById::<T>::get(role_id).ok_or(DispatchError::Other("Role not found"))?;
 
     let users_to_grant = dummy_list_of_users::<T>(num_of_users);
 
-
     if !users_to_grant.is_empty() {
-        Pallet::<T>::grant_role(
-            origin.into(),
-            role.id,
-            users_to_grant.clone(),
-        )?;
+        Pallet::<T>::grant_role(origin.into(), role.id, users_to_grant.clone())?;
     }
 
     Ok((role, users_to_grant))

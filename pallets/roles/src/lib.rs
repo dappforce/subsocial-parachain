@@ -36,21 +36,20 @@ pub use types::*;
 #[cfg(test)]
 mod mock;
 
-#[cfg(test)]
-mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(test)]
+mod tests;
 pub mod weights;
-
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use pallet_permissions::SpacePermissionsInfoOf;
     use subsocial_support::{remove_from_vec, WhoAndWhen};
-    use crate::weights::WeightInfo;
 
     #[pallet::config]
     pub trait Config:
@@ -284,7 +283,11 @@ pub mod pallet {
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
         #[pallet::weight(<T as Config>::WeightInfo::delete_role(*user_count))]
-        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId, user_count: u32) -> DispatchResult {
+        pub fn delete_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            user_count: u32,
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             let role = Self::require_role(role_id)?;
@@ -292,10 +295,7 @@ pub mod pallet {
             Self::ensure_role_manager(who.clone(), role.space_id)?;
 
             let users = Self::users_by_role_id(role_id);
-            ensure!(
-                users.len() as u32 == user_count,
-                Error::<T>::IncorrectUserCount,
-            );
+            ensure!(users.len() as u32 == user_count, Error::<T>::IncorrectUserCount,);
             ensure!(
                 users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
                 Error::<T>::TooManyUsersToDeleteRole
