@@ -291,7 +291,7 @@ fn charge_transaction<PreValidator: FnOnce()>(
 }
 
 #[test]
-fn charge_transaction_should_fail_when_no_energy_and_no_sub() {
+fn charge_transaction_should_fail_when_no_energy_and_no_native_balance() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 0);
@@ -318,7 +318,7 @@ fn charge_transaction_should_pay_with_energy_if_enough() {
 
         assert_ok!(charge_transaction(&caller, 150, 100, 20, || {
             assert_energy_balance!(caller, 1000 - div_coeff!(150, 2)); // subtract the expected fees / coefficient
-            assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
+            assert_balance!(caller, 1000 - 20); // tip subtracted from the native balance
             assert!(
                 get_captured_withdraw_fee_args().is_none(),
                 "Shouldn't go through the fallback OnChargeTransaction"
@@ -326,7 +326,7 @@ fn charge_transaction_should_pay_with_energy_if_enough() {
         },),);
         assert_energy_balance!(caller, 1000 - div_coeff!(100, 2));
         // subtract the actual (fees + tip) / coefficient
-        assert_balance!(caller, 1000 - 20); // tip subtracted from the sub balance
+        assert_balance!(caller, 1000 - 20); // tip subtracted from the native balance
         assert!(
             get_corrected_and_deposit_fee_args().is_none(),
             "Shouldn't go through the fallback OnChargeTransaction"
@@ -335,7 +335,7 @@ fn charge_transaction_should_pay_with_energy_if_enough() {
 }
 
 #[test]
-fn charge_transaction_should_fail_when_no_sub_to_pay_tip() {
+fn charge_transaction_should_fail_when_no_native_balance_to_pay_tip() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 10);
@@ -383,7 +383,7 @@ fn charge_transaction_should_pay_nothing_if_fee_is_zero() {
 }
 
 #[test]
-fn charge_transaction_should_pay_with_sub_if_energy_no_enough() {
+fn charge_transaction_should_pay_with_native_tokens_if_not_enough_energy() {
     ExtBuilder::default().value_coefficient(3.36f64).build().execute_with(|| {
         let caller = account(1);
         set_native_balance(caller, 1000);
@@ -412,7 +412,7 @@ fn charge_transaction_should_pay_with_sub_if_energy_no_enough() {
 }
 
 #[test]
-fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
+fn update_value_coefficient_should_reflect_on_future_charge_transactions() {
     let update_origin = account(1);
 
     ExtBuilder::default()
@@ -442,6 +442,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
             set_energy_balance(caller, 1_000_000);
             charge_transaction(100);
 
+            // 100 fee in native token at coefficient 1.25 equals 80 energy
             assert_energy_balance!(caller, 1_000_000 - 80);
 
             assert_ok!(Energy::update_value_coefficient(
@@ -462,7 +463,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
 
             assert_ok!(Energy::update_value_coefficient(
                 Origin::signed(update_origin),
-                FixedI64::checked_from_rational(12345, 10000).unwrap(), // 123.45%
+                FixedI64::checked_from_rational(12_345, 10_000).unwrap(), // 123.45%
             ),);
 
             assert_eq!(
@@ -472,9 +473,9 @@ fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
             );
 
             set_energy_balance(caller, 1_000_000);
-            charge_transaction(700000);
+            charge_transaction(700_000);
 
-            assert_energy_balance!(caller, 1_000_000 - 567031);
+            assert_energy_balance!(caller, 1_000_000 - 567_031);
 
             assert_ok!(Energy::update_value_coefficient(
                 Origin::signed(update_origin),
@@ -488,13 +489,13 @@ fn update_value_coefficient_should_reflect_on_future_charge_transcations() {
             );
 
             set_energy_balance(caller, 2_000_000);
-            charge_transaction(406950);
+            charge_transaction(406_950);
 
-            assert_energy_balance!(caller, 2_000_000 - 1220849);
+            assert_energy_balance!(caller, 2_000_000 - 1_220_849);
         });
 }
 
-///// tests for ED and providers
+///// tests for existential deposit and providers
 
 #[test]
 fn existential_deposit_and_providers() {
@@ -513,7 +514,7 @@ fn existential_deposit_and_providers() {
             assert_ok!(pallet_balances::Pallet::<Test>::transfer(
                 Origin::signed(treasury),
                 account1,
-                10000
+                10_000
             ));
             assert_eq!(System::providers(&account1), 1);
 
@@ -526,6 +527,8 @@ fn existential_deposit_and_providers() {
             assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 1000));
             assert_eq!(System::providers(&account1), 2);
 
+            // Now Account 1 has 1190 energy
+
             assert_ok!(charge_transaction(&account1, 90, 90, 0, || {}));
             assert_eq!(System::providers(&account1), 2);
 
@@ -533,8 +536,16 @@ fn existential_deposit_and_providers() {
             assert_eq!(System::providers(&account1), 2);
 
             assert_ok!(charge_transaction(&account1, 500, 500, 0, || {}));
+
+            // Now Account 1 has 50 energy. This is less then the existential deposit (100 energy).
+            // That's why we expect that these 50 energy to be burned.
+            assert_energy_balance!(account1, 0);
+
+            // And the number of providers should be decremented by 1.
             assert_eq!(System::providers(&account1), 1);
 
+            // Here 10 native tokens will be used to pay tx fees,
+            // because we lost dust (50 energy) on the previous steps of this test.
             assert_ok!(charge_transaction(&account1, 10, 10, 0, || {}));
             assert_eq!(System::providers(&account1), 1);
 
@@ -563,6 +574,8 @@ fn existential_deposit_and_providers() {
             assert_eq!(System::providers(&account1), 0);
         });
 }
+
+// TODO Add a test for DustLost event
 
 ///// test native_token_to_energy
 
