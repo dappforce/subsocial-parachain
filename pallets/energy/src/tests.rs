@@ -1,20 +1,20 @@
-use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
-use frame_support::pallet_prelude::{DispatchClass, Pays};
-use frame_support::traits::fungible::Transfer;
-use frame_support::weights::{extract_actual_weight, PostDispatchInfo};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{
+    assert_noop, assert_ok,
+    dispatch::{DispatchInfo, GetDispatchInfo},
+    pallet_prelude::{DispatchClass, Pays},
+    traits::fungible::Transfer,
+    weights::{extract_actual_weight, PostDispatchInfo},
+};
 use pallet_transaction_payment::ChargeTransactionPayment;
-use sp_runtime::traits::{Dispatchable, SignedExtension};
-use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
-use sp_runtime::DispatchError;
-use sp_runtime::{FixedI64, FixedPointNumber};
+use sp_runtime::{
+    traits::{Dispatchable, SignedExtension},
+    transaction_validity::{InvalidTransaction, TransactionValidityError},
+    DispatchError, FixedI64, FixedPointNumber,
+};
 
-use pallet_energy::Call as EnergyCall;
-use pallet_energy::EnergyBalance;
-use pallet_energy::Event as EnergyEvent;
+use pallet_energy::{Call as EnergyCall, EnergyBalance, Event as EnergyEvent};
 
-use crate::mock::*;
-use crate::{Error, WeightInfo};
+use crate::{mock::*, Error, WeightInfo};
 
 ///// tests for Energy::update_value_coefficient()
 
@@ -160,7 +160,6 @@ fn generate_energy_should_work_when_energy_balance_equal_to_existential_deposit(
         assert_balance!(caller, 900);
     });
 }
-
 
 #[test]
 fn generate_energy_should_work_when_caller_have_enough_balance() {

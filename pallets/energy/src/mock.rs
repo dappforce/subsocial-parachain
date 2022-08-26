@@ -1,21 +1,18 @@
 use codec::Decode;
-use frame_support::dispatch::RawOrigin;
-use frame_support::pallet_prelude::{DispatchClass, Pays, Weight};
-use frame_support::traits::{ConstU8, EnsureOrigin, Get, Imbalance, IsType, SortedMembers};
-use frame_support::weights::constants::ExtrinsicBaseWeight;
-use frame_support::weights::{
-    ConstantMultiplier, DispatchInfo, WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
-    WeightToFeePolynomial,
-};
 use frame_support::{
     assert_ok,
-    dispatch::DispatchResult,
+    dispatch::{DispatchResult, RawOrigin},
+    pallet_prelude::{DispatchClass, Pays, Weight},
     parameter_types,
-    traits::{Currency, Everything},
+    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType, SortedMembers},
+    weights::{
+        constants::ExtrinsicBaseWeight, ConstantMultiplier, DispatchInfo, WeightToFee,
+        WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    },
 };
-use frame_system::pallet_prelude::OriginFor;
 use frame_system::{
     limits::{BlockLength, BlockWeights},
+    pallet_prelude::OriginFor,
     Account, EnsureRoot, EnsureSignedBy,
 };
 use pallet_balances::NegativeImbalance;
@@ -25,16 +22,17 @@ use pallet_transaction_payment::{
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::traits::{DispatchInfoOf, One, PostDispatchInfoOf};
-use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf},
+    transaction_validity::TransactionValidityError,
     FixedI64, Perbill,
 };
-use sp_std::cell::RefCell;
-use sp_std::convert::{TryFrom, TryInto};
-use sp_std::marker::PhantomData;
+use sp_std::{
+    cell::RefCell,
+    convert::{TryFrom, TryInto},
+    marker::PhantomData,
+};
 
 pub(crate) use crate as pallet_energy;
 use crate::{EnergyBalance, TotalEnergy};

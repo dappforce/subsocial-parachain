@@ -19,18 +19,20 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons},
+    };
     use frame_system::pallet_prelude::*;
     use pallet_transaction_payment::OnChargeTransaction;
-    use sp_runtime::traits::{
-        CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero,
-    };
     use sp_runtime::{
+        traits::{
+            CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup,
+            Zero,
+        },
         ArithmeticError, DispatchResultWithInfo, FixedI64, FixedPointNumber, FixedPointOperand,
     };
-    use sp_std::convert::TryInto;
-    use sp_std::fmt::Debug;
+    use sp_std::{convert::TryInto, fmt::Debug};
 
     use crate::*;
 
@@ -221,9 +223,12 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
-            Self::try_mutate_energy_balance(target, |current_energy_balance| -> Result<BalanceOf<T>, ()> {
-                Ok(current_energy_balance.saturating_add(amount))
-            });
+            Self::try_mutate_energy_balance(
+                target,
+                |current_energy_balance| -> Result<BalanceOf<T>, ()> {
+                    Ok(current_energy_balance.saturating_add(amount))
+                },
+            );
         }
 
         /// Ensure that [account] can consume the given [amount] of energy, and returns current
@@ -247,9 +252,12 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            Self::try_mutate_energy_balance(target, |current_energy_balance| -> Result<BalanceOf<T>, ()> {
-                Ok(current_energy_balance.saturating_sub(amount))
-            });
+            Self::try_mutate_energy_balance(
+                target,
+                |current_energy_balance| -> Result<BalanceOf<T>, ()> {
+                    Ok(current_energy_balance.saturating_sub(amount))
+                },
+            );
         }
 
         pub(crate) fn try_mutate_energy_balance<E>(
@@ -342,7 +350,7 @@ pub mod pallet {
             tip: Self::Balance,
         ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
             if fee.is_zero() {
-                return Ok(LiquidityInfo::Nothing);
+                return Ok(LiquidityInfo::Nothing)
             }
 
             let fee_without_tip = fee.saturating_sub(tip);
@@ -357,7 +365,7 @@ pub mod pallet {
                     fee,
                     tip,
                 )
-                .map(|fallback_info| LiquidityInfo::Native(fallback_info));
+                .map(|fallback_info| LiquidityInfo::Native(fallback_info))
             }
 
             if !tip.is_zero() {
@@ -390,7 +398,7 @@ pub mod pallet {
         ) -> Result<(), TransactionValidityError> {
             match already_withdrawn {
                 LiquidityInfo::Nothing => Ok(()),
-                LiquidityInfo::Native(fallback_info) => {
+                LiquidityInfo::Native(fallback_info) =>
                     T::NativeOnChargeTransaction::correct_and_deposit_fee(
                         who,
                         dispatch_info,
@@ -398,11 +406,11 @@ pub mod pallet {
                         corrected_fee,
                         tip,
                         fallback_info,
-                    )
-                },
+                    ),
                 LiquidityInfo::Energy(paid) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
-                    let corrected_energy_fee = Self::native_token_to_energy(corrected_fee_without_tip);
+                    let corrected_energy_fee =
+                        Self::native_token_to_energy(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
 
