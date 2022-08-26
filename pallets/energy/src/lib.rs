@@ -30,7 +30,7 @@ pub mod pallet {
             CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup,
             Zero,
         },
-        ArithmeticError, DispatchResultWithInfo, FixedI64, FixedPointNumber, FixedPointOperand,
+        ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand,
     };
     use sp_std::{convert::TryInto, fmt::Debug};
 
@@ -223,7 +223,7 @@ pub mod pallet {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_add(amount);
             });
-            Self::try_mutate_energy_balance(
+            let _ = Self::try_mutate_energy_balance(
                 target,
                 |current_energy_balance| -> Result<BalanceOf<T>, ()> {
                     Ok(current_energy_balance.saturating_add(amount))
@@ -248,11 +248,11 @@ pub mod pallet {
 
         /// Consume energy for [account]. Decreases energy balance by [amount] and also decrease
         /// account providers if current energy balance is below [T::ExistentialDeposit].
-        fn consume_energy(target: &T::AccountId, mut amount: BalanceOf<T>) {
+        fn consume_energy(target: &T::AccountId, amount: BalanceOf<T>) {
             TotalEnergy::<T>::mutate(|total| {
                 *total = total.saturating_sub(amount);
             });
-            Self::try_mutate_energy_balance(
+            let _ = Self::try_mutate_energy_balance(
                 target,
                 |current_energy_balance| -> Result<BalanceOf<T>, ()> {
                     Ok(current_energy_balance.saturating_sub(amount))
@@ -284,7 +284,7 @@ pub mod pallet {
                     Some(new_energy_balance)
                 };
 
-                return Ok((existed, maybe_energy_balance.is_some(), maybe_dust))
+                Ok((existed, maybe_energy_balance.is_some(), maybe_dust))
             })
             .map(|(existed, exists, maybe_dust)| {
                 if existed && !exists {
@@ -376,7 +376,7 @@ pub mod pallet {
                     WithdrawReasons::TIP,
                     ExistenceRequirement::KeepAlive,
                 )
-                .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment.into() })?;
+                .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment })?;
             }
 
             match Self::ensure_can_consume_energy(who, energy_fee) {
@@ -414,7 +414,7 @@ pub mod pallet {
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
 
-                    let _ = Self::capture_energy(who, refund_amount);
+                    Self::capture_energy(who, refund_amount);
 
                     Ok(())
                 },
