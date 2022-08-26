@@ -604,7 +604,6 @@ impl pallet_account_follows::Config for Runtime {
 }
 
 
-
 parameter_types! {
 	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
 }
