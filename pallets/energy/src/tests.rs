@@ -2,7 +2,6 @@ use frame_support::{
     assert_noop, assert_ok,
     dispatch::{DispatchInfo, GetDispatchInfo},
     pallet_prelude::{DispatchClass, Pays},
-    traits::fungible::Transfer,
     weights::{extract_actual_weight, PostDispatchInfo},
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -393,7 +392,7 @@ fn charge_transaction_should_pay_with_native_tokens_if_not_enough_energy() {
             assert_balance!(caller, 1000 - 200 - 13); // subtract the expected fees + tip
             assert_eq!(
                 get_captured_withdraw_fee_args().unwrap(),
-                WithdrawFeeArgs { who: caller.clone(), fee_with_tip: 200 + 13, tip: 13 }
+                WithdrawFeeArgs { who: caller, fee_with_tip: 200 + 13, tip: 13 }
             );
         },),);
         assert_energy_balance!(caller, 50);
@@ -402,7 +401,7 @@ fn charge_transaction_should_pay_with_native_tokens_if_not_enough_energy() {
         assert!(matches!(
             get_corrected_and_deposit_fee_args().unwrap(),
             CorrectAndDepositFeeArgs {
-                who: caller,
+                who: _caller,
                 corrected_fee_with_tip: 63, // 50 + 13
                 already_withdrawn: _,       // ignored
             }

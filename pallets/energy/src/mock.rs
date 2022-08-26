@@ -1,24 +1,17 @@
 use codec::Decode;
 use frame_support::{
-    assert_ok,
-    dispatch::{DispatchResult, RawOrigin},
+    dispatch::RawOrigin,
     pallet_prelude::{DispatchClass, Pays, Weight},
     parameter_types,
-    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType, SortedMembers},
+    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
     weights::{
-        constants::ExtrinsicBaseWeight, ConstantMultiplier, DispatchInfo, WeightToFee,
-        WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+        DispatchInfo, WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFeePolynomial,
     },
 };
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    pallet_prelude::OriginFor,
-    Account, EnsureRoot, EnsureSignedBy,
-};
+use frame_system::limits::BlockWeights;
 use pallet_balances::NegativeImbalance;
-use pallet_transaction_payment::{
-    ChargeTransactionPayment, CurrencyAdapter, MultiplierUpdate, OnChargeTransaction,
-};
+use pallet_transaction_payment::{CurrencyAdapter, OnChargeTransaction};
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -244,32 +237,32 @@ pub(crate) struct CorrectAndDepositFeeArgs {
 }
 
 thread_local! {
-    pub(crate) static CapturedWithdrawFeeArgs: RefCell<Option<WithdrawFeeArgs>> = RefCell::new(None);
-    pub(crate) static CapturedCorrectAndDepositFeeArgs: RefCell<Option<CorrectAndDepositFeeArgs>> = RefCell::new(None);
+    pub(crate) static CAPTURED_WITHDRAW_FEE_ARGS: RefCell<Option<WithdrawFeeArgs>> = RefCell::new(None);
+    pub(crate) static CAPTURED_CORRECT_AND_DEPOSIT_FEE_ARGS: RefCell<Option<CorrectAndDepositFeeArgs>> = RefCell::new(None);
 }
 
 pub(crate) fn get_captured_withdraw_fee_args() -> Option<WithdrawFeeArgs> {
-    CapturedWithdrawFeeArgs.with(|r| r.borrow().clone())
+    CAPTURED_WITHDRAW_FEE_ARGS.with(|r| r.borrow().clone())
 }
 
 pub(crate) fn get_corrected_and_deposit_fee_args() -> Option<CorrectAndDepositFeeArgs> {
-    CapturedCorrectAndDepositFeeArgs.with(|r| r.borrow().clone())
+    CAPTURED_CORRECT_AND_DEPOSIT_FEE_ARGS.with(|r| r.borrow().clone())
 }
 
 pub(crate) fn set_withdraw_fee_args(args: WithdrawFeeArgs) {
-    CapturedWithdrawFeeArgs.with(|r| *r.borrow_mut() = Some(args));
+    CAPTURED_WITHDRAW_FEE_ARGS.with(|r| *r.borrow_mut() = Some(args));
 }
 
 pub(crate) fn set_corrected_and_deposit_fee_args(args: CorrectAndDepositFeeArgs) {
-    CapturedCorrectAndDepositFeeArgs.with(|r| *r.borrow_mut() = Some(args));
+    CAPTURED_CORRECT_AND_DEPOSIT_FEE_ARGS.with(|r| *r.borrow_mut() = Some(args));
 }
 
 pub(crate) fn clear_withdraw_fee_args() {
-    CapturedWithdrawFeeArgs.with(|r| *r.borrow_mut() = None);
+    CAPTURED_WITHDRAW_FEE_ARGS.with(|r| *r.borrow_mut() = None);
 }
 
 pub(crate) fn clear_corrected_and_deposit_fee_args() {
-    CapturedCorrectAndDepositFeeArgs.with(|r| *r.borrow_mut() = None);
+    CAPTURED_CORRECT_AND_DEPOSIT_FEE_ARGS.with(|r| *r.borrow_mut() = None);
 }
 
 pub struct ProxiedOnChargeTransaction<Real>(PhantomData<Real>);
@@ -291,7 +284,7 @@ where
         tip: Self::Balance,
     ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
         set_withdraw_fee_args(WithdrawFeeArgs {
-            who: who.clone(),
+            who: *who,
             fee_with_tip: fee.into(),
             tip: tip.into(),
         });
@@ -307,9 +300,9 @@ where
         already_withdrawn: Self::LiquidityInfo,
     ) -> Result<(), TransactionValidityError> {
         set_corrected_and_deposit_fee_args(CorrectAndDepositFeeArgs {
-            who: who.clone(),
+            who: *who,
             corrected_fee_with_tip: corrected_fee.into(),
-            already_withdrawn: already_withdrawn.into_ref().as_ref().map(|val| val.peek().clone()),
+            already_withdrawn: already_withdrawn.into_ref().as_ref().map(|val| val.peek()),
         });
         Real::correct_and_deposit_fee(
             who,
