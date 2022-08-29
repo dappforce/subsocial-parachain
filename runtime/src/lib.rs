@@ -33,7 +33,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 13,
+	spec_version: 14,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -377,7 +377,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -601,6 +601,22 @@ impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
 }
 
+
+parameter_types! {
+	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
+}
+
+impl pallet_energy::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Balance = Balance;
+	type DefaultValueCoefficient = DefaultValueCoefficient;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type ExistentialDeposit = ExistentialDeposit;
+	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -639,6 +655,7 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
+		Energy: pallet_energy = 61,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -670,6 +687,7 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
+		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }
