@@ -257,22 +257,9 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
 
-		let is_social_call =
-			matches!(c,
-				Call::Roles(..) |
-				Call::AccountFollows(..) |
-				Call::Profiles(..) |
-				Call::SpaceFollows(..) |
-				Call::SpaceOwnership(..) |
-				Call::Spaces(..) |
-				Call::Posts(..) |
-				Call::Reactions(..)
-			);
-
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
-			_ if is_social_call => false,
 			_ => true,
 		}
 	}
