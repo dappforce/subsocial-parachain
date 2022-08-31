@@ -123,10 +123,9 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in the Subsocial node, we map to 1/10 of that, or 1/10 MILLIUNIT
-		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+		// Extrinsic base weight (smallest non-zero weight) is mapped to 10 MILLIUNIT
+		let p = 10 * MILLIUNIT;
+		let q = Balance::from(ExtrinsicBaseWeight::get());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,
@@ -359,7 +358,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TransactionByteFee: Balance = 100 * MICROUNIT;
+	pub const TransactionByteFee: Balance = MILLIUNIT / 10;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
