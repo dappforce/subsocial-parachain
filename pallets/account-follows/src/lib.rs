@@ -68,7 +68,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
         pub fn follow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -88,7 +88,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
         pub fn unfollow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
