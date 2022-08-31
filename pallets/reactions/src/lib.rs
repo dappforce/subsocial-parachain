@@ -147,7 +147,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(6, 5))]
+        #[pallet::weight(79_000_000 + T::DbWeight::get().reads_writes(7, 5))]
         pub fn create_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -208,7 +208,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 2))]
+        #[pallet::weight(49_000_000 + T::DbWeight::get().reads_writes(4, 2))]
         pub fn update_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -260,7 +260,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 4))]
+        #[pallet::weight(52_000_000 + T::DbWeight::get().reads_writes(4, 4))]
         pub fn delete_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,

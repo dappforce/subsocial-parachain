@@ -56,7 +56,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // FIXME: cover with tests
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().writes(1))]
         pub fn set_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -70,7 +70,7 @@ pub mod pallet {
         }
 
         // FIXME: cover with tests
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(1, 1))]
         pub fn reset_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
