@@ -1,11 +1,8 @@
-name: Build and deploy a new release
+name: GH runner Activation 
 on:
-  workflow_dispatch:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - main
+
+  schedule:
+    - cron: "0 1 * * 0"
 
 jobs:
 
@@ -26,7 +23,7 @@ jobs:
             ./apply.sh
         
   build:
-    if: contains( github.event.pull_request.labels.*.name, 'CI') || github.event_name == 'workflow_dispatch'
+    if: contains( github.event.pull_request.labels.*.name, 'CI')          
     name: Create & push Docker image
     needs: create_runner
     runs-on: [ self-hosted, linux, x64, parachain ]
@@ -77,43 +74,9 @@ jobs:
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-
-  deploy_1:
-    name: deploy-collator-1
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /home/ops/
-            ./para-one.sh
-
-
-  deploy_2:
-    name: deploy-collator-2
-    needs: deploy_1
-    runs-on: ubuntu-latest
-    steps:
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST_2 }}
-          username: ${{ secrets.USERNAME_2 }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /home/ops/
-            ./para-two.sh
-
   remove_snapshot:
     name: remove_snapshot
-    needs: deploy_2
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands
