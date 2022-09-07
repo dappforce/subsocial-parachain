@@ -27,7 +27,6 @@ use frame_support::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
-	PalletId,
 };
 use frame_support::traits::{ConstU128, ConstU32};
 use frame_system::{
@@ -48,7 +47,6 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
-use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
@@ -511,34 +509,6 @@ impl pallet_aura::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 
-parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
-	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
-}
-
-// // We allow root only to execute privileged collator selection operations.
-// pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
-//
-// impl pallet_collator_selection::Config for Runtime {
-// 	type Event = Event;
-// 	type Currency = Balances;
-// 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-// 	type PotId = PotId;
-// 	type MaxCandidates = MaxCandidates;
-// 	type MinCandidates = MinCandidates;
-// 	type MaxInvulnerables = MaxInvulnerables;
-// 	// should be a multiple of session or things will get inconsistent
-// 	type KickThreshold = Period;
-// 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-// 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-// 	type ValidatorRegistration = Session;
-// 	type WeightInfo = ();
-// }
-
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -747,7 +717,6 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_vesting, Vesting]
 		[pallet_utility, Utility]
-		// [pallet_collator_selection, CollatorSelection]
 		[pallet_parachain_staking, ParachainStaking]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
