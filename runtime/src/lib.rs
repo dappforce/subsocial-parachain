@@ -29,7 +29,6 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::pallet_prelude;
 use frame_support::traits::{ConstU128, ConstU32};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
