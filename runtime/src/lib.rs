@@ -344,7 +344,7 @@ parameter_types! {
 	/// Default fixed percent a collator takes off the top of due rewards
 	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
 	/// Default percent of inflation set aside for parachain bond every round
-	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
+	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
 }
 
 /// The inflation config set in chain spec.
@@ -403,9 +403,9 @@ impl pallet_parachain_staking::Config for Runtime {
 	/// Minimum stake required to be reserved to be a candidate
 	type MinCandidateStk = ConstU128<{ 500 * UNIT }>;
 	/// Minimum stake required to be reserved to be a delegator
-	type MinDelegation = ConstU128<{ 5 * UNIT }>;
+	type MinDelegation = ConstU128<{ 100 * UNIT }>;
 	/// Minimum stake required to be reserved to be a delegator
-	type MinDelegatorStk = ConstU128<{ 5 * UNIT }>;
+	type MinDelegatorStk = ConstU128<{ 50 * UNIT }>;
 	type OnCollatorPayout = ();
 	type OnNewRound = ();
 	type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>;
