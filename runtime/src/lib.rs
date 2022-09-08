@@ -108,6 +108,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	pallet_parachain_staking::migrations::InitStakingMigration<Runtime>,
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -345,6 +346,9 @@ parameter_types! {
 	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
 	/// Default percent of inflation set aside for parachain bond every round
 	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
+	pub const MigratedCollatorsStake: Balance = 1000 * UNIT;
+	pub CollatorsToMigrate: Vec<AccountId> = Session::validators();
+	pub InflationInfoOnMigration: InflationInfo<Balance> = subsocial_inflation_config();
 }
 
 /// The inflation config set in chain spec.
@@ -406,6 +410,9 @@ impl pallet_parachain_staking::Config for Runtime {
 	type MinDelegation = ConstU128<{ 100 * UNIT }>;
 	/// Minimum stake required to be reserved to be a delegator
 	type MinDelegatorStk = ConstU128<{ 50 * UNIT }>;
+	type CollatorsToMigrate = CollatorsToMigrate;
+	type MigratedCollatorsStake = MigratedCollatorsStake;
+	type InflationInfoOnMigration = InflationInfoOnMigration;
 	type OnCollatorPayout = ();
 	type OnNewRound = ();
 	type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>;
