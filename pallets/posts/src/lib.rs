@@ -184,7 +184,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(100_000 + T::DbWeight::get().reads_writes(8, 8))]
+        #[pallet::weight(88_000_000 + T::DbWeight::get().reads_writes(7, 6))]
         pub fn create_post(
             origin: OriginFor<T>,
             space_id_opt: Option<SpaceId>,
@@ -252,7 +252,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(100_000 + T::DbWeight::get().reads_writes(5, 3))]
+        #[pallet::weight(75_000_000 + T::DbWeight::get().reads_writes(5, 3))]
         pub fn update_post(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -309,7 +309,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(T::DbWeight::get().reads(1) + 50_000)]
+        #[pallet::weight(92_000_000 + T::DbWeight::get().reads_writes(7, 5))]
         pub fn move_post(
             origin: OriginFor<T>,
             post_id: PostId,

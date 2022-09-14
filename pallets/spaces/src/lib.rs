@@ -141,7 +141,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(500_000 + T::DbWeight::get().reads_writes(5, 4))]
+        #[pallet::weight(85_000_000 + T::DbWeight::get().reads_writes(8, 7))]
         pub fn create_space(
             origin: OriginFor<T>,
             content: Content,
@@ -168,7 +168,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(500_000 + T::DbWeight::get().reads_writes(3, 3))]
+        #[pallet::weight(62_000_000 + T::DbWeight::get().reads_writes(5, 1))]
         pub fn update_space(
             origin: OriginFor<T>,
             space_id: SpaceId,

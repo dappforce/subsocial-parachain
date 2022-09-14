@@ -27,6 +27,7 @@ smallvec = "1.6.1"
 # Local
 pallet-account-follows = { path = "../pallets/account-follows", default-features = false }
 pallet-domains = { path = "../pallets/domains", default-features = false }
+pallet-energy = { path = "../pallets/energy", default-features = false }
 pallet-permissions = { path = '../pallets/permissions', default-features = false }
 pallet-posts = { path = '../pallets/posts', default-features = false }
 pallet-profiles = { path = '../pallets/profiles', default-features = false }
@@ -145,6 +146,7 @@ std = [
 	"pallet-randomness-collective-flip/std",
 	"pallet-account-follows/std",
 	"pallet-domains/std",
+	"pallet-energy/std",
 	"pallet-permissions/std",
 	"pallet-posts/std",
 	"pallet-profiles/std",
@@ -173,6 +175,7 @@ runtime-benchmarks = [
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
+	"pallet-energy/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
 ]
 

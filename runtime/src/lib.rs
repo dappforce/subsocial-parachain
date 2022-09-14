@@ -33,7 +33,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -123,10 +123,9 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in the Subsocial node, we map to 1/10 of that, or 1/10 MILLIUNIT
-		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+		// Extrinsic base weight (smallest non-zero weight) is mapped to 10 MILLIUNIT
+		let p = 10 * MILLIUNIT;
+		let q = Balance::from(ExtrinsicBaseWeight::get());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,
@@ -164,7 +163,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 13,
+	spec_version: 15,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -257,22 +256,9 @@ impl Contains<Call> for BaseFilter {
 				Call::Vesting(pallet_vesting::Call::vest_other { .. })
 			);
 
-		let is_social_call =
-			matches!(c,
-				Call::Roles(..) |
-				Call::AccountFollows(..) |
-				Call::Profiles(..) |
-				Call::SpaceFollows(..) |
-				Call::SpaceOwnership(..) |
-				Call::Spaces(..) |
-				Call::Posts(..) |
-				Call::Reactions(..)
-			);
-
 		match *c {
 			Call::Balances(..) => is_force_transfer,
 			Call::Vesting(..) => !disallowed_vesting_calls,
-			_ if is_social_call => false,
 			_ => true,
 		}
 	}
@@ -372,12 +358,12 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TransactionByteFee: Balance = 100 * MICROUNIT;
+	pub const TransactionByteFee: Balance = MILLIUNIT / 10;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -602,6 +588,22 @@ impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
 }
 
+
+parameter_types! {
+	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
+}
+
+impl pallet_energy::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Balance = Balance;
+	type DefaultValueCoefficient = DefaultValueCoefficient;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type ExistentialDeposit = ExistentialDeposit;
+	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -640,6 +642,7 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
+		Energy: pallet_energy = 61,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -671,6 +674,7 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
+		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_space_follows, SpaceFollows]
 	);
