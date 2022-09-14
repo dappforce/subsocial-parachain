@@ -18,7 +18,6 @@ fn create_role_should_work() {
         let role = Roles::role_by_id(ROLE1).unwrap();
         assert_eq!(Roles::next_role_id(), ROLE2);
 
-        assert!(role.updated.is_none());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
@@ -49,7 +48,6 @@ fn create_role_should_work_with_a_few_roles() {
         let role = Roles::role_by_id(ROLE3).unwrap();
         assert_eq!(Roles::next_role_id(), ROLE4);
 
-        assert!(role.updated.is_none());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
@@ -147,7 +145,6 @@ fn update_role_should_work() {
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
 
-        assert!(role.updated.is_some());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, true);
         assert_eq!(role.content, self::updated_role_content_ipfs());
@@ -179,7 +176,6 @@ fn update_role_should_work_with_empty_perms_provided_no_changes() {
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
 
-        assert!(role.updated.is_some());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, true);
         assert_eq!(role.content, self::default_role_content_ipfs());
@@ -211,7 +207,6 @@ fn update_role_should_work_with_same_perms_provided_no_update() {
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
 
-        assert!(role.updated.is_none());
         assert_eq!(
             role.permissions,
             self::permission_set_default().into_iter().collect()
@@ -240,7 +235,6 @@ fn update_role_should_work_with_a_few_roles() {
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
 
-        assert!(role.updated.is_some());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
@@ -275,7 +269,6 @@ fn update_role_should_work_not_updated_all_the_same() {
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
 
-        assert!(role.updated.is_none());
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());

@@ -1,4 +1,4 @@
-use crate::{SpaceId, Content};
+use crate::{Content, SpaceId};
 
 pub trait IsAccountBlocked<AccountId> {
     fn is_blocked_account(account: AccountId, scope: SpaceId) -> bool;
