@@ -5,8 +5,8 @@ authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
-repository = 'https://github.com/dappforce/dappforce-subsocial-node'
-description = 'Space management pallet'
+repository = 'https://github.com/dappforce/subsocial-parachain'
+description = 'Tests for Space Follows pallet'
 keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
 categories = ['cryptography::cryptocurrencies']
 
