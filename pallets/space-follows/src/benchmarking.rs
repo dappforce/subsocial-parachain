@@ -3,11 +3,10 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame_benchmarking::{account, benchmarks, whitelist, whitelisted_caller};
-use frame_support::{dispatch::DispatchError, ensure, traits::Currency};
+use frame_benchmarking::{account, benchmarks};
+use frame_support::{dispatch::DispatchError, ensure};
 use frame_system::RawOrigin;
 use pallet_spaces::types::Space;
-use sp_std::vec;
 use subsocial_support::Content;
 
 fn create_dummy_space<T: Config>(
@@ -31,19 +30,7 @@ benchmarks! {
         let space_follower = account::<T::AccountId>("SpaceFollower", 1, 0);
 
         let space = create_dummy_space::<T>(space_owner_origin.clone())?;
-    }: {
-        Pallet::<T>::follow_space(
-            RawOrigin::Signed(space_follower.clone()).into(),
-            space.id,
-        )?;
-
-        // Cleanup
-        whitelist!(space_follower);
-        Pallet::<T>::unfollow_space(
-            RawOrigin::Signed(space_follower.clone()).into(),
-            space.id,
-        )?;
-    }
+    }: _(RawOrigin::Signed(space_follower.clone()), space.id)
     verify {
         let space = pallet_spaces::SpaceById::<T>::get(space.id)
             .ok_or(DispatchError::Other("Space not found"))?;
