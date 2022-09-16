@@ -3,10 +3,16 @@
 pub use pallet::*;
 
 use frame_support::dispatch::DispatchResult;
+use frame_support::traits::{Currency, ExistenceRequirement};
 
 use pallet_spaces::Pallet as Spaces;
 
 // pub mod rpc;
+
+pub mod types;
+
+pub(crate) type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -20,11 +26,15 @@ pub mod pallet {
         traits::{IsAccountBlocked, SpaceFollowsProvider},
         ModerationError, SpaceId,
     };
+    use crate::types::SpaceFollowSettings;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        /// The currency type.
+        type Currency: Currency<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -40,7 +50,14 @@ pub mod pallet {
         NotSpaceFollower,
         /// Not allowed to follow a hidden space.
         CannotFollowHiddenSpace,
+        /// Caller account is not the owner of that space.
+        NotSpaceOwner,
     }
+
+    #[pallet::storage]
+    #[pallet::getter(fn space_follow_settings)]
+    pub type FollowSettingsForSpace<T: Config> =
+        StorageMap<_, Blake2_128Concat, SpaceId, SpaceFollowSettings<BalanceOf<T>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn space_followers)]
@@ -66,7 +83,19 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(101_000_000 + T::DbWeight::get().reads_writes(5, 5))]
+        #[pallet::weight(100_000_000)]
+        pub fn set_space_follow_settings(origin: OriginFor<T>, space_id: SpaceId, settings: SpaceFollowSettings<BalanceOf<T>>) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            let space = Spaces::<T>::require_space(space_id)?;
+            ensure!(space.owner == caller, Error::<T>::NotSpaceOwner);
+
+            FollowSettingsForSpace::<T>::insert(space_id, settings);
+
+            Ok(())
+        }
+
+        #[pallet::weight(101_000_000 + T::DbWeight::get().reads_writes(6, 7))]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -82,6 +111,17 @@ pub mod pallet {
                 T::IsAccountBlocked::is_allowed_account(follower.clone(), space.id),
                 ModerationError::AccountIsBlocked
             );
+
+            let space_follow_settings = FollowSettingsForSpace::<T>::get(space_id);
+
+            if let Some(balance) = space_follow_settings.subscription {
+                let _ = T::Currency::transfer(
+                    &follower,
+                    &space.owner,
+                    balance,
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
 
             Self::add_space_follower(follower, space_id);
 

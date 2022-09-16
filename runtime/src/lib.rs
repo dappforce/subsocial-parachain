@@ -563,6 +563,7 @@ impl pallet_roles::Config for Runtime {
 
 impl pallet_space_follows::Config for Runtime {
 	type Event = Event;
+	type Currency = Balances;
 }
 
 parameter_types! {
