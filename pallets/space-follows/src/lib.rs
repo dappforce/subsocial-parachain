@@ -2,8 +2,10 @@
 
 pub use pallet::*;
 
-use frame_support::dispatch::DispatchResult;
-use frame_support::traits::{Currency, ExistenceRequirement};
+use frame_support::{
+    dispatch::DispatchResult,
+    traits::{Currency, ExistenceRequirement},
+};
 
 use pallet_spaces::Pallet as Spaces;
 
@@ -18,6 +20,7 @@ pub(crate) type BalanceOf<T> =
 pub mod pallet {
     use super::*;
 
+    use crate::types::SpaceFollowSettings;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
@@ -26,7 +29,6 @@ pub mod pallet {
         traits::{IsAccountBlocked, SpaceFollowsProvider},
         ModerationError, SpaceId,
     };
-    use crate::types::SpaceFollowSettings;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
@@ -84,7 +86,11 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(100_000_000)]
-        pub fn set_space_follow_settings(origin: OriginFor<T>, space_id: SpaceId, settings: SpaceFollowSettings<BalanceOf<T>>) -> DispatchResult {
+        pub fn set_space_follow_settings(
+            origin: OriginFor<T>,
+            space_id: SpaceId,
+            settings: SpaceFollowSettings<BalanceOf<T>>,
+        ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
 
             let space = Spaces::<T>::require_space(space_id)?;
