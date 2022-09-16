@@ -1,4 +1,3 @@
-use crate::tests_utils::*;
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_runtime::{
@@ -22,7 +21,6 @@ frame_support::construct_runtime!(
         Permissions: pallet_permissions,
         Roles: pallet_roles,
         SpaceFollows: pallet_space_follows,
-        Posts: pallet_posts,
         Spaces: pallet_spaces,
     }
 );
@@ -90,16 +88,6 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-parameter_types! {
-    pub const MaxCommentDepth: u32 = 10;
-}
-
-impl pallet_posts::Config for Test {
-    type Event = Event;
-    type MaxCommentDepth = MaxCommentDepth;
-    type IsPostBlocked = MockModeration;
-}
-
 impl pallet_permissions::Config for Test {
     type DefaultSpacePermissions = pallet_permissions::default_permissions::DefaultSpacePermissions;
 }
@@ -113,16 +101,16 @@ impl pallet_roles::Config for Test {
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
-    type IsAccountBlocked = MockModeration;
-    type IsContentBlocked = MockModeration;
+    type IsAccountBlocked = ();
+    type IsContentBlocked = ();
 }
 
 impl pallet_spaces::Config for Test {
     type Event = Event;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
-    type IsAccountBlocked = MockModeration;
-    type IsContentBlocked = MockModeration;
+    type IsAccountBlocked = ();
+    type IsContentBlocked = ();
     type MaxSpacesPerAccount = ConstU32<100>;
 }
 

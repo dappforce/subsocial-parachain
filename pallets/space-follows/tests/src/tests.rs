@@ -10,7 +10,7 @@ fn follow_space_should_work() {
 
         assert_eq!(SpaceFollows::spaces_followed_by_account(ACCOUNT2), vec![SPACE1]);
         assert_eq!(SpaceFollows::space_followers(SPACE1), vec![ACCOUNT2]);
-        assert_eq!(SpaceFollows::space_followed_by_account((ACCOUNT2, SPACE1)), true);
+        assert!(SpaceFollows::space_followed_by_account((ACCOUNT2, SPACE1)));
     });
 }
 
@@ -33,7 +33,7 @@ fn follow_space_should_fail_when_account_is_already_space_follower() {
 #[test]
 fn follow_space_should_fail_when_trying_to_follow_hidden_space() {
     ExtBuilder::build_with_space().execute_with(|| {
-        assert_ok!(_update_space(None, None, Some(space_update(None, None, Some(true)))));
+        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
 
         assert_noop!(_default_follow_space(), SpaceFollowsError::<Test>::CannotFollowHiddenSpace);
     });
@@ -47,7 +47,7 @@ fn unfollow_space_should_work() {
         assert_ok!(_default_unfollow_space());
 
         assert!(SpaceFollows::spaces_followed_by_account(ACCOUNT2).is_empty());
-        assert_eq!(SpaceFollows::space_followers(SPACE1), Vec::<AccountId>::new());
+        assert!(SpaceFollows::space_followers(SPACE1).is_empty());
     });
 }
 #[test]
