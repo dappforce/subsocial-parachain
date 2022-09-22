@@ -1,12 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::{Currency, ExistenceRequirement};
+
 pub use pallet::*;
-
-use frame_support::{
-    dispatch::DispatchResult,
-    traits::{Currency, ExistenceRequirement},
-};
-
 use pallet_spaces::Pallet as Spaces;
 
 // pub mod rpc;
@@ -18,17 +14,19 @@ pub(crate) type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-
-    use crate::types::SpaceFollowSettings;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
+
     use subsocial_support::{
         remove_from_vec,
         traits::{IsAccountBlocked, SpaceFollowsProvider},
         ModerationError, SpaceId,
     };
+
+    use crate::types::{SpaceFollowSettings, SpaceSubscriberInfo};
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
@@ -60,6 +58,17 @@ pub mod pallet {
     #[pallet::getter(fn space_follow_settings)]
     pub type FollowSettingsForSpace<T: Config> =
         StorageMap<_, Blake2_128Concat, SpaceId, SpaceFollowSettings<BalanceOf<T>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn space_subscriber)]
+    pub type SpaceSubscribers<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        SpaceId,
+        Twox64Concat,
+        T::AccountId,
+        SpaceSubscriberInfo<BalanceOf<T>, T::BlockNumber>,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn space_followers)]
@@ -119,14 +128,38 @@ pub mod pallet {
             );
 
             let space_follow_settings = FollowSettingsForSpace::<T>::get(space_id);
+            let maybe_subscription_info = SpaceSubscribers::<T>::get(space_id, follower.clone());
 
             if let Some(balance) = space_follow_settings.subscription {
-                let _ = T::Currency::transfer(
-                    &follower,
-                    &space.owner,
-                    balance,
-                    ExistenceRequirement::KeepAlive,
-                )?;
+                let current_block_number = <frame_system::Pallet<T>>::block_number();
+                let should_subscribe = matches!(
+                    maybe_subscription_info,
+                    Some(SpaceSubscriberInfo {
+                        subscribed_on,
+                        expires_on,
+                        ..
+                    })
+                    if subscribed_on >= current_block_number &&
+                    (expires_on.is_none() || matches!(expires_on, Some(block) if current_block_number < block))
+                );
+
+                if should_subscribe {
+                    let _ = T::Currency::transfer(
+                        &follower,
+                        &space.owner,
+                        balance,
+                        ExistenceRequirement::KeepAlive,
+                    )?;
+                    SpaceSubscribers::<T>::insert(
+                        space_id,
+                        follower.clone(),
+                        SpaceSubscriberInfo {
+                            subscribed_on: current_block_number,
+                            expires_on: None,
+                            subscription: balance,
+                        },
+                    );
+                }
             }
 
             Self::add_space_follower(follower, space_id);
