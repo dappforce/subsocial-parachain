@@ -147,6 +147,7 @@ impl pallet_roles::Config for TestRuntime {
 impl pallet_space_follows::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
+    type WeightInfo = pallet_space_follows::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl pallet_space_ownership::Config for TestRuntime {

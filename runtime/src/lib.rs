@@ -563,6 +563,7 @@ impl pallet_roles::Config for Runtime {
 
 impl pallet_space_follows::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_space_follows::weights::SubstrateWeight<Runtime>;
 	type Currency = Balances;
 }
 
@@ -676,6 +677,7 @@ mod benches {
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_space_follows, SpaceFollows]
 	);
 }
 

@@ -5,6 +5,10 @@ use frame_support::traits::{Currency, ExistenceRequirement};
 pub use pallet::*;
 use pallet_spaces::Pallet as Spaces;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 // pub mod rpc;
 
 pub mod types;
@@ -14,6 +18,9 @@ pub(crate) type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
+    use super::*;
+
+    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
@@ -26,8 +33,6 @@ pub mod pallet {
 
     use crate::types::{SpaceFollowSettings, SpaceSubscriberInfo};
 
-    use super::*;
-
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
         /// The overarching event type.
@@ -35,6 +40,8 @@ pub mod pallet {
 
         /// The currency type.
         type Currency: Currency<Self::AccountId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -110,7 +117,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(101_000_000 + T::DbWeight::get().reads_writes(6, 7))]
+        #[pallet::weight(<T as Config>::WeightInfo::unfollow_space())]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -167,7 +174,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(67_000_000 + T::DbWeight::get().reads_writes(5, 5))]
+        #[pallet::weight(<T as Config>::WeightInfo::unfollow_space())]
         pub fn unfollow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 

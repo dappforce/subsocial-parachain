@@ -176,6 +176,7 @@ runtime-benchmarks = [
 	"pallet-utility/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
+	"pallet-space-follows/runtime-benchmarks",
 ]
 
 try-runtime = [
