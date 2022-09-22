@@ -3,8 +3,9 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
+use crate::types::SpaceFollowSettings;
 use frame_benchmarking::{account, benchmarks};
-use frame_support::{dispatch::DispatchError, ensure};
+use frame_support::{dispatch::DispatchError, ensure, sp_runtime::traits::Bounded};
 use frame_system::RawOrigin;
 use pallet_spaces::types::Space;
 use subsocial_support::Content;
@@ -24,6 +25,18 @@ fn create_dummy_space<T: Config>(
 }
 
 benchmarks! {
+
+    set_space_follow_settings {
+        let space_owner_origin = RawOrigin::Signed(account::<T::AccountId>("SpaceOwner", 2, 0));
+        let space = create_dummy_space::<T>(space_owner_origin.clone())?;
+        let settings = SpaceFollowSettings::<BalanceOf<T>> {
+            subscription: Some(BalanceOf::<T>::max_value()),
+        };
+
+    }: _(space_owner_origin, space.id, settings.clone())
+    verify {
+        ensure!(FollowSettingsForSpace::<T>::get(space.id) == settings, "SpaceSettings didn't update");
+    }
 
     follow_space {
         let space_owner_origin = RawOrigin::Signed(account::<T::AccountId>("SpaceOwner", 2, 0));

@@ -101,7 +101,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(100_000_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_space_follow_settings())]
         pub fn set_space_follow_settings(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -151,7 +151,7 @@ pub mod pallet {
                 );
 
                 if should_subscribe {
-                    let _ = T::Currency::transfer(
+                    T::Currency::transfer(
                         &follower,
                         &space.owner,
                         balance,
