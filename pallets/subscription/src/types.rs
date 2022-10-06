@@ -6,6 +6,9 @@ pub struct SpaceSubscriptionSettings<Balance, RoleId> {
     /// The balance required to subscribe to a space.
     pub subscription: Balance,
 
+    /// Determines if subscription for a space s disabled.
+    pub disabled: bool,
+
     /// The id of the role that will be granted for space subscriber.
     pub role_id: RoleId,
 }
@@ -31,6 +34,6 @@ pub trait SubscriptionSpacesInterface<AccountId, SpaceId> {
 
 pub trait SubscriptionRolesInterface<RoleId, SpaceId, AccountId> {
     fn does_role_exist_in_space(role_id: RoleId, space_id: SpaceId) -> bool;
-    
+
     fn grant_role(account_id: AccountId, role_id: RoleId);
 }

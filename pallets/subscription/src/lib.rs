@@ -53,16 +53,16 @@ pub mod pallet {
         NotSpaceOwner,
         /// Role cannot be found in the space.
         RoleNotInSpace,
-        /// User have already subscribed.
+        /// User have already subscribed to this space.
         AlreadySubscribed,
-        /// Space cannot be subscribed to.
-        CannotSubscribeToSpace,
-        /// Space Id given is invalid.
-        InvalidSpaceId,
+        /// Cannot subscribe to the space that does not have subscription settings.
+        SubscriptionNotEnabled,
+        /// Space was not found by id.
+        SpaceNotFound,
     }
 
     #[pallet::storage]
-    pub type SubscriptionSettingsForSpace<T: Config> = StorageMap<
+    pub type SubscriptionSettingsBySpace<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::SpaceId,
@@ -82,33 +82,53 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceSubscriptionSettingsChanged { space_id: T::SpaceId },
-        UserSubscribed { space_id: T::SpaceId, granted_role: T::RoleId, subscription: BalanceOf<T> },
+        SubscriptionSettingsChanged {
+            /// Space owner
+            account: T::AccountId,
+            space: T::SpaceId,
+        },
+        // TODO Add 'account' field (space owner in this case)
+        UserSubscribed {
+            /// Subscriber
+            account: T::AccountId,
+            space: T::SpaceId,
+            granted_role: T::RoleId,
+            price: BalanceOf<T>,
+        },
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        // // TODO think
+        // // 1. Create role -> Enable subscription.
+        // // ... close the tab.
+        // // 2. Set up subsc. for the 1-st time.
+        // pub fn create_subscription_settings() {
+        //     // Create a role
+        //     // Set up a subscription settings for the first time.
+        // }
+
         #[pallet::weight(100_000_000)]
-        pub fn set_space_subscription_settings(
+        pub fn update_subscription_settings(
             origin: OriginFor<T>,
             space_id: T::SpaceId,
-            subscription_settings: SpaceSubscriptionSettings<BalanceOf<T>, T::RoleId>,
+            settings: SpaceSubscriptionSettings<BalanceOf<T>, T::RoleId>,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            ensure!(T::SpacesInterface::is_space_owner(owner, space_id), Error::<T>::NotSpaceOwner);
+            ensure!(T::SpacesInterface::is_space_owner(owner.clone(), space_id), Error::<T>::NotSpaceOwner);
 
             ensure!(
-                T::RolesInterface::does_role_exist_in_space(
-                    subscription_settings.role_id,
-                    space_id
-                ),
+                T::RolesInterface::does_role_exist_in_space(settings.role_id, space_id),
                 Error::<T>::RoleNotInSpace,
             );
 
-            SubscriptionSettingsForSpace::<T>::insert(space_id, subscription_settings);
+            SubscriptionSettingsBySpace::<T>::insert(space_id, settings);
 
-            Self::deposit_event(Event::SpaceSubscriptionSettingsChanged { space_id });
+            Self::deposit_event(Event::SubscriptionSettingsChanged {
+                account: owner,
+                space: space_id,
+            });
 
             Ok(())
         }
@@ -122,13 +142,13 @@ pub mod pallet {
                 Error::<T>::AlreadySubscribed,
             );
 
-            let settings = match SubscriptionSettingsForSpace::<T>::get(space_id) {
-                None => fail!(Error::<T>::CannotSubscribeToSpace),
-                Some(settings) => settings,
+            let settings = match SubscriptionSettingsBySpace::<T>::get(space_id) {
+                Some(settings) if !settings.disabled => settings,
+                _ => fail!(Error::<T>::SubscriptionNotEnabled),
             };
 
             let space_owner =
-                T::SpacesInterface::get_space_owner(space_id).ok_or(Error::<T>::InvalidSpaceId)?;
+                T::SpacesInterface::get_space_owner(space_id).ok_or(Error::<T>::SpaceNotFound)?;
 
             T::Currency::transfer(
                 &subscriber,
@@ -150,9 +170,10 @@ pub mod pallet {
             );
 
             Self::deposit_event(Event::UserSubscribed {
-                space_id,
+                account: subscriber,
+                space: space_id,
                 granted_role: settings.role_id,
-                subscription: settings.subscription,
+                price: settings.subscription,
             });
 
             Ok(())
