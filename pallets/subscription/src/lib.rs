@@ -55,6 +55,8 @@ pub mod pallet {
         RoleNotInSpace,
         /// User have already subscribed to this space.
         AlreadySubscribed,
+        /// User have already unsubscribed or have no subscription to this space.
+        AlreadyNotSubscribed,
         /// Cannot subscribe to the space that does not have subscription settings.
         SubscriptionNotEnabled,
         /// Space was not found by id.
@@ -94,6 +96,10 @@ pub mod pallet {
             granted_role: T::RoleId,
             price: BalanceOf<T>,
         },
+        UserUnSubscribed {
+            account: T::AccountId,
+            space: T::SpaceId,
+        },
     }
 
     #[pallet::call]
@@ -115,7 +121,10 @@ pub mod pallet {
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            ensure!(T::SpacesInterface::is_space_owner(owner.clone(), space_id), Error::<T>::NotSpaceOwner);
+            ensure!(
+                T::SpacesInterface::is_space_owner(owner.clone(), space_id),
+                Error::<T>::NotSpaceOwner
+            );
 
             ensure!(
                 T::RolesInterface::does_role_exist_in_space(settings.role_id, space_id),
@@ -136,10 +145,9 @@ pub mod pallet {
         pub fn subscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 
-            ensure!(
-                SpaceSubscribers::<T>::get(space_id, subscriber.clone()) == None,
-                Error::<T>::AlreadySubscribed,
-            );
+            if matches!(SpaceSubscribers::<T>::get(space_id, subscriber.clone()), Some(info) if !info.unsubscribed) {
+                fail!(Error::<T>::AlreadySubscribed);
+            }
 
             let settings = match SubscriptionSettingsBySpace::<T>::get(space_id) {
                 Some(settings) if !settings.disabled => settings,
@@ -165,6 +173,7 @@ pub mod pallet {
                     subscribed_on: <frame_system::Pallet<T>>::block_number(),
                     subscription: settings.subscription,
                     granted_role_id: settings.role_id,
+                    unsubscribed: false,
                 },
             );
 
@@ -174,6 +183,25 @@ pub mod pallet {
                 granted_role: settings.role_id,
                 price: settings.subscription,
             });
+
+            Ok(())
+        }
+
+        #[pallet::weight(100_000_000)]
+        pub fn unsubscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
+            let subscriber = ensure_signed(origin)?;
+
+            let mut subscriber_info = match SpaceSubscribers::<T>::get(space_id, subscriber.clone())
+            {
+                Some(info) if !info.unsubscribed => info,
+                _ => fail!(Error::<T>::AlreadyNotSubscribed),
+            };
+
+            subscriber_info.unsubscribed = true;
+
+            SpaceSubscribers::<T>::insert(space_id, subscriber.clone(), subscriber_info);
+
+            Self::deposit_event(Event::UserUnSubscribed { account: subscriber, space: space_id });
 
             Ok(())
         }

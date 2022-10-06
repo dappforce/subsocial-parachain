@@ -24,6 +24,9 @@ pub struct SpaceSubscriberInfo<Balance, RoleId, BlockNumber> {
 
     /// The if of the granted role due to subscription.
     pub granted_role_id: RoleId,
+
+    /// Determines if the user has marked themself as unsubscribed.
+    pub unsubscribed: bool,
 }
 
 pub trait SubscriptionSpacesInterface<AccountId, SpaceId> {
