@@ -2,7 +2,7 @@ use frame_support::pallet_prelude::*;
 
 /// Subscription settings for a space
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct SpaceSubscriptionSettings<Balance, RoleId> {
+pub struct SubscriptionSettings<Balance, RoleId> {
     /// The balance required to subscribe to a space.
     pub subscription: Balance,
 
@@ -15,7 +15,7 @@ pub struct SpaceSubscriptionSettings<Balance, RoleId> {
 
 /// Information about space subscriber.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct SpaceSubscriberInfo<Balance, RoleId, BlockNumber> {
+pub struct SubscriberInfo<Balance, RoleId, BlockNumber> {
     /// The block number at which the subscriptions became active.
     pub subscribed_on: BlockNumber,
 
