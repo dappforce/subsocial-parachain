@@ -87,7 +87,6 @@ pub mod pallet {
             account: T::AccountId,
             space: T::SpaceId,
         },
-        // TODO Add 'account' field (space owner in this case)
         UserSubscribed {
             /// Subscriber
             account: T::AccountId,
