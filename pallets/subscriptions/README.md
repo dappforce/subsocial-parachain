@@ -1,4 +1,4 @@
-# Subscription Pallet
+# Subscriptions Pallet
 
 Subscribing to a space is something similar to following a space, except subscribers will be granted a role for the space. This role can have any set of permissions space owner chooses to allow.
 

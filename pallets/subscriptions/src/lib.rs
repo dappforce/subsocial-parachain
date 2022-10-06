@@ -55,9 +55,9 @@ pub mod pallet {
         RoleNotInSpace,
         /// User have already subscribed to this space.
         AlreadySubscribed,
-        /// User have already unsubscribed or have no subscription to this space.
+        /// User have already unsubscribed or have no subscriptions to this space.
         AlreadyNotSubscribed,
-        /// Cannot subscribe to the space that does not have subscription settings.
+        /// Cannot subscribe to the space that does not have subscriptions settings.
         SubscriptionNotEnabled,
         /// Space was not found by id.
         SpaceNotFound,
@@ -105,12 +105,12 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // // TODO think
-        // // 1. Create role -> Enable subscription.
+        // // 1. Create role -> Enable subscriptions.
         // // ... close the tab.
         // // 2. Set up subsc. for the 1-st time.
         // pub fn create_subscription_settings() {
         //     // Create a role
-        //     // Set up a subscription settings for the first time.
+        //     // Set up a subscriptions settings for the first time.
         // }
 
         #[pallet::weight(100_000_000)]
