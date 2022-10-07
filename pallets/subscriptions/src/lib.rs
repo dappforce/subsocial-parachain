@@ -68,7 +68,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         T::SpaceId,
-        SpaceSubscriptionSettings<BalanceOf<T>, T::RoleId>,
+        SubscriptionSettings<BalanceOf<T>, T::RoleId>,
     >;
 
     #[pallet::storage]
@@ -78,7 +78,7 @@ pub mod pallet {
         T::SpaceId,
         Twox64Concat,
         T::AccountId,
-        SpaceSubscriberInfo<BalanceOf<T>, T::RoleId, T::BlockNumber>,
+        SubscriberInfo<BalanceOf<T>, T::RoleId, T::BlockNumber>,
     >;
 
     #[pallet::event]
@@ -117,7 +117,7 @@ pub mod pallet {
         pub fn update_subscription_settings(
             origin: OriginFor<T>,
             space_id: T::SpaceId,
-            settings: SpaceSubscriptionSettings<BalanceOf<T>, T::RoleId>,
+            settings: SubscriptionSettings<BalanceOf<T>, T::RoleId>,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
@@ -169,7 +169,7 @@ pub mod pallet {
             SpaceSubscribers::<T>::insert(
                 space_id,
                 subscriber.clone(),
-                SpaceSubscriberInfo {
+                SubscriberInfo {
                     subscribed_on: <frame_system::Pallet<T>>::block_number(),
                     subscription: settings.subscription,
                     granted_role_id: settings.role_id,
