@@ -114,7 +114,7 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             ensure!(
-                T::SpacesInterface::get_space_owner(space_id)? == owner.clone(),
+                T::SpacesInterface::get_space_owner(space_id)? == owner,
                 Error::<T>::NotSpaceOwner
             );
 

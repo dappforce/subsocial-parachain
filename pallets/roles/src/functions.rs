@@ -122,7 +122,7 @@ impl<T: Config> Pallet<T> {
         let role = Self::require_role(role_id)?;
 
         if let Some(who) = manager.clone() {
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
+            Self::ensure_role_manager(who, role.space_id)?;
         }
 
         for user in users_set.iter() {

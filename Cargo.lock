@@ -10832,6 +10832,7 @@ dependencies = [
  "pallet-space-follows",
  "pallet-space-ownership",
  "pallet-spaces",
+ "pallet-subscriptions",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
