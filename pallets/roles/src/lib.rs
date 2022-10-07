@@ -17,6 +17,7 @@ use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
+pub use pallet::*;
 use pallet_permissions::{
     Pallet as Permissions, PermissionChecker, SpacePermission, SpacePermissionSet,
 };
@@ -25,12 +26,11 @@ use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, ModerationError, SpaceId, User, WhoAndWhenOf,
 };
+pub use types::*;
 
-pub use pallet::*;
 pub mod functions;
 
 pub mod types;
-pub use types::*;
 // pub mod rpc;
 
 #[cfg(test)]
@@ -41,11 +41,13 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
     use pallet_permissions::SpacePermissionsInfoOf;
     use subsocial_support::{remove_from_vec, WhoAndWhen};
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
@@ -219,9 +221,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let has_updates = update.disabled.is_some() ||
-                update.content.is_some() ||
-                update.permissions.is_some();
+            let has_updates = update.disabled.is_some()
+                || update.content.is_some()
+                || update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesProvided);
 
@@ -313,31 +315,9 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
-            let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
 
-            let role = Self::require_role(role_id)?;
+            Pallet::<T>::do_grant_role(Some(who), role_id, users)?;
 
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            for user in users_set.iter() {
-                if !Self::users_by_role_id(role_id).contains(user) {
-                    <UsersByRoleId<T>>::mutate(role_id, |users| {
-                        users.push(user.clone());
-                    });
-                }
-                if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id)
-                {
-                    <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
-                        roles.push(role_id);
-                    })
-                }
-            }
-
-            Self::deposit_event(Event::RoleGranted {
-                account: who,
-                role_id,
-                users: users_set.iter().cloned().collect(),
-            });
             Ok(())
         }
 

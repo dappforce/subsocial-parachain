@@ -28,15 +28,3 @@ pub struct SubscriberInfo<Balance, RoleId, BlockNumber> {
     /// Determines if the user has marked themself as unsubscribed.
     pub unsubscribed: bool,
 }
-
-pub trait SubscriptionSpacesInterface<AccountId, SpaceId> {
-    fn is_space_owner(owner: AccountId, space_id: SpaceId) -> bool;
-
-    fn get_space_owner(space_id: SpaceId) -> Option<AccountId>;
-}
-
-pub trait SubscriptionRolesInterface<RoleId, SpaceId, AccountId> {
-    fn does_role_exist_in_space(role_id: RoleId, space_id: SpaceId) -> bool;
-
-    fn grant_role(account_id: AccountId, role_id: RoleId);
-}

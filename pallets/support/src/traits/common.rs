@@ -24,6 +24,12 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId) -> DispatchResult;
 }
 
+pub trait RolesInterface<RoleId, SpaceId, AccountId> {
+    fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError>;
+
+    fn grant_role(account_id: AccountId, role_id: RoleId) -> DispatchResult;
+}
+
 pub trait SpacesInterface<AccountId, SpaceId> {
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
 

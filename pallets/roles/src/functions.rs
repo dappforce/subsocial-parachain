@@ -1,7 +1,9 @@
-use super::*;
-
 use frame_support::dispatch::DispatchError;
+
 use pallet_permissions::SpacePermissionsContext;
+use subsocial_support::traits::RolesInterface;
+
+use super::*;
 
 impl<T: Config> Pallet<T> {
     /// Check that there is a `Role` with such `role_id` in the storage
@@ -91,7 +93,7 @@ impl<T: Config> Pallet<T> {
         for role_id in role_ids {
             if let Some(role) = Self::role_by_id(role_id) {
                 if role.disabled {
-                    continue
+                    continue;
                 }
 
                 let mut is_expired = false;
@@ -102,12 +104,49 @@ impl<T: Config> Pallet<T> {
                 }
 
                 if !is_expired && role.permissions.contains(&permission) {
-                    return Ok(())
+                    return Ok(());
                 }
             }
         }
 
         Err(error)
+    }
+
+    pub fn do_grant_role(
+        manager: Option<T::AccountId>,
+        role_id: RoleId,
+        users: Vec<User<T::AccountId>>,
+    ) -> DispatchResult {
+        let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
+
+        let role = Self::require_role(role_id)?;
+
+        if let Some(who) = manager.clone() {
+            Self::ensure_role_manager(who.clone(), role.space_id)?;
+        }
+
+        for user in users_set.iter() {
+            if !Self::users_by_role_id(role_id).contains(user) {
+                <UsersByRoleId<T>>::mutate(role_id, |users| {
+                    users.push(user.clone());
+                });
+            }
+            if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id) {
+                <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
+                    roles.push(role_id);
+                })
+            }
+        }
+
+        Self::deposit_event(Event::RoleGranted {
+            account: manager.unwrap_or_else(|| {
+                T::AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap()
+            }),
+            role_id,
+            users: users_set.iter().cloned().collect(),
+        });
+
+        Ok(())
     }
 }
 
@@ -141,9 +180,9 @@ impl<T: Config> Role<T> {
 
     pub fn set_disabled(&mut self, disable: bool) -> DispatchResult {
         if self.disabled && disable {
-            return Err(Error::<T>::RoleAlreadyDisabled.into())
+            return Err(Error::<T>::RoleAlreadyDisabled.into());
         } else if !self.disabled && !disable {
-            return Err(Error::<T>::RoleAlreadyEnabled.into())
+            return Err(Error::<T>::RoleAlreadyEnabled.into());
         }
 
         self.disabled = disable;
@@ -183,5 +222,16 @@ impl<T: Config> PermissionChecker for Pallet<T> {
         error: DispatchError,
     ) -> DispatchResult {
         Self::ensure_user_has_space_permission(user, ctx, permission, error)
+    }
+}
+
+impl<T: Config> RolesInterface<RoleId, SpaceId, T::AccountId> for Pallet<T> {
+    fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError> {
+        let role = Pallet::<T>::require_role(role_id)?;
+        Ok(role.space_id)
+    }
+
+    fn grant_role(account_id: T::AccountId, role_id: RoleId) -> DispatchResult {
+        Pallet::<T>::do_grant_role(None, role_id, vec![User::Account(account_id)])
     }
 }

@@ -14,6 +14,8 @@ pub mod pallet {
     use frame_support::traits::{Currency, ExistenceRequirement};
     use frame_system::pallet_prelude::*;
 
+    use subsocial_support::traits::{RolesInterface, SpacesInterface};
+
     use crate::types::*;
 
     use super::*;
@@ -32,15 +34,11 @@ pub mod pallet {
 
         type SpaceId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug;
 
-        type SpacesInterface: SubscriptionSpacesInterface<Self::AccountId, Self::SpaceId>;
+        type SpacesInterface: SpacesInterface<Self::AccountId, Self::SpaceId>;
 
         type RoleId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug;
 
-        type RolesInterface: SubscriptionRolesInterface<
-            Self::RoleId,
-            Self::SpaceId,
-            Self::AccountId,
-        >;
+        type RolesInterface: RolesInterface<Self::RoleId, Self::SpaceId, Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -59,17 +57,11 @@ pub mod pallet {
         AlreadyNotSubscribed,
         /// Cannot subscribe to the space that does not have subscriptions settings.
         SubscriptionNotEnabled,
-        /// Space was not found by id.
-        SpaceNotFound,
     }
 
     #[pallet::storage]
-    pub type SubscriptionSettingsBySpace<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::SpaceId,
-        SubscriptionSettings<BalanceOf<T>, T::RoleId>,
-    >;
+    pub type SubscriptionSettingsBySpace<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::SpaceId, SubscriptionSettings<BalanceOf<T>, T::RoleId>>;
 
     #[pallet::storage]
     pub type SpaceSubscribers<T: Config> = StorageDoubleMap<
@@ -122,12 +114,12 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             ensure!(
-                T::SpacesInterface::is_space_owner(owner.clone(), space_id),
+                T::SpacesInterface::get_space_owner(space_id)? == owner.clone(),
                 Error::<T>::NotSpaceOwner
             );
 
             ensure!(
-                T::RolesInterface::does_role_exist_in_space(settings.role_id, space_id),
+                T::RolesInterface::get_role_space(settings.role_id)? == space_id,
                 Error::<T>::RoleNotInSpace,
             );
 
@@ -145,7 +137,8 @@ pub mod pallet {
         pub fn subscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 
-            if matches!(SpaceSubscribers::<T>::get(space_id, subscriber.clone()), Some(info) if !info.unsubscribed) {
+            if matches!(SpaceSubscribers::<T>::get(space_id, subscriber.clone()), Some(info) if !info.unsubscribed)
+            {
                 fail!(Error::<T>::AlreadySubscribed);
             }
 
@@ -154,8 +147,7 @@ pub mod pallet {
                 _ => fail!(Error::<T>::SubscriptionNotEnabled),
             };
 
-            let space_owner =
-                T::SpacesInterface::get_space_owner(space_id).ok_or(Error::<T>::SpaceNotFound)?;
+            let space_owner = T::SpacesInterface::get_space_owner(space_id)?;
 
             T::Currency::transfer(
                 &subscriber,
@@ -164,7 +156,7 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )?;
 
-            T::RolesInterface::grant_role(subscriber.clone(), settings.role_id);
+            T::RolesInterface::grant_role(subscriber.clone(), settings.role_id)?;
 
             SpaceSubscribers::<T>::insert(
                 space_id,
