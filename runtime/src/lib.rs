@@ -13,6 +13,7 @@ use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
+pub use frame_support::traits::Get;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -26,14 +27,15 @@ use frame_support::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
-	PalletId,
 };
+use frame_support::traits::{ConstU128, ConstU32};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
+pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber};
+pub use pallet_parachain_staking::InflationInfo;
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -45,7 +47,6 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
-use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
@@ -107,6 +108,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	pallet_parachain_staking::migrations::InitStakingMigration<Runtime>,
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -186,6 +188,8 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+pub const MONTHS: BlockNumber = DAYS * 30;
+pub const YEARS: BlockNumber = MONTHS * 12;
 
 // Unit = the base number of indivisible units for balances
 pub const UNIT: Balance = 10_000_000_000;
@@ -334,7 +338,84 @@ impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 	type UncleGenerations = UncleGenerations;
 	type FilterUncle = ();
-	type EventHandler = (CollatorSelection,);
+	type EventHandler = ParachainStaking;
+}
+
+parameter_types! {
+	/// Default fixed percent a collator takes off the top of due rewards
+	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+	/// Default percent of inflation set aside for parachain bond every round
+	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
+	pub const MigratedCollatorsStake: Balance = 1000 * UNIT;
+	pub CollatorsToMigrate: Vec<AccountId> = Session::validators();
+	pub InflationInfoOnMigration: InflationInfo<Balance> = subsocial_inflation_config();
+}
+
+/// The inflation config set in chain spec.
+pub fn subsocial_inflation_config() -> InflationInfo<Balance> {
+	use pallet_parachain_staking::Range;
+	let annual_inflation = Range {
+		min: Perbill::from_percent(4),
+		ideal: Perbill::from_percent(5),
+		max: Perbill::from_percent(5),
+	};
+	let expectations = Range {
+		min: 100_000 * UNIT,
+		ideal: 200_000 * UNIT,
+		max: 500_000 * UNIT,
+	};
+	InflationInfo::<Balance>::new(
+		get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+		YEARS,
+		annual_inflation,
+		expectations,
+	)
+}
+
+impl pallet_parachain_staking::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+	/// Minimum round length is 2 minutes (10 * 12 second block times)
+	type MinBlocksPerRound = ConstU32<10>;
+	/// Blocks per round
+	type DefaultBlocksPerRound = ConstU32<{ 2 * HOURS }>;
+	/// Rounds before the collator leaving the candidates request can be executed
+	type LeaveCandidatesDelay = ConstU32<2>;
+	/// Rounds before the candidate bond increase/decrease can be executed
+	type CandidateBondLessDelay = ConstU32<2>;
+	/// Rounds before the delegator exit can be executed
+	type LeaveDelegatorsDelay = ConstU32<2>;
+	/// Rounds before the delegator revocation can be executed
+	type RevokeDelegationDelay = ConstU32<2>;
+	/// Rounds before the delegator bond increase/decrease can be executed
+	type DelegationBondLessDelay = ConstU32<2>;
+	/// Rounds before the reward is paid
+	type RewardPaymentDelay = ConstU32<2>;
+	/// Minimum collators selected per round, default at genesis and minimum forever after
+	type MinSelectedCandidates = ConstU32<8>;
+	/// Maximum top delegations per candidate
+	type MaxTopDelegationsPerCandidate = ConstU32<300>;
+	/// Maximum bottom delegations per candidate
+	type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+	/// Maximum delegations per delegator
+	type MaxDelegationsPerDelegator = ConstU32<100>;
+	type DefaultCollatorCommission = DefaultCollatorCommission;
+	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+	/// Minimum stake required to become a collator
+	type MinCollatorStk = ConstU128<{ 1000 * UNIT }>;
+	/// Minimum stake required to be reserved to be a candidate
+	type MinCandidateStk = ConstU128<{ 500 * UNIT }>;
+	/// Minimum stake required to be reserved to be a delegator
+	type MinDelegation = ConstU128<{ 100 * UNIT }>;
+	/// Minimum stake required to be reserved to be a delegator
+	type MinDelegatorStk = ConstU128<{ 50 * UNIT }>;
+	type CollatorsToMigrate = CollatorsToMigrate;
+	type MigratedCollatorsStake = MigratedCollatorsStake;
+	type InflationInfoOnMigration = InflationInfoOnMigration;
+	type OnCollatorPayout = ();
+	type OnNewRound = ();
+	type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -409,58 +490,28 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
-parameter_types! {
-	pub const Period: u32 = 6 * HOURS;
-	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
-}
-
 impl pallet_session::Config for Runtime {
 	type Event = Event;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-	type SessionManager = CollatorSelection;
+	type ValidatorIdOf = ConvertInto;
+	type ShouldEndSession = ParachainStaking;
+	type NextSessionRotation = ParachainStaking;
+	type SessionManager = ParachainStaking;
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const MaxAuthorities: u32 = 100_000;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = MaxAuthorities;
-}
-
-parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
-	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
-}
-
-// We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
-
-impl pallet_collator_selection::Config for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-	type ValidatorRegistration = Session;
-	type WeightInfo = ();
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -625,10 +676,10 @@ construct_runtime!(
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+		ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 25,
 
 		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 26,
 		Utility: pallet_utility = 28,
@@ -671,7 +722,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_vesting, Vesting]
 		[pallet_utility, Utility]
-		[pallet_collator_selection, CollatorSelection]
+		[pallet_parachain_staking, ParachainStaking]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
@@ -877,4 +928,12 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
+}
+
+// Shorthand for a Get field of a pallet Config.
+#[macro_export]
+macro_rules! get {
+	($pallet:ident, $name:ident, $type:ty) => {
+		<<$crate::Runtime as $pallet::Config>::$name as $crate::Get<$type>>::get()
+	};
 }

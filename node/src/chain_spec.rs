@@ -7,7 +7,7 @@ use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
 use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
 
-use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
+use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT, subsocial_inflation_config};
 use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -84,6 +84,14 @@ pub fn development_config() -> ChainSpec {
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Charlie"),
+						get_collator_keys_from_seed("Charlie"),
 					)
 				],
 				vec![
@@ -244,30 +252,33 @@ pub fn staging_testnet_config() -> ChainSpec {
 }
 
 fn parachain_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<(AccountId, Balance)>,
-	id: ParaId,
-	root_key: AccountId,
+    initial_authorities: Vec<(AccountId, AuraId)>,
+    endowed_accounts: Vec<(AccountId, Balance)>,
+    id: ParaId,
+    root_key: AccountId,
 ) -> subsocial_parachain_runtime::GenesisConfig {
-	subsocial_parachain_runtime::GenesisConfig {
-		system: subsocial_parachain_runtime::SystemConfig {
-			code: subsocial_parachain_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-		},
-		balances: subsocial_parachain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
-				(account, balance.saturating_mul(UNIT))
-			}).collect(),
-		},
-		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: subsocial_parachain_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
+    subsocial_parachain_runtime::GenesisConfig {
+        system: subsocial_parachain_runtime::SystemConfig {
+            code: subsocial_parachain_runtime::WASM_BINARY
+                .expect("WASM binary was not build, please build it!")
+                .to_vec(),
+        },
+        balances: subsocial_parachain_runtime::BalancesConfig {
+            balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
+                (account, balance.saturating_mul(UNIT))
+            }).collect(),
+        },
+        parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+        parachain_staking: subsocial_parachain_runtime::ParachainStakingConfig {
+            candidates: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), 2000 * UNIT))
+				.collect(),
+            delegations: vec![],
+            inflation_config: subsocial_inflation_config(),
+        },
 		session: subsocial_parachain_runtime::SessionConfig {
-			keys: invulnerables
+			keys: initial_authorities
 				.iter()
 				.cloned()
 				.map(|(acc, aura)| {
