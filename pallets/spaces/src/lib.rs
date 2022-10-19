@@ -21,22 +21,17 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// pub mod rpc;
-pub mod types;
-
 pub use pallet::*;
-
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
+// pub mod rpc;
+pub mod types;
+
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use types::*;
-
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-
     use sp_std::vec::Vec;
 
     use pallet_permissions::{
@@ -44,9 +39,12 @@ pub mod pallet {
     };
     use subsocial_support::{
         ensure_content_is_valid, remove_from_bounded_vec,
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
+    use types::*;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
@@ -371,7 +369,7 @@ pub mod pallet {
                     f(space);
                     *space_opt = Some(space.clone());
 
-                    return Ok(space.clone())
+                    return Ok(space.clone());
                 }
 
                 Err(Error::<T>::SpaceNotFound.into())
@@ -398,6 +396,13 @@ pub mod pallet {
             let space = Pallet::<T>::require_space(id)?;
             ensure!(space.is_owner(account), Error::<T>::NotASpaceOwner);
             Ok(())
+        }
+    }
+
+    impl<T: Config> SpacesInterface<T::AccountId, SpaceId> for Pallet<T> {
+        fn get_space_owner(space_id: SpaceId) -> Result<T::AccountId, DispatchError> {
+            let space = Pallet::<T>::require_space(space_id)?;
+            Ok(space.owner)
         }
     }
 }
