@@ -36,7 +36,7 @@ pub(crate) fn space_update(
     }
 }
 
-pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
+pub(crate) fn _create_default_space() -> DispatchResult {
     _create_space(None, None, None)
 }
 
@@ -44,7 +44,7 @@ pub(crate) fn _create_space(
     origin: Option<Origin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
-) -> DispatchResultWithPostInfo {
+) -> DispatchResult {
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
@@ -52,7 +52,7 @@ pub(crate) fn _create_space(
     )
 }
 
-pub(crate) fn _create_space_with_content(content: Content) -> DispatchResultWithPostInfo {
+pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
     _create_space(None, Some(content), None)
 }
 
