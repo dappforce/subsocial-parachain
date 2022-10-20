@@ -644,6 +644,7 @@ impl pallet_reactions::Config for Runtime {
 impl pallet_profiles::Config for Runtime {
 	type Event = Event;
 	type SpacePermissionsProvider = Spaces;
+	type SpaceInterface = Spaces;
 }
 
 parameter_types! {

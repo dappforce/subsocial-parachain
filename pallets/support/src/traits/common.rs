@@ -2,7 +2,7 @@
 
 use frame_support::dispatch::{DispatchError, DispatchResult};
 
-use crate::SpaceId;
+use crate::{Content, SpaceId};
 
 pub trait SpacePermissionsProvider<AccountId, SpacePermissionsInfo> {
     fn space_permissions_info(id: SpaceId) -> Result<SpacePermissionsInfo, DispatchError>;
@@ -26,4 +26,6 @@ pub trait ProfileManager<AccountId> {
 
 pub trait SpacesInterface<AccountId, SpaceId> {
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
+
+    fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
