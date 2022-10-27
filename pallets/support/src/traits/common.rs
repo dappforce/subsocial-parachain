@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::dispatch::{DispatchError, DispatchResult};
+use sp_std::vec::Vec;
 
 use crate::{Content, SpaceId};
 
@@ -24,10 +25,18 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId) -> DispatchResult;
 }
 
-pub trait RolesInterface<RoleId, SpaceId, AccountId> {
+pub trait RolesInterface<RoleId, SpaceId, AccountId, SpacePermission, BlockNumber> {
     fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError>;
 
     fn grant_role(account_id: AccountId, role_id: RoleId) -> DispatchResult;
+
+    fn create_role(
+        space_owner: &AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
+    ) -> Result<RoleId, DispatchError>;
 }
 
 pub trait SpacesInterface<AccountId, SpaceId> {

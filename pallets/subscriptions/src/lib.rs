@@ -2,18 +2,25 @@
 
 pub use pallet::*;
 
+pub use crate::weights::WeightInfo;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 mod types;
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use std::fmt::Debug;
-
     use codec::EncodeLike;
-    use frame_support::fail;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{Currency, ExistenceRequirement};
+    use frame_support::{
+        fail,
+        pallet_prelude::*,
+        traits::{Currency, ExistenceRequirement},
+    };
     use frame_system::pallet_prelude::*;
+    use sp_std::fmt::Debug;
 
+    use pallet_permissions::SpacePermission;
     use subsocial_support::traits::{RolesInterface, SpacesInterface};
 
     use crate::types::*;
@@ -32,13 +39,22 @@ pub mod pallet {
         /// The currency trait.
         type Currency: Currency<Self::AccountId>;
 
-        type SpaceId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug;
+        type SpaceId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug + Default;
 
         type SpacesInterface: SpacesInterface<Self::AccountId, Self::SpaceId>;
 
-        type RoleId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug;
+        type RoleId: MaxEncodedLen + Copy + Decode + TypeInfo + EncodeLike + Eq + Debug + Default;
 
-        type RolesInterface: RolesInterface<Self::RoleId, Self::SpaceId, Self::AccountId>;
+        type RolesInterface: RolesInterface<
+            Self::RoleId,
+            Self::SpaceId,
+            Self::AccountId,
+            SpacePermission,
+            Self::BlockNumber,
+        >;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -105,7 +121,7 @@ pub mod pallet {
         //     // Set up a subscriptions settings for the first time.
         // }
 
-        #[pallet::weight(100_000_000)]
+        #[pallet::weight(< T as Config >::WeightInfo::update_subscription_settings())]
         pub fn update_subscription_settings(
             origin: OriginFor<T>,
             space_id: T::SpaceId,
@@ -133,7 +149,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(100_000_000)]
+        #[pallet::weight(< T as Config >::WeightInfo::subscribe())]
         pub fn subscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 
@@ -179,7 +195,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(100_000_000)]
+        #[pallet::weight(< T as Config >::WeightInfo::unsubscribe())]
         pub fn unsubscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 

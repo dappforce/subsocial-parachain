@@ -5958,6 +5958,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-permissions",
  "parity-scale-codec",
  "scale-info",
  "smallvec",

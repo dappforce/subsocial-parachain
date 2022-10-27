@@ -11,8 +11,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{self as system, ensure_signed};
+use frame_support::{dispatch::DispatchResult, ensure};
+use frame_system as system;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
@@ -182,32 +182,10 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
+            let role_id =
+                Pallet::<T>::do_create_role(&who, space_id, time_to_live, content, permissions)?;
 
-            ensure_content_is_valid(content.clone())?;
-            ensure!(
-                T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
-                ModerationError::ContentIsBlocked,
-            );
-
-            Self::ensure_role_manager(who.clone(), space_id)?;
-
-            let permissions_set = permissions.into_iter().collect();
-            let new_role =
-                Role::<T>::new(who.clone(), space_id, time_to_live, content, permissions_set)?;
-
-            // TODO review strange code:
-            let next_role_id = new_role.id.checked_add(1).ok_or(Error::<T>::RoleIdOverflow)?;
-            NextRoleId::<T>::put(next_role_id);
-
-            RoleById::<T>::insert(new_role.id, new_role.clone());
-            RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
-
-            Self::deposit_event(Event::RoleCreated {
-                account: who,
-                space_id,
-                role_id: new_role.id,
-            });
+            Self::deposit_event(Event::RoleCreated { account: who, space_id, role_id });
             Ok(())
         }
 
@@ -221,9 +199,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let has_updates = update.disabled.is_some()
-                || update.content.is_some()
-                || update.permissions.is_some();
+            let has_updates = update.disabled.is_some() ||
+                update.content.is_some() ||
+                update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesProvided);
 

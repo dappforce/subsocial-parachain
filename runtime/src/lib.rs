@@ -613,6 +613,7 @@ impl pallet_subscriptions::Config for Runtime {
 	type SpacesInterface = Spaces;
 	type RoleId = RoleId;
 	type RolesInterface = Roles;
+	type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -687,6 +688,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
+		[pallet_subscriptions, Subscriptions]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }

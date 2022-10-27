@@ -93,7 +93,7 @@ impl<T: Config> Pallet<T> {
         for role_id in role_ids {
             if let Some(role) = Self::role_by_id(role_id) {
                 if role.disabled {
-                    continue;
+                    continue
                 }
 
                 let mut is_expired = false;
@@ -104,12 +104,43 @@ impl<T: Config> Pallet<T> {
                 }
 
                 if !is_expired && role.permissions.contains(&permission) {
-                    return Ok(());
+                    return Ok(())
                 }
             }
         }
 
         Err(error)
+    }
+
+    pub fn do_create_role(
+        space_owner: &T::AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<T::BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
+    ) -> Result<RoleId, DispatchError> {
+        ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
+
+        ensure_content_is_valid(content.clone())?;
+        ensure!(
+            T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
+            ModerationError::ContentIsBlocked,
+        );
+
+        Self::ensure_role_manager(space_owner.clone(), space_id)?;
+
+        let permissions_set = permissions.into_iter().collect();
+        let new_role =
+            Role::<T>::new(space_owner.clone(), space_id, time_to_live, content, permissions_set)?;
+
+        // TODO review strange code:
+        let next_role_id = new_role.id.checked_add(1).ok_or(Error::<T>::RoleIdOverflow)?;
+        NextRoleId::<T>::put(next_role_id);
+
+        RoleById::<T>::insert(new_role.id, new_role.clone());
+        RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
+
+        Ok(new_role.id)
     }
 
     pub fn do_grant_role(
@@ -180,9 +211,9 @@ impl<T: Config> Role<T> {
 
     pub fn set_disabled(&mut self, disable: bool) -> DispatchResult {
         if self.disabled && disable {
-            return Err(Error::<T>::RoleAlreadyDisabled.into());
+            return Err(Error::<T>::RoleAlreadyDisabled.into())
         } else if !self.disabled && !disable {
-            return Err(Error::<T>::RoleAlreadyEnabled.into());
+            return Err(Error::<T>::RoleAlreadyEnabled.into())
         }
 
         self.disabled = disable;
@@ -225,7 +256,9 @@ impl<T: Config> PermissionChecker for Pallet<T> {
     }
 }
 
-impl<T: Config> RolesInterface<RoleId, SpaceId, T::AccountId> for Pallet<T> {
+impl<T: Config> RolesInterface<RoleId, SpaceId, T::AccountId, SpacePermission, T::BlockNumber>
+    for Pallet<T>
+{
     fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError> {
         let role = Pallet::<T>::require_role(role_id)?;
         Ok(role.space_id)
@@ -233,5 +266,15 @@ impl<T: Config> RolesInterface<RoleId, SpaceId, T::AccountId> for Pallet<T> {
 
     fn grant_role(account_id: T::AccountId, role_id: RoleId) -> DispatchResult {
         Pallet::<T>::do_grant_role(None, role_id, vec![User::Account(account_id)])
+    }
+
+    fn create_role(
+        space_owner: &T::AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<T::BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
+    ) -> Result<RoleId, DispatchError> {
+        Pallet::<T>::do_create_role(space_owner, space_id, time_to_live, content, permissions)
     }
 }
