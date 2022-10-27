@@ -2,7 +2,7 @@ use codec::Decode;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     parameter_types,
-    traits::{Currency, Everything},
+    traits::Everything,
 };
 use mockall::mock;
 use sp_core::H256;
@@ -11,10 +11,7 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::{
-    any::Any,
-    convert::{TryFrom, TryInto},
-};
+use sp_std::convert::{TryFrom, TryInto};
 
 use pallet_permissions::SpacePermission;
 use subsocial_support::{

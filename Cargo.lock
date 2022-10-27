@@ -6017,6 +6017,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "lazy_static",
  "mockall",
  "pallet-balances",
  "pallet-permissions",
