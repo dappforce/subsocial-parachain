@@ -33,6 +33,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "p
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 smallvec = "1.6.1"
+mockall = "0.11.3"
 
 [features]
 default = ["std"]

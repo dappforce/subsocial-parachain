@@ -4,10 +4,14 @@ pub use pallet::*;
 
 pub use crate::weights::WeightInfo;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
 mod types;
 pub mod weights;
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {

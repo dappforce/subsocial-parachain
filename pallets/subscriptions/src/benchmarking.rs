@@ -1,3 +1,4 @@
+use codec::Decode;
 use frame_benchmarking::{account, benchmarks};
 use frame_support::{
     ensure,
@@ -32,7 +33,7 @@ benchmarks! {
     }
 
     update_subscription_settings {
-        let owner: T::AccountId = account("owner", 24, 0);
+        let owner = T::AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap();
         let space_id = T::SpacesInterface::create_space(&owner, valid_content_ipfs())?;
         let role_id = T::RolesInterface::create_role(
             &owner,
@@ -108,4 +109,9 @@ benchmarks! {
         ensure!(info.unsubscribed, "account should be unsubscribed");
     }
 
+    impl_benchmark_test_suite!(
+        Pallet,
+        crate::mock::ExtBuilder::default().build(),
+        crate::mock::Test,
+    );
 }
