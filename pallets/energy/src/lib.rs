@@ -23,6 +23,7 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons},
     };
+    use frame_support::traits::Contains;
     use frame_system::pallet_prelude::*;
     use pallet_transaction_payment::OnChargeTransaction;
     use sp_runtime::{
@@ -66,6 +67,9 @@ pub mod pallet {
 
         /// The minimum amount of energy required to keep an account.
         type ExistentialDeposit: Get<Self::Balance>;
+
+        /// Filter that determines if the call fees can be paid by energy.
+        type CallFilter: Contains<Self::Call>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -356,8 +360,9 @@ pub mod pallet {
             let fee_without_tip = fee.saturating_sub(tip);
             let energy_fee = Self::native_token_to_energy(fee_without_tip);
 
-            // if we don't have enough energy then fallback to paying with native token.
-            if Self::energy_balance(&who) < energy_fee {
+            // if the call cannot be paid by energy or we don't have enough energy then fallback
+            // to paying with native token.
+            if !T::CallFilter::contains(call) || Self::energy_balance(&who) < energy_fee {
                 return T::NativeOnChargeTransaction::withdraw_fee(
                     who,
                     call,
