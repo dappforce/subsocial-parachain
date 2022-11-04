@@ -119,7 +119,6 @@ pub mod pallet {
             space.owner = new_owner.clone();
             SpaceById::<T>::insert(space_id, space);
 
-            // FIXME: cover with tests
             let _ = T::ProfileManager::unlink_space_from_profile(&old_owner, space_id);
 
             // Remove space id from the list of spaces by old owner

@@ -3,6 +3,12 @@
 pub use pallet::*;
 // pub mod rpc;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -49,8 +55,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Social account was not found by id.
-        SocialAccountNotFound,
         /// There is no space set as profile.
         NoSpaceSetAsProfile,
     }
@@ -126,7 +130,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        // FIXME: cover with tests
         pub fn do_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
             T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
 
@@ -134,7 +137,6 @@ pub mod pallet {
             Ok(())
         }
 
-        // FIXME: cover with tests
         pub fn unlink_space_from_profile(
             account: &T::AccountId,
             space_id: SpaceId,
