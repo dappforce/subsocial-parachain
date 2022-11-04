@@ -219,6 +219,7 @@ impl pallet_energy::Config for Test {
     type UpdateOrigin = EnsureAccount<TestUpdateOrigin, AccountId>;
     type NativeOnChargeTransaction = ProxiedOnChargeTransaction<CurrencyAdapter<Balances, ()>>;
     type ExistentialDeposit = EnergyExistentialDeposit;
+    type CallFilter = Everything;
     type WeightInfo = ();
 }
 
