@@ -289,7 +289,10 @@ fn parachain_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		sudo: subsocial_parachain_runtime::SudoConfig {
-			key: Some(root_key),
+			key: Some(root_key.clone()),
+		},
+		spaces: subsocial_parachain_runtime::SpacesConfig {
+			endowed_account: Some(root_key),
 		},
 	}
 }
@@ -298,7 +301,7 @@ pub fn subsocial_properties() -> Properties {
 	let mut properties = Properties::new();
 
 	properties.insert("ss58Format".into(), 28.into());
-	properties.insert("tokenDecimals".into(), 11.into());
+	properties.insert("tokenDecimals".into(), 10.into());
 	properties.insert("tokenSymbol".into(), "SUB".into());
 
 	properties

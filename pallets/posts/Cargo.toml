@@ -1,0 +1,46 @@
+[package]
+name = 'pallet-posts'
+version = '0.1.7'
+authors = ['DappForce <dappforce@pm.me>']
+edition = '2021'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+repository = 'https://github.com/dappforce/dappforce-subsocial-node'
+description = 'Post management pallet'
+keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
+
+[features]
+default = ['std']
+std = [
+    'serde',
+    'codec/std',
+    'scale-info/std',
+    'frame-support/std',
+    'frame-system/std',
+    'pallet-timestamp/std',
+    'sp-runtime/std',
+    'sp-std/std',
+    'pallet-permissions/std',
+    'pallet-space-follows/std',
+    'pallet-spaces/std',
+    'subsocial-support/std',
+]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+serde = { features = ['derive'], optional = true, version = '1.0.137' }
+
+# Local dependencies
+pallet-permissions = { default-features = false, path = '../permissions' }
+pallet-space-follows = { default-features = false, path = '../space-follows' }
+pallet-spaces = { default-features = false, path = '../spaces' }
+subsocial-support = { default-features = false, path = '../support' }
+
+# Substrate dependencies
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }

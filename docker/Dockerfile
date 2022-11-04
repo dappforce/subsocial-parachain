@@ -30,4 +30,4 @@ USER subsocial
 EXPOSE 40333 8833 8844
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/subsocial-collator"]
+ENTRYPOINT ["/usr/local/bin/subsocial-collator"]

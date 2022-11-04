@@ -1,18 +1,18 @@
 # Domains Pallet
 
-Domains pallet allows users to register and manage domains.
+Domains pallet allows users to register and manage their domains. The main purpose of a domain is to be a human-readable alias for owner's account address. 
 
 
-## Resolving Domain Names
-- **Pallet Name:** domains
-- **Storages:** 
-  - `RegisteredDomains: Map<DomainName,DomainMeta>`\
-    Metadata associated per domain.
-  - `DomainsByOwner: Map<AccountId, DomainName[]>`\
-    Domains owned per account.
+## Main storages
 
-Domain name can be resolved to obtain the owner.
+The main storages of domains pallet are: 
+- `RegisteredDomains: Map<DomainName,DomainMeta>`\
+  Metadata associated with domain.
+- `DomainsByOwner: Map<AccountId, DomainName[]>`\
+  Domains owned by account.
 
+
+## Domain metadata
 
 In addition to resolving a domain owner, you can also resolve the various records set up
 by the user. The following table shows a list of records that can be attached to the domain name.
@@ -53,7 +53,8 @@ by the user. The following table shows a list of records that can be attached to
 </tbody>
 </table>
 
-### The full domain metadata recorded for each domain
+### Main types
+
 ```rust
 pub struct DomainMeta<T: Config> {
     /// When the domain was created.
@@ -95,23 +96,15 @@ pub enum InnerValue {
 }
 ```
 
-## JS Examples
+## JS examples
 
-### Top Level Domains
-The domains pallet will have a list of supported TLDs. This list can be fetched
-the following script.
-```javascript
-async function supportedTlds()  {
-    const tldEntries = await api.query.domains.supportedTlds.entries();
-    return tldEntries
-        .filter(([_, isSupported]) => isSupported)
-        .map(([key, _]) => key.args[0].toHuman());
-}
-```
+Let's see how to get data about domains and their owners from the storage of domains pallet.
 
-### Fetching the domain owner.
+### Get the domain owner
+
 In many scenarios we may want to resolve a domain name
-to the owner of this domain. This can be done by the following script.
+to the owner of this domain. This can be done with the following script.
+
 ```javascript
 async function fetchDomainOwner(domain) {
     const domainMeta = await api.query.domains.registeredDomains(domain);
@@ -119,10 +112,25 @@ async function fetchDomainOwner(domain) {
 }
 ```
 
-### Fetch domain owned by account.
+### Get domains owned by account
+
 ```javascript
 async function fetchDomains(account) {
     const domains = await api.query.domains.domainsByOwner(account);
     return domains;
+}
+```
+
+### Get all TLDs (top-level domains)
+
+The domains pallet stores a list of supported TLDs. This list can be fetched with
+the following script.
+
+```javascript
+async function supportedTlds()  {
+    const tldEntries = await api.query.domains.supportedTlds.entries();
+    return tldEntries
+        .filter(([_, isSupported]) => isSupported)
+        .map(([key, _]) => key.args[0].toHuman());
 }
 ```

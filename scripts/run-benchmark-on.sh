@@ -14,7 +14,7 @@ fi
 PALLET_NAME="$1"
 OUTPUT_DIR="$2"
 
-"$ROOT_DIR"/target/release/subsocial-collator benchmark \
+"$ROOT_DIR"/target/release/subsocial-collator benchmark pallet \
   --chain dev \
   --execution wasm \
   --wasm-execution Compiled \

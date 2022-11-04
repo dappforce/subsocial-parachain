@@ -18,7 +18,7 @@ pub use crate::weights::WeightInfo;
 
 pub mod types;
 
-pub use pallet_parachain_utils::{SpaceId, PostId, Content};
+pub use subsocial_support::{SpaceId, PostId, Content};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -34,7 +34,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
-    use pallet_parachain_utils::ensure_content_is_valid;
+    use subsocial_support::ensure_content_is_valid;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {

@@ -38,9 +38,10 @@ Run as an archive node (store all blocks state):
 --chain=kusama
 ```
 
-## Using docker
+### Using docker
 
-Official Docker Hub image of the Subsocial parachain: https://hub.docker.com/r/dappforce/subsocial-parachain
+Official Docker Hub image of the Subsocial parachain: 
+https://hub.docker.com/r/dappforce/subsocial-parachain
 
 Simply run and join the network with docker:
 
@@ -51,3 +52,17 @@ docker run -d -v node-data:/data dappforce/subsocial-parachain:latest subsocial-
 --execution=wasm \
 --chain=kusama
 ```
+
+### Run a local testnet using parachain-launch
+
+- Install [parachain-launch](https://github.com/open-web3-stack/parachain-launch)
+- Install [Docker-compose](https://docs.docker.com/compose/install/)
+- Configure and launch with a single command: `./parachain-launch/launch.sh`
+
+**Note:**
+
+- You may need to build docker image if the one [in registry](https://hub.docker.com/r/dappforce/subsocial-parachain) is outdated.
+- To build latest docker image, compatible with parachain-launch, run exactly:
+    ```shell
+    docker build . -f docker/Dockerfile -t dappforce/subsocial-parachain:rococo
+    ```

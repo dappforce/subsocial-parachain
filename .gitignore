@@ -6,9 +6,8 @@
 
 .cargo-remote.toml
 
-polkadot-launch
-!polkadot-launch/config.json
-!polkadot-launch/*.sh
+parachain-launch/output/*
+output.txt
 
 # IDE's config
 **/.idea
