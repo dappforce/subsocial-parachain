@@ -126,6 +126,7 @@ impl pallet_profiles::Config for TestRuntime {
     type Event = Event;
     type SpacePermissionsProvider = Spaces;
     type SpaceInterface = Spaces;
+    type WeightInfo = ();
 }
 
 impl pallet_reactions::Config for TestRuntime {

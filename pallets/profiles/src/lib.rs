@@ -9,6 +9,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
+pub use crate::weights::WeightInfo;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -35,6 +41,8 @@ pub mod pallet {
         >;
 
         type SpaceInterface: SpacesInterface<Self::AccountId, SpaceId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -61,8 +69,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        // FIXME: cover with tests
-        #[pallet::weight(1_250_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(<T as Config>::WeightInfo::set_profile())]
         pub fn set_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -75,8 +82,7 @@ pub mod pallet {
             Ok(())
         }
 
-        // FIXME: cover with tests
-        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(1, 1))]
+        #[pallet::weight(<T as Config>::WeightInfo::reset_profile())]
         pub fn reset_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -91,7 +97,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_250_000 + T::DbWeight::get().reads_writes(3, 4))]
+        #[pallet::weight(<T as Config>::WeightInfo::create_space_as_profile())]
         pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 

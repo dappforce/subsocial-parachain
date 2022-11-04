@@ -90,6 +90,7 @@ impl pallet_profiles::Config for Test {
     type Event = Event;
     type SpacePermissionsProvider = MockSpaces;
     type SpaceInterface = MockSpaces;
+    type WeightInfo = ();
 }
 
 lazy_static! {
@@ -104,7 +105,7 @@ pub(super) fn use_static_mock() -> MutexGuard<'static, ()> {
     }
 }
 
-pub struct ExtBuilder;
+pub(super) struct ExtBuilder;
 impl ExtBuilder {
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
