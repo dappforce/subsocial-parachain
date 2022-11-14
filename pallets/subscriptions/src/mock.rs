@@ -1,10 +1,11 @@
+use std::borrow::Borrow;
+
 use codec::Decode;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     parameter_types,
-    traits::Everything,
+    traits::{Everything, Get},
 };
-use mockall::mock;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -20,6 +21,7 @@ use subsocial_support::{
 };
 
 pub(crate) use crate as pallet_subscriptions;
+use crate::clearable_parameter_type;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -90,63 +92,79 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-mock! {
-    pub Spaces {}
-    impl SpacesInterface<AccountId, SpaceId> for Spaces {
-        fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
+pub struct MockSpaces;
 
-        fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
+parameter_types! {
+    pub static get_space_owner__return: Result<AccountId, DispatchError> = Ok(AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap());
+    pub static create_space__return: Result<SpaceId, DispatchError> = Ok(101);
+}
+
+clearable_parameter_type!(pub static get_space_owner__space_id: SpaceId);
+clearable_parameter_type!(pub static create_space__owner: AccountId);
+clearable_parameter_type!(pub static create_space__content: Content);
+
+
+impl SpacesInterface<AccountId, SpaceId> for MockSpaces {
+    fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError> {
+        get_space_owner__space_id::set(space_id);
+        get_space_owner__return::get()
+    }
+
+    fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError> {
+        create_space__owner::set(owner.clone());
+        create_space__content::set(content.clone());
+        create_space__return::get()
     }
 }
 
-mock! {
-    pub Roles {}
-    impl RolesInterface<RoleId, SpaceId, AccountId, SpacePermission, BlockNumber> for Roles {
-        fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError>;
+pub struct MockRoles;
 
-        fn grant_role(account_id: AccountId, role_id: RoleId) -> DispatchResult;
-
-        fn create_role(
-            space_owner: &AccountId,
-            space_id: SpaceId,
-            time_to_live: Option<BlockNumber>,
-            content: Content,
-            permissions: Vec<SpacePermission>,
-        ) -> Result<RoleId, DispatchError>;
-    }
+parameter_types! {
+    pub static get_role_space__return: Result<SpaceId, DispatchError> = Ok(101);
+    pub static grant_role__return: DispatchResult = Ok(());
+    pub static create_role__return: Result<RoleId, DispatchError> = Ok(111);
 }
 
-pub struct BenchSpaces;
+clearable_parameter_type!(pub static get_role_space__role_id: RoleId);
 
-impl SpacesInterface<AccountId, SpaceId> for BenchSpaces {
-    fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError> {
-        Ok(AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap())
+clearable_parameter_type!(pub static grant_role__account_id: AccountId);
+clearable_parameter_type!(pub static grant_role__role_id: RoleId);
+
+clearable_parameter_type!(pub static grant_role_space__role_id: RoleId);
+clearable_parameter_type!(pub static grant_role__owner: AccountId);
+clearable_parameter_type!(pub static grant_role__content: Content);
+
+clearable_parameter_type!(pub static create_role__space_owner: RoleId);
+clearable_parameter_type!(pub static create_role__space_id: SpaceId);
+clearable_parameter_type!(pub static create_role__time_to_live: Option<BlockNumber>);
+clearable_parameter_type!(pub static create_role__content: Content);
+clearable_parameter_type!(pub static create_role__permissions: Vec<SpacePermission>);
+
+impl RolesInterface<RoleId, SpaceId, AccountId, SpacePermission, BlockNumber> for MockRoles {
+    fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError> {
+        get_space_owner__space_id::set(role_id);
+        get_role_space__return::get()
     }
 
-    fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError> {
-        Ok(101)
-    }
-}
-
-pub struct BenchRoles;
-
-impl RolesInterface<RoleId, SpaceId, AccountId, SpacePermission, BlockNumber> for BenchRoles {
-    fn get_role_space(_role_id: RoleId) -> Result<SpaceId, DispatchError> {
-        Ok(101)
-    }
-
-    fn grant_role(_account_id: AccountId, _role_id: RoleId) -> DispatchResult {
-        Ok(())
+    fn grant_role(account_id: AccountId, role_id: RoleId) -> DispatchResult {
+        grant_role__account_id::set(account_id.clone());
+        grant_role__role_id::set(role_id);
+        grant_role__return::get()
     }
 
     fn create_role(
-        _space_owner: &AccountId,
-        _space_id: SpaceId,
-        _time_to_live: Option<BlockNumber>,
-        _content: Content,
-        _permissions: Vec<SpacePermission>,
+        space_owner: &AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
     ) -> Result<RoleId, DispatchError> {
-        Ok(111)
+        create_role__space_owner::set(space_owner.clone());
+        create_role__space_id::set(space_id);
+        create_role__time_to_live::set(time_to_live);
+        create_role__content::set(content.clone());
+        create_role__permissions::set(permissions.clone());
+        create_role__return::get()
     }
 }
 
@@ -154,15 +172,9 @@ impl pallet_subscriptions::Config for Test {
     type Event = Event;
     type Currency = Balances;
     type SpaceId = SpaceId;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type SpacesInterface = MockSpaces;
-    #[cfg(feature = "runtime-benchmarks")]
-    type SpacesInterface = BenchSpaces;
     type RoleId = RoleId;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type RolesInterface = MockRoles;
-    #[cfg(feature = "runtime-benchmarks")]
-    type RolesInterface = BenchRoles;
     type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Test>;
 }
 
