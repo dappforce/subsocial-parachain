@@ -1,5 +1,7 @@
 use frame_support::{
-    assert_ok, dispatch::DispatchResult, parameter_types,
+    assert_ok,
+    dispatch::DispatchResult,
+    parameter_types,
     traits::{Currency, Everything},
 };
 use frame_support::traits::EnsureOrigin;
@@ -7,12 +9,15 @@ use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header, traits::{BlakeTwo256, IdentityLookup},
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::convert::{TryInto, TryFrom};
+use sp_std::convert::{TryFrom, TryInto};
 
-use subsocial_support::Content;
-use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
+use subsocial_support::{
+    mock_functions::{another_valid_content_ipfs, valid_content_ipfs},
+    Content,
+};
 
 pub(crate) use crate as pallet_domains;
 use crate::types::*;
@@ -21,16 +26,16 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system,
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system,
         Timestamp: pallet_timestamp,
         Balances: pallet_balances,
-		Domains: pallet_domains,
-	}
+        Domains: pallet_domains,
+    }
 );
 
 pub(super) type AccountId = u64;
@@ -38,8 +43,8 @@ pub(super) type Balance = u64;
 type BlockNumber = u64;
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 42;
+    pub const BlockHashCount: u64 = 250;
+    pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Test {
@@ -163,9 +168,7 @@ pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
 }
 
 pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
-    Domains::split_domain_by_dot(
-        &Domains::bound_domain(string.to_vec())
-    )
+    Domains::split_domain_by_dot(&Domains::bound_domain(string.to_vec()))
 }
 
 pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
@@ -194,7 +197,8 @@ pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
 
 pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
     vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
-        .try_into().expect("qed; outer value exceeds max length")
+        .try_into()
+        .expect("qed; outer value exceeds max length")
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
@@ -359,12 +363,18 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn max_promo_domains_per_account(mut self, max_promo_domains_per_account: u32) -> Self {
+    pub(crate) fn max_promo_domains_per_account(
+        mut self,
+        max_promo_domains_per_account: u32,
+    ) -> Self {
         self.max_promo_domains_per_account = max_promo_domains_per_account;
         self
     }
 
-    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
+    pub(crate) fn reservation_period_limit(
+        mut self,
+        reservation_period_limit: BlockNumber,
+    ) -> Self {
         self.reservation_period_limit = reservation_period_limit;
         self
     }
@@ -382,7 +392,8 @@ impl ExtBuilder {
     fn set_configs(&self) {
         MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
-        MAX_PROMO_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_promo_domains_per_account);
+        MAX_PROMO_DOMAINS_PER_ACCOUNT
+            .with(|x| *x.borrow_mut() = self.max_promo_domains_per_account);
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
@@ -391,19 +402,15 @@ impl ExtBuilder {
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
 
-        let storage = &mut frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
+        let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
             System::set_block_number(1);
-            assert_ok!(
-                Domains::support_tlds(
-                    Origin::root(),
-                    vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
-                )
-            );
+            assert_ok!(Domains::support_tlds(
+                Origin::root(),
+                vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
+            ));
         });
 
         ext

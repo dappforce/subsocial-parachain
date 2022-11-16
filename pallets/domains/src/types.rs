@@ -1,8 +1,7 @@
-use frame_support::pallet_prelude::*;
-use frame_support::traits::Currency;
+use frame_support::{pallet_prelude::*, traits::Currency};
 use sp_runtime::traits::Zero;
 
-use subsocial_support::{WhoAndWhenOf, new_who_and_when};
+use subsocial_support::{new_who_and_when, WhoAndWhenOf};
 
 use super::*;
 
@@ -11,6 +10,7 @@ pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
 
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
+pub(crate) type RegistrarTlds<T> = BoundedVec<DomainName<T>, <T as Config>::MaxTldsPerRegistrar>;
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
@@ -21,11 +21,6 @@ pub enum InnerValue<AccountId> {
     Account(AccountId),
     Space(SpaceId),
     Post(PostId),
-}
-
-pub(super) enum IsForced {
-    Yes,
-    No,
 }
 
 /// A domain metadata.
@@ -61,12 +56,13 @@ pub struct DomainMeta<T: Config> {
 impl<T: Config> DomainMeta<T> {
     pub fn new(
         expires_at: T::BlockNumber,
+        created_by: T::AccountId,
         owner: T::AccountId,
         content: Content,
         domain_deposit: BalanceOf<T>,
     ) -> Self {
         Self {
-            created: new_who_and_when::<T>(owner.clone()),
+            created: new_who_and_when::<T>(created_by),
             updated: None,
             expires_at,
             owner,
@@ -76,5 +72,19 @@ impl<T: Config> DomainMeta<T> {
             domain_deposit,
             outer_value_deposit: Zero::zero(),
         }
+    }
+}
+
+#[derive(Encode, Decode, Default, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct RegistrarInfo<T: Config> {
+    pub(super) max_domains_to_register: Option<u32>,
+    pub(super) registered_domains: u32,
+    pub(super) tlds: RegistrarTlds<T>,
+}
+
+impl<T: Config> RegistrarInfo<T> {
+    pub fn new(max_register: Option<u32>, tlds: RegistrarTlds<T>) -> Self {
+        Self { max_domains_to_register: max_register, registered_domains: 0, tlds }
     }
 }

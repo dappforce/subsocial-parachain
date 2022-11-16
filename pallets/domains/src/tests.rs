@@ -1,13 +1,13 @@
 use frame_support::{assert_noop, assert_ok};
-use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
+use sp_runtime::{traits::Zero, DispatchError::BadOrigin};
 use sp_std::convert::TryInto;
 
-use subsocial_support::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
-use subsocial_support::new_who_and_when;
+use subsocial_support::{
+    mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs},
+    new_who_and_when,
+};
 
-use crate::{DomainByInnerValue, Event, mock::*};
-use crate::Error;
-use crate::types::*;
+use crate::{mock::*, types::*, DomainByInnerValue, Error, Event};
 
 // `register_domain` tests
 
@@ -31,100 +31,87 @@ fn register_domain_should_work() {
             assert_eq!(Domains::domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
 
             let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
-            assert_eq!(domain_meta, DomainMeta {
-                created: new_who_and_when::<Test>(DOMAIN_OWNER),
-                updated: None,
-                expires_at: ExtBuilder::default().reservation_period_limit + 1,
-                owner: DOMAIN_OWNER,
-                content: valid_content_ipfs(),
-                inner_value: None,
-                outer_value: None,
-                domain_deposit: LOCAL_DOMAIN_DEPOSIT,
-                outer_value_deposit: Zero::zero()
-            });
+            assert_eq!(
+                domain_meta,
+                DomainMeta {
+                    created: new_who_and_when::<Test>(DOMAIN_OWNER),
+                    updated: None,
+                    expires_at: ExtBuilder::default().reservation_period_limit + 1,
+                    owner: DOMAIN_OWNER,
+                    content: valid_content_ipfs(),
+                    inner_value: None,
+                    outer_value: None,
+                    domain_deposit: LOCAL_DOMAIN_DEPOSIT,
+                    outer_value_deposit: Zero::zero()
+                }
+            );
 
             assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
 
-            System::assert_last_event(Event::<Test>::DomainRegistered {
-                who: owner,
-                domain: expected_domain,
-            }.into());
+            System::assert_last_event(
+                Event::<Test>::DomainRegistered { who: owner, domain: expected_domain }.into(),
+            );
         });
 }
 
 #[test]
 fn register_domain_should_fail_when_domain_already_owned() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
-        assert_noop!(
-            _register_default_domain(),
-            Error::<Test>::DomainAlreadyOwned,
-        );
+        assert_noop!(_register_default_domain(), Error::<Test>::DomainAlreadyOwned,);
     });
 }
 
 #[test]
 fn register_domain_should_fail_when_too_many_domains_registered() {
-    ExtBuilder::default()
-        .max_domains_per_account(1)
-        .build()
-        .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+    ExtBuilder::default().max_domains_per_account(1).build().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
 
-            let domain_one = domain_from(b"domain-one".to_vec());
-            let domain_two = domain_from(b"domain-two".to_vec());
+        let domain_one = domain_from(b"domain-one".to_vec());
+        let domain_two = domain_from(b"domain-two".to_vec());
 
-            assert_ok!(_force_register_domain_with_name(domain_one));
-            assert_noop!(
-                _force_register_domain_with_name(domain_two),
-                Error::<Test>::TooManyDomainsPerAccount,
-            );
-        });
+        assert_ok!(_force_register_domain_with_name(domain_one));
+        assert_noop!(
+            _force_register_domain_with_name(domain_two),
+            Error::<Test>::TooManyDomainsPerAccount,
+        );
+    });
 }
 
 #[test]
 fn register_domain_should_fail_when_balance_is_insufficient() {
-    ExtBuilder::default()
-        .base_domain_deposit(10)
-        .build()
-        .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, 9);
+    ExtBuilder::default().base_domain_deposit(10).build().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, 9);
 
-            assert_noop!(
-                _register_default_domain(),
-                pallet_balances::Error::<Test>::InsufficientBalance,
-            );
-        });
+        assert_noop!(
+            _register_default_domain(),
+            pallet_balances::Error::<Test>::InsufficientBalance,
+        );
+    });
 }
 
 #[test]
 fn register_domain_should_fail_when_promo_domains_limit_reached() {
-    ExtBuilder::default()
-        .max_promo_domains_per_account(1)
-        .build()
-        .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+    ExtBuilder::default().max_promo_domains_per_account(1).build().execute_with(|| {
+        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
 
-            assert_ok!(_register_default_domain());
+        assert_ok!(_register_default_domain());
 
-            assert_noop!(
-                Domains::register_domain(
-                    Origin::signed(DOMAIN_OWNER),
-                    domain_from(b"second-domain".to_vec()),
-                    valid_content_ipfs(),
-                    ExtBuilder::default().reservation_period_limit,
-                ),
-                Error::<Test>::TooManyDomainsPerAccount,
-            );
-        });
+        assert_noop!(
+            Domains::register_domain(
+                Origin::signed(DOMAIN_OWNER),
+                domain_from(b"second-domain".to_vec()),
+                valid_content_ipfs(),
+                ExtBuilder::default().reservation_period_limit,
+            ),
+            Error::<Test>::TooManyDomainsPerAccount,
+        );
+    });
 }
 
 #[test]
 fn force_register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(
-            _force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
-            BadOrigin
-        );
+        assert_noop!(_force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)), BadOrigin);
     });
 }
 
@@ -140,15 +127,12 @@ fn force_register_domain_should_fail_when_reservation_period_zero() {
 
 #[test]
 fn force_register_domain_should_fail_when_reservation_above_limit() {
-    ExtBuilder::default()
-        .reservation_period_limit(1000)
-        .build()
-        .execute_with(|| {
-            assert_noop!(
-                _force_register_domain_with_expires_in(1001),
-                Error::<Test>::TooBigRegistrationPeriod,
-            );
-        });
+    ExtBuilder::default().reservation_period_limit(1000).build().execute_with(|| {
+        assert_noop!(
+            _force_register_domain_with_expires_in(1001),
+            Error::<Test>::TooBigRegistrationPeriod,
+        );
+    });
 }
 
 #[test]
@@ -195,10 +179,9 @@ fn set_inner_value_should_work() {
             Some(default_domain_lc()),
         );
 
-        System::assert_last_event(Event::<Test>::DomainMetaUpdated {
-            who: DOMAIN_OWNER,
-            domain: domain_lc,
-        }.into());
+        System::assert_last_event(
+            Event::<Test>::DomainMetaUpdated { who: DOMAIN_OWNER, domain: domain_lc }.into(),
+        );
     });
 }
 
@@ -207,43 +190,48 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
     let domain_one = domain_from(b"domain-one".to_vec());
     let domain_two = domain_from(b"domain-two".to_vec());
 
-    ExtBuilder::default()
-        .base_domain_deposit(0)
-        .build()
-        .execute_with(|| {
-            assert_ok!(Domains::register_domain(
-                origin_a(), domain_one.clone(), valid_content_ipfs(), 1
-            ));
-            assert_ok!(Domains::register_domain(
-                origin_b(), domain_two.clone(), valid_content_ipfs(), 1
-            ));
+    ExtBuilder::default().base_domain_deposit(0).build().execute_with(|| {
+        assert_ok!(Domains::register_domain(
+            origin_a(),
+            domain_one.clone(),
+            valid_content_ipfs(),
+            1
+        ));
+        assert_ok!(Domains::register_domain(
+            origin_b(),
+            domain_two.clone(),
+            valid_content_ipfs(),
+            1
+        ));
 
-            assert_ok!(Domains::set_inner_value(
-                origin_a(), domain_one.clone(), Some(inner_value_space_id())
-            ));
-            assert_ok!(Domains::set_inner_value(
-                origin_b(), domain_two.clone(), Some(inner_value_space_id())
-            ));
+        assert_ok!(Domains::set_inner_value(
+            origin_a(),
+            domain_one.clone(),
+            Some(inner_value_space_id())
+        ));
+        assert_ok!(Domains::set_inner_value(
+            origin_b(),
+            domain_two.clone(),
+            Some(inner_value_space_id())
+        ));
 
-            assert_eq!(
-                DomainByInnerValue::<Test>::get(ACCOUNT_A, inner_value_space_id()),
-                Some(domain_one.clone()),
-            );
-            assert_eq!(
-                DomainByInnerValue::<Test>::get(ACCOUNT_B, inner_value_space_id()),
-                Some(domain_two.clone()),
-            );
+        assert_eq!(
+            DomainByInnerValue::<Test>::get(ACCOUNT_A, inner_value_space_id()),
+            Some(domain_one.clone()),
+        );
+        assert_eq!(
+            DomainByInnerValue::<Test>::get(ACCOUNT_B, inner_value_space_id()),
+            Some(domain_two.clone()),
+        );
 
-            System::assert_has_event(Event::<Test>::DomainMetaUpdated {
-                who: ACCOUNT_A,
-                domain: domain_one,
-            }.into());
+        System::assert_has_event(
+            Event::<Test>::DomainMetaUpdated { who: ACCOUNT_A, domain: domain_one }.into(),
+        );
 
-            System::assert_has_event(Event::<Test>::DomainMetaUpdated {
-                who: ACCOUNT_B,
-                domain: domain_two,
-            }.into());
-        });
+        System::assert_has_event(
+            Event::<Test>::DomainMetaUpdated { who: ACCOUNT_B, domain: domain_two }.into(),
+        );
+    });
 }
 
 #[test]
@@ -262,7 +250,10 @@ fn set_inner_value_should_work_when_value_changes() {
         ));
 
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &initial_value), None);
-        assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value), Some(default_domain_lc()));
+        assert_eq!(
+            DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value),
+            Some(default_domain_lc())
+        );
 
         assert_eq!(Some(new_value), get_inner_value(&domain_lc));
     });
@@ -273,10 +264,7 @@ fn set_inner_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
-        assert_noop!(
-            _set_default_inner_value(),
-            Error::<Test>::DomainHasExpired,
-        );
+        assert_noop!(_set_default_inner_value(), Error::<Test>::DomainHasExpired,);
     });
 }
 
@@ -295,23 +283,18 @@ fn set_inner_value_should_fail_when_inner_value_not_differ() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_ok!(_set_default_inner_value());
 
-        assert_noop!(
-            _set_default_inner_value(),
-            Error::<Test>::InnerValueNotChanged,
-        );
+        assert_noop!(_set_default_inner_value(), Error::<Test>::InnerValueNotChanged,);
     });
 }
 
 #[test]
 fn force_set_inner_value_should_work() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
-        assert_ok!(
-            Domains::force_set_inner_value(
-                Origin::root(),
-                default_domain_lc(),
-                Some(inner_value_account_domain_owner()),
-            )
-        );
+        assert_ok!(Domains::force_set_inner_value(
+            Origin::root(),
+            default_domain_lc(),
+            Some(inner_value_account_domain_owner()),
+        ));
     });
 }
 
@@ -360,10 +343,9 @@ fn set_outer_value_should_work() {
                 expected_value.unwrap().len() as u64 * LOCAL_BYTE_DEPOSIT + LOCAL_DOMAIN_DEPOSIT
             );
 
-            System::assert_last_event(Event::<Test>::DomainMetaUpdated {
-                who: owner,
-                domain: domain_lc,
-            }.into());
+            System::assert_last_event(
+                Event::<Test>::DomainMetaUpdated { who: owner, domain: domain_lc }.into(),
+            );
         });
 }
 
@@ -405,10 +387,7 @@ fn set_outer_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
-        assert_noop!(
-            _set_default_outer_value(),
-            Error::<Test>::DomainHasExpired,
-        );
+        assert_noop!(_set_default_outer_value(), Error::<Test>::DomainHasExpired,);
     });
 }
 
@@ -429,10 +408,7 @@ fn set_outer_value_should_fail_when_value_not_differ() {
 
         assert_ok!(_set_default_outer_value());
 
-        assert_noop!(
-            _set_default_outer_value(),
-            Error::<Test>::OuterValueNotChanged,
-        );
+        assert_noop!(_set_default_outer_value(), Error::<Test>::OuterValueNotChanged,);
     });
 }
 
@@ -469,10 +445,9 @@ fn set_domain_content_should_work() {
         assert!(old_content != result_content);
         assert_eq!(another_valid_content_ipfs(), result_content);
 
-        System::assert_last_event(Event::<Test>::DomainMetaUpdated {
-            who: owner,
-            domain: domain_lc,
-        }.into());
+        System::assert_last_event(
+            Event::<Test>::DomainMetaUpdated { who: owner, domain: domain_lc }.into(),
+        );
     });
 }
 
@@ -481,10 +456,7 @@ fn set_domain_content_should_fail_when_domain_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
 
-        assert_noop!(
-            _set_default_domain_content(),
-            Error::<Test>::DomainHasExpired,
-        );
+        assert_noop!(_set_default_domain_content(), Error::<Test>::DomainHasExpired,);
     });
 }
 
@@ -503,10 +475,7 @@ fn set_domain_content_should_fail_when_content_not_differ() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_ok!(_set_default_domain_content());
 
-        assert_noop!(
-            _set_default_domain_content(),
-            Error::<Test>::DomainContentNotChanged,
-        );
+        assert_noop!(_set_default_domain_content(), Error::<Test>::DomainContentNotChanged,);
     });
 }
 
@@ -529,7 +498,9 @@ fn reserve_words_should_work() {
             Domains::bound_domain(b"word-one".to_vec()),
             Domains::bound_domain(b"word-two".to_vec()),
             Domains::bound_domain(b"word-three".to_vec()),
-        ].try_into().expect("qed; domains vector exceeds the limit");
+        ]
+        .try_into()
+        .expect("qed; domains vector exceeds the limit");
 
         assert_ok!(Domains::reserve_words(Origin::root(), domains_list.clone()));
 
@@ -544,15 +515,15 @@ fn reserve_words_should_work() {
 #[test]
 fn reserve_words_should_fail_when_word_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
-            let domains_list = vec![
-                domain_from(b"domain--one".to_vec())
-            ].try_into().expect("qed; domains vector exceeds the limit");
+        let domains_list = vec![domain_from(b"domain--one".to_vec())]
+            .try_into()
+            .expect("qed; domains vector exceeds the limit");
 
-            assert_noop!(
-                Domains::reserve_words(Origin::root(), domains_list),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-        });
+        assert_noop!(
+            Domains::reserve_words(Origin::root(), domains_list),
+            Error::<Test>::DomainContainsInvalidChar,
+        );
+    });
 }
 
 // `support_tlds` tests
@@ -560,12 +531,10 @@ fn reserve_words_should_fail_when_word_is_invalid() {
 #[test]
 fn support_tlds_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(
-            Domains::support_tlds(
-                Origin::root(),
-                vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
-            )
-        );
+        assert_ok!(Domains::support_tlds(
+            Origin::root(),
+            vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
+        ));
 
         assert!(Domains::is_tld_supported(default_tld()));
         System::assert_last_event(Event::<Test>::NewTldsSupported { count: 1 }.into());
@@ -575,14 +544,14 @@ fn support_tlds_should_work() {
 #[test]
 fn support_tlds_should_fail_when_tld_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
-        let tlds_list = vec![
-            domain_from(b"domain--one".to_vec())
-        ].try_into().expect("qed; domains vector exceeds the limit");
+        let tlds_list = vec![domain_from(b"domain--one".to_vec())]
+            .try_into()
+            .expect("qed; domains vector exceeds the limit");
 
         assert_noop!(
-                Domains::support_tlds(Origin::root(), tlds_list),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
+            Domains::support_tlds(Origin::root(), tlds_list),
+            Error::<Test>::DomainContainsInvalidChar,
+        );
     });
 }
 
@@ -590,29 +559,26 @@ fn support_tlds_should_fail_when_tld_is_invalid() {
 
 #[test]
 fn ensure_valid_domain_should_work() {
-    ExtBuilder::default()
-        .min_domain_length(3)
-        .build()
-        .execute_with(|| {
-            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"abcde.sub")));
-            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"a-b-c.sub")));
-            assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"12345.sub")));
+    ExtBuilder::default().min_domain_length(3).build().execute_with(|| {
+        assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"abcde.sub")));
+        assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"a-b-c.sub")));
+        assert_ok!(Domains::ensure_valid_domain(&split_domain_from(b"12345.sub")));
 
-            assert_noop!(
-                Domains::ensure_valid_domain(&split_domain_from(b"a.sub")),
-                Error::<Test>::DomainIsTooShort,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(&split_domain_from(b"-ab.sub")),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(&split_domain_from(b"ab-.sub")),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-            assert_noop!(
-                Domains::ensure_valid_domain(&split_domain_from(b"a--b.sub")),
-                Error::<Test>::DomainContainsInvalidChar,
-            );
-        });
+        assert_noop!(
+            Domains::ensure_valid_domain(&split_domain_from(b"a.sub")),
+            Error::<Test>::DomainIsTooShort,
+        );
+        assert_noop!(
+            Domains::ensure_valid_domain(&split_domain_from(b"-ab.sub")),
+            Error::<Test>::DomainContainsInvalidChar,
+        );
+        assert_noop!(
+            Domains::ensure_valid_domain(&split_domain_from(b"ab-.sub")),
+            Error::<Test>::DomainContainsInvalidChar,
+        );
+        assert_noop!(
+            Domains::ensure_valid_domain(&split_domain_from(b"a--b.sub")),
+            Error::<Test>::DomainContainsInvalidChar,
+        );
+    });
 }
