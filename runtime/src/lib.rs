@@ -520,6 +520,7 @@ impl pallet_domains::Config for Runtime {
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
+	type ManagerOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
