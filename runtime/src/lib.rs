@@ -197,7 +197,7 @@ mod currency {
 	pub const MICROUNIT: Balance = MILLIUNIT / 1000;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		items as Balance * 2 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
+		items as Balance * 2 * UNIT + (bytes as Balance) * 300 * MICROUNIT
 	}
 }
 
@@ -565,7 +565,7 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 5;
+    pub const MinDomainLength: u32 = 6;
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
