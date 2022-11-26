@@ -532,6 +532,12 @@ impl Default for ProxyType {
 
 impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
+		if let Call::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
+			if let Call::Domains(pallet_domains::Call::force_register_domain { .. }) = &**call {
+				return true;
+			}
+		}
+
 		match self {
 			ProxyType::Any => true,
 			ProxyType::DomainRegistrar => matches!(
