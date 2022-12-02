@@ -58,6 +58,24 @@ pub struct DomainMeta<T: Config> {
     pub(super) outer_value_deposit: BalanceOf<T>,
 }
 
+pub(crate) struct DomainData<T: Config> {
+    pub owner: T::AccountId,
+    pub full_domain: DomainName<T>,
+    pub content: Content,
+    pub expires_in: T::BlockNumber,
+}
+
+impl<T: Config> DomainData<T> {
+    pub fn new(
+        owner: T::AccountId,
+        full_domain: DomainName<T>,
+        content: Content,
+        expires_in: T::BlockNumber,
+    ) -> Self {
+        Self { owner, full_domain, content, expires_in }
+    }
+}
+
 impl<T: Config> DomainMeta<T> {
     pub fn new(
         expires_at: T::BlockNumber,

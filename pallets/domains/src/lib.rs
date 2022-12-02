@@ -192,8 +192,9 @@ pub mod pallet {
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
+            let domain_data = DomainData::new(owner, full_domain, content, expires_in);
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::No)
+            Self::do_register_domain(domain_data, IsForced::No)
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
@@ -210,9 +211,11 @@ pub mod pallet {
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            let owner = T::Lookup::lookup(target)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::Yes)
+            let owner = T::Lookup::lookup(target)?;
+            let domain_data = DomainData::new(owner, full_domain, content, expires_in);
+
+            Self::do_register_domain(domain_data, IsForced::Yes)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
@@ -354,18 +357,16 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn do_register_domain(
-            owner: T::AccountId,
-            full_domain: DomainName<T>,
-            content: Content,
-            expires_in: T::BlockNumber,
-            is_forced: IsForced,
-        ) -> DispatchResult {
+        fn do_register_domain(domain_data: DomainData<T>, is_forced: IsForced) -> DispatchResult {
+            let DomainData { owner, full_domain, content, expires_in } = domain_data;
+
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
+
             ensure!(
                 expires_in <= T::RegistrationPeriodLimit::get(),
                 Error::<T>::TooBigRegistrationPeriod,
             );
+
             ensure_content_is_valid(content.clone())?;
 
             // Note that while upper and lower case letters are allowed in domain
