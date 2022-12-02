@@ -357,11 +357,12 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        // TODO: refactor long method
         fn do_register_domain(domain_data: DomainData<T>, is_forced: IsForced) -> DispatchResult {
             let DomainData { owner, full_domain, content, expires_in } = domain_data;
 
+            // Perform checks that doesn't require storage access.
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
-
             ensure!(
                 expires_in <= T::RegistrationPeriodLimit::get(),
                 Error::<T>::TooBigRegistrationPeriod,
@@ -375,56 +376,32 @@ pub mod pallet {
             let domain_lc = Self::lower_domain_then_bound(&full_domain);
             let domain_parts = Self::split_domain_by_dot(&domain_lc);
 
+            // Perform checks that require storage access.
             Self::ensure_valid_domain(&domain_parts)?;
 
-            let subdomain = domain_parts.first().unwrap();
-            let tld = domain_parts.last().unwrap();
+            let (subdomain, tld) = Self::get_domain_subset(&domain_parts);
 
-            // FIXME: this is hot fix, change asap
-            // ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
-            ensure!(tld.as_slice() == b"sub", Error::<T>::TldNotSupported);
+            ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
+            Self::ensure_domain_is_free(&domain_lc)?;
+            Self::ensure_within_domains_limit(&owner)?;
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
-
+            let deposit = Self::try_reserve_domain_deposit(&owner, &is_forced)?;
             if let IsForced::No = is_forced {
-                ensure!(
-                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                    Error::<T>::TooManyDomainsPerAccount,
-                );
-                Self::ensure_word_is_not_reserved(subdomain)?;
-            }
-
-            ensure!(
-                Self::registered_domain(&domain_lc).is_none(),
-                Error::<T>::DomainAlreadyOwned,
-            );
-
-            ensure!(
-                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
-            );
-
-            let mut deposit = Zero::zero();
-            if let IsForced::No = is_forced {
-                // TODO: unreserve the balance for expired or sold domains
-                deposit = T::BaseDomainDeposit::get();
-                <T as Config>::Currency::reserve(&owner, deposit)?;
+                Self::ensure_word_is_not_reserved(&subdomain)?;
+                // FIXME: this check is redundant, because we already checked that in the function above
+                // FIXME: MaxPromoDomainsPerAccount check missing
             }
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
-            let domain_meta = DomainMeta::new(
-                expires_at,
-                owner.clone(),
-                content,
-                deposit,
-            );
+            let domain_meta = DomainMeta::new(expires_at, owner.clone(), content, deposit);
 
+            // Perform write operations.
             // TODO: withdraw balance when it will be possible to purchase domains.
 
-            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
+            RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
             DomainsByOwner::<T>::mutate(
                 &owner, |domains| {
-                    domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+                    domains.try_push(domain_lc).expect("qed; too many domains per account")
                 }
             );
 
@@ -592,6 +569,46 @@ pub mod pallet {
 
         pub(crate) fn split_domain_by_dot(full_domain: &DomainName<T>) -> Vec<DomainName<T>> {
             full_domain.split(|c| *c == b'.').map(Self::lower_domain_then_bound).collect()
+        }
+
+        pub(crate) fn get_domain_subset(parts: &[DomainName<T>]) -> DomainSubset<T> {
+            let tld = parts.last().unwrap().clone();
+            let subdomain = parts.first().unwrap().clone();
+            (subdomain, tld)
+        }
+
+        pub(crate) fn ensure_within_domains_limit(owner: &T::AccountId) -> DispatchResult {
+            let domains_per_account = DomainsByOwner::<T>::decode_len(owner)
+                .unwrap_or(Zero::zero());
+
+            ensure!(
+                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+            Ok(())
+        }
+
+        pub(crate) fn ensure_domain_is_free(domain_lc: &DomainName<T>) -> DispatchResult {
+            ensure!(
+                !RegisteredDomains::<T>::contains_key(domain_lc),
+                Error::<T>::DomainAlreadyOwned,
+            );
+            Ok(())
+        }
+
+        pub(crate) fn try_reserve_domain_deposit(
+            depositor: &T::AccountId,
+            is_forced: &IsForced,
+        ) -> Result<BalanceOf<T>, DispatchError> {
+            match is_forced {
+                IsForced::No => {
+                    // TODO: unreserve the balance for expired or sold domains
+                    let deposit = T::BaseDomainDeposit::get();
+                    Self::try_reserve_deposit(depositor, Zero::zero(), deposit)?;
+                    Ok(deposit)
+                },
+                IsForced::Yes => Ok(Zero::zero()),
+            }
         }
 
         fn ensure_word_is_not_reserved(word: &DomainName<T>) -> DispatchResult {
