@@ -148,6 +148,7 @@ pub mod pallet {
         DomainContentNotChanged,
         /// Cannot register more than `MaxDomainsPerAccount` domains.
         TooManyDomainsPerAccount,
+        MaxPromoDomainsPerAccountLimitReached,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
         /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.

@@ -113,7 +113,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
                     valid_content_ipfs(),
                     ExtBuilder::default().reservation_period_limit,
                 ),
-                Error::<Test>::TooManyDomainsPerAccount,
+                Error::<Test>::MaxPromoDomainsPerAccountLimitReached,
             );
         });
 }
