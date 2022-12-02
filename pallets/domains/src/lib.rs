@@ -146,12 +146,14 @@ pub mod pallet {
     pub enum Error<T> {
         /// The content stored in a domain metadata was not changed.
         DomainContentNotChanged,
-        /// Cannot register more than `MaxDomainsPerAccount` domains.
+        /// Cannot register more than [`Config::MaxDomainsPerAccount`] domains.
         TooManyDomainsPerAccount,
+        /// Cannot register more than [`Config::MaxPromoDomainsPerAccount`] domains.
         MaxPromoDomainsPerAccountLimitReached,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
+        /// This domain label length must be withing the limits defined with
+        /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
         DomainIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
@@ -533,7 +535,7 @@ pub mod pallet {
 
         /// Try to get domain meta by it's custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
-            Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
+            Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -548,6 +550,7 @@ pub mod pallet {
             Ok(())
         }
 
+        // TODO: move to subsocial-support crate
         pub fn try_reserve_deposit(
             depositor: &T::AccountId,
             old_deposit: BalanceOf<T>,

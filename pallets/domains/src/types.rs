@@ -6,11 +6,22 @@ use subsocial_support::{WhoAndWhenOf, new_who_and_when};
 
 use super::*;
 
+/// Is a domain name vector.
+///
+/// It is a vector of characters, which represents either the full domain name (e.g.
+/// "polkaverse.sub") or a part of it (e.g. "polkaverse", "sub").
+///
+/// Can be split to a domain subset with [`Pallet::split_domain_by_dot`] function.
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>::AccountId>;
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
 
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
+
+/// A subset of second level domain.
+/// Alias to a tuple: `(subdomain, top-level domain)`.
+pub(crate) type DomainSubset<T> =
+    (/* subdomain */ DomainName<T>, /* tld */ DomainName<T>);
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
