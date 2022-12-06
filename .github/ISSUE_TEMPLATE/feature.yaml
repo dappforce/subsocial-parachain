@@ -1,5 +1,5 @@
 name: Feature Request
-description: Submit your requests and suggestions to improve!
+description: Submit your requests and suggestions to improve Subsocial
 body:
   - type: checkboxes
     id: terms
