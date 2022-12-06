@@ -545,7 +545,6 @@ impl InstanceFilter<Call> for ProxyType {
 				}
 				false
 			},
-			// We don't include any space or profile management pallets actions here.
 			ProxyType::SocialActions => matches!(
 				c,
 				Call::Posts(..)
