@@ -2,6 +2,7 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
+use frame_support::traits::{ConstU32, ConstU64};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -119,8 +120,11 @@ impl pallet_domains::Config for Test {
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
+    type MaxRecordKeySize = ConstU32<250>;
+    type MaxRecordValueSize = ConstU32<250>;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
+    type RecordByteDeposit = ConstU64<250>;
     type WeightInfo = ();
 }
 

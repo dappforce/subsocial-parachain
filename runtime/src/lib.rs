@@ -28,6 +28,7 @@ use frame_support::{
 	},
 	PalletId,
 };
+use frame_support::traits::ConstU32;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -518,8 +519,11 @@ impl pallet_domains::Config for Runtime {
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;
+	type MaxRecordKeySize = ConstU32<128>;
+	type MaxRecordValueSize = ConstU32<4096>;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
+	type RecordByteDeposit = TransactionByteFee;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
