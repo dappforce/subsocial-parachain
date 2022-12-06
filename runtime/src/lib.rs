@@ -522,6 +522,8 @@ parameter_types! {
 pub enum ProxyType {
 	Any,
 	DomainRegistrar,
+	SocialActions,
+	Management,
 }
 
 impl Default for ProxyType {
@@ -543,6 +545,30 @@ impl InstanceFilter<Call> for ProxyType {
 				}
 				false
 			},
+			// We don't include any space or profile management pallets actions here.
+			ProxyType::SocialActions => matches!(
+				c,
+				Call::Posts(..)
+					| Call::Reactions(..)
+					| Call::AccountFollows(..)
+					| Call::SpaceFollows(..)
+			),
+			ProxyType::Management => matches!(
+				c,
+				Call::Spaces(..)
+					| Call::SpaceOwnership(..)
+					| Call::Roles(..)
+					| Call::Profiles(..)
+					| Call::Domains(..)
+			),
+		}
+	}
+
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			_ => false,
 		}
 	}
 }
