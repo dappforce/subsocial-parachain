@@ -235,10 +235,10 @@ pub mod pallet {
         }
 
         #[pallet::weight(50_000_000)]
-        pub fn set_record(origin: OriginFor<T>,domain: DomainName<T>, key: RecordKey<T>, value: RecordValue<T>) -> DispatchResult {
+        pub fn set_record(origin: OriginFor<T>,domain: DomainName<T>, key: RecordKey<T>, value_opt: Option<RecordValue<T>>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::do_set_record(domain, key, value, Some(sender))?;
+            Self::do_set_record(domain, key, value_opt, Some(sender))?;
 
             Ok(())
         }
@@ -448,7 +448,7 @@ pub mod pallet {
         fn do_set_record(
             domain: DomainName<T>,
             key: RecordKey<T>,
-            value: RecordValue<T>,
+            value_opt: Option<RecordValue<T>>,
             check_ownership: Option<T::AccountId>,
         ) -> DispatchResult {
             let domain_lc = Self::lower_domain_then_bound(&domain);
@@ -458,7 +458,7 @@ pub mod pallet {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            DomainRecords::<T>::insert(domain_lc, key, value);
+            DomainRecords::<T>::mutate_exists(domain_lc, key, value_opt);
 
             // TODO: reserve some balance per byte and don't forget refund if new value is less than
             // paid value
