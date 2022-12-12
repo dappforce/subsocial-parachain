@@ -80,6 +80,9 @@ pub mod pallet {
         #[pallet::constant]
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
+        /// The governance origin to control this pallet.
+        type ManagerOrigin: EnsureOrigin<Self::Origin>;
+
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -213,7 +216,7 @@ pub mod pallet {
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::ManagerOrigin::ensure_origin(origin)?;
 
             let owner = T::Lookup::lookup(target)?;
             let domain_data = DomainData::new(owner, full_domain, content, expires_in);
@@ -245,7 +248,7 @@ pub mod pallet {
             domain: DomainName<T>,
             value_opt: Option<InnerValueOf<T>>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::ManagerOrigin::ensure_origin(origin)?;
 
             Self::do_set_inner_value(domain, value_opt, None)?;
 
@@ -325,7 +328,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             words: BoundedDomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+            T::ManagerOrigin::ensure_origin(origin)?;
 
             let inserted_words_count = Self::insert_domains(
                 &words,
@@ -346,7 +349,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             tlds: BoundedDomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+            T::ManagerOrigin::ensure_origin(origin)?;
 
             let inserted_tlds_count = Self::insert_domains(
                 &tlds,

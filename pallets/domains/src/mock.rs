@@ -2,6 +2,8 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
+use frame_support::traits::EnsureOrigin;
+use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -121,6 +123,7 @@ impl pallet_domains::Config for Test {
     type MaxOuterValueLength = MaxOuterValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = ();
 }
 
