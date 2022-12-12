@@ -22,7 +22,7 @@ pub mod types;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
-    use frame_system::{pallet_prelude::*, Pallet as System};
+    use frame_system::{Pallet as System, pallet_prelude::*};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
     use subsocial_support::ensure_content_is_valid;
@@ -109,7 +109,7 @@ pub mod pallet {
         DomainName<T>,
         Blake2_128Concat,
         RecordKey<T>,
-        RecordValue<T>,
+        RecordValueWithDeposit<T>,
     >;
 
     /// Metadata associated per domain.
@@ -123,13 +123,13 @@ pub mod pallet {
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
-    pub(super) type DomainsByOwner<T: Config> =
-        StorageMap<_,
-            Twox64Concat,
-            T::AccountId,
-            BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
-            ValueQuery,
-        >;
+    pub(super) type DomainsByOwner<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
+        ValueQuery,
+    >;
 
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
@@ -235,7 +235,12 @@ pub mod pallet {
         }
 
         #[pallet::weight(50_000_000)]
-        pub fn set_record(origin: OriginFor<T>,domain: DomainName<T>, key: RecordKey<T>, value_opt: Option<RecordValue<T>>) -> DispatchResult {
+        pub fn set_record(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+            key: RecordKey<T>,
+            value_opt: Option<RecordValue<T>>,
+        ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
             Self::do_set_record(domain, key, value_opt, Some(sender))?;
@@ -453,17 +458,45 @@ pub mod pallet {
         ) -> DispatchResult {
             let domain_lc = Self::lower_domain_then_bound(&domain);
             let meta = Self::require_domain(domain_lc.clone())?;
+            let owner = meta.owner.clone();
 
             if let Some(should_be_owner) = check_ownership {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            DomainRecords::<T>::mutate_exists(domain_lc, key, value_opt);
+            let old_deposit: BalanceOf<T> = if let Some(value_with_deposit) =
+                DomainRecords::<T>::get(domain_lc.clone(), key.clone())
+            {
+                value_with_deposit.1
+            } else {
+                0u32.into()
+            };
+            let new_deposit: BalanceOf<T> = Self::calc_record_deposit(key.clone(), value_opt.clone());
 
-            // TODO: reserve some balance per byte and don't forget refund if new value is less than
-            // paid value
+            DomainRecords::<T>::mutate_exists(domain_lc, key, |_| {
+                value_opt.map(|value| (value, new_deposit))
+            });
+
+
+            if old_deposit > new_deposit {
+                let diff = old_deposit.saturating_sub(new_deposit);
+                let _ = T::Currency::unreserve(&owner, diff);
+            } else {
+                let diff = new_deposit.saturating_sub(old_deposit);
+                T::Currency::reserve(&owner, diff)?;
+            }
 
             Ok(())
+        }
+
+        pub(crate) fn calc_record_deposit(
+            key: RecordKey<T>,
+            value_opt: Option<RecordValue<T>>,
+        ) -> BalanceOf<T> {
+            let num_of_bytes =
+                if let Some(value) = value_opt { key.len() + value.len() } else { 0 } as u32;
+
+            T::RecordByteDeposit::get().saturating_mul(num_of_bytes.into())
         }
 
         fn do_set_inner_value(
