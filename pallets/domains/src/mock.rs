@@ -2,7 +2,7 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
-use frame_support::traits::EnsureOrigin;
+use frame_support::traits::{ConstU32, GenesisBuild};
 use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -109,6 +109,8 @@ parameter_types! {
 
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
+
+    pub static InitialPriceRanges: Vec<(PriceRangeStart, Balance)> = Vec::new();
 }
 
 impl pallet_domains::Config for Test {
@@ -124,6 +126,8 @@ impl pallet_domains::Config for Test {
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type ManagerOrigin = EnsureRoot<AccountId>;
+    type MaxPriceRanges = ConstU32<10>;
+    type InitialPriceRanges = InitialPriceRanges;
     type WeightInfo = ();
 }
 
@@ -311,9 +315,13 @@ fn _set_domain_content(
     )
 }
 
+pub(super) fn make_account_balance_be(account: &AccountId, balance: Balance) {
+    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(account, balance);
+}
+
 pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
     let account = account(id);
-    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(&account, balance);
+    make_account_balance_be(&account, balance);
     account
 }
 
@@ -333,6 +341,7 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
+    pub(crate) initial_price_ranges: Vec<(PriceRangeStart, Balance)>,
 }
 
 impl Default for ExtBuilder {
@@ -344,6 +353,11 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
+            initial_price_ranges: vec![
+                (7, 50),
+                (10, 25),
+                (3, 100),
+            ],
         }
     }
 }
@@ -379,6 +393,11 @@ impl ExtBuilder {
         self
     }
 
+    pub(crate) fn initial_price_ranges(mut self, initial_price_ranges: Vec<(PriceRangeStart, Balance)>) -> Self {
+        self.initial_price_ranges = initial_price_ranges;
+        self
+    }
+
     fn set_configs(&self) {
         MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
@@ -386,6 +405,7 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+        INITIAL_PRICE_RANGES.with(|x| *x.borrow_mut() = self.initial_price_ranges.clone());
     }
 
     pub(crate) fn build(self) -> TestExternalities {
@@ -394,6 +414,10 @@ impl ExtBuilder {
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
+
+        let _ = pallet_domains::GenesisConfig::<Test> {
+            initial_price_ranges: self.initial_price_ranges.clone(),
+        }.assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {

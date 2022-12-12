@@ -21,7 +21,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Contains,
+	traits::{ConstU32, Contains},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -570,6 +570,8 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = ();
 }
 
+use pallet_domains::types::PriceRangeStart;
+
 parameter_types! {
     pub const MinDomainLength: u32 = 6;
     pub const MaxDomainLength: u32 = 63;
@@ -586,6 +588,13 @@ parameter_types! {
 
     pub const BaseDomainDeposit: Balance = 10 * UNIT;
     pub const OuterValueByteDeposit: Balance = 10 * MILLIUNIT;
+
+	// FIXME: test values
+	pub DefaultPricesSet: Vec<(PriceRangeStart, Balance)> = vec![
+		(6, 25 * UNIT),
+		(8, 12500 * MILLIUNIT),
+		(12, 6250 * MILLIUNIT),
+	];
 }
 
 impl pallet_domains::Config for Runtime {
@@ -601,6 +610,8 @@ impl pallet_domains::Config for Runtime {
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type ManagerOrigin = EnsureRoot<AccountId>;
+	type MaxPriceRanges = ConstU32<10>;
+	type InitialPriceRanges = DefaultPricesSet;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 

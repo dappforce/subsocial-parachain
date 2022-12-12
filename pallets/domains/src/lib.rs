@@ -27,11 +27,11 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency}, weights::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
-    use sp_runtime::traits::{Saturating, StaticLookup, Zero};
+    use sp_runtime::traits::{Saturating, StaticLookup, Zero, One};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
     use subsocial_support::ensure_content_is_valid;
@@ -42,7 +42,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency trait.
-        type Currency: ReservableCurrency<Self::AccountId>;
+        type Currency: ReservableCurrency<Self::AccountId> + Currency<Self::AccountId>;
 
         /// Domain's minimum length.
         #[pallet::constant]
@@ -82,6 +82,12 @@ pub mod pallet {
 
         /// The governance origin to control this pallet.
         type ManagerOrigin: EnsureOrigin<Self::Origin>;
+
+        #[pallet::constant]
+        type MaxPriceRanges: Get<u32>;
+
+        #[pallet::constant]
+        type InitialPriceRanges: Get<Vec<(PriceRangeStart, BalanceOf<Self>)>>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -131,6 +137,37 @@ pub mod pallet {
     #[pallet::getter(fn is_tld_supported)]
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn prices_matrix)]
+    pub(super) type PricesMatrix<T: Config> =
+        StorageMap<_, Twox64Concat, PriceRangeStart, BalanceOf<T>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn prices_ranges)]
+    pub(super) type PricesRanges<T: Config> =
+        StorageValue<_, Vec<PriceRangeStart>, ValueQuery>;
+
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub initial_price_ranges: Vec<(PriceRangeStart, BalanceOf<T>)>,
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self {
+                initial_price_ranges: T::InitialPriceRanges::get(),
+            }
+        }
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        fn build(&self) {
+            Pallet::<T>::init_pallet(&self.initial_price_ranges);
+        }
+    }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -182,6 +219,12 @@ pub mod pallet {
         TldNotSpecified,
         /// Top-level domain is not supported.
         TldNotSupported,
+        /// The domain price cannot be calculated.
+        CannotCalculatePrice,
+        /// There are not enough funds to reserve domain deposit.
+        InsufficientBalanceToReserveDeposit,
+        /// There are not enough funds to pay for domain.
+        InsufficientBalanceToPayForDomain,
     }
 
     #[pallet::call]
@@ -389,20 +432,34 @@ pub mod pallet {
 
             ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
             Self::ensure_domain_is_free(&domain_lc)?;
-            Self::ensure_within_domains_limit(&owner)?;
+            Self::ensure_can_reserve_deposit(&owner, &is_forced)?;
 
-            let deposit = Self::try_reserve_domain_deposit(&owner, &is_forced)?;
+            let domains_per_account = Self::ensure_within_domains_limit(&owner)?;
+            let price = Self::try_calculate_price(&subdomain)?;
+
             if let IsForced::No = is_forced {
-                Self::ensure_word_is_not_reserved(&subdomain)?;
                 // FIXME: this check is redundant, because we already checked that in the function above
-                // FIXME: MaxPromoDomainsPerAccount check missing
+                Self::ensure_word_is_not_reserved(&subdomain)?;
+                ensure!(
+                    <T as Config>::Currency::can_slash(&owner, price),
+                    Error::<T>::InsufficientBalanceToPayForDomain,
+                );
+
+                ensure!(
+                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
+                    Error::<T>::MaxPromoDomainsPerAccountLimitReached,
+                );
             }
 
+            // Perform write operations.
+            if let IsForced::No = is_forced {
+                // todo: add receiver origin
+                <T as Config>::Currency::slash(&owner, price);
+            }
+
+            let deposit = Self::try_reserve_domain_deposit(&owner, &is_forced)?;
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(expires_at, owner.clone(), content, deposit);
-
-            // Perform write operations.
-            // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
             DomainsByOwner::<T>::mutate(
@@ -584,7 +641,9 @@ pub mod pallet {
             (subdomain, tld)
         }
 
-        pub(crate) fn ensure_within_domains_limit(owner: &T::AccountId) -> DispatchResult {
+        pub(crate) fn ensure_within_domains_limit(
+            owner: &T::AccountId
+        ) -> Result<usize, DispatchError> {
             let domains_per_account = DomainsByOwner::<T>::decode_len(owner)
                 .unwrap_or(Zero::zero());
 
@@ -592,7 +651,7 @@ pub mod pallet {
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
-            Ok(())
+            Ok(domains_per_account)
         }
 
         pub(crate) fn ensure_domain_is_free(domain_lc: &DomainName<T>) -> DispatchResult {
@@ -618,6 +677,19 @@ pub mod pallet {
             }
         }
 
+        fn ensure_can_reserve_deposit(depositor: &T::AccountId, is_forced: &IsForced) -> DispatchResult {
+            match is_forced {
+                IsForced::No => {
+                    ensure!(
+                        <T as Config>::Currency::can_reserve(depositor, T::BaseDomainDeposit::get()),
+                        Error::<T>::InsufficientBalanceToReserveDeposit,
+                    );
+                },
+                IsForced::Yes => (),
+            }
+            Ok(())
+        }
+
         fn ensure_word_is_not_reserved(word: &DomainName<T>) -> DispatchResult {
             let word_without_hyphens = Self::bound_domain(
                 word.iter().filter(|c| **c != b'-').cloned().collect()
@@ -625,6 +697,31 @@ pub mod pallet {
 
             ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())
+        }
+
+        fn try_calculate_price(subdomain: &DomainName<T>) -> Result<BalanceOf<T>, DispatchError> {
+            let price_ranges: Vec<PriceRangeStart> = Self::prices_ranges();
+
+            let idx = price_ranges
+                .partition_point(|x| (*x as usize) < subdomain.len())
+                .saturating_sub(One::one());
+
+            let range_start = &price_ranges[idx];
+
+            Self::prices_matrix(range_start).ok_or(Error::<T>::CannotCalculatePrice.into())
+        }
+
+        pub fn init_pallet(initial_price_ranges: &[(PriceRangeStart, BalanceOf<T>)]) {
+            for (min_length, price) in initial_price_ranges.iter() {
+                PricesRanges::<T>::mutate(|ranges| {
+                    match ranges.binary_search(min_length) {
+                        Ok(_) => (),
+                        Err(pos) => ranges.insert(pos, *min_length),
+                    }
+                });
+
+                PricesMatrix::<T>::insert(min_length, *price);
+            }
         }
     }
 }
