@@ -616,3 +616,33 @@ fn ensure_valid_domain_should_work() {
             );
         });
 }
+
+
+// Test calc_record_deposit
+#[test]
+fn test_calc_record_deposit() {
+    let test = |deposit: Balance, key: &[u8], value_opt: Option<&[u8]>, expected: Balance| {
+        let key: RecordKey<Test> = key.to_vec().try_into().unwrap();
+        let value_opt: Option<RecordValue<Test>> = value_opt.map(|value| value.to_vec().try_into().unwrap());
+
+        ExtBuilder::default()
+            .record_byte_deposit(deposit)
+            .build()
+            .execute_with(|| {
+                let res = pallet_domains::Pallet::<Test>::calc_record_deposit(key.clone(), value_opt.clone());
+                assert_eq!(res, expected, "Expected deposit of ({},{:?}) to be {} but the result is {}",
+                           String::from_utf8(key.to_vec()).unwrap(),
+                           value_opt.map(|v| String::from_utf8(v.to_vec()).unwrap()),
+                           expected,
+                           res,
+                );
+            })
+    };
+
+
+    test(1, b"123", Some(b"123"), 6);
+    test(10, b"1", Some(b"123456789"), 100);
+    test(1, b"123", None, 0);
+    test(33, b"1", Some(b"23"), 99);
+    test(33, b"112121215458421", None, 0);
+}

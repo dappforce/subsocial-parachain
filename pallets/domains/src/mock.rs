@@ -2,7 +2,6 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
-use frame_support::traits::{ConstU32, ConstU64};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -108,6 +107,10 @@ parameter_types! {
 
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
+
+    pub static MaxRecordKeySize: u32 = 250;
+    pub static MaxRecordValueSize: u32 = 250;
+    pub static RecordByteDeposit: Balance = 0;
 }
 
 impl pallet_domains::Config for Test {
@@ -120,11 +123,11 @@ impl pallet_domains::Config for Test {
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
-    type MaxRecordKeySize = ConstU32<250>;
-    type MaxRecordValueSize = ConstU32<250>;
+    type MaxRecordKeySize = MaxRecordKeySize;
+    type MaxRecordValueSize = MaxRecordValueSize;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
-    type RecordByteDeposit = ConstU64<250>;
+    type RecordByteDeposit = RecordByteDeposit;
     type WeightInfo = ();
 }
 
@@ -334,6 +337,9 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
+    pub(crate) max_record_key_size: u32,
+    pub(crate) max_record_value_size: u32,
+    pub(crate) record_byte_deposit: Balance,
 }
 
 impl Default for ExtBuilder {
@@ -345,6 +351,9 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
+            max_record_key_size: 250,
+            max_record_value_size: 250,
+            record_byte_deposit: 0,
         }
     }
 }
@@ -380,6 +389,21 @@ impl ExtBuilder {
         self
     }
 
+    pub(crate) fn max_record_key_size(mut self, max_record_key_size: u32) -> Self {
+        self.max_record_key_size = max_record_key_size;
+        self
+    }
+
+    pub(crate) fn max_record_value_size(mut self, max_record_value_size: u32) -> Self {
+        self.max_record_value_size = max_record_value_size;
+        self
+    }
+
+    pub(crate) fn record_byte_deposit(mut self, record_byte_deposit: Balance) -> Self {
+        self.record_byte_deposit = record_byte_deposit;
+        self
+    }
+
     fn set_configs(&self) {
         MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
@@ -387,6 +411,9 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+        MAX_RECORD_KEY_SIZE.with(|x| *x.borrow_mut() = self.max_record_key_size);
+        MAX_RECORD_VALUE_SIZE.with(|x| *x.borrow_mut() = self.max_record_value_size);
+        RECORD_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.record_byte_deposit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {
