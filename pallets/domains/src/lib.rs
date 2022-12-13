@@ -56,10 +56,6 @@ pub mod pallet {
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
-        /// Maximum number of promotional domains that can be registered per account.
-        #[pallet::constant]
-        type MaxPromoDomainsPerAccount: Get<u32>;
-
         /// Maximum number of price ranges for domains.
         #[pallet::constant]
         type MaxPriceRanges: Get<u32>;
@@ -209,8 +205,6 @@ pub mod pallet {
         DomainContentNotChanged,
         /// Cannot register more than [`Config::MaxDomainsPerAccount`] domains.
         TooManyDomainsPerAccount,
-        /// Cannot register more than [`Config::MaxPromoDomainsPerAccount`] domains.
-        MaxPromoDomainsPerAccountLimitReached,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
         /// This domain label length must be withing the limits defined with
@@ -463,18 +457,13 @@ pub mod pallet {
             Self::ensure_domain_is_free(&domain_lc)?;
             Self::ensure_can_reserve_deposit(&owner, &is_forced)?;
 
-            let domains_per_account = Self::ensure_within_domains_limit(&owner)?;
+            Self::ensure_within_domains_limit(&owner)?;
             let price = Self::try_calculate_price(&subdomain)?;
 
             if let IsForced::No = is_forced {
                 // TODO: this check is duplicating one, which happens in one of the functions above
                 Self::ensure_word_is_not_reserved(&subdomain)?;
                 Self::ensure_can_pay_for_domain(&owner, price)?;
-
-                ensure!(
-                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                    Error::<T>::MaxPromoDomainsPerAccountLimitReached,
-                );
 
                 // Perform write operations.
                 <T as Config>::Currency::transfer(
@@ -669,9 +658,7 @@ pub mod pallet {
             (subdomain, tld)
         }
 
-        pub(crate) fn ensure_within_domains_limit(
-            owner: &T::AccountId
-        ) -> Result<usize, DispatchError> {
+        pub(crate) fn ensure_within_domains_limit(owner: &T::AccountId) -> DispatchResult {
             let domains_per_account = DomainsByOwner::<T>::decode_len(owner)
                 .unwrap_or(Zero::zero());
 
@@ -679,7 +666,7 @@ pub mod pallet {
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
-            Ok(domains_per_account)
+            Ok(())
         }
 
         pub(crate) fn ensure_domain_is_free(domain_lc: &DomainName<T>) -> DispatchResult {

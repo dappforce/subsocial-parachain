@@ -91,29 +91,7 @@ fn register_domain_should_fail_when_balance_is_insufficient() {
 
             assert_noop!(
                 _register_default_domain(),
-                pallet_balances::Error::<Test>::InsufficientBalance,
-            );
-        });
-}
-
-#[test]
-fn register_domain_should_fail_when_promo_domains_limit_reached() {
-    ExtBuilder::default()
-        .max_promo_domains_per_account(1)
-        .build()
-        .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
-
-            assert_ok!(_register_default_domain());
-
-            assert_noop!(
-                Domains::register_domain(
-                    Origin::signed(DOMAIN_OWNER),
-                    domain_from(b"second-domain".to_vec()),
-                    valid_content_ipfs(),
-                    ExtBuilder::default().reservation_period_limit,
-                ),
-                Error::<Test>::MaxPromoDomainsPerAccountLimitReached,
+                Error::<Test>::InsufficientBalanceToReserveDeposit,
             );
         });
 }

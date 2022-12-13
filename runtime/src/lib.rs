@@ -577,8 +577,6 @@ parameter_types! {
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
-    // TODO This value should be removed later, once it will be possible to purchase domains.
-	pub const MaxPromoDomainsPerAccount: u32 = 10;
 
 	// TODO: replace with a calculation
 	// 	(([MAXIMUM_BLOCK_WEIGHT] * 0.75) / ("function_weight")) * 0.33
@@ -606,7 +604,6 @@ impl pallet_domains::Config for Runtime {
 	type MinDomainLength = MinDomainLength;
 	type MaxDomainLength = MaxDomainLength;
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
-	type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
 	type MaxPriceRanges = ConstU32<10>;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
