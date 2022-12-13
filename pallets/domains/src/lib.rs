@@ -22,9 +22,10 @@ pub mod types;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
-    use frame_system::{Pallet as System, pallet_prelude::*};
+    use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+
     use subsocial_support::ensure_content_is_valid;
     use types::*;
 
@@ -158,6 +159,12 @@ pub mod pallet {
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
+        /// Domain record have been updated
+        DomainRecordUpdated {
+            domain: DomainName<T>,
+            key: RecordKey<T>,
+            value: Option<RecordValue<T>>,
+        },
     }
 
     #[pallet::error]
@@ -471,12 +478,12 @@ pub mod pallet {
             } else {
                 0u32.into()
             };
-            let new_deposit: BalanceOf<T> = Self::calc_record_deposit(key.clone(), value_opt.clone());
+            let new_deposit: BalanceOf<T> =
+                Self::calc_record_deposit(key.clone(), value_opt.clone());
 
-            DomainRecords::<T>::mutate_exists(domain_lc, key, |_| {
-                value_opt.map(|value| (value, new_deposit))
+            DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
+                *current_opt = value_opt.clone().map(|value| (value, new_deposit));
             });
-
 
             if old_deposit > new_deposit {
                 let diff = old_deposit.saturating_sub(new_deposit);
@@ -486,6 +493,11 @@ pub mod pallet {
                 T::Currency::reserve(&owner, diff)?;
             }
 
+            Self::deposit_event(Event::DomainRecordUpdated {
+                domain: domain_lc,
+                key,
+                value: value_opt,
+            });
             Ok(())
         }
 
