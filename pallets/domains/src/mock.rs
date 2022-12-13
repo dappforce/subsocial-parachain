@@ -111,6 +111,8 @@ parameter_types! {
     pub static OuterValueByteDeposit: Balance = 0;
 
     pub static InitialPriceRanges: Vec<(PriceRangeStart, Balance)> = Vec::new();
+
+    pub const DefaultPaymentReceiver: AccountId = PAYMENT_RECEIVER;
 }
 
 impl pallet_domains::Config for Test {
@@ -120,19 +122,21 @@ impl pallet_domains::Config for Test {
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
     type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
+    type MaxPriceRanges = ConstU32<10>;
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxPriceRanges = ConstU32<10>;
+    type DefaultPaymentReceiver = DefaultPaymentReceiver;
     type InitialPriceRanges = InitialPriceRanges;
     type WeightInfo = ();
 }
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
+pub(crate) const PAYMENT_RECEIVER: u64 = 3;
 
 pub(crate) const ACCOUNT_A: u64 = 10;
 pub(crate) const ACCOUNT_B: u64 = 20;
@@ -417,6 +421,7 @@ impl ExtBuilder {
 
         let _ = pallet_domains::GenesisConfig::<Test> {
             initial_price_ranges: self.initial_price_ranges.clone(),
+            payment_receiver: PAYMENT_RECEIVER,
         }.assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());

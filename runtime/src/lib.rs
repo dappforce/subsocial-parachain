@@ -12,7 +12,7 @@ pub mod xcm_config;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -595,6 +595,9 @@ parameter_types! {
 		(8, 12500 * MILLIUNIT),
 		(12, 6250 * MILLIUNIT),
 	];
+
+	pub DefaultPaymentReceiver: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+		.unwrap_or(PalletId(*b"py/domns").into_account_truncating());
 }
 
 impl pallet_domains::Config for Runtime {
@@ -604,13 +607,14 @@ impl pallet_domains::Config for Runtime {
 	type MaxDomainLength = MaxDomainLength;
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
 	type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
+	type MaxPriceRanges = ConstU32<10>;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type ManagerOrigin = EnsureRoot<AccountId>;
-	type MaxPriceRanges = ConstU32<10>;
+	type DefaultPaymentReceiver = DefaultPaymentReceiver;
 	type InitialPriceRanges = DefaultPricesSet;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
