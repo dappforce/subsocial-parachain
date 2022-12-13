@@ -241,7 +241,7 @@ pub mod pallet {
             Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::Yes)
         }
 
-        #[pallet::weight(50_000_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_record())]
         pub fn set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,
