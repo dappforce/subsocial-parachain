@@ -7,6 +7,8 @@ use subsocial_support::new_who_and_when;
 
 use crate::{DomainByInnerValue, Event, mock::*};
 use crate::Error;
+use crate::mock::*;
+use crate::pallet::DomainRecords;
 use crate::types::*;
 
 // `register_domain` tests
@@ -619,6 +621,11 @@ fn ensure_valid_domain_should_work() {
 
 
 // Tests for set_record
+
+// helper for records
+fn record_key(k: &[u8]) -> RecordKey<Test> { k.to_vec().try_into().unwrap() }
+fn record_value(v: &[u8]) -> RecordValue<Test> { v.to_vec().try_into().unwrap() }
+
 #[test]
 fn set_record_should_fail_when_caller_unsigned() {
     ExtBuilder::default()
@@ -645,8 +652,8 @@ fn set_record_should_fail_when_caller_is_not_domain_owner() {
                 Domains::set_record(
                     Origin::signed(DUMMY_ACCOUNT),
                     default_domain(),
-                    b"key".to_vec().try_into().unwrap(),
-                    Some(b"value".to_vec().try_into().unwrap()),
+                    record_key(b"key"),
+                    record_value(b"value").into(),
                 ),
                 Error::<Test>::NotDomainOwner,
             );
@@ -662,8 +669,8 @@ fn set_record_should_fail_when_domain_is_not_found() {
                 Domains::set_record(
                     Origin::signed(DUMMY_ACCOUNT),
                     default_domain(),
-                    b"key".to_vec().try_into().unwrap(),
-                    Some(b"value".to_vec().try_into().unwrap()),
+                    record_key(b"key"),
+                    record_value(b"value").into(),
                 ),
                 Error::<Test>::DomainNotFound,
             );
@@ -676,13 +683,22 @@ fn set_record_should_work_correctly() {
         .record_byte_deposit(0)
         .build_with_default_domain_registered()
         .execute_with(|| {
+            let key = record_key(b"key");
+            let value = record_value(b"value");
+            let value_opt: Option<RecordValue<Test>> = Some(value.clone());
             assert_ok!(
                 Domains::set_record(
                     Origin::signed(DOMAIN_OWNER),
                     default_domain(),
-                    b"key".to_vec().try_into().unwrap(),
-                    Some(b"value".to_vec().try_into().unwrap()),
+                    key.clone(),
+                    value_opt.clone(),
                 ),
+            );
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 0)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: value_opt }.into()
             );
         });
 }
@@ -697,10 +713,199 @@ fn set_record_should_fail_when_owner_have_no_record_deposit() {
                 Domains::set_record(
                     Origin::signed(DOMAIN_OWNER),
                     default_domain(),
-                    b"key".to_vec().try_into().unwrap(),
-                    Some(b"value".to_vec().try_into().unwrap()),
+                    record_key(b"key"),
+                    record_value(b"value").into(),
                 ),
                 pallet_balances::Error::<Test>::InsufficientBalance,
+            );
+        });
+}
+
+#[test]
+fn set_record_should_reserve_correct_record_deposit() {
+    ExtBuilder::default()
+        .record_byte_deposit(120)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+
+            account_with_balance(DOMAIN_OWNER, 1000);
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+
+            let key = record_key(b"123");
+            let value = record_value(b"456");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
+
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 720)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
+            );
+        });
+}
+
+
+#[test]
+fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
+    ExtBuilder::default()
+        .record_byte_deposit(120)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+
+            account_with_balance(DOMAIN_OWNER, 1000);
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+
+            let key = record_key(b"123");
+            let value = record_value(b"456");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
+
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 720)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+            );
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    None,
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), None);
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: None }.into()
+            );
+        });
+}
+
+
+#[test]
+fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
+    ExtBuilder::default()
+        .record_byte_deposit(120)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+
+            account_with_balance(DOMAIN_OWNER, 1000);
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+
+            let key = record_key(b"123");
+            let value = record_value(b"456");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
+
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 720)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+            );
+
+            let value = record_value(b"4");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 520);
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 480)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
+            );
+        });
+}
+
+#[test]
+fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
+    ExtBuilder::default()
+        .record_byte_deposit(120)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+
+            account_with_balance(DOMAIN_OWNER, 1000);
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+
+            let key = record_key(b"123");
+            let value = record_value(b"456");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
+
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 720)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+            );
+
+            let value = record_value(b"45678");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 40);
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), 960)));
+
+            System::assert_last_event(
+                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
             );
         });
 }
