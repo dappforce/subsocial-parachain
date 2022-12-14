@@ -260,16 +260,10 @@ impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
 		let is_force_transfer =
 			matches!(c, Call::Balances(pallet_balances::Call::force_transfer { .. }));
-		let disallowed_vesting_calls =
-			matches!(c,
-				Call::Vesting(pallet_vesting::Call::vested_transfer { .. }) |
-				Call::Vesting(pallet_vesting::Call::vest { .. }) |
-				Call::Vesting(pallet_vesting::Call::vest_other { .. })
-			);
 
 		match *c {
 			Call::Balances(..) => is_force_transfer,
-			Call::Vesting(..) => !disallowed_vesting_calls,
+			Call::Vesting(pallet_vesting::Call::vested_transfer { .. }) => false,
 			_ => true,
 		}
 	}
