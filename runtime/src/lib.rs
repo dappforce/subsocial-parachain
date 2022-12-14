@@ -28,7 +28,6 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::traits::ConstU32;
 use frame_support::traits::InstanceFilter;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
