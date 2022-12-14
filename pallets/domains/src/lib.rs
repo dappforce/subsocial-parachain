@@ -423,7 +423,9 @@ pub mod pallet {
             let subdomain = domain_parts.first().unwrap();
             let tld = domain_parts.last().unwrap();
 
-            ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
+            // FIXME: this is hot fix, change asap
+            // ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
+            ensure!(tld.as_slice() == b"sub", Error::<T>::TldNotSupported);
 
             let domains_per_account = Self::domains_by_owner(&owner).len();
 
