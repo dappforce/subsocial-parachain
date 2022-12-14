@@ -499,13 +499,7 @@ pub mod pallet {
             let new_deposit: BalanceOf<T> =
                 Self::calc_record_deposit(key.clone(), value_opt.clone());
 
-            if old_deposit > new_deposit {
-                let diff = old_deposit.saturating_sub(new_deposit);
-                let _ = T::Currency::unreserve(&owner, diff);
-            } else {
-                let diff = new_deposit.saturating_sub(old_deposit);
-                T::Currency::reserve(&owner, diff)?;
-            }
+            Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
                 *current_opt = value_opt.clone().map(|value| (value, new_deposit));
