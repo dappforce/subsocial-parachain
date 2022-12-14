@@ -618,6 +618,93 @@ fn ensure_valid_domain_should_work() {
 }
 
 
+// Tests for set_record
+#[test]
+fn set_record_should_fail_when_caller_unsigned() {
+    ExtBuilder::default()
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+            assert_noop!(
+                Domains::set_record(
+                    Origin::none(),
+                    default_domain(),
+                    b"key".to_vec().try_into().unwrap(),
+                    Some(b"value".to_vec().try_into().unwrap()),
+                ),
+                BadOrigin,
+            );
+        });
+}
+
+#[test]
+fn set_record_should_fail_when_caller_is_not_domain_owner() {
+    ExtBuilder::default()
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+            assert_noop!(
+                Domains::set_record(
+                    Origin::signed(DUMMY_ACCOUNT),
+                    default_domain(),
+                    b"key".to_vec().try_into().unwrap(),
+                    Some(b"value".to_vec().try_into().unwrap()),
+                ),
+                Error::<Test>::NotDomainOwner,
+            );
+        });
+}
+
+#[test]
+fn set_record_should_fail_when_domain_is_not_found() {
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                Domains::set_record(
+                    Origin::signed(DUMMY_ACCOUNT),
+                    default_domain(),
+                    b"key".to_vec().try_into().unwrap(),
+                    Some(b"value".to_vec().try_into().unwrap()),
+                ),
+                Error::<Test>::DomainNotFound,
+            );
+        });
+}
+
+#[test]
+fn set_record_should_work_correctly() {
+    ExtBuilder::default()
+        .record_byte_deposit(0)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    b"key".to_vec().try_into().unwrap(),
+                    Some(b"value".to_vec().try_into().unwrap()),
+                ),
+            );
+        });
+}
+
+#[test]
+fn set_record_should_fail_when_owner_have_no_record_deposit() {
+    ExtBuilder::default()
+        .record_byte_deposit(10)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+            assert_noop!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    b"key".to_vec().try_into().unwrap(),
+                    Some(b"value".to_vec().try_into().unwrap()),
+                ),
+                pallet_balances::Error::<Test>::InsufficientBalance,
+            );
+        });
+}
+
 // Test calc_record_deposit
 #[test]
 fn test_calc_record_deposit() {
