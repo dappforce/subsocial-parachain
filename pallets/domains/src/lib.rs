@@ -518,7 +518,7 @@ pub mod pallet {
             value_opt: Option<RecordValue<T>>,
         ) -> BalanceOf<T> {
             let num_of_bytes =
-                if let Some(value) = value_opt { key.len() + value.len() } else { 0 } as u32;
+                if let Some(value) = value_opt { key.len().saturating_add(value.len()) } else { 0 } as u32;
 
             T::RecordByteDeposit::get().saturating_mul(num_of_bytes.into())
         }
