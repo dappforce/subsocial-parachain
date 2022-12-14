@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 17,
+	spec_version: 18,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -522,6 +522,8 @@ parameter_types! {
 pub enum ProxyType {
 	Any,
 	DomainRegistrar,
+	SocialActions,
+	Management,
 }
 
 impl Default for ProxyType {
@@ -532,18 +534,40 @@ impl Default for ProxyType {
 
 impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
-		if let Call::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
-			if let Call::Domains(pallet_domains::Call::force_register_domain { .. }) = &**call {
-				return true;
-			}
-		}
-
 		match self {
 			ProxyType::Any => true,
-			ProxyType::DomainRegistrar => matches!(
+			ProxyType::DomainRegistrar => {
+				if let Call::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
+					return matches!(
+						&**call,
+						Call::Domains(pallet_domains::Call::force_register_domain { .. })
+					)
+				}
+				false
+			},
+			ProxyType::SocialActions => matches!(
 				c,
-				Call::Domains(pallet_domains::Call::force_register_domain { .. })
+				Call::Posts(..)
+					| Call::Reactions(..)
+					| Call::AccountFollows(..)
+					| Call::SpaceFollows(..)
 			),
+			ProxyType::Management => matches!(
+				c,
+				Call::Spaces(..)
+					| Call::SpaceOwnership(..)
+					| Call::Roles(..)
+					| Call::Profiles(..)
+					| Call::Domains(..)
+			),
+		}
+	}
+
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			_ => false,
 		}
 	}
 }
