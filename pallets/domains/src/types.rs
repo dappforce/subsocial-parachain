@@ -18,7 +18,8 @@ pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLengt
 
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
 
-pub type PriceRangeStart = u32;
+pub type DomainLength = u32;
+
 /// A subset of second level domains.
 /// Alias to a tuple: `(subdomain, top-level domain)`.
 pub(crate) type DomainParts<T> =

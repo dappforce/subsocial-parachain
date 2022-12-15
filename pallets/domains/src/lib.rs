@@ -31,7 +31,7 @@ pub mod pallet {
 
     use frame_system::pallet_prelude::*;
 
-    use sp_runtime::traits::{Saturating, StaticLookup, Zero, One};
+    use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
     use subsocial_support::ensure_content_is_valid;
@@ -46,19 +46,15 @@ pub mod pallet {
 
         /// Domain's minimum length.
         #[pallet::constant]
-        type MinDomainLength: Get<u32>;
+        type MinDomainLength: Get<DomainLength>;
 
         /// Domain's maximum length.
         #[pallet::constant]
-        type MaxDomainLength: Get<u32>;
+        type MaxDomainLength: Get<DomainLength>;
 
         /// Maximum number of domains that can be registered per account.
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
-
-        /// Maximum number of price ranges for domains.
-        #[pallet::constant]
-        type MaxPriceRanges: Get<u32>;
 
         /// The maximum number of domains that can be inserted into a storage at once.
         #[pallet::constant]
@@ -83,13 +79,17 @@ pub mod pallet {
         /// The governance origin to control this pallet.
         type ForceOrigin: EnsureOrigin<Self::Origin>;
 
+        /// The default price for a domain if other not specified in [`PriceByDomainLength`]
+        type DefaultDomainPrice: Get<BalanceOf<Self>>;
+
         /// Account that receives funds spent for domain purchase.
         /// Used only once, when the pallet is initialized.
         type DefaultBeneficiary: Get<Self::AccountId>;
 
-        /// Initial price ranges to be initialized in the pallet. Should be used only once.
+        /// A set of prices according to a domain length.
+        /// Used only once, when the pallet is initialized.
         #[pallet::constant]
-        type InitialPriceRanges: Get<Vec<(PriceRangeStart, BalanceOf<Self>)>>;
+        type DefaultPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -142,15 +142,9 @@ pub mod pallet {
 
     /// Domains prices according to the range indicated by the shortest domain length in the range.
     #[pallet::storage]
-    #[pallet::getter(fn prices_matrix)]
-    pub(super) type PricesMatrix<T: Config> =
-        StorageMap<_, Twox64Concat, PriceRangeStart, BalanceOf<T>>;
-
-    /// A sorted list of initial domain lengths in the range.
-    #[pallet::storage]
-    #[pallet::getter(fn prices_ranges)]
-    pub(super) type PricesRanges<T: Config> =
-        StorageValue<_, Vec<PriceRangeStart>, ValueQuery>;
+    #[pallet::getter(fn price_by_domain_length)]
+    pub(super) type PriceByDomainLength<T: Config> =
+        StorageMap<_, Twox64Concat, DomainLength, BalanceOf<T>>;
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentReceiver<T: Config>() -> T::AccountId {
@@ -159,22 +153,22 @@ pub mod pallet {
 
     /// A list of accounts that receive payment for the domain registration.
     #[pallet::storage]
-    #[pallet::getter(fn payment_receiver)]
-    pub(super) type PaymentReceiver<T: Config> =
+    #[pallet::getter(fn payment_beneficiary)]
+    pub(super) type PaymentBeneficiary<T: Config> =
         StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentReceiver<T>>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub initial_price_ranges: Vec<(PriceRangeStart, BalanceOf<T>)>,
-        pub payment_receiver: T::AccountId,
+        pub default_prices: Vec<(DomainLength, BalanceOf<T>)>,
+        pub payment_beneficiary: T::AccountId,
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                initial_price_ranges: T::InitialPriceRanges::get(),
-                payment_receiver: T::DefaultBeneficiary::get(),
+                default_prices: T::DefaultPrices::get(),
+                payment_beneficiary: T::DefaultBeneficiary::get(),
             }
         }
     }
@@ -182,8 +176,8 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            Pallet::<T>::init_pallet(&self.initial_price_ranges);
-            PaymentReceiver::<T>::set(self.payment_receiver.clone());
+            Pallet::<T>::init_pallet(&self.default_prices);
+            PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
         }
     }
 
@@ -419,12 +413,12 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
-        pub fn set_payment_receiver(
+        pub fn set_payment_beneficiary(
             origin: OriginFor<T>,
-            payment_receiver: T::AccountId,
+            payment_beneficiary: T::AccountId,
         ) -> DispatchResult {
             T::ForceOrigin::ensure_origin(origin)?;
-            PaymentReceiver::<T>::set(payment_receiver);
+            PaymentBeneficiary::<T>::set(payment_beneficiary);
             Ok(())
         }
     }
@@ -459,7 +453,7 @@ pub mod pallet {
             Self::ensure_can_reserve_deposit(&owner, &is_forced)?;
 
             Self::ensure_within_domains_limit(&owner)?;
-            let price = Self::try_calculate_price(&subdomain)?;
+            let price = Self::calculate_price(&subdomain);
 
             if let IsForced::No = is_forced {
                 // TODO: this check is duplicating one, which happens in one of the functions above
@@ -469,7 +463,7 @@ pub mod pallet {
                 // Perform write operations.
                 <T as Config>::Currency::transfer(
                     &owner,
-                    &Self::payment_receiver(),
+                    &Self::payment_beneficiary(),
                     price,
                     KeepAlive,
                 )?;
@@ -715,16 +709,8 @@ pub mod pallet {
             Ok(())
         }
 
-        fn try_calculate_price(subdomain: &DomainName<T>) -> Result<BalanceOf<T>, DispatchError> {
-            let price_ranges: Vec<PriceRangeStart> = Self::prices_ranges();
-
-            let idx = price_ranges
-                .partition_point(|x| (*x as usize) < subdomain.len())
-                .saturating_sub(One::one());
-
-            let range_start = &price_ranges[idx];
-
-            Self::prices_matrix(range_start).ok_or(Error::<T>::CannotCalculatePrice.into())
+        fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
+            Self::price_by_domain_length(subdomain.len() as u32).unwrap_or(T::DefaultDomainPrice::get())
         }
 
         fn ensure_can_pay_for_domain(owner: &T::AccountId, price: BalanceOf<T>) -> DispatchResult {
@@ -734,16 +720,9 @@ pub mod pallet {
             )
         }
 
-        pub fn init_pallet(initial_price_ranges: &[(PriceRangeStart, BalanceOf<T>)]) {
-            for (min_length, price) in initial_price_ranges.iter() {
-                PricesRanges::<T>::mutate(|ranges| {
-                    match ranges.binary_search(min_length) {
-                        Ok(_) => (),
-                        Err(pos) => ranges.insert(pos, *min_length),
-                    }
-                });
-
-                PricesMatrix::<T>::insert(min_length, *price);
+        pub fn init_pallet(default_prices: &[(DomainLength, BalanceOf<T>)]) {
+            for (length, price) in default_prices.iter() {
+                PriceByDomainLength::<T>::insert(length, *price);
             }
         }
     }

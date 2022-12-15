@@ -2,7 +2,7 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
-use frame_support::traits::{ConstU32, GenesisBuild};
+use frame_support::traits::GenesisBuild;
 use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -109,9 +109,9 @@ parameter_types! {
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
 
-    pub static InitialPriceRanges: Vec<(PriceRangeStart, Balance)> = Vec::new();
-
-    pub const DefaultPaymentReceiver: AccountId = PAYMENT_RECEIVER;
+    pub static DefaultDomainPrice: Balance = 0;
+    pub static DefaultPrices: Vec<(DomainLength, Balance)> = Vec::new();
+    pub const DefaultPaymentReceiver: AccountId = PAYMENT_BENEFICIARY;
 }
 
 impl pallet_domains::Config for Test {
@@ -120,21 +120,21 @@ impl pallet_domains::Config for Test {
     type MinDomainLength = MinDomainLength;
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
-    type MaxPriceRanges = ConstU32<10>;
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
+    type DefaultDomainPrice = DefaultDomainPrice;
     type DefaultBeneficiary = DefaultPaymentReceiver;
-    type InitialPriceRanges = InitialPriceRanges;
+    type DefaultPrices = DefaultPrices;
     type WeightInfo = ();
 }
 
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
-pub(crate) const PAYMENT_RECEIVER: u64 = 3;
+pub(crate) const PAYMENT_BENEFICIARY: u64 = 3;
 
 pub(crate) const ACCOUNT_A: u64 = 10;
 pub(crate) const ACCOUNT_B: u64 = 20;
@@ -337,7 +337,8 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
-    pub(crate) initial_price_ranges: Vec<(PriceRangeStart, Balance)>,
+    pub(crate) default_domain_price: Balance,
+    pub(crate) default_prices: Vec<(DomainLength, Balance)>,
 }
 
 impl Default for ExtBuilder {
@@ -348,10 +349,11 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
-            initial_price_ranges: vec![
-                (7, 50),
-                (10, 25),
-                (3, 100),
+            default_domain_price: 100,
+            default_prices: vec![
+                (3, 50),
+                (4, 25),
+                (5, 100),
             ],
         }
     }
@@ -383,8 +385,13 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn initial_price_ranges(mut self, initial_price_ranges: Vec<(PriceRangeStart, Balance)>) -> Self {
-        self.initial_price_ranges = initial_price_ranges;
+    pub(crate) fn default_domain_price(mut self, default_domain_price: Balance) -> Self {
+        self.default_domain_price = default_domain_price;
+        self
+    }
+
+    pub(crate) fn default_prices(mut self, default_prices: Vec<(DomainLength, Balance)>) -> Self {
+        self.default_prices = default_prices;
         self
     }
 
@@ -394,7 +401,8 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
-        INITIAL_PRICE_RANGES.with(|x| *x.borrow_mut() = self.initial_price_ranges.clone());
+        DEFAULT_DOMAIN_PRICE.with(|x| *x.borrow_mut() = self.default_domain_price);
+        DEFAULT_PRICES.with(|x| *x.borrow_mut() = self.default_prices.clone());
     }
 
     pub(crate) fn build(self) -> TestExternalities {
@@ -405,8 +413,8 @@ impl ExtBuilder {
             .unwrap();
 
         let _ = pallet_domains::GenesisConfig::<Test> {
-            initial_price_ranges: self.initial_price_ranges.clone(),
-            payment_receiver: PAYMENT_RECEIVER,
+            default_prices: self.default_prices,
+            payment_beneficiary: PAYMENT_BENEFICIARY,
         }.assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());

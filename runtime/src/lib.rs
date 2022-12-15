@@ -21,7 +21,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, Contains},
+	traits::Contains,
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -570,7 +570,7 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = ();
 }
 
-use pallet_domains::types::PriceRangeStart;
+use pallet_domains::types::DomainLength;
 
 parameter_types! {
     pub const MinDomainLength: u32 = 6;
@@ -588,7 +588,9 @@ parameter_types! {
     pub const OuterValueByteDeposit: Balance = 10 * MILLIUNIT;
 
 	// FIXME: test values
-	pub DefaultPricesSet: Vec<(PriceRangeStart, Balance)> = vec![
+	pub const DefaultDomainPrice: Balance = 10 * UNIT;
+
+	pub DefaultPricesSet: Vec<(DomainLength, Balance)> = vec![
 		(6, 25 * UNIT),
 		(8, 12500 * MILLIUNIT),
 		(12, 6250 * MILLIUNIT),
@@ -604,15 +606,15 @@ impl pallet_domains::Config for Runtime {
 	type MinDomainLength = MinDomainLength;
 	type MaxDomainLength = MaxDomainLength;
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
-	type MaxPriceRanges = ConstU32<10>;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type ForceOrigin = EnsureRoot<AccountId>;
+	type DefaultDomainPrice = DefaultDomainPrice;
 	type DefaultBeneficiary = DefaultPaymentReceiver;
-	type InitialPriceRanges = DefaultPricesSet;
+	type DefaultPrices = DefaultPricesSet;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
