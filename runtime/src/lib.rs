@@ -596,7 +596,7 @@ parameter_types! {
 		(12, 6250 * MILLIUNIT),
 	];
 
-	pub DefaultPaymentReceiver: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+	pub DefaultBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(PalletId(*b"py/domns").into_account_truncating());
 }
 
@@ -613,7 +613,7 @@ impl pallet_domains::Config for Runtime {
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type DefaultDomainPrice = DefaultDomainPrice;
-	type DefaultBeneficiary = DefaultPaymentReceiver;
+	type DefaultBeneficiary = DefaultBeneficiary;
 	type DefaultPrices = DefaultPricesSet;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
