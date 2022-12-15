@@ -84,12 +84,12 @@ pub mod pallet {
 
         /// Account that receives funds spent for domain purchase.
         /// Used only once, when the pallet is initialized.
-        type DefaultBeneficiary: Get<Self::AccountId>;
+        type InitialPaymentBeneficiary: Get<Self::AccountId>;
 
         /// A set of prices according to a domain length.
         /// Used only once, when the pallet is initialized.
         #[pallet::constant]
-        type DefaultPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
+        type InitialPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -148,7 +148,7 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentReceiver<T: Config>() -> T::AccountId {
-        T::DefaultBeneficiary::get()
+        T::InitialPaymentBeneficiary::get()
     }
 
     /// A list of accounts that receive payment for the domain registration.
@@ -159,7 +159,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub default_prices: Vec<(DomainLength, BalanceOf<T>)>,
+        pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
         pub payment_beneficiary: T::AccountId,
     }
 
@@ -167,8 +167,8 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                default_prices: T::DefaultPrices::get(),
-                payment_beneficiary: T::DefaultBeneficiary::get(),
+                initial_prices: T::InitialPrices::get(),
+                payment_beneficiary: T::InitialPaymentBeneficiary::get(),
             }
         }
     }
@@ -176,7 +176,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            Pallet::<T>::init_pallet(&self.default_prices);
+            Pallet::<T>::init_pallet(&self.initial_prices);
             PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
         }
     }

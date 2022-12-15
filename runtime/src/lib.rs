@@ -590,13 +590,13 @@ parameter_types! {
 	// FIXME: test values
 	pub const DefaultDomainPrice: Balance = 10 * UNIT;
 
-	pub DefaultPricesSet: Vec<(DomainLength, Balance)> = vec![
+	pub InitialPrices: Vec<(DomainLength, Balance)> = vec![
 		(6, 25 * UNIT),
 		(8, 12500 * MILLIUNIT),
 		(12, 6250 * MILLIUNIT),
 	];
 
-	pub DefaultBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+	pub InitialPaymentBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(PalletId(*b"py/domns").into_account_truncating());
 }
 
@@ -613,8 +613,8 @@ impl pallet_domains::Config for Runtime {
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type DefaultDomainPrice = DefaultDomainPrice;
-	type DefaultBeneficiary = DefaultBeneficiary;
-	type DefaultPrices = DefaultPricesSet;
+	type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+	type InitialPrices = InitialPrices;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 
