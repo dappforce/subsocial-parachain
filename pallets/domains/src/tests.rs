@@ -7,7 +7,6 @@ use subsocial_support::new_who_and_when;
 
 use crate::{DomainByInnerValue, Event, mock::*};
 use crate::Error;
-use crate::mock::*;
 use crate::pallet::DomainRecords;
 use crate::types::*;
 
