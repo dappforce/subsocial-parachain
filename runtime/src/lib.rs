@@ -610,8 +610,8 @@ impl pallet_domains::Config for Runtime {
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
-	type ManagerOrigin = EnsureRoot<AccountId>;
-	type DefaultPaymentReceiver = DefaultPaymentReceiver;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type DefaultBeneficiary = DefaultPaymentReceiver;
 	type InitialPriceRanges = DefaultPricesSet;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }

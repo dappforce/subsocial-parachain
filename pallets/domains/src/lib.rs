@@ -42,7 +42,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency trait.
-        type Currency: ReservableCurrency<Self::AccountId> + Currency<Self::AccountId>;
+        type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Domain's minimum length.
         #[pallet::constant]
@@ -81,12 +81,13 @@ pub mod pallet {
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
         /// The governance origin to control this pallet.
-        type ManagerOrigin: EnsureOrigin<Self::Origin>;
+        type ForceOrigin: EnsureOrigin<Self::Origin>;
 
-        /// Initial payment receiver account.
-        type DefaultPaymentReceiver: Get<Self::AccountId>;
+        /// Account that receives funds spent for domain purchase.
+        /// Used only once, when the pallet is initialized.
+        type DefaultBeneficiary: Get<Self::AccountId>;
 
-        /// Initial price ranges to be initialized in the pallet.
+        /// Initial price ranges to be initialized in the pallet. Should be used only once.
         #[pallet::constant]
         type InitialPriceRanges: Get<Vec<(PriceRangeStart, BalanceOf<Self>)>>;
 
@@ -153,7 +154,7 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentReceiver<T: Config>() -> T::AccountId {
-        T::DefaultPaymentReceiver::get()
+        T::DefaultBeneficiary::get()
     }
 
     /// A list of accounts that receive payment for the domain registration.
@@ -173,7 +174,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 initial_price_ranges: T::InitialPriceRanges::get(),
-                payment_receiver: T::DefaultPaymentReceiver::get(),
+                payment_receiver: T::DefaultBeneficiary::get(),
             }
         }
     }
@@ -254,7 +255,7 @@ pub mod pallet {
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
-            let domain_data = DomainData::new(owner, full_domain, content, expires_in);
+            let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
 
             Self::do_register_domain(domain_data, IsForced::No)
         }
@@ -272,10 +273,10 @@ pub mod pallet {
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ForceOrigin::ensure_origin(origin)?;
 
             let owner = T::Lookup::lookup(target)?;
-            let domain_data = DomainData::new(owner, full_domain, content, expires_in);
+            let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
 
             Self::do_register_domain(domain_data, IsForced::Yes)
         }
@@ -304,7 +305,7 @@ pub mod pallet {
             domain: DomainName<T>,
             value_opt: Option<InnerValueOf<T>>,
         ) -> DispatchResult {
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ForceOrigin::ensure_origin(origin)?;
 
             Self::do_set_inner_value(domain, value_opt, None)?;
 
@@ -384,7 +385,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             words: BoundedDomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ForceOrigin::ensure_origin(origin)?;
 
             let inserted_words_count = Self::insert_domains(
                 &words,
@@ -405,7 +406,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             tlds: BoundedDomainsVec<T>,
         ) -> DispatchResultWithPostInfo {
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ForceOrigin::ensure_origin(origin)?;
 
             let inserted_tlds_count = Self::insert_domains(
                 &tlds,
@@ -422,7 +423,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             payment_receiver: T::AccountId,
         ) -> DispatchResult {
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ForceOrigin::ensure_origin(origin)?;
             PaymentReceiver::<T>::set(payment_receiver);
             Ok(())
         }
@@ -430,8 +431,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         // TODO: refactor long method
-        fn do_register_domain(domain_data: DomainData<T>, is_forced: IsForced) -> DispatchResult {
-            let DomainData { owner, full_domain, content, expires_in } = domain_data;
+        fn do_register_domain(domain_data: DomainRegisterData<T>, is_forced: IsForced) -> DispatchResult {
+            let DomainRegisterData { owner, full_domain, content, expires_in } = domain_data;
 
             // Perform checks that doesn't require storage access.
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
@@ -652,7 +653,7 @@ pub mod pallet {
             full_domain.split(|c| *c == b'.').map(Self::lower_domain_then_bound).collect()
         }
 
-        pub(crate) fn get_domain_subset(parts: &[DomainName<T>]) -> DomainSubset<T> {
+        pub(crate) fn get_domain_subset(parts: &[DomainName<T>]) -> DomainParts<T> {
             let tld = parts.last().unwrap().clone();
             let subdomain = parts.first().unwrap().clone();
             (subdomain, tld)

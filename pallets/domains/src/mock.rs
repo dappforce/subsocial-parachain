@@ -126,8 +126,8 @@ impl pallet_domains::Config for Test {
     type MaxOuterValueLength = MaxOuterValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
-    type ManagerOrigin = EnsureRoot<AccountId>;
-    type DefaultPaymentReceiver = DefaultPaymentReceiver;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type DefaultBeneficiary = DefaultPaymentReceiver;
     type InitialPriceRanges = InitialPriceRanges;
     type WeightInfo = ();
 }
@@ -317,18 +317,13 @@ fn _set_domain_content(
     )
 }
 
-pub(super) fn make_account_balance_be(account: &AccountId, balance: Balance) {
+pub(super) fn set_account_balance_as(account: &AccountId, balance: Balance) {
     let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(account, balance);
 }
 
-pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
-    let account = account(id);
-    make_account_balance_be(&account, balance);
+pub(crate) fn account_with_balance(account: AccountId, balance: Balance) -> AccountId {
+    set_account_balance_as(&account, balance);
     account
-}
-
-pub(crate) fn account(id: AccountId) -> AccountId {
-    id
 }
 
 pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
