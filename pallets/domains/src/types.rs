@@ -11,7 +11,7 @@ use super::*;
 /// It is a vector of characters, which represents either the full domain name (e.g.
 /// "example.sub") or a part of it (e.g. "example", "sub").
 ///
-/// Can be split to a domain subset with [`Pallet::split_domain_by_dot`] function.
+/// Can be split into a domain subset with the [`Pallet::split_domain_by_dot`] function.
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>::AccountId>;
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
@@ -19,7 +19,7 @@ pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLengt
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
 
 pub type PriceRangeStart = u32;
-/// A subset of second level domain.
+/// A subset of second level domains.
 /// Alias to a tuple: `(subdomain, top-level domain)`.
 pub(crate) type DomainParts<T> =
     (/* subdomain */ DomainName<T>, /* tld */ DomainName<T>);
