@@ -113,6 +113,18 @@ pub mod pallet {
             ValueQuery,
         >;
 
+    /// The default [DomainName] set for each account.
+    ///
+    /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
+    #[pallet::storage]
+    pub(super) type DefaultDomain<T: Config> =
+        StorageMap<_,
+            Twox64Concat,
+            T::AccountId,
+            DomainName<T>,
+            OptionQuery,
+        >;
+
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     pub(super) type DomainByInnerValue<T: Config> =
@@ -136,6 +148,8 @@ pub mod pallet {
         DomainRegistered { who: T::AccountId, domain: DomainName<T> },
         /// The domain meta was successfully updated.
         DomainMetaUpdated { who: T::AccountId, domain: DomainName<T> },
+        /// The default domain was successfully updated.
+        DefaultDomainUpdated { who: T::AccountId, domain: DomainName<T> },
         /// New words have been reserved.
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
@@ -144,6 +158,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// The default domain was not changed.
+        DefaultDomainNotChanged,
         /// The content stored in a domain metadata was not changed.
         DomainContentNotChanged,
         /// Cannot register more than `MaxDomainsPerAccount` domains.
@@ -307,6 +323,28 @@ pub mod pallet {
             RegisteredDomains::<T>::insert(&domain_lc, meta);
 
             Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain });
+            Ok(())
+        }
+
+        /// Sets the default domain of an account.
+        #[pallet::weight(<T as Config>::WeightInfo::set_default_domain())]
+        pub fn set_default_domain(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+        ) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+
+            let domain_lc = Self::lower_domain_then_bound(&domain);
+            let meta = Self::require_domain(domain_lc.clone())?;
+
+            Self::ensure_allowed_to_update_domain(&meta, &sender)?;
+
+            let old_default_domain = <DefaultDomain<T>>::get(&sender);
+            ensure!(old_default_domain != Some(domain_lc.clone()), Error::<T>::DefaultDomainNotChanged);
+
+            <DefaultDomain<T>>::insert(&sender, domain_lc);
+
+            Self::deposit_event(Event::DefaultDomainUpdated { who: sender, domain });
             Ok(())
         }
 
