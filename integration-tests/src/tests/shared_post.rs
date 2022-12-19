@@ -35,9 +35,6 @@ fn share_post_should_work() {
             vec![POST2]
         );
 
-        // Check whether data stored correctly
-        assert_eq!(Posts::post_by_id(POST1).unwrap().shares_count, 1);
-
         let shared_post = Posts::post_by_id(POST2).unwrap();
 
         assert_eq!(shared_post.space_id, Some(SPACE2));
@@ -92,9 +89,6 @@ fn share_post_should_work_for_share_own_post_in_same_own_space() {
             vec![POST2]
         );
 
-        // Check whether data stored correctly
-        assert_eq!(Posts::post_by_id(POST1).unwrap().shares_count, 1);
-
         let shared_post = Posts::post_by_id(POST2).unwrap();
         assert_eq!(shared_post.space_id, Some(SPACE1));
         assert_eq!(shared_post.created.account, ACCOUNT1);
@@ -148,7 +142,7 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
                 Some(extension_shared_post(POST2)),
                 None
             ),
-            PostsError::<TestRuntime>::CannotShareSharingPost
+            PostsError::<TestRuntime>::CannotShareSharedPost
         );
     });
 }
