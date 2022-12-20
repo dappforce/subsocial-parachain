@@ -674,7 +674,7 @@ impl pallet_spaces::Config for Runtime {
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;
-	type WeightInfo = ();
+	type WeightInfo = pallet_spaces::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_space_ownership::Config for Runtime {
