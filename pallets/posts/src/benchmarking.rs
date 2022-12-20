@@ -13,7 +13,7 @@ fn create_dummy_space<T: Config>(
 ) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), None, Content::None, None)
+    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), Content::None, None)
         .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)

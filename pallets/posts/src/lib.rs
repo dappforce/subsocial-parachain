@@ -45,7 +45,6 @@ mod benchmarking;
 pub mod weights;
 
 // pub mod rpc;
-pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -70,6 +69,8 @@ pub mod pallet {
         type MaxCommentDepth: Get<u32>;
 
         type IsPostBlocked: IsPostBlocked<PostId>;
+
+        type WeightInfo: crate::weights::WeightInfo;
     }
 
     #[pallet::pallet]

@@ -120,6 +120,7 @@ impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
+    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for TestRuntime {
