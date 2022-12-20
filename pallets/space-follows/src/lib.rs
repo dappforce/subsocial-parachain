@@ -66,7 +66,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(5, 5))]
+        #[pallet::weight(101_000_000 + T::DbWeight::get().reads_writes(5, 5))]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -88,7 +88,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(5, 5))]
+        #[pallet::weight(67_000_000 + T::DbWeight::get().reads_writes(5, 5))]
         pub fn unfollow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
