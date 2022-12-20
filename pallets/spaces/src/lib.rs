@@ -247,9 +247,9 @@ pub mod pallet {
         }
 
         #[pallet::weight((
-        1_000_000 + T::DbWeight::get().reads_writes(1, 3),
-        DispatchClass::Operational,
-        Pays::Yes,
+            1_000_000 + T::DbWeight::get().reads_writes(1, 3),
+            DispatchClass::Operational,
+            Pays::Yes,
         ))]
         pub fn force_create_space(
             origin: OriginFor<T>,
@@ -306,9 +306,9 @@ pub mod pallet {
         }
 
         #[pallet::weight((
-        10_000 + T::DbWeight::get().writes(1),
-        DispatchClass::Operational,
-        Pays::Yes,
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
         ))]
         pub fn force_set_next_space_id(
             origin: OriginFor<T>,

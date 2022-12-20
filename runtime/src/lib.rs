@@ -28,12 +28,13 @@ use frame_support::{
 	},
 	PalletId,
 };
+use frame_support::traits::InstanceFilter;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -123,10 +124,9 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in the Subsocial node, we map to 1/10 of that, or 1/10 MILLIUNIT
-		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+		// Extrinsic base weight (smallest non-zero weight) is mapped to 10 MILLIUNIT
+		let p = 10 * MILLIUNIT;
+		let q = Balance::from(ExtrinsicBaseWeight::get());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,
@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 13,
+	spec_version: 18,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -188,10 +188,20 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 10_000_000_000;
-pub const MILLIUNIT: Balance = UNIT / 1000;
-pub const MICROUNIT: Balance = MILLIUNIT / 1000;
+mod currency {
+	use super::Balance;
+
+	// Unit = the base number of indivisible units for balances
+	pub const UNIT: Balance = 10_000_000_000;
+	pub const MILLIUNIT: Balance = UNIT / 1000;
+	pub const MICROUNIT: Balance = MILLIUNIT / 1000;
+
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		items as Balance * 2 * UNIT + (bytes as Balance) * 300 * MICROUNIT
+	}
+}
+
+pub use currency::*;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = 10 * MILLIUNIT;
@@ -250,29 +260,10 @@ impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
 		let is_force_transfer =
 			matches!(c, Call::Balances(pallet_balances::Call::force_transfer { .. }));
-		let disallowed_vesting_calls =
-			matches!(c,
-				Call::Vesting(pallet_vesting::Call::vested_transfer { .. }) |
-				Call::Vesting(pallet_vesting::Call::vest { .. }) |
-				Call::Vesting(pallet_vesting::Call::vest_other { .. })
-			);
-
-		let is_social_call =
-			matches!(c,
-				Call::Roles(..) |
-				Call::AccountFollows(..) |
-				Call::Profiles(..) |
-				Call::SpaceFollows(..) |
-				Call::SpaceOwnership(..) |
-				Call::Spaces(..) |
-				Call::Posts(..) |
-				Call::Reactions(..)
-			);
 
 		match *c {
 			Call::Balances(..) => is_force_transfer,
-			Call::Vesting(..) => !disallowed_vesting_calls,
-			_ if is_social_call => false,
+			Call::Vesting(pallet_vesting::Call::vested_transfer { .. }) => false,
 			_ => true,
 		}
 	}
@@ -372,12 +363,12 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TransactionByteFee: Balance = 100 * MICROUNIT;
+	pub const TransactionByteFee: Balance = MILLIUNIT / 10;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -497,6 +488,99 @@ impl pallet_vesting::Config for Runtime {
 	const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = deposit(1, 8);
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = deposit(0, 33);
+	pub const MaxProxies: u16 = 32;
+	pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+	pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+	pub const MaxPending: u16 = 32;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	codec::Encode,
+	codec::Decode,
+	sp_runtime::RuntimeDebug,
+	codec::MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+	Any,
+	DomainRegistrar,
+	SocialActions,
+	Management,
+}
+
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+
+impl InstanceFilter<Call> for ProxyType {
+	fn filter(&self, c: &Call) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::DomainRegistrar => {
+				if let Call::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
+					return matches!(
+						&**call,
+						Call::Domains(pallet_domains::Call::force_register_domain { .. })
+					)
+				}
+				false
+			},
+			ProxyType::SocialActions => matches!(
+				c,
+				Call::Posts(..)
+					| Call::Reactions(..)
+					| Call::AccountFollows(..)
+					| Call::SpaceFollows(..)
+			),
+			ProxyType::Management => matches!(
+				c,
+				Call::Spaces(..)
+					| Call::SpaceOwnership(..)
+					| Call::Roles(..)
+					| Call::Profiles(..)
+					| Call::Domains(..)
+			),
+		}
+	}
+
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			_ => false,
+		}
+	}
+}
+
+impl pallet_proxy::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = MaxProxies;
+	type WeightInfo = ();
+	type MaxPending = MaxPending;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
 impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -505,12 +589,12 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 7;
+    pub const MinDomainLength: u32 = 6;
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
     // TODO This value should be removed later, once it will be possible to purchase domains.
-	pub const MaxPromoDomainsPerAccount: u32 = 3;
+	pub const MaxPromoDomainsPerAccount: u32 = 10;
 
 	// TODO: replace with a calculation
 	// 	(([MAXIMUM_BLOCK_WEIGHT] * 0.75) / ("function_weight")) * 0.33
@@ -602,6 +686,22 @@ impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
 }
 
+
+parameter_types! {
+	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
+}
+
+impl pallet_energy::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Balance = Balance;
+	type DefaultValueCoefficient = DefaultValueCoefficient;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type ExistentialDeposit = ExistentialDeposit;
+	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -630,6 +730,7 @@ construct_runtime!(
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 26,
+		Proxy: pallet_proxy = 27,
 		Utility: pallet_utility = 28,
 
 		// XCM helpers.
@@ -640,6 +741,7 @@ construct_runtime!(
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
+		Energy: pallet_energy = 61,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -668,9 +770,11 @@ mod benches {
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_vesting, Vesting]
+		[pallet_proxy, Proxy]
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
+		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_spaces, Spaces]
 	);

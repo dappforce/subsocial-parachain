@@ -170,7 +170,7 @@ pub mod pallet {
         /// such as a name, description, and image for a role. This may be useful for end users.
         ///
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(23_000_000 + T::DbWeight::get().reads_writes(4, 3))]
         pub fn create_role(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -211,7 +211,7 @@ pub mod pallet {
 
         /// Update an existing role by a given id.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(21_000_000 + T::DbWeight::get().reads_writes(3, 1))]
         pub fn update_role(
             origin: OriginFor<T>,
             role_id: RoleId,
@@ -272,7 +272,7 @@ pub mod pallet {
 
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(6, 5))]
+        #[pallet::weight(1_030_869_000 + T::DbWeight::get().reads_writes(5, 4))]
         pub fn delete_role(origin: OriginFor<T>, role_id: RoleId) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
@@ -304,7 +304,7 @@ pub mod pallet {
 
         /// Grant a given role to a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::weight(116_873_000 + T::DbWeight::get().reads_writes(4, 2))]
         pub fn grant_role(
             origin: OriginFor<T>,
             role_id: RoleId,
@@ -343,7 +343,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::weight(160_533_000 + T::DbWeight::get().reads_writes(4, 2))]
         pub fn revoke_role(
             origin: OriginFor<T>,
             role_id: RoleId,
