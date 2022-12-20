@@ -17,22 +17,18 @@ pub struct Space<T: Config> {
     pub id: SpaceId,
 
     pub created: WhoAndWhenOf<T>,
-    pub updated: Option<WhoAndWhenOf<T>>,
+    /// True, if the content of this space was edited.
+    pub edited: bool,
 
     /// The current owner of a given space.
     pub owner: T::AccountId,
 
     // The next fields can be updated by the owner:
-    pub(super) parent_id: Option<SpaceId>,
-
     pub content: Content,
 
     /// Hidden field is used to recommend to end clients (web and mobile apps) that a particular
     /// space and its' posts should not be shown.
     pub hidden: bool,
-
-    /// The total number of visible posts in a given space.
-    pub posts_count: u32,
 
     /// This allows you to override Subsocial's default permissions by enabling or disabling role
     /// permissions.
@@ -41,7 +37,6 @@ pub struct Space<T: Config> {
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct SpaceUpdate {
-    pub parent_id: Option<Option<SpaceId>>,
     pub content: Option<Content>,
     pub hidden: Option<bool>,
     pub permissions: Option<Option<SpacePermissions>>,
@@ -50,7 +45,6 @@ pub struct SpaceUpdate {
 impl<T: Config> Space<T> {
     pub fn new(
         id: SpaceId,
-        parent_id: Option<SpaceId>,
         created_by: T::AccountId,
         content: Content,
         permissions: Option<SpacePermissions>,
@@ -58,12 +52,10 @@ impl<T: Config> Space<T> {
         Space {
             id,
             created: new_who_and_when::<T>(created_by.clone()),
-            updated: None,
+            edited: false,
             owner: created_by,
-            parent_id,
             content,
             hidden: false,
-            posts_count: 0,
             permissions,
         }
     }
@@ -79,18 +71,6 @@ impl<T: Config> Space<T> {
     pub fn ensure_space_owner(&self, account: T::AccountId) -> DispatchResult {
         ensure!(self.is_owner(&account), Error::<T>::NotASpaceOwner);
         Ok(())
-    }
-
-    pub fn inc_posts(&mut self) {
-        self.posts_count = self.posts_count.saturating_add(1);
-    }
-
-    pub fn dec_posts(&mut self) {
-        self.posts_count = self.posts_count.saturating_sub(1);
-    }
-
-    pub fn try_get_parent(&self) -> Result<SpaceId, DispatchError> {
-        self.parent_id.ok_or_else(|| Error::<T>::SpaceIsAtRoot.into())
     }
 
     pub fn is_public(&self) -> bool {

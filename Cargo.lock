@@ -5393,6 +5393,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-energy"
+version = "0.1.7"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -5657,7 +5675,6 @@ version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "pallet-permissions",
  "pallet-space-follows",
  "pallet-spaces",
@@ -5870,31 +5887,6 @@ dependencies = [
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership-tests"
-version = "0.1.5"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-permissions",
- "pallet-posts",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-space-ownership",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
  "sp-std",
  "subsocial-support",
 ]
@@ -10811,9 +10803,11 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-domains",
+ "pallet-energy",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-reactions",
  "pallet-roles",

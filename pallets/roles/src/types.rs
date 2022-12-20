@@ -9,7 +9,6 @@ pub const FIRST_ROLE_ID: u64 = 1;
 #[scale_info(skip_type_params(T))]
 pub struct Role<T: Config> {
     pub created: WhoAndWhenOf<T>,
-    pub updated: Option<WhoAndWhenOf<T>>,
 
     /// Unique sequential identifier of a role. Examples of role ids: `1`, `2`, `3`, and so on.
     pub id: RoleId,

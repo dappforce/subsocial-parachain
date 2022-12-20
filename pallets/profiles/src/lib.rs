@@ -41,8 +41,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Space was successfully assigned as a profile.
-        SpaceAsProfileAssigned { account: T::AccountId, space: SpaceId },
+        /// Profile's space id was updated for this account.
+        ProfileUpdated { account: T::AccountId, space_id: Option<SpaceId> },
     }
 
     #[pallet::error]
@@ -56,37 +56,60 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // FIXME: cover with tests
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn set_space_as_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
+        #[pallet::weight(1_250_000 + T::DbWeight::get().writes(1))]
+        pub fn set_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::try_set_profile(&sender, space_id)?;
+            Self::do_set_profile(&sender, space_id)?;
 
-            Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
+            Self::deposit_event(Event::ProfileUpdated {
+                account: sender,
+                space_id: Some(space_id),
+            });
             Ok(())
         }
 
         // FIXME: cover with tests
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn unset_space_as_profile(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(1, 1))]
+        pub fn reset_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            let space_id =
-                Self::profile_space_id_by_account(&sender).ok_or(Error::<T>::NoSpaceSetAsProfile)?;
+            ensure!(
+                Self::profile_space_id_by_account(&sender).is_some(),
+                Error::<T>::NoSpaceSetAsProfile
+            );
 
-            Self::try_reset_profile(&sender, space_id)?;
+            <ProfileSpaceIdByAccount<T>>::remove(&sender);
 
-            Self::deposit_event(Event::SpaceAsProfileAssigned { account: sender, space: space_id });
+            Self::deposit_event(Event::ProfileUpdated { account: sender, space_id: None });
             Ok(())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().writes(1),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_set_space_as_profile(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+            space_id_opt: Option<SpaceId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            match space_id_opt {
+                Some(space_id) => <ProfileSpaceIdByAccount<T>>::insert(&account, space_id),
+                None => <ProfileSpaceIdByAccount<T>>::remove(&account),
+            }
+
+            Self::deposit_event(Event::ProfileUpdated { account, space_id: space_id_opt });
+            Ok(Pays::No.into())
         }
     }
 
     impl<T: Config> Pallet<T> {
         // FIXME: cover with tests
-        pub fn try_set_profile(
-            account: &T::AccountId,
-            space_id: SpaceId,
-        ) -> DispatchResult {
+        pub fn do_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
             T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
 
             <ProfileSpaceIdByAccount<T>>::insert(account, space_id);
@@ -94,7 +117,7 @@ pub mod pallet {
         }
 
         // FIXME: cover with tests
-        pub fn try_reset_profile(
+        pub fn unlink_space_from_profile(
             account: &T::AccountId,
             space_id: SpaceId,
         ) -> DispatchResult {
@@ -115,11 +138,11 @@ pub mod pallet {
         }
 
         fn try_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::try_set_profile(account, space_id)
+            Self::do_set_profile(account, space_id)
         }
 
-        fn try_reset_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::try_reset_profile(account, space_id)
+        fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+            Self::unlink_space_from_profile(account, space_id)
         }
     }
 }
