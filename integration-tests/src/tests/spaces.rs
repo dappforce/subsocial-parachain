@@ -14,39 +14,6 @@ use crate::utils::roles_utils::*;
 use crate::utils::space_follows_utils::*;
 
 #[test]
-fn create_subspace_should_fail_when_content_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_content_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                Some(valid_content_ipfs()),
-                None,
-            ),
-            ModerationError::ContentIsBlocked,
-        );
-    });
-}
-
-
-#[test]
-fn create_subspace_should_fail_when_account_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_account_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                None,
-                None,
-            ),
-            ModerationError::AccountIsBlocked,
-        );
-    });
-}
-
-#[test]
 fn update_space_should_fail_when_account_is_blocked() {
     ExtBuilder::build_with_post().execute_with(|| {
         block_account_in_space_1();
@@ -90,14 +57,12 @@ fn create_space_should_work() {
         let space = Spaces::space_by_id(SPACE1).unwrap();
 
         assert_eq!(space.created.account, ACCOUNT1);
-        assert!(space.updated.is_none());
-        assert_eq!(space.hidden, false);
+        assert!(!space.edited);
+        assert!(!space.hidden);
 
         assert_eq!(space.owner, ACCOUNT1);
         // assert_eq!(space.handle, Some(space_handle()));
         assert_eq!(space.content, space_content_ipfs());
-
-        assert_eq!(space.posts_count, 0);
 
         // // Check that the handle deposit has been reserved:
         // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -268,7 +233,7 @@ fn update_space_should_work() {
         let space = Spaces::space_by_id(SPACE1).unwrap();
         // assert_eq!(space.handle, Some(new_handle.clone()));
         assert_eq!(space.content, expected_content_ipfs);
-        assert_eq!(space.hidden, true);
+        assert!(space.hidden);
 
         // assert_eq!(find_space_id_by_handle(space_handle()), None);
         // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));

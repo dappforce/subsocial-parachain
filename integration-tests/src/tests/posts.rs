@@ -109,17 +109,14 @@ fn create_post_should_work() {
         let post = Posts::post_by_id(POST1).unwrap();
 
         assert_eq!(post.created.account, ACCOUNT1);
-        assert!(post.updated.is_none());
-        assert_eq!(post.hidden, false);
+        assert!(!post.edited);
+        assert!(!post.hidden);
 
         assert_eq!(post.space_id, Some(SPACE1));
         assert_eq!(post.extension, extension_regular_post());
 
         assert_eq!(post.content, post_content_ipfs());
 
-        assert_eq!(post.replies_count, 0);
-        assert_eq!(post.hidden_replies_count, 0);
-        assert_eq!(post.shares_count, 0);
         assert_eq!(post.upvotes_count, 0);
         assert_eq!(post.downvotes_count, 0);
     });
@@ -219,13 +216,12 @@ fn update_post_should_work() {
         let post = Posts::post_by_id(POST1).unwrap();
         assert_eq!(post.space_id, Some(SPACE1));
         assert_eq!(post.content, expected_content_ipfs);
-        assert_eq!(post.hidden, true);
+        assert!(post.hidden);
     });
 }
 
 fn check_if_post_moved_correctly(
     moved_post_id: PostId,
-    old_space_id: SpaceId,
     expected_new_space_id: SpaceId,
 ) {
     let post: Post<TestRuntime> = Posts::post_by_id(moved_post_id).unwrap(); // `POST2` is a comment
@@ -233,10 +229,6 @@ fn check_if_post_moved_correctly(
 
     // Check that space id of the post has been updated from 1 to 2
     assert_eq!(new_space_id, expected_new_space_id);
-
-    // Check that stats on the old space have been decreased
-    let old_space = Spaces::space_by_id(old_space_id).unwrap();
-    assert_eq!(old_space.posts_count, 0);
 }
 
 #[test]
@@ -247,10 +239,7 @@ fn move_post_should_work() {
         let moved_post_id = POST1;
         let old_space_id = SPACE1;
         let expected_new_space_id = SPACE2;
-        check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
-
-        // Check that stats on the new space have been increased
-        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 1);
+        check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
@@ -273,10 +262,7 @@ fn move_post_should_work_when_space_id_none() {
         assert_ok!(_move_post_to_nowhere(moved_post_id));
         assert_ok!(_move_post_1_to_space_2());
 
-        check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
-
-        // Check that stats on the new space have been increased
-        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 1);
+        check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
@@ -305,10 +291,7 @@ fn move_hidden_post_should_work() {
 
         assert_ok!(_move_post_1_to_space_2());
 
-        check_if_post_moved_correctly(moved_post_id, old_space_id, expected_new_space_id);
-
-        // Check that stats on the new space haven't changed
-        assert_eq!(Spaces::space_by_id(expected_new_space_id).unwrap().posts_count, 0);
+        check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
 
         // Check that there are no posts ids in the old space
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());

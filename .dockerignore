@@ -3,7 +3,6 @@
 **/*.txt
 **/*.md
 /docker/
-!/target/release/subsocial-collator
 
 # dotfiles in the repo root
 /.*

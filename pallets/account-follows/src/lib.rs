@@ -11,6 +11,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use subsocial_support::remove_from_vec;
+
     use sp_std::vec::Vec;
 
     /// The pallet's configuration trait.
@@ -67,7 +68,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
         pub fn follow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -87,7 +88,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
         pub fn unfollow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -107,6 +108,34 @@ pub mod pallet {
 
             Self::deposit_event(Event::AccountUnfollowed { follower, account });
             Ok(())
+        }
+
+        #[pallet::weight((
+            10_000 + T::DbWeight::get().reads_writes(4, 4),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn force_follow_account(
+            origin: OriginFor<T>,
+            follower: T::AccountId,
+            following: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            ensure!(
+                !Self::account_followed_by_account((follower.clone(), following.clone())),
+                Error::<T>::AlreadyAccountFollower
+            );
+
+            AccountsFollowedByAccount::<T>::mutate(follower.clone(), |ids| {
+                ids.push(following.clone())
+            });
+            AccountFollowers::<T>::mutate(following.clone(), |ids| ids.push(follower.clone()));
+            AccountFollowedByAccount::<T>::insert((follower.clone(), following.clone()), true);
+
+            Self::deposit_event(Event::AccountFollowed { follower, account: following });
+
+            Ok(Pays::No.into())
         }
     }
 }
