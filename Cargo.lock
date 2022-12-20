@@ -5393,6 +5393,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-energy"
+version = "0.1.7"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -10787,9 +10805,11 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-domains",
+ "pallet-energy",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-reactions",
  "pallet-roles",
