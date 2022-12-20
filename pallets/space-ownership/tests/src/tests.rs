@@ -44,7 +44,7 @@ fn transfer_space_ownership_should_fail_when_trying_to_transfer_to_current_owner
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _transfer_space_ownership(Some(Origin::signed(ACCOUNT1)), None, Some(ACCOUNT1)),
-            SpaceOwnershipError::<Test>::CannotTranferToCurrentOwner
+            SpaceOwnershipError::<Test>::CannotTransferToCurrentOwner
         );
     });
 }

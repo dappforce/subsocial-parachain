@@ -311,22 +311,20 @@ pub(crate) fn updated_space_content() -> Content {
 pub(crate) fn update_for_space_handle(
     new_handle: Option<Vec<u8>>,
 ) -> SpaceUpdate {
-    space_update(Some(new_handle), None, None)
+    space_update(None, None)
 }
 
 pub(crate) fn update_for_space_content(
     new_content: Content,
 ) -> SpaceUpdate {
-    space_update(None, Some(new_content), None)
+    space_update(Some(new_content), None)
 }
 
 pub(crate) fn space_update(
-    handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     hidden: Option<bool>,
 ) -> SpaceUpdate {
     SpaceUpdate {
-        parent_id: None,
         content,
         hidden,
         permissions: None,
@@ -380,7 +378,6 @@ pub(crate) fn _create_space_with_parent_id(
     }
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        parent_id_opt.unwrap_or_default(),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default()
     )
@@ -394,7 +391,7 @@ pub(crate) fn _update_space(
     Spaces::update_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
-        update.unwrap_or_else(|| space_update(None, None, None)),
+        update.unwrap_or_else(|| space_update(None, None)),
     )
 }
 
