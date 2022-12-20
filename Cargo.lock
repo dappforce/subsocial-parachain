@@ -10830,6 +10830,7 @@ dependencies = [
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-reactions",
  "pallet-roles",
