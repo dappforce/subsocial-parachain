@@ -86,7 +86,7 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
         assert_ok!(_update_space(
             None,
             None,
-            Some(space_update(None, None, Some(true)))
+            Some(space_update(None, Some(true)))
         ));
 
         assert_noop!(
