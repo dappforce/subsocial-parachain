@@ -67,7 +67,7 @@ fn update_space_should_fail_when_content_is_blocked() {
             _update_space(
                 None,
                 None,
-                Some(space_update(None, Some(valid_content_ipfs()), None))
+                Some(space_update(Some(valid_content_ipfs()), None))
             ),
             DispatchError::from(ModerationError::ContentIsBlocked)
         );
@@ -88,14 +88,12 @@ fn create_space_should_work() {
         let space = Spaces::space_by_id(SPACE1).unwrap();
 
         assert_eq!(space.created.account, ACCOUNT1);
-        assert!(space.updated.is_none());
+        assert!(!space.edited);
         assert_eq!(space.hidden, false);
 
         assert_eq!(space.owner, ACCOUNT1);
         // assert_eq!(space.handle, Some(space_handle()));
         assert_eq!(space.content, space_content_ipfs());
-
-        assert_eq!(space.posts_count, 0);
 
         // // Check that the handle deposit has been reserved:
         // let reserved_balance = Balances::reserved_balance(ACCOUNT1);
@@ -257,7 +255,6 @@ fn update_space_should_work() {
             None, // From ACCOUNT1 (has permission as he's an owner)
             None,
             Some(space_update(
-                None,
                 Some(expected_content_ipfs.clone()),
                 Some(true),
             ))
@@ -283,7 +280,6 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                None,
                 Some(updated_space_content()),
                 Some(true),
             );
@@ -449,7 +445,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
             _update_space(
                 None,
                 None,
-                Some(space_update(None, Some(invalid_content_ipfs()), None,))
+                Some(space_update(Some(invalid_content_ipfs()), None,))
             ),
             DispatchError::from(ContentError::InvalidIpfsCid)
         );
@@ -461,7 +457,6 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
             let space_update = space_update(
-                None,
                 Some(updated_space_content()),
                 Some(true),
             );
