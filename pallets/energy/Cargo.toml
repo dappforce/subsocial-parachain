@@ -1,14 +1,15 @@
 [package]
-name = "pallet-domains"
+name = "pallet-energy"
 version = "0.1.7"
 authors = ["DappForce <dappforce@pm.me>"]
-edition = "2018"
+edition = "2021"
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
-description = "Module for storing purchased domains."
+description = "Energy pallet provides an alternative system to pay transaction fees"
 keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
 categories = ["cryptography::cryptocurrencies"]
+
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -17,12 +18,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
-subsocial-support = { path = "../support", default-features = false }
-
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 
@@ -30,20 +29,23 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
+smallvec = "1.6.1"
 
 [features]
 default = ["std"]
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+]
 std = [
     "codec/std",
     "scale-info/std",
-    "pallet-balances/std",
-    "pallet-timestamp/std",
+    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
-    "frame-benchmarking/std",
+    "pallet-balances/std",
+    "pallet-transaction-payment/std",
     "sp-runtime/std",
     "sp-std/std",
-    "subsocial-support/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

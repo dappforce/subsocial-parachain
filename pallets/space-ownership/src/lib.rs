@@ -71,7 +71,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
+        #[pallet::weight(33_000_000 + T::DbWeight::get().reads_writes(1, 1))]
         pub fn transfer_space_ownership(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -98,7 +98,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2))]
+        #[pallet::weight(56_000_000 + T::DbWeight::get().reads_writes(4, 4))]
         pub fn accept_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let new_owner = ensure_signed(origin)?;
 
@@ -142,7 +142,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(37_000_000 + T::DbWeight::get().reads_writes(2, 1))]
         pub fn reject_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let who = ensure_signed(origin)?;
 

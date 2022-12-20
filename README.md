@@ -53,7 +53,7 @@ docker run -d -v node-data:/data dappforce/subsocial-parachain:latest subsocial-
 --chain=kusama
 ```
 
-### Using parachain-launch
+### Run a local testnet using parachain-launch
 
 - Install [parachain-launch](https://github.com/open-web3-stack/parachain-launch)
 - Install [Docker-compose](https://docs.docker.com/compose/install/)
