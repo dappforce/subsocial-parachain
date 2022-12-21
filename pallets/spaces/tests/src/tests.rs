@@ -1,60 +1,18 @@
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
-use sp_runtime::traits::Zero;
+use frame_support::{assert_noop, assert_ok};
 
-use pallet_spaces::Error as SpacesError;
 use pallet_permissions::SpacePermission as SP;
-use subsocial_support::mock_functions::*;
-use subsocial_support::{ContentError, ModerationError};
+use pallet_spaces::Error as SpacesError;
+use subsocial_support::{mock_functions::*, ContentError, ModerationError};
 
-use crate::mock::*;
-use crate::tests_utils::*;
-
-#[test]
-fn create_subspace_should_fail_when_content_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_content_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                None,
-                Some(valid_content_ipfs()),
-                None,
-            ),
-            DispatchError::from(ModerationError::ContentIsBlocked)
-        );
-    });
-}
-
-
-#[test]
-fn create_subspace_should_fail_when_account_is_blocked() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        block_account_in_space_1();
-        assert_noop!(
-            _create_subspace(
-                None,
-                Some(Some(SPACE1)),
-                None,
-                None,
-                None,
-            ),
-            DispatchError::from(ModerationError::AccountIsBlocked)
-        );
-    });
-}
+use crate::{mock::*, tests_utils::*};
 
 #[test]
 fn update_space_should_fail_when_account_is_blocked() {
     ExtBuilder::build_with_post().execute_with(|| {
         block_account_in_space_1();
         assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(update_for_space_content(updated_space_content()))
-            ),
-            DispatchError::from(ModerationError::AccountIsBlocked)
+            _update_space(None, None, Some(update_for_space_content(updated_space_content()))),
+            ModerationError::AccountIsBlocked,
         );
     });
 }
@@ -64,12 +22,8 @@ fn update_space_should_fail_when_content_is_blocked() {
     ExtBuilder::build_with_post().execute_with(|| {
         block_content_in_space_1();
         assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(space_update(Some(valid_content_ipfs()), None))
-            ),
-            DispatchError::from(ModerationError::ContentIsBlocked)
+            _update_space(None, None, Some(space_update(Some(valid_content_ipfs()), None))),
+            ModerationError::ContentIsBlocked,
         );
     });
 }
@@ -89,7 +43,7 @@ fn create_space_should_work() {
 
         assert_eq!(space.created.account, ACCOUNT1);
         assert!(!space.edited);
-        assert_eq!(space.hidden, false);
+        assert!(!space.hidden);
 
         assert_eq!(space.owner, ACCOUNT1);
         // assert_eq!(space.handle, Some(space_handle()));
@@ -115,14 +69,9 @@ fn create_post_should_work_overridden_space_permission_for_everyone() {
     ExtBuilder::build_with_space_and_custom_permissions(
         permissions_where_everyone_can_create_post(),
     )
-        .execute_with(|| {
-            assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
-            None,
-            None,
-            None
-        ));
-        });
+    .execute_with(|| {
+        assert_ok!(_create_post(Some(Origin::signed(ACCOUNT2)), None, None, None));
+    });
 }
 
 #[test]
@@ -130,16 +79,11 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
     ExtBuilder::build_with_space_and_custom_permissions(
         permissions_where_follower_can_create_post(),
     )
-        .execute_with(|| {
-            assert_ok!(_default_follow_space());
+    .execute_with(|| {
+        assert_ok!(_default_follow_space());
 
-            assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
-            None,
-            None,
-            None
-        ));
-        });
+        assert_ok!(_create_post(Some(Origin::signed(ACCOUNT2)), None, None, None));
+    });
 }
 //
 // #[test]
@@ -181,7 +125,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -193,7 +137,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -205,7 +149,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -217,7 +161,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
 //
 //         assert_noop!(
 //             _create_space(None, Some(Some(invalid_handle)), None, None),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -239,8 +183,8 @@ fn create_space_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build().execute_with(|| {
         // Try to catch an error creating a space with invalid content
         assert_noop!(
-            _create_space(None, None, Some(invalid_content_ipfs()), None),
-            DispatchError::from(ContentError::InvalidIpfsCid)
+            _create_space(None, Some(invalid_content_ipfs()), None),
+            ContentError::InvalidIpfsCid,
         );
     });
 }
@@ -254,17 +198,14 @@ fn update_space_should_work() {
         assert_ok!(_update_space(
             None, // From ACCOUNT1 (has permission as he's an owner)
             None,
-            Some(space_update(
-                Some(expected_content_ipfs.clone()),
-                Some(true),
-            ))
+            Some(space_update(Some(expected_content_ipfs.clone()), Some(true),))
         ));
 
         // Check whether space updates correctly
         let space = Spaces::space_by_id(SPACE1).unwrap();
         // assert_eq!(space.handle, Some(new_handle.clone()));
         assert_eq!(space.content, expected_content_ipfs);
-        assert_eq!(space.hidden, true);
+        assert!(space.hidden);
 
         // assert_eq!(find_space_id_by_handle(space_handle()), None);
         // assert_eq!(find_space_id_by_handle(new_handle), Some(SPACE1));
@@ -279,10 +220,7 @@ fn update_space_should_work() {
 fn update_space_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
-            let space_update = space_update(
-                Some(updated_space_content()),
-                Some(true),
-            );
+            let space_update = space_update(Some(updated_space_content()), Some(true));
 
             assert_ok!(_update_space(
                 Some(Origin::signed(ACCOUNT2)),
@@ -317,10 +255,7 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
 fn update_space_should_fail_when_no_updates_for_space_provided() {
     ExtBuilder::build_with_space().execute_with(|| {
         // Try to catch an error updating a space with no changes
-        assert_noop!(
-            _update_space(None, None, None),
-            SpacesError::<Test>::NoUpdatesForSpace
-        );
+        assert_noop!(_update_space(None, None, None), SpacesError::<Test>::NoUpdatesForSpace);
     });
 }
 
@@ -359,7 +294,8 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //     ExtBuilder::build_with_space().execute_with(|| {
 //         let handle: Vec<u8> = b"unique_handle".to_vec();
 //
-//         assert_ok!(_create_space(None, Some(Some(handle.clone())), None, None)); // SpaceId 2 with a custom handle
+//         assert_ok!(_create_space(None, Some(Some(handle.clone())), None, None)); // SpaceId 2
+// with a custom handle
 //
 //         // Should fail when updating a space 1 with a handle of a space 2:
 //         assert_noop!(
@@ -384,7 +320,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -400,7 +336,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -416,7 +352,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -432,7 +368,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
 //                 None,
 //                 Some(update_for_space_handle(Some(invalid_handle)))
 //             ),
-//             DispatchError::from(ModerationError::HandleContainsInvalidChars)
+//             DispatchError::Other(UtilsError::HandleContainsInvalidChars.into())
 //         );
 //     });
 // }
@@ -442,12 +378,8 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build_with_space().execute_with(|| {
         // Try to catch an error updating a space with invalid content
         assert_noop!(
-            _update_space(
-                None,
-                None,
-                Some(space_update(Some(invalid_content_ipfs()), None,))
-            ),
-            DispatchError::from(ContentError::InvalidIpfsCid)
+            _update_space(None, None, Some(space_update(Some(invalid_content_ipfs()), None,))),
+            ContentError::InvalidIpfsCid,
         );
     });
 }
@@ -456,19 +388,12 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
 fn update_space_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
-            let space_update = space_update(
-                Some(updated_space_content()),
-                Some(true),
-            );
+            let space_update = space_update(Some(updated_space_content()), Some(true));
 
             assert_ok!(_delete_default_role());
 
             assert_noop!(
-                _update_space(
-                    Some(Origin::signed(ACCOUNT2)),
-                    Some(SPACE1),
-                    Some(space_update)
-                ),
+                _update_space(Some(Origin::signed(ACCOUNT2)), Some(SPACE1), Some(space_update)),
                 SpacesError::<Test>::NoPermissionToUpdateSpace
             );
         },
