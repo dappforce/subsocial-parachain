@@ -6,7 +6,7 @@ edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
-description = 'Pallet that allows to follow/unfollow spaces'
+description = 'Space follow pallet tests'
 keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
 categories = ['cryptography::cryptocurrencies']
 
