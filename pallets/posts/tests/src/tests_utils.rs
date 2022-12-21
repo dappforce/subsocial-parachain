@@ -596,3 +596,19 @@ pub(crate) fn _delete_comment_reaction(
 ) -> DispatchResult {
     _delete_post_reaction(origin, Some(post_id.unwrap_or(2)), reaction_id)
 }
+
+pub(crate) fn _transfer_default_space_ownership() -> DispatchResult {
+    _transfer_space_ownership(None, None, None)
+}
+
+pub(crate) fn _transfer_space_ownership(
+    origin: Option<Origin>,
+    space_id: Option<SpaceId>,
+    transfer_to: Option<AccountId>,
+) -> DispatchResult {
+    SpaceOwnership::transfer_space_ownership(
+        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        space_id.unwrap_or(SPACE1),
+        transfer_to.unwrap_or(ACCOUNT2),
+    )
+}

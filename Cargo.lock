@@ -5701,6 +5701,7 @@ dependencies = [
  "pallet-reactions",
  "pallet-roles",
  "pallet-space-follows",
+ "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
