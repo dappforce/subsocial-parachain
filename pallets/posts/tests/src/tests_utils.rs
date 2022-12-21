@@ -1,28 +1,26 @@
-use frame_support::assert_ok;
-use frame_support::pallet_prelude::*;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use sp_io::TestExternalities;
-use sp_core::storage::Storage;
-use pallet_spaces::*;
-use pallet_permissions::{
-    SpacePermission as SP,
-    SpacePermissions,
-    SpacePermission,
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    hash::{Hash, Hasher},
 };
-use pallet_spaces::types::{SpaceUpdate};
 
-use subsocial_support::{mock_functions::*, ContentError, ModerationError, PostId, SpaceId, User, Content};
-use pallet_permissions::default_permissions::DefaultSpacePermissions;
+use frame_support::{assert_ok, pallet_prelude::*};
+use sp_core::storage::Storage;
+use sp_io::TestExternalities;
+
+use pallet_permissions::{SpacePermission as SP, SpacePermission, SpacePermissions};
 use pallet_posts::{Comment, PostExtension, PostUpdate};
 use pallet_reactions::{ReactionId, ReactionKind};
-use subsocial_support::traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
+use pallet_spaces::types::SpaceUpdate;
+use subsocial_support::{
+    mock_functions::*,
+    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
+    Content, PostId, SpaceId, User,
+};
 
 use crate::mock::*;
 
 ////// Ext Builder
-
 
 pub struct ExtBuilder;
 
@@ -34,15 +32,14 @@ impl ExtBuilder {
         }
 
         let _ = pallet_balances::GenesisConfig::<Test> {
-            balances: accounts.iter().cloned().map(|k|(k, 100)).collect()
-        }.assimilate_storage(storage);
+            balances: accounts.iter().cloned().map(|k| (k, 100)).collect(),
+        }
+        .assimilate_storage(storage);
     }
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
+        let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
         Self::configure_storages(&mut storage);
 
@@ -54,10 +51,6 @@ impl ExtBuilder {
 
     fn add_default_space() {
         assert_ok!(_create_default_space());
-    }
-
-    fn add_space_with_custom_permissions(permissions: SpacePermissions) {
-        assert_ok!(_create_space(None, None, None, Some(Some(permissions))));
     }
 
     fn add_space_with_no_handle() {
@@ -102,22 +95,15 @@ impl ExtBuilder {
         ext
     }
 
-    /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where BlockNumber is 1
+    /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where
+    /// BlockNumber is 1
     pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post_and_two_spaces();
-        ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
+        ext.execute_with(|| {
+            assert_ok!(_create_default_post_reaction());
+        });
         ext
     }
-
-    // /// Custom ext configuration with pending ownership transfer without Space
-    // pub fn build_with_pending_ownership_transfer_no_space() -> TestExternalities {
-    //     let mut ext = Self::build_with_space();
-    //     ext.execute_with(|| {
-    //         assert_ok!(_transfer_default_space_ownership());
-    //         <SpaceById<Test>>::remove(SPACE1);
-    //     });
-    //     ext
-    // }
 
     /// Custom ext configuration with specified permissions granted (includes SpaceId 1)
     pub fn build_with_a_few_roles_granted_to_account2(perms: Vec<SP>) -> TestExternalities {
@@ -125,13 +111,7 @@ impl ExtBuilder {
 
         ext.execute_with(|| {
             let user = User::Account(ACCOUNT2);
-            assert_ok!(_create_role(
-                    None,
-                    None,
-                    None,
-                    None,
-                    Some(perms)
-                ));
+            assert_ok!(_create_role(None, None, None, None, Some(perms)));
             // RoleId 1
             assert_ok!(_create_default_role()); // RoleId 2
 
@@ -139,25 +119,6 @@ impl ExtBuilder {
             assert_ok!(_grant_role(None, Some(ROLE2), Some(vec![user])));
         });
 
-        ext
-    }
-
-    /// Custom ext configuration with space follow without Space
-    pub fn build_with_space_follow_no_space() -> TestExternalities {
-        let mut ext = Self::build_with_space();
-
-        ext.execute_with(|| {
-            assert_ok!(_default_follow_space());
-            <SpaceById<Test>>::remove(SPACE1);
-        });
-
-        ext
-    }
-
-    /// Custom ext configuration with a space and override the space permissions
-    pub fn build_with_space_and_custom_permissions(permissions: SpacePermissions) -> TestExternalities {
-        let mut ext = Self::build();
-        ext.execute_with(|| Self::add_space_with_custom_permissions(permissions));
         ext
     }
 }
@@ -180,16 +141,11 @@ type RoleId = u64;
 pub(crate) const ROLE1: RoleId = 1;
 pub(crate) const ROLE2: RoleId = 2;
 
-pub(crate) const REACTION1: ReactionId = 1;
-pub(crate) const REACTION2: ReactionId = 2;
-
 ////// Moderation Utils
-
-
 
 // Moderation pallet mocks
 
-/*------------------------------------------------------------------------------------------------*/
+/* ------------------------------------------------------------------------------------------------ */
 // Moderation tests
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
@@ -243,8 +199,7 @@ impl MockModeration {
     }
 
     fn is_allowed_entity(id: EntityId, scope: SpaceId) -> bool {
-        Self::get_entity_status(id, scope)
-            .unwrap_or(EntityStatus::Allowed) == EntityStatus::Allowed
+        Self::get_entity_status(id, scope).unwrap_or(EntityStatus::Allowed) == EntityStatus::Allowed
     }
 
     fn is_blocked_entity(id: EntityId, scope: SpaceId) -> bool {
@@ -293,11 +248,7 @@ impl IsContentBlocked for MockModeration {
 }
 
 pub(crate) fn block_account_in_space_1() {
-    MockModeration::set_entity_status(
-        EntityId::Account(ACCOUNT1),
-        SPACE1,
-        EntityStatus::Blocked,
-    );
+    MockModeration::set_entity_status(EntityId::Account(ACCOUNT1), SPACE1, EntityStatus::Blocked);
 }
 
 pub(crate) fn block_content_in_space_1() {
@@ -314,32 +265,8 @@ pub(crate) fn space_content_ipfs() -> Content {
     Content::IPFS(b"bafyreib3mgbou4xln42qqcgj6qlt3cif35x4ribisxgq7unhpun525l54e".to_vec())
 }
 
-pub(crate) fn updated_space_content() -> Content {
-    Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW2CuDgwxkD4".to_vec())
-}
-
-
-pub(crate) fn update_for_space_handle(
-    new_handle: Option<Vec<u8>>,
-) -> SpaceUpdate {
-    space_update(None, None)
-}
-
-pub(crate) fn update_for_space_content(
-    new_content: Content,
-) -> SpaceUpdate {
-    space_update(Some(new_content), None)
-}
-
-pub(crate) fn space_update(
-    content: Option<Content>,
-    hidden: Option<bool>,
-) -> SpaceUpdate {
-    SpaceUpdate {
-        content,
-        hidden,
-        permissions: None,
-    }
+pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
+    SpaceUpdate { content, hidden, permissions: None }
 }
 
 pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
@@ -350,36 +277,25 @@ pub(crate) fn _create_space(
     origin: Option<Origin>,
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>
+    permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(
-        origin,
-        handle,
-        content,
-        permissions,
-    )
+    _create_space_with_parent_id(origin, handle, content, permissions)
 }
 
 pub(crate) fn _create_subspace(
     origin: Option<Origin>,
-    parent_id_opt: Option<Option<SpaceId>>,
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>
+    permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(
-        origin,
-        handle,
-        content,
-        permissions,
-    )
+    _create_space_with_parent_id(origin, handle, content, permissions)
 }
 
 pub(crate) fn _create_space_with_parent_id(
     origin: Option<Origin>,
     handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>
+    permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
     if matches!(handle, Some(Some(_))) {
         panic!("HANDLES ARE DISABLED");
@@ -387,7 +303,7 @@ pub(crate) fn _create_space_with_parent_id(
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
-        permissions.unwrap_or_default()
+        permissions.unwrap_or_default(),
     )
 }
 
@@ -402,7 +318,6 @@ pub(crate) fn _update_space(
         update.unwrap_or_else(|| space_update(None, None)),
     )
 }
-
 
 ///////////// Post Utils
 
@@ -419,11 +334,7 @@ pub(crate) fn post_update(
     content: Option<Content>,
     hidden: Option<bool>,
 ) -> PostUpdate {
-    PostUpdate {
-        space_id,
-        content,
-        hidden,
-    }
+    PostUpdate { space_id, content, hidden }
 }
 
 pub(crate) fn comment_content_ipfs() -> Content {
@@ -510,10 +421,7 @@ pub(crate) fn _create_comment(
     _create_post(
         origin,
         Some(None),
-        Some(extension_comment(
-            parent_id.unwrap_or_default(),
-            post_id.unwrap_or(POST1),
-        )),
+        Some(extension_comment(parent_id.unwrap_or_default(), post_id.unwrap_or(POST1))),
         Some(content.unwrap_or_else(comment_content_ipfs)),
     )
 }
@@ -526,9 +434,7 @@ pub(crate) fn _update_comment(
     _update_post(
         origin,
         Some(post_id.unwrap_or(POST2)),
-        Some(update.unwrap_or_else(||
-            post_update(None, Some(reply_content_ipfs()), None))
-        ),
+        Some(update.unwrap_or_else(|| post_update(None, Some(reply_content_ipfs()), None))),
     )
 }
 
@@ -556,15 +462,11 @@ pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>)
     )
 }
 
-
 /////// Roles utils
-
 
 pub(crate) fn default_role_content_ipfs() -> Content {
     Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4".to_vec())
 }
-
-
 
 pub fn _create_default_role() -> DispatchResult {
     _create_role(None, None, None, None, None)
@@ -607,37 +509,11 @@ pub fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub fn _delete_role(
-    origin: Option<Origin>,
-    role_id: Option<RoleId>,
-) -> DispatchResult {
-    Roles::delete_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        role_id.unwrap_or(ROLE1),
-    )
+pub fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
+    Roles::delete_role(origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)), role_id.unwrap_or(ROLE1))
 }
-
 
 /////// Permissions utils
-
-pub(crate) fn permissions_where_everyone_can_create_post() -> SpacePermissions {
-    let mut default_permissions = DefaultSpacePermissions::get();
-    default_permissions.everyone = default_permissions.everyone
-        .map(|mut permissions| {
-            permissions.insert(SP::CreatePosts);
-            permissions
-        });
-
-    default_permissions
-}
-
-pub(crate) fn permissions_where_follower_can_create_post() -> SpacePermissions {
-    let mut default_permissions = DefaultSpacePermissions::get();
-    default_permissions.follower = Some(vec![SP::CreatePosts].into_iter().collect());
-
-    default_permissions
-}
-
 
 /// Permissions Set that includes next permission: ManageRoles
 pub(crate) fn permission_set_default() -> Vec<SpacePermission> {
@@ -649,11 +525,6 @@ pub(crate) fn permission_set_default() -> Vec<SpacePermission> {
 pub(crate) fn reaction_upvote() -> ReactionKind {
     ReactionKind::Upvote
 }
-
-pub(crate) fn reaction_downvote() -> ReactionKind {
-    ReactionKind::Downvote
-}
-
 
 pub(crate) fn _create_default_post_reaction() -> DispatchResult {
     _create_post_reaction(None, None, None)

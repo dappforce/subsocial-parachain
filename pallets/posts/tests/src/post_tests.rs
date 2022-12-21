@@ -1,22 +1,12 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
 use pallet_permissions::SpacePermission as SP;
-use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate};
-use subsocial_support::{
-    mock_functions::*,
-    ContentError,
-    ModerationError,
-    PostId,
-    SpaceId,
-    User,
-};
+use pallet_posts::{Error as PostsError, Post};
+use pallet_spaces::Error as SpacesError;
+use subsocial_support::{mock_functions::*, ContentError, ModerationError, PostId, SpaceId};
 
-use crate::mock::*;
-use crate::tests_utils::*;
-
+use crate::{mock::*, tests_utils::*};
 
 #[test]
 fn create_post_should_fail_when_content_is_blocked() {
@@ -153,10 +143,7 @@ fn create_post_should_fail_when_post_has_no_space_id() {
 #[test]
 fn create_post_should_fail_when_space_not_found() {
     ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _create_default_post(),
-            SpacesError::<Test>::SpaceNotFound
-        );
+        assert_noop!(_create_default_post(), SpacesError::<Test>::SpaceNotFound);
     });
 }
 
@@ -209,11 +196,7 @@ fn update_post_should_work() {
         assert_ok!(_update_post(
             None, // From ACCOUNT1 (has default permission to UpdateOwnPosts)
             None,
-            Some(post_update(
-                None,
-                Some(expected_content_ipfs.clone()),
-                Some(true)
-            ))
+            Some(post_update(None, Some(expected_content_ipfs.clone()), Some(true)))
         ));
 
         // Check whether post updates correctly
@@ -224,10 +207,7 @@ fn update_post_should_work() {
     });
 }
 
-fn check_if_post_moved_correctly(
-    moved_post_id: PostId,
-    expected_new_space_id: SpaceId,
-) {
+fn check_if_post_moved_correctly(moved_post_id: PostId, expected_new_space_id: SpaceId) {
     let post: Post<Test> = Posts::post_by_id(moved_post_id).unwrap(); // `POST2` is a comment
     let new_space_id = post.space_id.unwrap();
 
@@ -241,15 +221,11 @@ fn move_post_should_work() {
         assert_ok!(_move_post_1_to_space_2());
 
         let moved_post_id = POST1;
-        let old_space_id = SPACE1;
         let expected_new_space_id = SPACE2;
         check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
 
         // Check that there is the post id in the new space
-        assert_eq!(
-            Posts::post_ids_by_space_id(expected_new_space_id),
-            vec![moved_post_id]
-        );
+        assert_eq!(Posts::post_ids_by_space_id(expected_new_space_id), vec![moved_post_id]);
     });
 }
 
@@ -257,7 +233,6 @@ fn move_post_should_work() {
 fn move_post_should_work_when_space_id_none() {
     ExtBuilder::build_with_reacted_post_and_two_spaces().execute_with(|| {
         let moved_post_id = POST1;
-        let old_space_id = SPACE1; // Where post were before moving to `SpaceId:None`
         let expected_new_space_id = SPACE2;
 
         assert_ok!(_move_post_to_nowhere(moved_post_id));
@@ -266,10 +241,7 @@ fn move_post_should_work_when_space_id_none() {
         check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
 
         // Check that there is the post id in the new space
-        assert_eq!(
-            Posts::post_ids_by_space_id(expected_new_space_id),
-            vec![moved_post_id]
-        );
+        assert_eq!(Posts::post_ids_by_space_id(expected_new_space_id), vec![moved_post_id]);
     });
 }
 
@@ -295,10 +267,7 @@ fn move_hidden_post_should_work() {
         assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
 
         // Check that there is the post id in the new space
-        assert_eq!(
-            Posts::post_ids_by_space_id(expected_new_space_id),
-            vec![moved_post_id]
-        );
+        assert_eq!(Posts::post_ids_by_space_id(expected_new_space_id), vec![moved_post_id]);
     });
 }
 
@@ -306,10 +275,7 @@ fn move_hidden_post_should_work() {
 fn move_hidden_post_should_fail_when_post_not_found() {
     ExtBuilder::build().execute_with(|| {
         // Note that we have not created a post that we are trying to move
-        assert_noop!(
-            _move_post_1_to_space_2(),
-            PostsError::<Test>::PostNotFound
-        );
+        assert_noop!(_move_post_1_to_space_2(), PostsError::<Test>::PostNotFound);
     });
 }
 
@@ -317,10 +283,7 @@ fn move_hidden_post_should_fail_when_post_not_found() {
 fn move_hidden_post_should_fail_when_provided_space_not_found() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Note that we have not created a new space #2 before moving the post
-        assert_noop!(
-            _move_post_1_to_space_2(),
-            SpacesError::<Test>::SpaceNotFound
-        );
+        assert_noop!(_move_post_1_to_space_2(), SpacesError::<Test>::SpaceNotFound);
     });
 }
 
@@ -328,19 +291,11 @@ fn move_hidden_post_should_fail_when_provided_space_not_found() {
 fn move_hidden_post_should_fail_origin_has_no_permission_to_create_posts() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Create a space #2 from account #2
-        assert_ok!(_create_space(
-            Some(Origin::signed(ACCOUNT2)),
-            Some(None),
-            None,
-            None
-        ));
+        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), Some(None), None, None));
 
         // Should not be possible to move the post b/c it's owner is account #1
         // when the space #2 is owned by account #2
-        assert_noop!(
-            _move_post_1_to_space_2(),
-            PostsError::<Test>::NoPermissionToCreatePosts
-        );
+        assert_noop!(_move_post_1_to_space_2(), PostsError::<Test>::NoPermissionToCreatePosts);
     });
 }
 
@@ -433,22 +388,14 @@ fn update_any_post_should_work_when_one_of_roles_is_permitted() {
 fn update_post_should_fail_when_no_updates_for_post_provided() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Try to catch an error updating a post with no changes
-        assert_noop!(
-            _update_post(None, None, None),
-            PostsError::<Test>::NoUpdatesForPost
-        );
+        assert_noop!(_update_post(None, None, None), PostsError::<Test>::NoUpdatesForPost);
     });
 }
 
 #[test]
 fn update_post_should_fail_when_post_not_found() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(
-            None,
-            None,
-            None,
-            None
-        )); // SpaceId 2
+        assert_ok!(_create_space(None, None, None, None)); // SpaceId 2
 
         // Try to catch an error updating a post with wrong post ID
         assert_noop!(
@@ -457,9 +404,9 @@ fn update_post_should_fail_when_post_not_found() {
                 Some(POST2),
                 Some(post_update(
                     // FIXME: when Post's `space_id` update is fully implemented
-                    None, /*Some(SPACE2)*/
+                    None, /* Some(SPACE2) */
                     None,
-                    Some(true) /*None*/
+                    Some(true) /* None */
                 ))
             ),
             PostsError::<Test>::PostNotFound
@@ -470,12 +417,7 @@ fn update_post_should_fail_when_post_not_found() {
 #[test]
 fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(
-            None,
-            None,
-            None,
-            None
-        )); // SpaceId 2
+        assert_ok!(_create_space(None, None, None, None)); // SpaceId 2
 
         // Try to catch an error updating a post with different account
         assert_noop!(
@@ -484,9 +426,9 @@ fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
                 None,
                 Some(post_update(
                     // FIXME: when Post's `space_id` update is fully implemented
-                    None, /*Some(SPACE2)*/
+                    None, /* Some(SPACE2) */
                     None,
-                    Some(true) /*None*/
+                    Some(true) /* None */
                 ))
             ),
             PostsError::<Test>::NoPermissionToUpdateAnyPost
@@ -499,11 +441,7 @@ fn update_post_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Try to catch an error updating a post with invalid content
         assert_noop!(
-            _update_post(
-                None,
-                None,
-                Some(post_update(None, Some(invalid_content_ipfs()), None))
-            ),
+            _update_post(None, None, Some(post_update(None, Some(invalid_content_ipfs()), None))),
             DispatchError::from(ContentError::InvalidIpfsCid)
         );
     });
@@ -520,11 +458,7 @@ fn update_post_should_fail_when_no_right_permission_in_account_roles() {
 
             // Post update with ID 1 should be fine
             assert_noop!(
-                _update_post(
-                    Some(Origin::signed(ACCOUNT2)),
-                    Some(POST1),
-                    Some(post_update)
-                ),
+                _update_post(Some(Origin::signed(ACCOUNT2)), Some(POST1), Some(post_update)),
                 PostsError::<Test>::NoPermissionToUpdateAnyPost
             );
         },

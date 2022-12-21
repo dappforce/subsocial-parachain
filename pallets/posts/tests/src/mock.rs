@@ -1,14 +1,11 @@
-use frame_support::{
-    assert_ok, dispatch::DispatchResult, parameter_types,
-    traits::{Currency, Everything},
-};
-use frame_support::pallet_prelude::ConstU32;
+use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::Everything};
 use sp_core::H256;
-use sp_io::TestExternalities;
-use sp_runtime::{DispatchError, testing::Header, traits::{BlakeTwo256, IdentityLookup}};
-use sp_std::convert::{TryInto, TryFrom};
-use subsocial_support::{SpaceId, User};
-use pallet_permissions::{SpacePermission, SpacePermissionsContext};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
+};
+use sp_std::convert::{TryFrom, TryInto};
+
 use crate::tests_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -33,14 +30,13 @@ frame_support::construct_runtime!(
     }
 );
 
-
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
 pub(super) type BlockNumber = u64;
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 42;
+    pub const BlockHashCount: u64 = 250;
+    pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Test {
@@ -69,7 +65,6 @@ impl frame_system::Config for Test {
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
-
 
 parameter_types! {
     pub const MinimumPeriod: u64 = 5;
@@ -108,7 +103,6 @@ impl pallet_posts::Config for Test {
     type IsPostBlocked = MockModeration;
 }
 
-
 impl pallet_permissions::Config for Test {
     type DefaultSpacePermissions = pallet_permissions::default_permissions::DefaultSpacePermissions;
 }
@@ -130,7 +124,6 @@ impl pallet_profiles::Config for Test {
     type Event = Event;
     type SpacePermissionsProvider = Spaces;
 }
-
 
 impl pallet_spaces::Config for Test {
     type Event = Event;

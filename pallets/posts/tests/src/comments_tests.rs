@@ -1,22 +1,10 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
-use pallet_permissions::SpacePermission as SP;
-use pallet_spaces::{Error as SpacesError, SpaceById};
-use pallet_spaces::types::{SpaceUpdate};
-use subsocial_support::{
-    mock_functions::*,
-    ContentError,
-    ModerationError,
-    PostId,
-    SpaceId,
-    User,
-};
+use pallet_posts::Error as PostsError;
+use subsocial_support::{mock_functions::*, ContentError, PostId};
 
-use crate::mock::*;
-use crate::tests_utils::*;
-
+use crate::{mock::*, tests_utils::*};
 
 #[test]
 fn create_comment_should_work() {
@@ -72,10 +60,7 @@ fn create_comment_should_work_when_comment_has_parents() {
 fn create_comment_should_fail_when_post_not_found() {
     ExtBuilder::build().execute_with(|| {
         // Try to catch an error creating a comment with wrong post
-        assert_noop!(
-            _create_default_comment(),
-            PostsError::<Test>::PostNotFound
-        );
+        assert_noop!(_create_default_comment(), PostsError::<Test>::PostNotFound);
     });
 }
 
@@ -104,32 +89,18 @@ fn create_comment_should_fail_when_ipfs_cid_is_invalid() {
 #[test]
 fn create_comment_should_fail_when_trying_to_create_in_hidden_space_scope() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_update_space(
-            None,
-            None,
-            Some(space_update(None, Some(true)))
-        ));
+        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
 
-        assert_noop!(
-            _create_default_comment(),
-            PostsError::<Test>::CannotCreateInHiddenScope
-        );
+        assert_noop!(_create_default_comment(), PostsError::<Test>::CannotCreateInHiddenScope);
     });
 }
 
 #[test]
 fn create_comment_should_fail_when_trying_create_in_hidden_post_scope() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_update_post(
-            None,
-            None,
-            Some(post_update(None, None, Some(true)))
-        ));
+        assert_ok!(_update_post(None, None, Some(post_update(None, None, Some(true)))));
 
-        assert_noop!(
-            _create_default_comment(),
-            PostsError::<Test>::CannotCreateInHiddenScope
-        );
+        assert_noop!(_create_default_comment(), PostsError::<Test>::CannotCreateInHiddenScope);
     });
 }
 
@@ -160,7 +131,6 @@ fn update_comment_should_work() {
         // Check whether post updates correctly
         let comment = Posts::post_by_id(POST2).unwrap();
         assert_eq!(comment.content, reply_content_ipfs());
-
     });
 }
 
@@ -195,7 +165,10 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             assert_eq!(Posts::reply_ids_by_post_id(comment_id), vec![comment_id + 1]);
         }
 
-        assert_eq!(Posts::reply_ids_by_post_id(should_hide_by_one_id), vec![should_hide_by_one_id + 1]);
+        assert_eq!(
+            Posts::reply_ids_by_post_id(should_hide_by_one_id),
+            vec![should_hide_by_one_id + 1]
+        );
         assert_eq!(Posts::reply_ids_by_post_id(should_hide_id), vec![should_hide_id + 1]);
     });
 }
@@ -205,10 +178,7 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
 fn update_comment_should_fail_when_post_not_found() {
     ExtBuilder::build().execute_with(|| {
         // Try to catch an error updating a comment with wrong PostId
-        assert_noop!(
-            _update_comment(None, None, None),
-            PostsError::<Test>::PostNotFound
-        );
+        assert_noop!(_update_comment(None, None, None), PostsError::<Test>::PostNotFound);
     });
 }
 

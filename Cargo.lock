@@ -5689,7 +5689,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-posts-tests"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
