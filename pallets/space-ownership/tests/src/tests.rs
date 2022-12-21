@@ -1,31 +1,24 @@
-use frame_support::{assert_ok, assert_noop};
+use frame_support::{assert_noop, assert_ok};
 use sp_runtime::traits::Zero;
 
 use pallet_space_ownership::Error as SpaceOwnershipError;
 use pallet_spaces::Error as SpacesError;
 
-use crate::mock::*;
-use crate::tests_utils::*;
+use crate::{mock::*, tests_utils::*};
 
 #[test]
 fn transfer_space_ownership_should_work() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_ok!(_transfer_default_space_ownership()); // Transfer SpaceId 1 owned by ACCOUNT1 to ACCOUNT2
 
-        assert_eq!(
-            SpaceOwnership::pending_space_owner(SPACE1).unwrap(),
-            ACCOUNT2
-        );
+        assert_eq!(SpaceOwnership::pending_space_owner(SPACE1).unwrap(), ACCOUNT2);
     });
 }
 
 #[test]
 fn transfer_space_ownership_should_fail_when_space_not_found() {
     ExtBuilder::build().execute_with(|| {
-        assert_noop!(
-            _transfer_default_space_ownership(),
-            SpacesError::<Test>::SpaceNotFound
-        );
+        assert_noop!(_transfer_default_space_ownership(), SpacesError::<Test>::SpaceNotFound);
     });
 }
 
@@ -74,10 +67,7 @@ fn accept_pending_ownership_should_work() {
 #[test]
 fn accept_pending_ownership_should_fail_when_space_not_found() {
     ExtBuilder::build_with_pending_ownership_transfer_no_space().execute_with(|| {
-        assert_noop!(
-            _accept_default_pending_ownership(),
-            SpacesError::<Test>::SpaceNotFound
-        );
+        assert_noop!(_accept_default_pending_ownership(), SpacesError::<Test>::SpaceNotFound);
     });
 }
 
@@ -150,10 +140,7 @@ fn reject_pending_ownership_should_work_when_proposal_rejected_by_current_space_
 #[test]
 fn reject_pending_ownership_should_fail_when_space_not_found() {
     ExtBuilder::build_with_pending_ownership_transfer_no_space().execute_with(|| {
-        assert_noop!(
-            _reject_default_pending_ownership(),
-            SpacesError::<Test>::SpaceNotFound
-        );
+        assert_noop!(_reject_default_pending_ownership(), SpacesError::<Test>::SpaceNotFound);
     });
 }
 
