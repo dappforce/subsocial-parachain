@@ -1,20 +1,14 @@
 use frame_support::{assert_noop, assert_ok};
 
-use pallet_reactions::{Error as ReactionsError, ReactionId, ReactionKind};
-use pallet_posts::{Comment, Error as PostsError, Post, PostExtension, PostUpdate};
+use pallet_posts::Error as PostsError;
+use pallet_reactions::Error as ReactionsError;
 
-use crate::mock::*;
-use crate::tests_utils::*;
-
+use crate::{mock::*, tests_utils::*};
 
 #[test]
 fn create_post_reaction_should_work_upvote() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_post_reaction(
-            Some(Origin::signed(ACCOUNT2)),
-            None,
-            None
-        )); // ReactionId 1 by ACCOUNT2 which is permitted by default
+        assert_ok!(_create_post_reaction(Some(Origin::signed(ACCOUNT2)), None, None)); // ReactionId 1 by ACCOUNT2 which is permitted by default
 
         // Check storages
         assert_eq!(Reactions::reaction_ids_by_post_id(POST1), vec![REACTION1]);
@@ -72,10 +66,7 @@ fn create_post_reaction_should_fail_when_account_has_already_reacted() {
 fn create_post_reaction_should_fail_when_post_not_found() {
     ExtBuilder::build().execute_with(|| {
         // Try to catch an error creating reaction by the same account
-        assert_noop!(
-            _create_default_post_reaction(),
-            PostsError::<Test>::PostNotFound
-        );
+        assert_noop!(_create_default_post_reaction(), PostsError::<Test>::PostNotFound);
     });
 }
 
@@ -83,11 +74,7 @@ fn create_post_reaction_should_fail_when_post_not_found() {
 fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Hide the space
-        assert_ok!(_update_space(
-            None,
-            None,
-            Some(space_update(None, Some(true)))
-        ));
+        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
 
         assert_noop!(
             _create_default_post_reaction(),
@@ -100,11 +87,7 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
 fn create_post_reaction_should_fail_when_trying_to_react_on_hidden_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Hide the post
-        assert_ok!(_update_post(
-            None,
-            None,
-            Some(post_update(None, None, Some(true)))
-        ));
+        assert_ok!(_update_post(None, None, Some(post_update(None, None, Some(true)))));
 
         assert_noop!(
             _create_default_post_reaction(),
