@@ -2,10 +2,9 @@
 
 use super::*;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{dispatch::DispatchError, traits::Currency};
+use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
 use pallet_spaces::types::Space;
-use sp_std::vec;
 use subsocial_support::Content;
 
 fn create_dummy_space<T: Config>(
