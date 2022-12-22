@@ -12,7 +12,7 @@ fn create_dummy_space<T: Config>(
 ) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(origin.clone().into(), Content::None, None)
+    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)
         .map_err(|e| e.error)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
@@ -28,7 +28,7 @@ fn create_dummy_post<T: Config>(
     let post_id = NextPostId::<T>::get();
 
     Pallet::<T>::create_post(
-        origin.clone().into(),
+        origin.into(),
         Some(space.id),
         PostExtension::RegularPost,
         Content::None,
@@ -47,7 +47,7 @@ fn create_dummy_reply<T: Config>(
     let post_id = NextPostId::<T>::get();
 
     Pallet::<T>::create_post(
-        origin.clone().into(),
+        origin.into(),
         Some(space.id),
         PostExtension::Comment(Comment { parent_id: None, root_post_id: post.id }),
         Content::None,
@@ -113,7 +113,7 @@ benchmarks! {
         let origin = RawOrigin::Signed(whitelisted_caller());
         let space = create_dummy_space::<T>(origin.clone())?;
         let post = create_dummy_post::<T>(origin.clone(), space.clone())?;
-        let reply = create_dummy_reply::<T>(origin.clone(), space.clone(), post.clone())?;
+        let reply = create_dummy_reply::<T>(origin.clone(), space, post.clone())?;
 
         let new_content = Content::IPFS(b"Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu".to_vec());
 
@@ -128,14 +128,14 @@ benchmarks! {
             .ok_or(DispatchError::Other("Post wasn't found"))?;
 
         ensure!(updated_post != post, "Post wasn't updated");
-        ensure!(updated_post.hidden == true, "Post hidden status wasn't updated");
+        ensure!(updated_post.hidden, "Post hidden status wasn't updated");
         ensure!(updated_post.content == new_content, "Post wasn't updated");
     }
 
     move_post {
         let origin = RawOrigin::Signed(whitelisted_caller());
         let space = create_dummy_space::<T>(origin.clone())?;
-        let post = create_dummy_post::<T>(origin.clone(), space.clone())?;
+        let post = create_dummy_post::<T>(origin.clone(), space)?;
 
         let new_space = create_dummy_space::<T>(origin.clone())?;
     }: move_post(origin, post.id, Some(new_space.id))
