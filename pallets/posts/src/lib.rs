@@ -70,7 +70,7 @@ pub mod pallet {
 
         type IsPostBlocked: IsPostBlocked<PostId>;
 
-        type WeightInfo: crate::weights::WeightInfo;
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]

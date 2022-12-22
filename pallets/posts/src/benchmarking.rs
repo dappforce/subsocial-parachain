@@ -129,7 +129,7 @@ benchmarks! {
             .ok_or(DispatchError::Other("Post wasn't found"))?;
 
         ensure!(updated_post != post, "Post wasn't updated");
-        ensure!(updated_post.hidden == true, "Post wasn't updated");
+        ensure!(updated_post.hidden == true, "Post hidden status wasn't updated");
         ensure!(updated_post.content == new_content, "Post wasn't updated");
     }
 
