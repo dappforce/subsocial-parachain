@@ -110,8 +110,8 @@ parameter_types! {
     pub static OuterValueByteDeposit: Balance = 0;
 
     pub static DefaultDomainPrice: Balance = 0;
-    pub static DefaultPrices: Vec<(DomainLength, Balance)> = Vec::new();
-    pub const DefaultPaymentReceiver: AccountId = PAYMENT_BENEFICIARY;
+    pub static InitialPrices: Vec<(DomainLength, Balance)> = Vec::new();
+    pub const InitialPaymentBeneficiary: AccountId = PAYMENT_BENEFICIARY;
 }
 
 impl pallet_domains::Config for Test {
@@ -127,8 +127,8 @@ impl pallet_domains::Config for Test {
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
     type DefaultDomainPrice = DefaultDomainPrice;
-    type DefaultBeneficiary = DefaultPaymentReceiver;
-    type DefaultPrices = DefaultPrices;
+    type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+    type InitialPrices = InitialPrices;
     type WeightInfo = ();
 }
 
@@ -338,7 +338,7 @@ pub struct ExtBuilder {
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
     pub(crate) default_domain_price: Balance,
-    pub(crate) default_prices: Vec<(DomainLength, Balance)>,
+    pub(crate) initial_prices: Vec<(DomainLength, Balance)>,
 }
 
 impl Default for ExtBuilder {
@@ -350,7 +350,7 @@ impl Default for ExtBuilder {
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
             default_domain_price: 100,
-            default_prices: vec![
+            initial_prices: vec![
                 (3, 50),
                 (4, 25),
                 (5, 100),
@@ -390,8 +390,8 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn default_prices(mut self, default_prices: Vec<(DomainLength, Balance)>) -> Self {
-        self.default_prices = default_prices;
+    pub(crate) fn initial_prices(mut self, initial_prices: Vec<(DomainLength, Balance)>) -> Self {
+        self.initial_prices = initial_prices;
         self
     }
 
@@ -402,7 +402,7 @@ impl ExtBuilder {
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
         DEFAULT_DOMAIN_PRICE.with(|x| *x.borrow_mut() = self.default_domain_price);
-        DEFAULT_PRICES.with(|x| *x.borrow_mut() = self.default_prices.clone());
+        INITIAL_PRICES.with(|x| *x.borrow_mut() = self.initial_prices.clone());
     }
 
     pub(crate) fn build(self) -> TestExternalities {
@@ -413,7 +413,7 @@ impl ExtBuilder {
             .unwrap();
 
         let _ = pallet_domains::GenesisConfig::<Test> {
-            default_prices: self.default_prices,
+            initial_prices: self.initial_prices,
             payment_beneficiary: PAYMENT_BENEFICIARY,
         }.assimilate_storage(storage);
 
