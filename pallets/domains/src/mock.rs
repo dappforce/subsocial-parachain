@@ -109,7 +109,6 @@ parameter_types! {
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
 
-    pub static DefaultDomainPrice: Balance = 0;
     pub static InitialPrices: Vec<(DomainLength, Balance)> = Vec::new();
     pub const InitialPaymentBeneficiary: AccountId = PAYMENT_BENEFICIARY;
 }
@@ -126,7 +125,6 @@ impl pallet_domains::Config for Test {
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
-    type DefaultDomainPrice = DefaultDomainPrice;
     type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
     type InitialPrices = InitialPrices;
     type WeightInfo = ();
@@ -337,7 +335,6 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
-    pub(crate) default_domain_price: Balance,
     pub(crate) initial_prices: Vec<(DomainLength, Balance)>,
 }
 
@@ -349,7 +346,6 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
-            default_domain_price: 100,
             initial_prices: vec![
                 (3, 50),
                 (4, 25),
@@ -385,11 +381,6 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn default_domain_price(mut self, default_domain_price: Balance) -> Self {
-        self.default_domain_price = default_domain_price;
-        self
-    }
-
     pub(crate) fn initial_prices(mut self, initial_prices: Vec<(DomainLength, Balance)>) -> Self {
         self.initial_prices = initial_prices;
         self
@@ -401,7 +392,6 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
-        DEFAULT_DOMAIN_PRICE.with(|x| *x.borrow_mut() = self.default_domain_price);
         INITIAL_PRICES.with(|x| *x.borrow_mut() = self.initial_prices.clone());
     }
 

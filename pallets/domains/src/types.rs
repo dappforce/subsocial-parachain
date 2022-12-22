@@ -1,6 +1,7 @@
 use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
 use sp_runtime::traits::Zero;
+use sp_std::vec::Vec;
 
 use subsocial_support::{WhoAndWhenOf, new_who_and_when};
 
@@ -17,6 +18,7 @@ pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
 
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
+pub(crate) type PricesConfigVec<T> = Vec<(DomainLength, BalanceOf<T>)>;
 
 pub type DomainLength = u32;
 

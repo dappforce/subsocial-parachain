@@ -29,8 +29,12 @@
     // ./.maintain/weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
-#![allow(unused_parens)]
-#![allow(unused_imports)]
+#![allow(
+    rustdoc::all,
+    missing_docs,
+    unused_parens,
+    unused_imports
+)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;

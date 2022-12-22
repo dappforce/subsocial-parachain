@@ -79,9 +79,6 @@ pub mod pallet {
         /// The governance origin to control this pallet.
         type ForceOrigin: EnsureOrigin<Self::Origin>;
 
-        /// The default price for a domain if other not specified in [`PriceByDomainLength`]
-        type DefaultDomainPrice: Get<BalanceOf<Self>>;
-
         /// Account that receives funds spent for domain purchase.
         /// Used only once, when the pallet is initialized.
         type InitialPaymentBeneficiary: Get<Self::AccountId>;
@@ -140,11 +137,10 @@ pub mod pallet {
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
-    /// Domains prices according to the range indicated by the shortest domain length in the range.
     #[pallet::storage]
-    #[pallet::getter(fn price_by_domain_length)]
-    pub(super) type PriceByDomainLength<T: Config> =
-        StorageMap<_, Twox64Concat, DomainLength, BalanceOf<T>>;
+    #[pallet::getter(fn prices_config)]
+    pub(super) type PricesConfig<T: Config> =
+        StorageValue<_, PricesConfigVec<T>, ValueQuery>;
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
@@ -419,6 +415,22 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ForceOrigin::ensure_origin(origin)?;
             PaymentBeneficiary::<T>::set(payment_beneficiary);
+            Ok(())
+        }
+
+        #[pallet::weight(
+            T::DbWeight::get().writes(1) + (100_000 * new_prices_config.len() as Weight * 2)
+        )]
+        pub fn set_price_config(
+            origin: OriginFor<T>,
+            mut new_prices_config: PricesConfigVec<T>,
+        ) -> DispatchResult {
+            T::ForceOrigin::ensure_origin(origin)?;
+
+            new_prices_config.sort_by_key(|(length, _)| *length);
+            new_prices_config.dedup_by_key(|(length, _)| *length);
+
+            PricesConfig::<T>::set(new_prices_config);
             Ok(())
         }
     }
@@ -710,7 +722,13 @@ pub mod pallet {
         }
 
         fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
-            Self::price_by_domain_length(subdomain.len() as u32).unwrap_or(T::DefaultDomainPrice::get())
+            let price_config = Self::prices_config();
+            let subdomain_len = subdomain.len() as u32;
+
+            let partition_point = price_config.partition_point(|(l, _)| l <= &subdomain_len);
+            let (_, price) = price_config[partition_point.saturating_sub(1)];
+
+            price
         }
 
         fn ensure_can_pay_for_domain(owner: &T::AccountId, price: BalanceOf<T>) -> DispatchResult {
@@ -721,9 +739,14 @@ pub mod pallet {
         }
 
         pub fn init_pallet(default_prices: &[(DomainLength, BalanceOf<T>)]) {
-            for (length, price) in default_prices.iter() {
-                PriceByDomainLength::<T>::insert(length, *price);
-            }
+            PricesConfig::<T>::mutate(|prices| {
+                default_prices.iter().for_each(|(length, price)| {
+                    match prices.binary_search_by_key(length, |(l, _)| *l) {
+                        Ok(_) => (),
+                        Err(index) => prices.insert(index, (*length, *price)),
+                    }
+                });
+            });
         }
     }
 }
