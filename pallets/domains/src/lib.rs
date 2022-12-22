@@ -254,9 +254,23 @@ pub mod pallet {
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::do_set_record(domain, key, value_opt, Some(sender))?;
+            Self::do_set_record(domain, key, value_opt, Some(sender), true)?;
 
             Ok(())
+        }
+
+        #[pallet::weight(<T as Config>::WeightInfo::set_record())]
+        pub fn force_set_record(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+            key: RecordKey<T>,
+            value_opt: Option<RecordValue<T>>,
+        ) -> DispatchResultWithPostInfo {
+            let sender = ensure_signed(origin)?;
+
+            Self::do_set_record(domain, key, value_opt, None, false)?;
+
+            Ok(Pays::No.into())
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
@@ -480,6 +494,7 @@ pub mod pallet {
             key: RecordKey<T>,
             value_opt: Option<RecordValue<T>>,
             check_ownership: Option<T::AccountId>,
+            reserve_deposit: bool,
         ) -> DispatchResult {
             let domain_lc = Self::lower_domain_then_bound(&domain);
             let meta = Self::require_domain(domain_lc.clone())?;
@@ -496,10 +511,17 @@ pub mod pallet {
             } else {
                 0u32.into()
             };
-            let new_deposit: BalanceOf<T> =
-                Self::calc_record_deposit(key.clone(), value_opt.clone());
 
-            Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
+
+            let new_deposit: BalanceOf<T> = if reserve_deposit {
+                let new_deposit = Self::calc_record_deposit(key.clone(), value_opt.clone());
+
+                Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
+
+                new_deposit
+            } else {
+                old_deposit
+            };
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
                 *current_opt = value_opt.clone().map(|value| (value, new_deposit));
