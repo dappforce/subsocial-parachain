@@ -33,7 +33,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v
 
 [features]
 default = ['std']
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
 #    'serde',
     'codec/std',
