@@ -35,9 +35,9 @@ benchmarks! {
         let space = pallet_spaces::SpaceById::<T>::get(space.id)
             .ok_or(DispatchError::Other("Space not found"))?;
 
-        ensure!(SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers didn't update");
-        ensure!(SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount didn't update");
-        ensure!(SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount didn't update");
+        ensure!(SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers was not updated");
+        ensure!(SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount was not updated");
+        ensure!(SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount was not updated");
     }
 
     unfollow_space {
@@ -52,8 +52,8 @@ benchmarks! {
         let space = pallet_spaces::SpaceById::<T>::get(space.id)
             .ok_or(DispatchError::Other("Space not found"))?;
 
-        ensure!(!SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers didn't update");
-        ensure!(!SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount didn't update");
-        ensure!(!SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount didn't update");
+        ensure!(!SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers was not updated");
+        ensure!(!SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount was not updated");
+        ensure!(!SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount was not updated");
     }
 }
