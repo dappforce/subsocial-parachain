@@ -2,7 +2,7 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
 use sp_runtime::traits::Zero;
 
-use subsocial_support::{WhoAndWhenOf, new_who_and_when};
+use subsocial_support::{WhoAndWhenOf, new_who_and_when, Content};
 
 use super::*;
 
@@ -67,7 +67,6 @@ impl<T: Config> DomainMeta<T> {
     pub fn new(
         expires_at: T::BlockNumber,
         owner: T::AccountId,
-        content: Content,
         domain_deposit: BalanceOf<T>,
     ) -> Self {
         Self {
@@ -75,7 +74,7 @@ impl<T: Config> DomainMeta<T> {
             updated: None,
             expires_at,
             owner,
-            content,
+            content: Content::None,
             inner_value: None,
             outer_value: None,
             domain_deposit,

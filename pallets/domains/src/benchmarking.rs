@@ -15,8 +15,6 @@ use frame_system::RawOrigin;
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_std::{convert::TryInto, vec};
 
-use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
-
 fn account_with_balance<T: Config>() -> T::AccountId {
 	let owner: T::AccountId = whitelisted_caller();
 	<T as Config>::Currency::make_free_balance_be(&owner, BalanceOf::<T>::max_value());
@@ -87,7 +85,7 @@ fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, Dispatch
 	let owner_lookup = lookup_source_from_account::<T>(owner);
 
 	Pallet::<T>::force_register_domain(
-		RawOrigin::Root.into(), owner_lookup, domain.clone(), valid_content_ipfs(), expires_in,
+		RawOrigin::Root.into(), owner_lookup, domain.clone(), expires_in,
 	)?;
 
 	Ok(domain)
@@ -111,7 +109,7 @@ benchmarks! {
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(who.clone()), domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Signed(who.clone()), domain.clone(), expires_in)
 	verify {
 		assert_last_event::<T>(
 			Event::DomainRegistered { who, domain }.into()
@@ -129,7 +127,7 @@ benchmarks! {
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner_lookup, domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Root, owner_lookup, domain.clone(), expires_in)
 	verify {
 		assert_last_event::<T>(
 			Event::DomainRegistered { who, domain }.into()
@@ -154,68 +152,6 @@ benchmarks! {
         assert_eq!(found_value, Some(value.clone()));
         ensure!(found_value == Some(value), "Value isn't correct");
     }
-
-    set_inner_value {
-        let who = account_with_balance::<T>();
-        let owner_origin = RawOrigin::Signed(who.clone());
-
-		let full_domain = add_domain::<T>(&who)?;
-
-		let initial_value = inner_value_owner_account::<T>(who);
-		Pallet::<T>::set_inner_value(
-			owner_origin.clone().into(), full_domain.clone(), initial_value
-		)?;
-
-		let updated_value = inner_value_space_id::<T>();
-
-	}: _(owner_origin, full_domain.clone(), updated_value.clone())
-	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
-		ensure!(updated_value == inner_value, "Inner value was not updated")
-	}
-
-	force_set_inner_value {
-		let who = account_with_balance::<T>();
-		let owner_origin = RawOrigin::Signed(who.clone());
-
-		let full_domain = add_domain::<T>(&who)?;
-
-		let initial_value = inner_value_owner_account::<T>(who);
-		Pallet::<T>::set_inner_value(owner_origin.into(), full_domain.clone(), initial_value)?;
-
-		let updated_value = inner_value_space_id::<T>();
-
-	}: _(RawOrigin::Root, full_domain.clone(), updated_value.clone())
-	verify {
-		let domain_lc = Pallet::<T>::lower_domain_then_bound(&full_domain);
-		let DomainMeta { inner_value, .. } = RegisteredDomains::<T>::get(&domain_lc).unwrap();
-		ensure!(updated_value == inner_value, "Inner value was not updated")
-	}
-
-	set_outer_value {
-		let who = account_with_balance::<T>();
-		let domain = add_domain::<T>(&who)?;
-
-		let value = Some(
-			vec![b'A'; T::MaxOuterValueLength::get() as usize]
-				.try_into()
-				.expect("qed; outer value exceeds max length")
-		);
-
-	}: _(RawOrigin::Signed(who.clone()), domain.clone(), value)
-	verify {
-		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain }.into());
-	}
-
-	set_domain_content {
-		let who = account_with_balance::<T>();
-		let domain = add_domain::<T>(&who)?;
-		let new_content = another_valid_content_ipfs();
-	}: _(RawOrigin::Signed(who.clone()), domain.clone(), new_content)
-	verify {
-		assert_last_event::<T>(Event::DomainMetaUpdated { who, domain }.into());
-	}
 
 	reserve_words {
 		let s in 1 .. T::DomainsInsertLimit::get() => ();

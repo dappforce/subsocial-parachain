@@ -10,8 +10,6 @@ use sp_runtime::{
 use sp_std::convert::{TryInto, TryFrom};
 
 use subsocial_support::Content;
-use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
-
 pub(crate) use crate as pallet_domains;
 use crate::types::*;
 
@@ -126,7 +124,6 @@ impl pallet_domains::Config for Test {
     type MaxRecordKeySize = MaxRecordKeySize;
     type MaxRecordValueSize = MaxRecordValueSize;
     type BaseDomainDeposit = BaseDomainDeposit;
-    type OuterValueByteDeposit = OuterValueByteDeposit;
     type RecordByteDeposit = RecordByteDeposit;
     type WeightInfo = ();
 }
@@ -202,116 +199,44 @@ pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
-    _force_register_domain(Some(origin), None, None, None, None)
+    _force_register_domain(Some(origin), None, None, None)
 }
 
 pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
-    _force_register_domain(None, None, None, None, Some(expires_in))
+    _force_register_domain(None, None, None, Some(expires_in))
 }
 
 pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain_name), None, None)
+    _force_register_domain(None, None, Some(domain_name), None)
 }
 
 fn _force_register_domain(
     origin: Option<Origin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
-    content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::force_register_domain(
         origin.unwrap_or_else(Origin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
-        content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None, None)
+    _register_domain(None, None, None)
 }
 
 fn _register_domain(
     origin: Option<Origin>,
     domain: Option<DomainName<Test>>,
-    content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
-        content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
-    )
-}
-
-pub(crate) fn _set_inner_value_with_origin(origin: Origin) -> DispatchResult {
-    _set_inner_value(Some(origin), None, None)
-}
-
-pub(crate) fn _set_default_inner_value() -> DispatchResult {
-    _set_inner_value(None, None, None)
-}
-
-fn _set_inner_value(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<Option<InnerValueOf<Test>>>,
-) -> DispatchResult {
-    Domains::set_inner_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or_else(|| Some(inner_value_account_domain_owner())),
-    )
-}
-
-pub(crate) fn _set_outer_value_with_origin(origin: Origin) -> DispatchResult {
-    _set_outer_value(Some(origin), None, None)
-}
-
-pub(crate) fn _set_outer_value_with_value(value_opt: Option<OuterValue<Test>>) -> DispatchResult {
-    _set_outer_value(None, None, Some(value_opt))
-}
-
-pub(crate) fn _set_default_outer_value() -> DispatchResult {
-    _set_outer_value(None, None, None)
-}
-
-fn _set_outer_value(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<Option<OuterValue<Test>>>,
-) -> DispatchResult {
-    Domains::set_outer_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or_else(|| Some(default_outer_value(None))),
-    )
-}
-
-pub(crate) fn _set_domain_content_with_origin(origin: Origin) -> DispatchResult {
-    _set_domain_content(Some(origin), None, None)
-}
-
-pub(crate) fn _set_domain_content_with_content(content: Content) -> DispatchResult {
-    _set_domain_content(None, None, Some(content))
-}
-
-pub(crate) fn _set_default_domain_content() -> DispatchResult {
-    _set_domain_content(None, None, None)
-}
-
-fn _set_domain_content(
-    origin: Option<Origin>,
-    domain: Option<DomainName<Test>>,
-    content: Option<Content>,
-) -> DispatchResult {
-    Domains::set_domain_content(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        content.unwrap_or_else(another_valid_content_ipfs),
     )
 }
 
