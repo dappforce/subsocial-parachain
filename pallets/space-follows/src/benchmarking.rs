@@ -32,9 +32,6 @@ benchmarks! {
         let space = create_dummy_space::<T>(space_owner_origin.clone())?;
     }: _(RawOrigin::Signed(space_follower.clone()), space.id)
     verify {
-        let space = pallet_spaces::SpaceById::<T>::get(space.id)
-            .ok_or(DispatchError::Other("Space not found"))?;
-
         ensure!(SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers was not updated");
         ensure!(SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount was not updated");
         ensure!(SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount was not updated");
@@ -49,9 +46,6 @@ benchmarks! {
 
     }: _(RawOrigin::Signed(space_follower.clone()), space.id)
     verify {
-        let space = pallet_spaces::SpaceById::<T>::get(space.id)
-            .ok_or(DispatchError::Other("Space not found"))?;
-
         ensure!(!SpaceFollowers::<T>::get(space.id).contains(&space_follower), "SpaceFollowers was not updated");
         ensure!(!SpaceFollowedByAccount::<T>::get(&(space_follower.clone(), space.id)), "SpaceFollowedByAccount was not updated");
         ensure!(!SpacesFollowedByAccount::<T>::get(&space_follower).contains(&space.id), "SpacesFollowedByAccount was not updated");
