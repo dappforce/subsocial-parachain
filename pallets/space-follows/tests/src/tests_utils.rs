@@ -84,37 +84,18 @@ pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
 
 pub(crate) fn _create_space(
     origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
+    // FIXME: we don't have handles anymore
+    _handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, handle, content, permissions)
-}
-
-pub(crate) fn _create_subspace(
-    origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, handle, content, permissions)
-}
-
-pub(crate) fn _create_space_with_parent_id(
-    origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    if matches!(handle, Some(Some(_))) {
-        panic!("HANDLES ARE DISABLED");
-    }
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
 }
+
 
 pub(crate) fn _update_space(
     origin: Option<Origin>,
