@@ -252,7 +252,7 @@ pub mod pallet {
             key: RecordKey<T>,
             value_opt: Option<RecordValue<T>>,
         ) -> DispatchResultWithPostInfo {
-            let sender = ensure_signed(origin)?;
+            ensure_root(origin)?;
 
             Self::do_set_record(domain, key, value_opt, None, false)?;
 
