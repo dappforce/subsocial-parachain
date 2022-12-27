@@ -245,7 +245,10 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::set_record())]
+        #[pallet::weight((
+            <T as Config>::WeightInfo::force_set_record(),
+            DispatchClass::Operational,
+        ))]
         pub fn force_set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,

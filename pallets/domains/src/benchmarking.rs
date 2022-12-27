@@ -52,7 +52,7 @@ fn mock_bounded_string_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
 }
 
 fn mock_tld<T: Config>() -> DomainName<T> {
-	Pallet::<T>::bound_domain(b"tld".to_vec())
+	Pallet::<T>::bound_domain(b"sub".to_vec())
 }
 
 fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
@@ -143,6 +143,24 @@ benchmarks! {
         let key: RecordKey<T> = b"key".to_vec().try_into().unwrap();
         let value: RecordValue<T> = b"value".to_vec().try_into().unwrap();
     }: _(owner_origin, full_domain.clone(), key.clone(), Some(value.clone()))
+    verify {
+        let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
+        assert_last_event::<T>(
+            Event::DomainRecordUpdated { domain: full_domain.clone(), key: key.clone(), value: Some(value.clone()) }.into()
+        );
+        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.0);
+        assert_eq!(found_value, Some(value.clone()));
+        ensure!(found_value == Some(value), "Value isn't correct");
+    }
+
+	force_set_record {
+        let who = account_with_balance::<T>();
+
+        let full_domain = add_domain::<T>(&who)?;
+
+        let key: RecordKey<T> = b"key".to_vec().try_into().unwrap();
+        let value: RecordValue<T> = b"value".to_vec().try_into().unwrap();
+    }: _(RawOrigin::Root, full_domain.clone(), key.clone(), Some(value.clone()))
     verify {
         let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
         assert_last_event::<T>(
