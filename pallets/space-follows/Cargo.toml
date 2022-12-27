@@ -12,7 +12,7 @@ categories = ['cryptography::cryptocurrencies']
 
 [features]
 default = ['std']
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
     'codec/std',
     'scale-info/std',
