@@ -5966,6 +5966,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-space-ownership-tests"
+version = "0.1.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-space-ownership",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-spaces"
 version = "0.1.7"
 dependencies = [
