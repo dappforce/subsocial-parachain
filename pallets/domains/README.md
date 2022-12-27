@@ -10,50 +10,55 @@ The main storages of domains pallet are:
   Metadata associated with domain.
 - `DomainsByOwner: Map<AccountId, DomainName[]>`\
   Domains owned by account.
+- `DomainRecords: Map<DomainName, Map<RecordKey, RecordValueWithDeposit>>`\
+  All records associated with a given domain name.
 
 
-## Domain metadata
+## Domain Records
 
 In addition to resolving a domain owner, you can also resolve the various records set up
-by the user. The following table shows a list of records that can be attached to the domain name.
+by the user.
+
+Domains records system allows any dotsama domains to have key-value pairs of metadata attached to it.
+There is no restrictions on what value should be stored in what key, However we have a list of defined key schema to be 
+interpreted by clients.
 
 
-<table>
-<thead>
-  <tr>
-    <th>Record Name</th>
-    <th>Type</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td rowspan="3">Content</td>
-    <td>String</td>
-  </tr>
-  <tr>
-    <td>IPFS</td>
-  </tr>
-  <tr>
-    <td>Hypercore</td>
-  </tr>
-  <tr>
-    <td rowspan="3">InnerValue</td>
-    <td>Subsocial Account</td>
-  </tr>
-  <tr>
-    <td>Subsocial Space</td>
-  </tr>
-  <tr>
-    <td>Subsocial Post</td>
-  </tr>
-  <tr>
-    <td>OuterValue</td>
-    <td>String</td>
-  </tr>
-</tbody>
-</table>
+### Record Key standard
+
+Standard record key is split by namespaces by a . used as a separator.
+
+#### Crypto payment records
+
+key of records regarding payment in crypto follows one of the following formats
+
+* `crypto.<TICKER>.address`
+  * `crypto.ETH.address` ⇒ `0xD1E5b0FF1287aA9f9A268759062E4Ab08b9Dacbe`
+  * `crypto.BTC.address` ⇒ `bc1qkd4um2nn2uyzmsch5y86wsa2pfh8xl445lg9nv`
+* `crypto.<TICKER>.version.<VERSION>.address`
+  * `crypto.USDT.version.ERC20.address` ⇒ `0x8aaD44321A86b170879d7A244c1e8d360c99DdA8`
+  * `crypto.USDT.version.TRON.address` ⇒ `THG9jVSMfKEbg4vYTYWjmLRyga3CKZdDsk`
+
+#### Browser resolution
+
+* `browser.redirect_url` ⇒ `http://example.com/home.html`
+
+#### Social records
+
+* `social.picture.value` ⇒ `ipfs://QmQqzMTavQgT4f4T5v6PWBp7XNKtoPmC9jvn12WPT3gkSE`
+* `whois.email.value` ⇒ `tarekkma@gmail.com`
+* `whois.for_sale.value` ⇒ `false`
+* `social.twitter.username` ⇒ `TarekkMA1`
+* `social.subsocial.account` ⇒ `3tiKakuy6RaHWThsHts23De8XwpaNdvw8PwwXcJqeVSN6w8w`
+* `social.subsocial.space` ⇒ `15`
+* `social.subsocial.post` ⇒ `1`
+
 
 ### Main types
+
+* `DomainName`: array of characters representing a domain name (maximum length `Config::MaxDomainLength`)
+* `RecordKey`: array of characters representing record key (maximum length `Config::MaxRecordKeySize`)
+* `RecordValue`: array of characters representing record value (maximum length `Config::MaxRecordValueSize`)
 
 ```rust
 pub struct DomainMeta<T: Config> {
@@ -68,31 +73,14 @@ pub struct DomainMeta<T: Config> {
     /// The domain owner.
     owner: T::AccountId,
 
-    /// Some additional domain metadata. For example avatar and description for this domain.
-    content: Content,
-
-    /// The inner domain link to Subsocial entity such as Account, Space, or Post.
-    inner_value: Option<InnerValueOf<T>>,
-
-    /// The outer domain link (any string).
-    outer_value: Option<OuterValue<T>>,
-
     /// The amount was held as a deposit for storing this structure.
     domain_deposit: BalanceOf<T>,
-    /// The amount was held as a deposit for storing outer value.
-    outer_value_deposit: BalanceOf<T>,
 }
 
 pub struct WhoAndWhen {
     account: AccountId,
     block: BlockNumber,
     time: Moment,
-}
-
-pub enum InnerValue {
-    Account(AccountId),
-    Space(SpaceId),
-    Post(PostId),
 }
 ```
 
