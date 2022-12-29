@@ -186,7 +186,7 @@ pub mod pallet {
         SubdomainsNotAllowed,
         /// This account is not allowed to update the domain metadata.
         NotDomainOwner,
-        /// Reservation period cannot be a zero value.
+        /// The reservation period cannot be a zero value.
         ZeroReservationPeriod,
         /// Cannot store a domain for such a long period of time.
         TooBigRegistrationPeriod,
