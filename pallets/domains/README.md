@@ -30,7 +30,7 @@ A standard record key is split by namespaces by a . used as a separator.
 
 #### Crypto payment records
 
-key of records regarding payment in crypto follows one of the following formats
+A key of records regarding payment in crypto follows one of the following formats
 
 * `crypto.<TICKER>.address`
   * `crypto.ETH.address` ⇒ `0xD1E5b0FF1287aA9f9A268759062E4Ab08b9Dacbe`
