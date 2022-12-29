@@ -73,7 +73,7 @@ pub struct DomainMeta<T: Config> {
     /// The domain owner.
     owner: T::AccountId,
 
-    /// The amount was held as a deposit for storing this structure.
+    /// The amount that was held as a deposit for storing this structure.
     domain_deposit: BalanceOf<T>,
 }
 
