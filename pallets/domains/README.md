@@ -9,7 +9,7 @@ The main storages of domains pallet are:
 - `RegisteredDomains: Map<DomainName,DomainMeta>`\
   Metadata associated with a domain.
 - `DomainsByOwner: Map<AccountId, DomainName[]>`\
-  Domains owned by account.
+  Domains owned by an account.
 - `DomainRecords: Map<DomainName, Map<RecordKey, RecordValueWithDeposit>>`\
   All records associated with a given domain name.
 
