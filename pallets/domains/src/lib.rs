@@ -158,7 +158,7 @@ pub mod pallet {
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
-        /// Domain record have been updated
+        /// The domain record has been updated
         DomainRecordUpdated {
             domain: DomainName<T>,
             key: RecordKey<T>,
