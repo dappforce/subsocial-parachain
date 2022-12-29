@@ -236,7 +236,7 @@ pub mod pallet {
         /// ## Record Deposit
         ///
         /// Deposit value is calculated based on how many bytes are in the key+value.
-        /// if new value is bigger than old value, the reminder will be reserved, and if the new value
+        /// if the new value is bigger than the old value, the reminder will be reserved, and if the new value
         /// is smaller than old value, part of the deposit will be refunded back to the domain owner.
         /// While if [value_opt] is None, the record will be deleted and whole deposit will be refunded.
         #[pallet::weight(<T as Config>::WeightInfo::set_record())]
