@@ -19,7 +19,7 @@ The main storages of domains pallet are:
 In addition to resolving a domain owner, you can also resolve the various records set up
 by the user.
 
-Domains records system allows any dotsama domains to have key-value pairs of metadata attached to it.
+The domains record system allows any dotsama domain to have a key-value pairs of metadata attached to it.
 There is no restrictions on what value should be stored in what key, However we have a list of defined key schema to be 
 interpreted by clients.
 
