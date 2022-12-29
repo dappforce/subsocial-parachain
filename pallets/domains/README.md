@@ -26,7 +26,7 @@ interpreted by clients.
 
 ### Record Key standard
 
-Standard record key is split by namespaces by a . used as a separator.
+A standard record key is split by namespaces by a . used as a separator.
 
 #### Crypto payment records
 
