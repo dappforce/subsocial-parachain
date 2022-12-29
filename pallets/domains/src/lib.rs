@@ -231,7 +231,7 @@ pub mod pallet {
             Self::do_register_domain(owner, full_domain, expires_in, IsForced::Yes)
         }
 
-        /// Change record associated by a domain name.
+        /// Change the record associated with a domain name.
         ///
         /// ## Record Deposit
         ///
