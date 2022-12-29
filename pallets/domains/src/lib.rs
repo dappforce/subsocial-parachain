@@ -270,7 +270,7 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        /// Mark set of domains as not reservable by users.
+        /// Mark a set of domains as not reservable by users.
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
