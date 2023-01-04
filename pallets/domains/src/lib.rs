@@ -3,6 +3,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub use subsocial_support::{PostId, SpaceId};
+
+pub use crate::weights::WeightInfo;
 
 #[cfg(test)]
 mod mock;
@@ -14,25 +17,18 @@ mod tests;
 mod benchmarking;
 pub mod weights;
 
-pub use crate::weights::WeightInfo;
-
 pub mod types;
-
-pub use subsocial_support::{SpaceId, PostId};
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use types::*;
-
-    use frame_system::Pallet as System;
-
     use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
-
-    use frame_system::pallet_prelude::*;
-
+    use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+
+    use types::*;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -100,7 +96,7 @@ pub mod pallet {
     pub(super) type ReservedWords<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
-    /// Metadata associated per domain.
+    /// Records associated per domain.
     #[pallet::storage]
     #[pallet::getter(fn domain_record)]
     pub(super) type DomainRecords<T: Config> = StorageDoubleMap<
@@ -109,7 +105,7 @@ pub mod pallet {
         DomainName<T>,
         Blake2_128Concat,
         RecordKey<T>,
-        RecordValueWithDeposit<T>,
+        RecordValueWithDepositInfo<T>,
     >;
 
     /// Metadata associated per domain.
@@ -123,24 +119,24 @@ pub mod pallet {
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
-    pub(super) type DomainsByOwner<T: Config> =
-        StorageMap<_,
-            Twox64Concat,
-            T::AccountId,
-            BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
-            ValueQuery,
-        >;
+    pub(super) type DomainsByOwner<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
+        ValueQuery,
+    >;
 
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
-    pub(super) type DomainByInnerValue<T: Config> =
-        StorageDoubleMap<_,
-            Twox64Concat,
-            T::AccountId,
-            Blake2_128Concat,
-            InnerValue<T::AccountId>,
-            DomainName<T>,
-        >;
+    pub(super) type DomainByInnerValue<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        Blake2_128Concat,
+        InnerValue<T::AccountId>,
+        DomainName<T>,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn is_tld_supported)]
@@ -172,7 +168,8 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
+        /// This domain label length must be between `MinDomainLength` and 63 characters,
+        /// inclusive.
         DomainIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
@@ -236,9 +233,10 @@ pub mod pallet {
         /// ## Record Deposit
         ///
         /// Deposit value is calculated based on how many bytes are in the key+value.
-        /// if the new value is bigger than the old value, the reminder will be reserved, and if the new value
-        /// is smaller than the old value, part of the deposit will be refunded back to the domain owner.
-        /// While if [value_opt] is None, the record will be deleted and the whole deposit will be refunded.
+        /// if the new value is bigger than the old value, the reminder will be reserved, and if the
+        /// new value is smaller than the old value, part of the deposit will be refunded
+        /// back to the domain owner. While if [value_opt] is None, the record will be
+        /// deleted and the whole deposit will be refunded.
         #[pallet::weight(<T as Config>::WeightInfo::set_record())]
         pub fn set_record(
             origin: OriginFor<T>,
@@ -281,11 +279,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let inserted_words_count = Self::insert_domains(
-                &words,
-                Self::ensure_domain_contains_valid_chars,
-                |domain| ReservedWords::<T>::insert(Self::lower_domain_then_bound(domain), true),
-            )?;
+            let inserted_words_count =
+                Self::insert_domains(&words, Self::ensure_domain_contains_valid_chars, |domain| {
+                    ReservedWords::<T>::insert(Self::lower_domain_then_bound(domain), true)
+                })?;
 
             Self::deposit_event(Event::NewWordsReserved { count: inserted_words_count });
             Ok(Some(<T as Config>::WeightInfo::reserve_words(inserted_words_count)).into())
@@ -302,11 +299,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let inserted_tlds_count = Self::insert_domains(
-                &tlds,
-                Self::ensure_ascii_alphanumeric,
-                |domain| SupportedTlds::<T>::insert(Self::lower_domain_then_bound(domain), true),
-            )?;
+            let inserted_tlds_count =
+                Self::insert_domains(&tlds, Self::ensure_ascii_alphanumeric, |domain| {
+                    SupportedTlds::<T>::insert(Self::lower_domain_then_bound(domain), true)
+                })?;
 
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
@@ -351,10 +347,7 @@ pub mod pallet {
                 Self::ensure_word_is_not_reserved(subdomain)?;
             }
 
-            ensure!(
-                Self::registered_domain(&domain_lc).is_none(),
-                Error::<T>::DomainAlreadyOwned,
-            );
+            ensure!(Self::registered_domain(&domain_lc).is_none(), Error::<T>::DomainAlreadyOwned,);
 
             ensure!(
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
@@ -369,20 +362,14 @@ pub mod pallet {
             }
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
-            let domain_meta = DomainMeta::new(
-                expires_at,
-                owner.clone(),
-                deposit,
-            );
+            let domain_meta = DomainMeta::new(expires_at, owner.clone(), deposit);
 
             // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
-            DomainsByOwner::<T>::mutate(
-                &owner, |domains| {
-                    domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
-                }
-            );
+            DomainsByOwner::<T>::mutate(&owner, |domains| {
+                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+            });
 
             Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
             Ok(())
@@ -403,19 +390,24 @@ pub mod pallet {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            let old_deposit: BalanceOf<T> = if let Some(value_with_deposit) =
+            let (old_depositor, old_deposit): (<T as frame_system::pallet::Config>::AccountId, BalanceOf<T>) = if let Some(value_with_deposit_info) =
                 DomainRecords::<T>::get(domain_lc.clone(), key.clone())
             {
-                value_with_deposit.1
+                (value_with_deposit_info.1, value_with_deposit_info.2)
             } else {
-                0u32.into()
+                (owner.clone(), 0u32.into())
             };
-
 
             let new_deposit: BalanceOf<T> = if reserve_deposit {
                 let new_deposit = Self::calc_record_deposit(key.clone(), value_opt.clone());
 
-                Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
+                if owner == old_depositor {
+                    Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
+                } else {
+                    <T as Config>::Currency::reserve(&owner, new_deposit)?;
+                    let err_amount = <T as Config>::Currency::unreserve(&old_depositor, old_deposit);
+                    debug_assert!(err_amount.is_zero());
+                }
 
                 new_deposit
             } else {
@@ -423,7 +415,7 @@ pub mod pallet {
             };
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
-                *current_opt = value_opt.clone().map(|value| (value, new_deposit));
+                *current_opt = value_opt.clone().map(|value| (value, owner, new_deposit));
             });
 
             Self::deposit_event(Event::DomainRecordUpdated {
@@ -439,7 +431,8 @@ pub mod pallet {
             value_opt: Option<RecordValue<T>>,
         ) -> BalanceOf<T> {
             let num_of_bytes =
-                if let Some(value) = value_opt { key.len().saturating_add(value.len()) } else { 0 } as u32;
+                if let Some(value) = value_opt { key.len().saturating_add(value.len()) } else { 0 }
+                    as u32;
 
             T::RecordByteDeposit::get().saturating_mul(num_of_bytes.into())
         }
@@ -459,7 +452,10 @@ pub mod pallet {
             let first_char_alphanumeric = domain.first().filter(is_char_alphanumeric).is_some();
             let last_char_alphanumeric = domain.last().filter(is_char_alphanumeric).is_some();
 
-            ensure!(first_char_alphanumeric && last_char_alphanumeric, Error::<T>::DomainContainsInvalidChar);
+            ensure!(
+                first_char_alphanumeric && last_char_alphanumeric,
+                Error::<T>::DomainContainsInvalidChar
+            );
 
             let mut prev_char_hyphen = false;
             let domain_correct = domain.iter().all(|c| {
@@ -469,7 +465,7 @@ pub mod pallet {
                 // Valid example: a-b-c.ksm
                 // Invalid example: a--b.ksm
                 if prev_char_hyphen && curr_char_hyphen {
-                    return false;
+                    return false
                 }
 
                 prev_char_hyphen = curr_char_hyphen;
@@ -559,9 +555,8 @@ pub mod pallet {
                 Ordering::Less =>
                     <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
                 Ordering::Greater => {
-                    let err_amount = <T as Config>::Currency::unreserve(
-                        depositor, old_deposit - new_deposit,
-                    );
+                    let err_amount =
+                        <T as Config>::Currency::unreserve(depositor, old_deposit - new_deposit);
                     debug_assert!(err_amount.is_zero());
                 },
                 _ => (),
@@ -575,9 +570,8 @@ pub mod pallet {
         }
 
         fn ensure_word_is_not_reserved(word: &DomainName<T>) -> DispatchResult {
-            let word_without_hyphens = Self::bound_domain(
-                word.iter().filter(|c| **c != b'-').cloned().collect()
-            );
+            let word_without_hyphens =
+                Self::bound_domain(word.iter().filter(|c| **c != b'-').cloned().collect());
 
             ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())
