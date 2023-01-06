@@ -72,6 +72,7 @@ impl pallet_permissions::Config for Test {
 }
 
 mock! {
+    // This will generate MockSpaces
     pub Spaces {}
     impl SpacePermissionsProvider<AccountId, SpacePermissionsInfoOf<Test>> for Spaces {
         fn space_permissions_info(id: SpaceId) -> Result<SpacePermissionsInfoOf<Test>, DispatchError>;
@@ -97,7 +98,7 @@ lazy_static! {
     static ref MTX: Mutex<()> = Mutex::new(());
 }
 
-// mockall create static method mocking required this synchronization.
+// mockall crate requires synchronized access for the mocking of static methods.
 pub(super) fn use_static_mock() -> MutexGuard<'static, ()> {
     match MTX.lock() {
         Ok(guard) => guard,
