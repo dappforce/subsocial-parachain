@@ -91,14 +91,6 @@ fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, Dispatch
 	Ok(domain)
 }
 
-fn inner_value_owner_account<T: Config>(account: T::AccountId) -> Option<InnerValueOf<T>> {
-	Some(InnerValue::Account(account))
-}
-
- fn inner_value_space_id<T: Config>() -> Option<InnerValueOf<T>> {
-	Some(InnerValue::Space(1))
-}
-
 benchmarks! {
 	register_domain {
 		add_default_tld::<T>()?;

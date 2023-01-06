@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
@@ -470,7 +471,7 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
                 Event::DomainRecordUpdated {
                     account: DOMAIN_OWNER,
                     domain: default_domain_lc(),
-                    key: key.clone(),
+                    key,
                     value: None,
                     deposit: 0,
                 }.into()
@@ -623,7 +624,7 @@ fn set_record_should_refund_to_correct_depositor() {
             fn change_ownership(new_owner: &AccountId) {
                 RegisteredDomains::<Test>::mutate(default_domain_lc(), |maybe_meta| {
                     if let Some(meta) = maybe_meta {
-                        meta.owner = new_owner.clone();
+                        meta.owner = *new_owner;
                     }
                 })
             }
@@ -648,7 +649,7 @@ fn set_record_should_refund_to_correct_depositor() {
                     account: DOMAIN_OWNER,
                     domain: default_domain_lc(),
                     key: key.clone(),
-                    value: Some(value.clone()),
+                    value: Some(value),
                     deposit: 100,
                 }.into(),
             );

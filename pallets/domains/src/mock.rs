@@ -8,8 +8,6 @@ use sp_runtime::{
     testing::Header, traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_std::convert::{TryInto, TryFrom};
-
-use subsocial_support::Content;
 pub(crate) use crate as pallet_domains;
 use crate::types::*;
 
@@ -131,18 +129,7 @@ impl pallet_domains::Config for Test {
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 
-pub(crate) const ACCOUNT_A: u64 = 10;
-pub(crate) const ACCOUNT_B: u64 = 20;
-
 pub(crate) const DEFAULT_TLD: [u8; 3] = *b"sub";
-
-pub(crate) fn origin_a() -> Origin {
-    Origin::signed(ACCOUNT_A)
-}
-
-pub(crate) fn origin_b() -> Origin {
-    Origin::signed(ACCOUNT_B)
-}
 
 pub(crate) fn default_tld() -> DomainName<Test> {
     Domains::bound_domain(DEFAULT_TLD.to_vec())
@@ -169,33 +156,8 @@ pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
     )
 }
 
-pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
-    Domains::registered_domain(domain).unwrap().inner_value
-}
-
-pub(crate) fn get_outer_value(domain: &DomainName<Test>) -> Option<OuterValue<Test>> {
-    Domains::registered_domain(domain).unwrap().outer_value
-}
-
-pub(crate) fn get_domain_content(domain: &DomainName<Test>) -> Content {
-    Domains::registered_domain(domain).unwrap().content
-}
-
 pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
-}
-
-pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
-    InnerValue::Account(DOMAIN_OWNER)
-}
-
-pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
-    InnerValue::Space(1)
-}
-
-pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
-    vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
-        .try_into().expect("qed; outer value exceeds max length")
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
