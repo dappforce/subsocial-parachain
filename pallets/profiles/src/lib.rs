@@ -138,23 +138,17 @@ pub mod pallet {
             Ok(())
         }
 
-        pub fn unlink_space_from_profile(
-            account: &T::AccountId,
-            space_id: SpaceId,
-        ) -> DispatchResult {
-            T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
-
+        pub fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) {
             if let Some(profile_space_id) = Self::profile_space_id_by_account(account) {
                 if profile_space_id == space_id {
                     <ProfileSpaceIdByAccount<T>>::remove(account);
                 }
             }
-            Ok(())
         }
     }
 
     impl<T: Config> ProfileManager<T::AccountId> for Pallet<T> {
-        fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+        fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) {
             Self::unlink_space_from_profile(account, space_id)
         }
     }

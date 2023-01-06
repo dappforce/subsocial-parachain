@@ -145,17 +145,16 @@ fn unlink_space_from_profile_should_work() {
         let account = 1;
         let space_id = 1;
 
-        // `ensure_space_owner` in `set_profile` and `unlink_space_from_profile` should return Ok.
+        // `ensure_space_owner` in `set_profile` should return Ok.
         let space_owner_ctx = MockSpaces::ensure_space_owner_context();
-        space_owner_ctx.expect().times(2).return_const(Ok(()));
+        space_owner_ctx.expect().return_const(Ok(()));
 
         assert_ok!(Profiles::set_profile(Origin::signed(account), space_id));
 
         // when
-        let result = Profiles::unlink_space_from_profile(&account, space_id);
+        Profiles::unlink_space_from_profile(&account, space_id);
 
         // then
-        assert_ok!(result);
         assert!(Profiles::profile_space_id_by_account(account).is_none());
     });
 }
@@ -163,22 +162,15 @@ fn unlink_space_from_profile_should_work() {
 #[test]
 fn unlink_space_from_profile_should_work_when_no_space_set_as_profile() {
     ExtBuilder::build().execute_with(|| {
-        let _m = use_static_mock();
-
         // given
-        let account_owner = 1;
+        let account = 1;
         let space_id = 1;
 
-        // `ensure_space_owner` in `set_profile` should return Ok.
-        let space_owner_ctx = MockSpaces::ensure_space_owner_context();
-        space_owner_ctx.expect().return_const(Ok(()));
-
         // when
-        let result = Profiles::unlink_space_from_profile(&account_owner, space_id);
+        Profiles::unlink_space_from_profile(&account, space_id);
 
         // then
-        assert_ok!(result);
-        assert!(Profiles::profile_space_id_by_account(account_owner).is_none());
+        assert!(Profiles::profile_space_id_by_account(account).is_none());
     });
 }
 
@@ -188,52 +180,20 @@ fn unlink_space_from_profile_should_work_when_provided_space_differs_from_profil
         let _m = use_static_mock();
 
         // given
-        let account_owner = 1;
+        let account = 1;
         let space_id = 1;
         let space_id_wrong = 2;
 
-        // `ensure_space_owner` in `set_profile` and `unlink_space_from_profile` should return Ok.
-        let space_owner_ctx = MockSpaces::ensure_space_owner_context();
-        space_owner_ctx.expect().times(2).return_const(Ok(()));
-
-        assert_ok!(Profiles::set_profile(Origin::signed(account_owner), space_id));
-
-        // when
-        let result = Profiles::unlink_space_from_profile(&account_owner, space_id_wrong);
-
-        // then
-        assert_ok!(result);
-        assert_eq!(Profiles::profile_space_id_by_account(account_owner), Some(space_id));
-    });
-}
-
-#[test]
-fn unlink_space_from_profile_should_fail_when_not_space_owner() {
-    ExtBuilder::build().execute_with(|| {
-        let _m = use_static_mock();
-
-        // given
-        let account_owner = 1;
-        let space_id = 1;
-
         // `ensure_space_owner` in `set_profile` should return Ok.
         let space_owner_ctx = MockSpaces::ensure_space_owner_context();
-        space_owner_ctx.expect().times(1).return_const(Ok(()));
+        space_owner_ctx.expect().return_const(Ok(()));
 
-        assert_ok!(Profiles::set_profile(Origin::signed(account_owner), space_id));
-
-        let account_not_owner = 2;
-
-        // `ensure_space_owner` in `unlink_space_from_profile` should return Error.
-        space_owner_ctx.expect().return_const(Err("NotSpaceOwner".into()));
+        assert_ok!(Profiles::set_profile(Origin::signed(account), space_id));
 
         // when
-        let result = Profiles::unlink_space_from_profile(&account_not_owner, space_id);
+        Profiles::unlink_space_from_profile(&account, space_id_wrong);
 
         // then
-        //  - expecting error here
-        assert_err!(result, "NotSpaceOwner");
-        assert_eq!(Profiles::profile_space_id_by_account(account_owner), Some(space_id));
-        assert!(Profiles::profile_space_id_by_account(account_not_owner).is_none());
+        assert_eq!(Profiles::profile_space_id_by_account(account), Some(space_id));
     });
 }
