@@ -40,7 +40,7 @@ pub mod pallet {
             SpacePermissionsInfoOf<Self>,
         >;
 
-        type SpaceInterface: SpacesInterface<Self::AccountId, SpaceId>;
+        type SpacesInterface: SpacesInterface<Self::AccountId, SpaceId>;
 
         type WeightInfo: WeightInfo;
     }
@@ -96,7 +96,7 @@ pub mod pallet {
         pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            let space_id = T::SpaceInterface::create_space(&sender, content)?;
+            let space_id = T::SpacesInterface::create_space(&sender, content)?;
 
             Self::do_set_profile(&sender, space_id)?;
 

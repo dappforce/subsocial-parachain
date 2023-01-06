@@ -10,7 +10,7 @@ fn create_space<T: Config>(
     owner: &T::AccountId,
     content: Content,
 ) -> Result<SpaceId, DispatchError> {
-    let space_id = T::SpaceInterface::create_space(owner, content)?;
+    let space_id = T::SpacesInterface::create_space(owner, content)?;
     Ok(space_id)
 }
 

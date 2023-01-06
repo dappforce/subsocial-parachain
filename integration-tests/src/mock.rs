@@ -125,7 +125,7 @@ impl pallet_posts::Config for TestRuntime {
 impl pallet_profiles::Config for TestRuntime {
     type Event = Event;
     type SpacePermissionsProvider = Spaces;
-    type SpaceInterface = Spaces;
+    type SpacesInterface = Spaces;
     type WeightInfo = ();
 }
 

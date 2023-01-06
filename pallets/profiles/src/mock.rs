@@ -89,7 +89,7 @@ mock! {
 impl pallet_profiles::Config for Test {
     type Event = Event;
     type SpacePermissionsProvider = MockSpaces;
-    type SpaceInterface = MockSpaces;
+    type SpacesInterface = MockSpaces;
     type WeightInfo = ();
 }
 
