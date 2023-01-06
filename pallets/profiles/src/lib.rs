@@ -142,6 +142,7 @@ pub mod pallet {
             if let Some(profile_space_id) = Self::profile_space_id_by_account(account) {
                 if profile_space_id == space_id {
                     <ProfileSpaceIdByAccount<T>>::remove(account);
+                    Self::deposit_event(Event::ProfileUpdated { account: sender, space_id: None });
                 }
             }
         }
