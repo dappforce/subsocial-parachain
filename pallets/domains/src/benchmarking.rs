@@ -151,7 +151,7 @@ benchmarks! {
         ensure!(found_value == Some(value), "Value isn't correct");
     }
 
-	force_set_record {
+    force_set_record {
         let who = account_with_balance::<T>();
 
         let full_domain = add_domain::<T>(&who)?;
