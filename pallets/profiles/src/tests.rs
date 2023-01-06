@@ -163,6 +163,8 @@ fn unlink_space_from_profile_should_work() {
 #[test]
 fn unlink_space_from_profile_should_work_when_no_space_set_as_profile() {
     ExtBuilder::build().execute_with(|| {
+        let _m = use_static_mock();
+
         // given
         let account_owner = 1;
         let space_id = 1;

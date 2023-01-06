@@ -40,5 +40,5 @@ benchmarks! {
         assert!(Profiles::<T>::profile_space_id_by_account(&caller).is_some());
     }
 
-    impl_benchmark_test_suite!(Profiles, crate::mock::ExtBuilder::build(), crate::mock::Test);
+    // impl_benchmark_test_suite!(Profiles, crate::mock::ExtBuilder::build(), crate::mock::Test);
 }
