@@ -74,11 +74,6 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
 
             Self::do_set_profile(&sender, space_id)?;
-
-            Self::deposit_event(Event::ProfileUpdated {
-                account: sender,
-                space_id: Some(space_id),
-            });
             Ok(())
         }
 
@@ -104,11 +99,6 @@ pub mod pallet {
             let space_id = T::SpaceInterface::create_space(&sender, content)?;
 
             Self::do_set_profile(&sender, space_id)?;
-
-            Self::deposit_event(Event::ProfileUpdated {
-                account: sender,
-                space_id: Some(space_id),
-            });
 
             Ok(())
         }
@@ -140,6 +130,11 @@ pub mod pallet {
             T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
 
             <ProfileSpaceIdByAccount<T>>::insert(account, space_id);
+
+            Self::deposit_event(Event::ProfileUpdated {
+                account: account.clone(),
+                space_id: Some(space_id),
+            });
             Ok(())
         }
 
