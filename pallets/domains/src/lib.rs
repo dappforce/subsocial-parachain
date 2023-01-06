@@ -156,9 +156,11 @@ pub mod pallet {
         NewTldsSupported { count: u32 },
         /// The domain record has been updated
         DomainRecordUpdated {
+            account: T::AccountId,
             domain: DomainName<T>,
             key: RecordKey<T>,
             value: Option<RecordValue<T>>,
+            deposit: BalanceOf<T>,
         },
     }
 
@@ -415,13 +417,15 @@ pub mod pallet {
             };
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
-                *current_opt = value_opt.clone().map(|value| (value, owner, new_deposit));
+                *current_opt = value_opt.clone().map(|value| (value, owner.clone(), new_deposit));
             });
 
             Self::deposit_event(Event::DomainRecordUpdated {
+                account: owner,
                 domain: domain_lc,
                 key,
                 value: value_opt,
+                deposit: new_deposit,
             });
             Ok(())
         }

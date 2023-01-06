@@ -1,13 +1,11 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
-
-use subsocial_support::mock_functions::valid_content_ipfs;
 use subsocial_support::{Content, new_who_and_when};
 
 use crate::{Event, mock::*};
 use crate::Error;
-use crate::pallet::DomainRecords;
+use crate::pallet::{DomainRecords, RegisteredDomains};
 use crate::types::*;
 
 // `register_domain` tests
@@ -349,7 +347,13 @@ fn set_record_should_work_correctly() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value, DOMAIN_OWNER, 0)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: value_opt }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key,
+                    value: value_opt,
+                    deposit: 0,
+                }.into()
             );
         });
 }
@@ -400,7 +404,13 @@ fn set_record_should_reserve_correct_record_deposit() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key,
+                    value: Some(value),
+                    deposit: 720,
+                }.into(),
             );
         });
 }
@@ -434,7 +444,13 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key: key.clone(),
+                    value: Some(value),
+                    deposit: 720,
+                }.into(),
             );
 
             assert_ok!(
@@ -451,7 +467,13 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), None);
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: None }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key: key.clone(),
+                    value: None,
+                    deposit: 0,
+                }.into()
             );
         });
 }
@@ -485,7 +507,13 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key: key.clone(),
+                    value: Some(value),
+                    deposit: 720,
+                }.into()
             );
 
             let value = record_value(b"4");
@@ -504,7 +532,13 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 480)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key,
+                    value: Some(value),
+                    deposit: 480,
+                }.into(),
             );
         });
 }
@@ -537,7 +571,13 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key: key.clone(), value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key: key.clone(),
+                    value: Some(value),
+                    deposit: 720,
+                }.into(),
             );
 
             let value = record_value(b"45678");
@@ -556,7 +596,88 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
             assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 960)));
 
             System::assert_last_event(
-                Event::DomainRecordUpdated { domain: default_domain_lc(), key, value: Some(value) }.into()
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key,
+                    value: Some(value),
+                    deposit: 960,
+                }.into(),
+            );
+        });
+}
+
+#[test]
+fn set_record_should_refund_to_correct_depositor() {
+    ExtBuilder::default()
+        .record_byte_deposit(10)
+        .build_with_default_domain_registered()
+        .execute_with(|| {
+            let DOMAIN_OWNER_2 = 10;
+            let DOMAIN_OWNER_3 = 11;
+
+            account_with_balance(DOMAIN_OWNER, 1000);
+            account_with_balance(DOMAIN_OWNER_2, 1000);
+            account_with_balance(DOMAIN_OWNER_3, 1000);
+
+            fn change_ownership(new_owner: &AccountId) {
+                RegisteredDomains::<Test>::mutate(default_domain_lc(), |maybe_meta| {
+                    if let Some(meta) = maybe_meta {
+                        meta.owner = new_owner.clone();
+                    }
+                })
+            }
+
+            let key = record_key(b"12345");
+            let value = record_value(b"67890");
+
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 900);
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 100)));
+            System::assert_last_event(
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER,
+                    domain: default_domain_lc(),
+                    key: key.clone(),
+                    value: Some(value.clone()),
+                    deposit: 100,
+                }.into(),
+            );
+
+            change_ownership(&DOMAIN_OWNER_2);
+
+
+            let value = record_value(b"6789");
+            assert_ok!(
+                Domains::set_record(
+                    Origin::signed(DOMAIN_OWNER_2),
+                    default_domain(),
+                    key.clone(),
+                    Some(value.clone()),
+                ),
+            );
+
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
+            assert_eq!(Balances::free_balance(DOMAIN_OWNER_2), 910);
+
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER_2, 90)));
+            System::assert_last_event(
+                Event::DomainRecordUpdated {
+                    account: DOMAIN_OWNER_2,
+                    domain: default_domain_lc(),
+                    key,
+                    value: Some(value),
+                    deposit: 90,
+                }.into(),
             );
         });
 }

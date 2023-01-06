@@ -146,7 +146,13 @@ benchmarks! {
     verify {
         let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
         assert_last_event::<T>(
-            Event::DomainRecordUpdated { domain: full_domain.clone(), key: key.clone(), value: Some(value.clone()) }.into()
+            Event::DomainRecordUpdated {
+				account: who.clone(),
+				domain: full_domain.clone(),
+				key: key.clone(),
+				value: Some(value.clone()),
+				deposit: 0u32.into(),
+			}.into(),
         );
         let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.0);
         assert_eq!(found_value, Some(value.clone()));
@@ -164,7 +170,13 @@ benchmarks! {
     verify {
         let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
         assert_last_event::<T>(
-            Event::DomainRecordUpdated { domain: full_domain.clone(), key: key.clone(), value: Some(value.clone()) }.into()
+            Event::DomainRecordUpdated {
+				account: who.clone(),
+				domain: full_domain.clone(),
+				key: key.clone(),
+				value: Some(value.clone()),
+				deposit: 0u32.into(),
+			}.into(),
         );
         let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.0);
         assert_eq!(found_value, Some(value.clone()));
