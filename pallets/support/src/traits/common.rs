@@ -17,10 +17,6 @@ pub trait SpaceFollowsProvider {
 }
 
 pub trait ProfileManager<AccountId> {
-    fn profile_space_id(account: &AccountId) -> Option<SpaceId>;
-
-    fn try_set_profile(account: &AccountId, space_id: SpaceId) -> DispatchResult;
-
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId) -> DispatchResult;
 }
 

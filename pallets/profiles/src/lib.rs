@@ -154,14 +154,6 @@ pub mod pallet {
     }
 
     impl<T: Config> ProfileManager<T::AccountId> for Pallet<T> {
-        fn profile_space_id(account: &T::AccountId) -> Option<SpaceId> {
-            Self::profile_space_id_by_account(account)
-        }
-
-        fn try_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::do_set_profile(account, space_id)
-        }
-
         fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
             Self::unlink_space_from_profile(account, space_id)
         }
