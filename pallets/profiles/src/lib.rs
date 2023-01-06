@@ -102,27 +102,6 @@ pub mod pallet {
 
             Ok(())
         }
-
-        #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
-            DispatchClass::Operational,
-            Pays::Yes,
-        ))]
-        pub fn force_set_space_as_profile(
-            origin: OriginFor<T>,
-            account: T::AccountId,
-            space_id_opt: Option<SpaceId>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            match space_id_opt {
-                Some(space_id) => <ProfileSpaceIdByAccount<T>>::insert(&account, space_id),
-                None => <ProfileSpaceIdByAccount<T>>::remove(&account),
-            }
-
-            Self::deposit_event(Event::ProfileUpdated { account, space_id: space_id_opt });
-            Ok(Pays::No.into())
-        }
     }
 
     impl<T: Config> Pallet<T> {
