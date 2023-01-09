@@ -9,8 +9,8 @@ For Linux, FreeBSD, OpenBSD, and macOS:
 ```sh
 git clone https://github.com/dappforce/subsocial-parachain
 cd subsocial-parachain/
-sh scripts/init.sh
-cargo build --release
+make init
+make build
 ```
 
 ## Run
