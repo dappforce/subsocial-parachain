@@ -168,6 +168,10 @@ pub fn kusama_local_testnet_config() -> ChainSpec {
 	local_testnet_config("kusama-local".into())
 }
 
+pub fn subsocialx_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocialx.json")[..])
+}
+
 pub fn subsocial_config() -> Result<ChainSpec, String> {
 	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
 }
@@ -237,7 +241,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 		None,
 		Some(subsocial_properties()),
 		Extensions {
-			relay_chain: "kusama".into(),
+			relay_chain: "polkadot".into(),
 			para_id: DEFAULT_PARA_ID,
 		},
 	)

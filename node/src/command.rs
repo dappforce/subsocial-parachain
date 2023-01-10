@@ -20,12 +20,15 @@ use crate::{
 	service::{new_partial, ParachainNativeExecutor},
 };
 
+pub(crate) const DEFAULT_PARA_ID: u32 = 2101;
+
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config()),
 		"local-rococo" => Box::new(chain_spec::rococo_local_testnet_config()),
 		"local-kusama" => Box::new(chain_spec::kusama_local_testnet_config()),
 		"staging" => Box::new(chain_spec::staging_testnet_config()),
+		"subsocialx" => Box::new(chain_spec::subsocialx_config()?),
 		"" => Box::new(chain_spec::subsocial_config()?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
