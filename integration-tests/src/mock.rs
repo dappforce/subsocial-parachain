@@ -2,47 +2,54 @@ use sp_core::H256;
 use sp_io::TestExternalities;
 
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    testing::Header,
     Storage,
 };
 
+use frame_support::{
+    assert_ok,
+    parameter_types,
+    traits::Everything,
+};
 use frame_support::traits::ConstU32;
-use frame_support::{assert_ok, parameter_types, traits::Everything};
 use frame_system as system;
 
-use crate::utils::*;
-use pallet_permissions::{SpacePermission as SP, SpacePermissions};
+use pallet_permissions::{
+    SpacePermission as SP,
+    SpacePermissions,
+};
 use pallet_spaces::SpaceById;
+pub use subsocial_support::{ModerationError, ContentError};
 use subsocial_support::User;
-pub use subsocial_support::{ContentError, ModerationError};
+use crate::utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: system,
-        Balances: pallet_balances,
-        Timestamp: pallet_timestamp,
-        Permissions: pallet_permissions,
-        Posts: pallet_posts,
-        Profiles: pallet_profiles,
-        Reactions: pallet_reactions,
-        Roles: pallet_roles,
-        SpaceFollows: pallet_space_follows,
-        SpaceOwnership: pallet_space_ownership,
-        Spaces: pallet_spaces,
-    }
-);
+        pub enum TestRuntime where
+            Block = Block,
+            NodeBlock = Block,
+            UncheckedExtrinsic = UncheckedExtrinsic,
+        {
+            System: system,
+            Balances: pallet_balances,
+            Timestamp: pallet_timestamp,
+            Permissions: pallet_permissions,
+            Posts: pallet_posts,
+            Profiles: pallet_profiles,
+            Reactions: pallet_reactions,
+            Roles: pallet_roles,
+            SpaceFollows: pallet_space_follows,
+            SpaceOwnership: pallet_space_ownership,
+            Spaces: pallet_spaces,
+        }
+    );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-}
+        pub const BlockHashCount: u64 = 250;
+    }
 
 impl system::Config for TestRuntime {
     type BaseCallFilter = Everything;
@@ -72,8 +79,8 @@ impl system::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MinimumPeriod: u64 = 5;
-}
+        pub const MinimumPeriod: u64 = 5;
+    }
 
 impl pallet_timestamp::Config for TestRuntime {
     type Moment = u64;
@@ -83,8 +90,8 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
-}
+        pub const ExistentialDeposit: u64 = 1;
+    }
 
 impl pallet_balances::Config for TestRuntime {
     type Balance = u64;
@@ -98,16 +105,16 @@ impl pallet_balances::Config for TestRuntime {
     type ReserveIdentifier = ();
 }
 
-use crate::utils::moderation_utils::MockModeration;
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
+use crate::utils::moderation_utils::MockModeration;
 
 impl pallet_permissions::Config for TestRuntime {
     type DefaultSpacePermissions = DefaultSpacePermissions;
 }
 
 parameter_types! {
-    pub const MaxCommentDepth: u32 = 10;
-}
+        pub const MaxCommentDepth: u32 = 10;
+    }
 
 impl pallet_posts::Config for TestRuntime {
     type Event = Event;
@@ -125,8 +132,8 @@ impl pallet_reactions::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
-}
+        pub const MaxUsersToProcessPerDeleteRole: u16 = 40;
+    }
 
 impl pallet_roles::Config for TestRuntime {
     type Event = Event;
@@ -159,15 +166,17 @@ impl pallet_spaces::Config for TestRuntime {
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
 
+
 pub struct ExtBuilder;
 
 // TODO: refactor
 use crate::utils::posts_utils::*;
-use crate::utils::reactions_utils::*;
-use crate::utils::roles_utils::*;
-use crate::utils::space_follows_utils::*;
-use crate::utils::space_ownership_utils::*;
 use crate::utils::spaces_utils::*;
+use crate::utils::roles_utils::*;
+use crate::utils::space_ownership_utils::*;
+use crate::utils::reactions_utils::*;
+use crate::utils::space_follows_utils::*;
+
 
 // TODO: make created space/post/comment configurable or by default
 impl ExtBuilder {
@@ -178,14 +187,15 @@ impl ExtBuilder {
         }
 
         let _ = pallet_balances::GenesisConfig::<TestRuntime> {
-            balances: accounts.iter().cloned().map(|k| (k, 100)).collect(),
-        }
-        .assimilate_storage(storage);
+            balances: accounts.iter().cloned().map(|k|(k, 100)).collect()
+        }.assimilate_storage(storage);
     }
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+        let mut storage = system::GenesisConfig::default()
+            .build_storage::<TestRuntime>()
+            .unwrap();
 
         Self::configure_storages(&mut storage);
 
@@ -248,9 +258,7 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where BlockNumber is 1
     pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post_and_two_spaces();
-        ext.execute_with(|| {
-            assert_ok!(_create_default_post_reaction());
-        });
+        ext.execute_with(|| { assert_ok!(_create_default_post_reaction()); });
         ext
     }
 
@@ -270,7 +278,13 @@ impl ExtBuilder {
 
         ext.execute_with(|| {
             let user = User::Account(ACCOUNT2);
-            assert_ok!(_create_role(None, None, None, None, Some(perms)));
+            assert_ok!(_create_role(
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(perms)
+                ));
             // RoleId 1
             assert_ok!(_create_default_role()); // RoleId 2
 
@@ -294,9 +308,7 @@ impl ExtBuilder {
     }
 
     /// Custom ext configuration with a space and override the space permissions
-    pub fn build_with_space_and_custom_permissions(
-        permissions: SpacePermissions,
-    ) -> TestExternalities {
+    pub fn build_with_space_and_custom_permissions(permissions: SpacePermissions) -> TestExternalities {
         let mut ext = Self::build();
         ext.execute_with(|| Self::add_space_with_custom_permissions(permissions));
         ext
