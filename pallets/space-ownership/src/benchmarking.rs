@@ -51,7 +51,7 @@ benchmarks! {
         let space = pallet_spaces::SpaceById::<T>::get(space.id)
             .ok_or(DispatchError::Other("Space not found"))?;
 
-        ensure!(PendingSpaceOwner::<T>::get(&space.id) == None, "Request is found");
+        ensure!(PendingSpaceOwner::<T>::get(&space.id) == None, "Request was not cleaned");
         ensure!(space.owner == acc2, "Space owner is not updated");
     }
 
@@ -70,7 +70,7 @@ benchmarks! {
         let space = pallet_spaces::SpaceById::<T>::get(space.id)
             .ok_or(DispatchError::Other("Space not found"))?;
 
-        ensure!(PendingSpaceOwner::<T>::get(&space.id) == None, "Request is found");
+        ensure!(PendingSpaceOwner::<T>::get(&space.id) == None, "Request was not cleaned");
         ensure!(space.owner == acc1, "Space owner is updated");
     }
 
