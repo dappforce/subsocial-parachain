@@ -12,6 +12,7 @@ use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermission
 use pallet_spaces::types::Space;
 use sp_std::{collections::btree_set::BTreeSet, prelude::Vec, vec};
 use subsocial_support::{Content, User};
+use subsocial_support::mock_functions::{valid_content_ipfs, another_valid_content_ipfs};
 
 fn create_dummy_space<T: Config + pallet_spaces::Config>(
     origin: RawOrigin<T::AccountId>,
@@ -71,7 +72,7 @@ benchmarks! {
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
         let time_to_live: Option<T::BlockNumber> = Some(100u32.into());
-        let content = Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4".to_vec());
+        let content = valid_content_ipfs();
         let perms = vec![SP::ManageRoles];
         let role_id = NextRoleId::<T>::get();
     }: _(caller_origin, space.id, time_to_live, content, perms)
@@ -92,7 +93,7 @@ benchmarks! {
 
         let update = RoleUpdate {
              disabled: true.into(),
-             content: Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4".to_vec()).into(),
+             content: another_valid_content_ipfs().into(),
              permissions: None
         };
     }: _(caller_origin, role.id, update)
