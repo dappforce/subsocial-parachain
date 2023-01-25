@@ -39,6 +39,7 @@ std = [
     'codec/std',
     'scale-info/std',
     'pallet-timestamp/std',
+    'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
     'sp-runtime/std',
@@ -46,4 +47,4 @@ std = [
     'subsocial-support/std',
     'pallet-permissions/std'
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = ['frame-support/try-runtime']
