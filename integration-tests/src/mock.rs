@@ -142,7 +142,7 @@ impl pallet_roles::Config for TestRuntime {
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
-    type WeightInfo = pallet_roles::weights::SubstrateWeight<TestRuntime>;
+    type WeightInfo = ();
 }
 
 impl pallet_space_follows::Config for TestRuntime {
