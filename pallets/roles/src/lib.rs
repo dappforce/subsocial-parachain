@@ -295,7 +295,7 @@ pub mod pallet {
             Self::ensure_role_manager(who.clone(), role.space_id)?;
 
             let users = Self::users_by_role_id(role_id);
-            ensure!(users.len() as u32 == user_count, Error::<T>::IncorrectUserCount,);
+            ensure!(users.len() as u32 == user_count, Error::<T>::IncorrectUserCount);
             ensure!(
                 users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
                 Error::<T>::TooManyUsersToDeleteRole
