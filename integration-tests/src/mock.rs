@@ -129,7 +129,7 @@ impl pallet_profiles::Config for TestRuntime {
 
 impl pallet_reactions::Config for TestRuntime {
     type Event = Event;
-    type WeightInfo = pallet_reactions::weights::SubstrateWeight<TestRuntime>;
+    type WeightInfo = ();
 }
 
 parameter_types! {
