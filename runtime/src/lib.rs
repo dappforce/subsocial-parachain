@@ -659,6 +659,7 @@ impl pallet_roles::Config for Runtime {
 	type SpaceFollows = SpaceFollows;
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
+	type WeightInfo = pallet_roles::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_space_follows::Config for Runtime {
@@ -780,6 +781,7 @@ mod benches {
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_reactions, Reactions]
+		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
     [pallet_posts, Posts]
