@@ -635,6 +635,7 @@ impl pallet_posts::Config for Runtime {
 	type Event = Event;
 	type MaxCommentDepth = MaxCommentDepth;
 	type IsPostBlocked = ()/*Moderation*/;
+	type WeightInfo = pallet_posts::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_reactions::Config for Runtime {
@@ -777,6 +778,7 @@ mod benches {
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_space_follows, SpaceFollows]
+    [pallet_posts, Posts]
 	);
 }
 

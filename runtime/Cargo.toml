@@ -180,10 +180,12 @@ runtime-benchmarks = [
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
+  "pallet-posts/runtime-benchmarks",
 ]
 
 try-runtime = [
 	"frame-executive/try-runtime",
 	"frame-try-runtime",
 	"pallet-space-follows/try-runtime",
+  "pallet-posts/try-runtime",
 ]
