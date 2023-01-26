@@ -4,7 +4,7 @@
 
 use super::*;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{dispatch::DispatchError, traits::Currency};
+use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
 use pallet_posts::{Post, PostExtension};
 use pallet_spaces::types::Space;
@@ -36,8 +36,7 @@ fn create_dummy_post<T: Config>(origin: RawOrigin<T::AccountId>) -> Result<Post<
         Content::None,
     )?;
 
-    let post =
-        pallet_posts::PostById::<T>::get(post_id).ok_or(DispatchError::Other("Post not found"))?;
+    let post = PostById::<T>::get(post_id).ok_or(DispatchError::Other("Post not found"))?;
 
     Ok(post)
 }
@@ -50,8 +49,8 @@ fn create_dummy_post_reaction<T: Config>(
 
     Pallet::<T>::create_post_reaction(origin.clone().into(), post.id, ReactionKind::Upvote)?;
 
-    let reaction =
-        ReactionById::<T>::get(reaction_id).ok_or(DispatchError::Other("Reaction not found"))?;
+    let reaction = ReactionById::<T>::get(reaction_id)
+        .ok_or(DispatchError::Other("Reaction not found"))?;
 
     Ok((post, reaction))
 }
@@ -65,12 +64,12 @@ benchmarks! {
 
     }: _(origin, post.id, reaction_kind)
     verify {
-        ensure!(ReactionIdsByPostId::<T>::get(post.id) == vec![reaction_id], "Reaction is not found");
+        ensure!(ReactionIdsByPostId::<T>::get(post.id) == vec![reaction_id], "Incorrect reaction in storage");
         ensure!(
             ReactionById::<T>::get(reaction_id)
                 .expect("Reaction not found")
                 .kind == reaction_kind,
-            "Reaction kind doesn't match"
+            "Reaction kind does not match"
         );
     }
 
@@ -87,7 +86,7 @@ benchmarks! {
             ReactionById::<T>::get(reaction.id)
                 .expect("Reaction not found")
                 .kind == other_kind,
-            "Reaction kind doesn't match"
+            "Reaction kind does not match"
         );
     }
 
@@ -95,10 +94,10 @@ benchmarks! {
         let origin = RawOrigin::Signed(whitelisted_caller());
         let (post, reaction) = create_dummy_post_reaction::<T>(origin.clone())?;
 
-        ensure!(ReactionIdsByPostId::<T>::get(post.id) == vec![reaction.id], "Reaction is not found");
+        ensure!(ReactionIdsByPostId::<T>::get(post.id) == vec![reaction.id], "Incorrect reaction in storage");
     }: _(origin, post.id, reaction.id)
     verify {
-        ensure!(ReactionIdsByPostId::<T>::get(post.id).is_empty(), "Reaction wasn't deleted from post");
-        ensure!(ReactionById::<T>::get(reaction.id) == None, "Reaction wasn't deleted");
+        ensure!(ReactionIdsByPostId::<T>::get(post.id).is_empty(), "Reaction was not deleted by post id");
+        ensure!(ReactionById::<T>::get(reaction.id) == None, "Reaction was not deleted");
     }
 }
