@@ -635,6 +635,7 @@ impl pallet_posts::Config for Runtime {
 	type Event = Event;
 	type MaxCommentDepth = MaxCommentDepth;
 	type IsPostBlocked = ()/*Moderation*/;
+	type WeightInfo = pallet_posts::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_reactions::Config for Runtime {
@@ -662,6 +663,7 @@ impl pallet_roles::Config for Runtime {
 
 impl pallet_space_follows::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_space_follows::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -680,6 +682,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type Event = Event;
 	type ProfileManager = Profiles;
+	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_account_follows::Config for Runtime {
@@ -777,6 +780,9 @@ mod benches {
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_reactions, Reactions]
+		[pallet_space_follows, SpaceFollows]
+		[pallet_space_ownership, SpaceOwnership]
+    [pallet_posts, Posts]
 	);
 }
 

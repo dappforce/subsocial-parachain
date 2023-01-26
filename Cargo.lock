@@ -5673,6 +5673,7 @@ dependencies = [
 name = "pallet-posts"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-permissions",
@@ -5870,6 +5871,7 @@ dependencies = [
 name = "pallet-space-follows"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-spaces",
@@ -5883,6 +5885,7 @@ dependencies = [
 name = "pallet-space-ownership"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-spaces",
