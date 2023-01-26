@@ -40,12 +40,17 @@ pub mod functions;
 pub mod types;
 pub use types::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 // pub mod rpc;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
 
+    use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::IsType};
     use frame_system::pallet_prelude::*;
 
@@ -64,6 +69,8 @@ pub mod pallet {
         type MaxCommentDepth: Get<u32>;
 
         type IsPostBlocked: IsPostBlocked<PostId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -184,7 +191,13 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(88_000_000 + T::DbWeight::get().reads_writes(7, 6))]
+        #[pallet::weight(
+            match extension {
+                PostExtension::RegularPost => <T as Config>::WeightInfo::create_post__regular(),
+                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__shared(),
+                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__comment(),
+            }
+        )]
         pub fn create_post(
             origin: OriginFor<T>,
             space_id_opt: Option<SpaceId>,
@@ -252,7 +265,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(75_000_000 + T::DbWeight::get().reads_writes(5, 3))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_post())]
         pub fn update_post(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -309,7 +322,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(92_000_000 + T::DbWeight::get().reads_writes(7, 5))]
+        #[pallet::weight(<T as Config>::WeightInfo::move_post())]
         pub fn move_post(
             origin: OriginFor<T>,
             post_id: PostId,
