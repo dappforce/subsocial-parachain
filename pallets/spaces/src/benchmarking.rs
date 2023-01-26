@@ -51,6 +51,7 @@ benchmarks! {
     verify {
         let space_from_storage = SpaceById::<T>::get(space.id).expect("Updated space should exist");
         assert!(space_from_storage.content.is_some());
+        assert!(space_from_storage.edited);
         assert!(space_from_storage.permissions.is_some());
     }
 }
