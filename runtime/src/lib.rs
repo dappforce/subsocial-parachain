@@ -681,6 +681,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type Event = Event;
 	type ProfileManager = Profiles;
+	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_account_follows::Config for Runtime {
@@ -778,6 +779,7 @@ mod benches {
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_space_follows, SpaceFollows]
+		[pallet_space_ownership, SpaceOwnership]
     [pallet_posts, Posts]
 	);
 }

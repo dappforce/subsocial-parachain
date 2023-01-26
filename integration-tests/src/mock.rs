@@ -153,6 +153,7 @@ impl pallet_space_follows::Config for TestRuntime {
 impl pallet_space_ownership::Config for TestRuntime {
     type Event = Event;
     type ProfileManager = Profiles;
+    type WeightInfo = ();
 }
 
 impl pallet_spaces::Config for TestRuntime {
