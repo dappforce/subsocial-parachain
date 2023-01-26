@@ -120,6 +120,7 @@ impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
+    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for TestRuntime {
@@ -146,6 +147,7 @@ impl pallet_roles::Config for TestRuntime {
 
 impl pallet_space_follows::Config for TestRuntime {
     type Event = Event;
+    type WeightInfo = pallet_space_follows::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl pallet_space_ownership::Config for TestRuntime {
