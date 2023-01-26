@@ -779,8 +779,8 @@ mod benches {
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_space_follows, SpaceFollows]
-    [pallet_spaces, Spaces]
-    [pallet_posts, Posts]
+		[pallet_spaces, Spaces]
+		[pallet_posts, Posts]
 	);
 }
 
