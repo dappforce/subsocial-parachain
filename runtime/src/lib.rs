@@ -640,6 +640,7 @@ impl pallet_posts::Config for Runtime {
 
 impl pallet_reactions::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_reactions::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_profiles::Config for Runtime {
@@ -778,6 +779,7 @@ mod benches {
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_reactions, Reactions]
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
     [pallet_posts, Posts]
