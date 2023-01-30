@@ -678,6 +678,7 @@ impl pallet_spaces::Config for Runtime {
 	type IsAccountBlocked = ()/*Moderation*/;
 	type IsContentBlocked = ()/*Moderation*/;
 	type MaxSpacesPerAccount = MaxSpacesPerAccount;
+	type WeightInfo = pallet_spaces::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_space_ownership::Config for Runtime {
@@ -784,6 +785,7 @@ mod benches {
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
+		[pallet_spaces, Spaces]
     [pallet_posts, Posts]
 	);
 }

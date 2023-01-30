@@ -183,6 +183,7 @@ runtime-benchmarks = [
 	"pallet-roles/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
 	"pallet-space-ownership/runtime-benchmarks",
+	"pallet-spaces/runtime-benchmarks",
   "pallet-posts/runtime-benchmarks",
 ]
 
@@ -193,5 +194,6 @@ try-runtime = [
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
 	"pallet-space-ownership/try-runtime",
+	"pallet-spaces/try-runtime",
   "pallet-posts/try-runtime",
 ]
