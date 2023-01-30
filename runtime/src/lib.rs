@@ -644,6 +644,8 @@ impl pallet_reactions::Config for Runtime {
 impl pallet_profiles::Config for Runtime {
 	type Event = Event;
 	type SpacePermissionsProvider = Spaces;
+	type SpacesInterface = Spaces;
+	type WeightInfo = pallet_profiles::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -774,6 +776,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
+		[pallet_profiles, Profiles]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }

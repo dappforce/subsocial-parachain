@@ -68,6 +68,9 @@ fn accept_pending_ownership_should_work() {
 
         assert!(Balances::reserved_balance(ACCOUNT1).is_zero());
 
+        // Check that previous owner profile space was unlinked:
+        assert!(Profiles::profile_space_id_by_account(ACCOUNT1).is_none());
+
         // assert_eq!(Balances::reserved_balance(ACCOUNT2), HANDLE_DEPOSIT);
     });
 }

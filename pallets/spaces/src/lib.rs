@@ -144,26 +144,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             content: Content,
             permissions_opt: Option<SpacePermissions>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            ensure_content_is_valid(content.clone())?;
-            Self::ensure_space_limit_not_reached(&owner)?;
-
-            let permissions =
-                permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
-
-            let space_id = Self::next_space_id();
-            let new_space = &mut Space::new(space_id, owner.clone(), content, permissions);
-
-            SpaceById::<T>::insert(space_id, new_space);
-            SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
-                ids.try_push(space_id).expect("qed; too many spaces per account")
-            });
-            NextSpaceId::<T>::mutate(|n| *n += 1);
-
-            Self::deposit_event(Event::SpaceCreated { account: owner, space_id });
-            Ok(().into())
+            Self::do_create_space(&owner, content, permissions_opt)?;
+            Ok(())
         }
 
         #[pallet::weight(62_000_000 + T::DbWeight::get().reads_writes(5, 1))]
@@ -329,6 +314,30 @@ pub mod pallet {
             }
         }
 
+        fn do_create_space(
+            owner: &T::AccountId,
+            content: Content,
+            permissions_opt: Option<SpacePermissions>,
+        ) -> Result<SpaceId, DispatchError> {
+            ensure_content_is_valid(content.clone())?;
+            Self::ensure_space_limit_not_reached(owner)?;
+
+            let permissions =
+                permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
+
+            let space_id = Self::next_space_id();
+            let new_space = &mut Space::new(space_id, owner.clone(), content, permissions);
+
+            SpaceById::<T>::insert(space_id, new_space);
+            SpaceIdsByOwner::<T>::mutate(owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
+            NextSpaceId::<T>::mutate(|n| *n += 1);
+
+            Self::deposit_event(Event::SpaceCreated { account: owner.clone(), space_id });
+            Ok(space_id)
+        }
+
         /// Check that there is a `Space` with such `space_id` in the storage
         /// or return`SpaceNotFound` error.
         pub fn ensure_space_exists(space_id: SpaceId) -> DispatchResult {
@@ -403,6 +412,10 @@ pub mod pallet {
         fn get_space_owner(space_id: SpaceId) -> Result<T::AccountId, DispatchError> {
             let space = Pallet::<T>::require_space(space_id)?;
             Ok(space.owner)
+        }
+
+        fn create_space(owner: &T::AccountId, content: Content) -> Result<SpaceId, DispatchError> {
+            Self::do_create_space(owner, content, None)
         }
     }
 }
