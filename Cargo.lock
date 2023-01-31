@@ -5974,7 +5974,6 @@ dependencies = [
  "impl-trait-for-tuples",
  "pallet-balances",
  "pallet-permissions",
- "pallet-posts",
  "pallet-profiles",
  "pallet-roles",
  "pallet-space-follows",
