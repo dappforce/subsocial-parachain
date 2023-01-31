@@ -6,8 +6,6 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-use crate::tests_utils::*;
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -22,7 +20,6 @@ frame_support::construct_runtime!(
         Balances: pallet_balances,
         Permissions: pallet_permissions,
         Roles: pallet_roles,
-        Profiles: pallet_profiles,
         SpaceFollows: pallet_space_follows,
         Posts: pallet_posts,
         Reactions: pallet_reactions,
@@ -100,7 +97,7 @@ parameter_types! {
 impl pallet_posts::Config for Test {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
-    type IsPostBlocked = MockModeration;
+    type IsPostBlocked = ();
 }
 
 impl pallet_permissions::Config for Test {
@@ -116,21 +113,16 @@ impl pallet_roles::Config for Test {
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
-    type IsAccountBlocked = MockModeration;
-    type IsContentBlocked = MockModeration;
-}
-
-impl pallet_profiles::Config for Test {
-    type Event = Event;
-    type SpacePermissionsProvider = Spaces;
+    type IsAccountBlocked = ();
+    type IsContentBlocked = ();
 }
 
 impl pallet_spaces::Config for Test {
     type Event = Event;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
-    type IsAccountBlocked = MockModeration;
-    type IsContentBlocked = MockModeration;
+    type IsAccountBlocked = ();
+    type IsContentBlocked = ();
     type MaxSpacesPerAccount = ConstU32<100>;
 }
 

@@ -36,7 +36,6 @@ sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 pallet-roles = { default-features = false, path = '../../roles' }
 pallet-space-follows = { default-features = false, path = '../../space-follows' }
-pallet-profiles = { default-features = false, path = '../../profiles' }
 pallet-posts = { default-features = false, path = '../../posts' }
 pallet-reactions = { default-features = false, path = '..' }
 pallet-spaces = { default-features = false, path = '../../spaces' }
@@ -56,7 +55,6 @@ std = [
     'pallet-balances/std',
     'pallet-roles/std',
     'pallet-space-follows/std',
-    'pallet-profiles/std',
     'pallet-posts/std',
 ]
 try-runtime = ["frame-support/try-runtime"]

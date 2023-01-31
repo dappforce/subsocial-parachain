@@ -1,9 +1,3 @@
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    hash::{Hash, Hasher},
-};
-
 use frame_support::{assert_ok, pallet_prelude::*};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
@@ -12,10 +6,7 @@ use pallet_permissions::SpacePermissions;
 use pallet_posts::{PostExtension, PostUpdate};
 use pallet_reactions::{ReactionId, ReactionKind};
 use pallet_spaces::types::SpaceUpdate;
-use subsocial_support::{
-    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
-    Content, PostId, SpaceId,
-};
+use subsocial_support::{Content, PostId, SpaceId};
 
 use crate::mock::*;
 
@@ -98,105 +89,6 @@ pub(crate) const POST1: PostId = 1;
 
 pub(crate) const REACTION1: ReactionId = 1;
 pub(crate) const REACTION2: ReactionId = 2;
-
-////// Moderation Utils
-
-// Moderation pallet mocks
-
-/* ------------------------------------------------------------------------------------------------ */
-// Moderation tests
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub enum EntityId {
-    Content(Content),
-    Account(AccountId),
-    Space(SpaceId),
-    Post(PostId),
-}
-
-impl Hash for EntityId {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            EntityId::Content(content) => match content {
-                Content::None => 0.hash(state),
-                Content::Other(content) => content.hash(state),
-                Content::IPFS(content) => content.hash(state),
-            },
-            EntityId::Account(account) => account.hash(state),
-            EntityId::Space(space) => space.hash(state),
-            EntityId::Post(post) => post.hash(state),
-        }
-    }
-}
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, Hash)]
-pub enum EntityStatus {
-    Allowed,
-    Blocked,
-}
-
-thread_local! {
-    pub static MOCK_MODERATION_STATE: RefCell<HashMap<(EntityId, SpaceId), EntityStatus>> = RefCell::new(Default::default());
-}
-pub struct MockModeration;
-
-impl MockModeration {
-    fn get_entity_status(id: EntityId, scope: SpaceId) -> Option<EntityStatus> {
-        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
-            let mock_moderation_state = mock_moderation_state.borrow();
-            let status = mock_moderation_state.get(&(id, scope)).cloned();
-            status
-        })
-    }
-
-    fn is_allowed_entity(id: EntityId, scope: SpaceId) -> bool {
-        Self::get_entity_status(id, scope).unwrap_or(EntityStatus::Allowed) == EntityStatus::Allowed
-    }
-
-    fn is_blocked_entity(id: EntityId, scope: SpaceId) -> bool {
-        Self::get_entity_status(id, scope) == Some(EntityStatus::Blocked)
-    }
-}
-
-impl IsPostBlocked<PostId> for MockModeration {
-    fn is_blocked_post(post_id: PostId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Post(post_id), scope)
-    }
-
-    fn is_allowed_post(post_id: PostId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Post(post_id), scope)
-    }
-}
-
-impl IsAccountBlocked<AccountId> for MockModeration {
-    fn is_blocked_account(account: AccountId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Account(account), scope)
-    }
-
-    fn is_allowed_account(account: AccountId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Account(account), scope)
-    }
-}
-
-impl IsSpaceBlocked for MockModeration {
-    fn is_blocked_space(space_id: SpaceId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Space(space_id), scope)
-    }
-
-    fn is_allowed_space(space_id: SpaceId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Space(space_id), scope)
-    }
-}
-
-impl IsContentBlocked for MockModeration {
-    fn is_blocked_content(content: Content, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Content(content), scope)
-    }
-
-    fn is_allowed_content(content: Content, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Content(content), scope)
-    }
-}
 
 ///////////// Space Utils
 
@@ -297,30 +189,6 @@ pub(crate) fn _update_post(
     )
 }
 
-//// Space follows utils
-
-pub(crate) fn _default_follow_space() -> DispatchResult {
-    _follow_space(None, None)
-}
-
-pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::follow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
-pub(crate) fn _default_unfollow_space() -> DispatchResult {
-    _unfollow_space(None, None)
-}
-
-pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::unfollow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
 //////// Reaction utils
 
 pub(crate) fn reaction_upvote() -> ReactionKind {
@@ -335,10 +203,6 @@ pub(crate) fn _create_default_post_reaction() -> DispatchResult {
     _create_post_reaction(None, None, None)
 }
 
-pub(crate) fn _create_default_comment_reaction() -> DispatchResult {
-    _create_comment_reaction(None, None, None)
-}
-
 pub(crate) fn _create_post_reaction(
     origin: Option<Origin>,
     post_id: Option<PostId>,
@@ -349,14 +213,6 @@ pub(crate) fn _create_post_reaction(
         post_id.unwrap_or(POST1),
         kind.unwrap_or_else(reaction_upvote),
     )
-}
-
-pub(crate) fn _create_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    _create_post_reaction(origin, Some(post_id.unwrap_or(2)), kind)
 }
 
 pub(crate) fn _update_post_reaction(
@@ -373,15 +229,6 @@ pub(crate) fn _update_post_reaction(
     )
 }
 
-pub(crate) fn _update_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    _update_post_reaction(origin, Some(post_id.unwrap_or(2)), reaction_id, kind)
-}
-
 pub(crate) fn _delete_post_reaction(
     origin: Option<Origin>,
     post_id: Option<PostId>,
@@ -392,12 +239,4 @@ pub(crate) fn _delete_post_reaction(
         post_id.unwrap_or(POST1),
         reaction_id,
     )
-}
-
-pub(crate) fn _delete_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-) -> DispatchResult {
-    _delete_post_reaction(origin, Some(post_id.unwrap_or(2)), reaction_id)
 }
