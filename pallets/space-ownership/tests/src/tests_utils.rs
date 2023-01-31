@@ -1,19 +1,10 @@
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    hash::{Hash, Hasher},
-};
-
 use frame_support::{assert_ok, pallet_prelude::*};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
 
 use pallet_permissions::SpacePermissions;
 use pallet_spaces::*;
-use subsocial_support::{
-    traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked},
-    Content, PostId, SpaceId,
-};
+use subsocial_support::{Content, SpaceId};
 
 use crate::mock::*;
 
@@ -76,105 +67,6 @@ pub(crate) const ACCOUNT3: AccountId = 3;
 
 pub(crate) const SPACE1: SpaceId = 1001;
 
-////// Moderation Utils
-
-// Moderation pallet mocks
-
-/* ------------------------------------------------------------------------------------------------ */
-// Moderation tests
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
-pub enum EntityId {
-    Content(Content),
-    Account(AccountId),
-    Space(SpaceId),
-    Post(PostId),
-}
-
-impl Hash for EntityId {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            EntityId::Content(content) => match content {
-                Content::None => 0.hash(state),
-                Content::Other(content) => content.hash(state),
-                Content::IPFS(content) => content.hash(state),
-            },
-            EntityId::Account(account) => account.hash(state),
-            EntityId::Space(space) => space.hash(state),
-            EntityId::Post(post) => post.hash(state),
-        }
-    }
-}
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, Hash)]
-pub enum EntityStatus {
-    Allowed,
-    Blocked,
-}
-
-thread_local! {
-    pub static MOCK_MODERATION_STATE: RefCell<HashMap<(EntityId, SpaceId), EntityStatus>> = RefCell::new(Default::default());
-}
-pub struct MockModeration;
-
-impl MockModeration {
-    fn get_entity_status(id: EntityId, scope: SpaceId) -> Option<EntityStatus> {
-        MOCK_MODERATION_STATE.with(|mock_moderation_state| {
-            let mock_moderation_state = mock_moderation_state.borrow();
-            let status = mock_moderation_state.get(&(id, scope)).cloned();
-            status
-        })
-    }
-
-    fn is_allowed_entity(id: EntityId, scope: SpaceId) -> bool {
-        Self::get_entity_status(id, scope).unwrap_or(EntityStatus::Allowed) == EntityStatus::Allowed
-    }
-
-    fn is_blocked_entity(id: EntityId, scope: SpaceId) -> bool {
-        Self::get_entity_status(id, scope) == Some(EntityStatus::Blocked)
-    }
-}
-
-impl IsPostBlocked<PostId> for MockModeration {
-    fn is_blocked_post(post_id: PostId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Post(post_id), scope)
-    }
-
-    fn is_allowed_post(post_id: PostId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Post(post_id), scope)
-    }
-}
-
-impl IsAccountBlocked<AccountId> for MockModeration {
-    fn is_blocked_account(account: AccountId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Account(account), scope)
-    }
-
-    fn is_allowed_account(account: AccountId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Account(account), scope)
-    }
-}
-
-impl IsSpaceBlocked for MockModeration {
-    fn is_blocked_space(space_id: SpaceId, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Space(space_id), scope)
-    }
-
-    fn is_allowed_space(space_id: SpaceId, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Space(space_id), scope)
-    }
-}
-
-impl IsContentBlocked for MockModeration {
-    fn is_blocked_content(content: Content, scope: SpaceId) -> bool {
-        Self::is_blocked_entity(EntityId::Content(content), scope)
-    }
-
-    fn is_allowed_content(content: Content, scope: SpaceId) -> bool {
-        Self::is_allowed_entity(EntityId::Content(content), scope)
-    }
-}
-
 ///////////// Space Utils
 
 pub(crate) fn space_content_ipfs() -> Content {
@@ -186,14 +78,6 @@ pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, content, permissions)
-}
-
-pub(crate) fn _create_subspace(
     origin: Option<Origin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
@@ -213,29 +97,7 @@ pub(crate) fn _create_space_with_parent_id(
     )
 }
 
-//// Space follows utils
 
-pub(crate) fn _default_follow_space() -> DispatchResult {
-    _follow_space(None, None)
-}
-
-pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::follow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
-pub(crate) fn _default_unfollow_space() -> DispatchResult {
-    _unfollow_space(None, None)
-}
-
-pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::unfollow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
 
 //////// Space ownership utils
 
