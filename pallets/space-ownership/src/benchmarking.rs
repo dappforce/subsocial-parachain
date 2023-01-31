@@ -3,11 +3,10 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame_benchmarking::{account, benchmarks, whitelist, whitelisted_caller};
-use frame_support::{dispatch::DispatchError, ensure, traits::Currency};
+use frame_benchmarking::{account, benchmarks};
+use frame_support::{dispatch::DispatchError, ensure};
 use frame_system::RawOrigin;
 use pallet_spaces::types::Space;
-use sp_std::vec;
 use subsocial_support::Content;
 
 fn create_dummy_space<T: Config>(

@@ -5,12 +5,12 @@
 // FIXME: refactor once SpacesInterface is added.
 
 use super::*;
-use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::{dispatch::DispatchError, traits::Currency};
+use frame_benchmarking::{account, benchmarks};
+use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
-use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
+use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::types::Space;
-use sp_std::{collections::btree_set::BTreeSet, prelude::Vec, vec};
+use sp_std::{prelude::Vec, vec};
 use subsocial_support::{Content, User};
 use subsocial_support::mock_functions::{valid_content_ipfs, another_valid_content_ipfs};
 

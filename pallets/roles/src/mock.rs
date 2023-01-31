@@ -133,6 +133,7 @@ impl pallet_spaces::Config for Test {
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
     type MaxSpacesPerAccount = ConstU32<100>;
+    type WeightInfo = ();
 }
 
 impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpacePermissions>>
