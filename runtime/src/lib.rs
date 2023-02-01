@@ -545,11 +545,12 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Reactions(..)
 					| Call::AccountFollows(..)
 					| Call::SpaceFollows(..)
+					| Call::Spaces(..)
+					| Call::Profiles(..)
 			),
 			ProxyType::Management => matches!(
 				c,
-				Call::Spaces(..)
-					| Call::SpaceOwnership(..)
+				Call::SpaceOwnership(..)
 					| Call::Roles(..)
 					| Call::Profiles(..)
 					| Call::Domains(..)
