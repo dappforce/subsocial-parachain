@@ -6008,7 +6008,6 @@ version = "0.1.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "pallet-balances",
  "pallet-permissions",
  "pallet-posts",
