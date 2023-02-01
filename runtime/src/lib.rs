@@ -518,6 +518,7 @@ pub enum ProxyType {
 	DomainRegistrar,
 	SocialActions,
 	Management,
+	OffChainProxy,
 }
 
 impl Default for ProxyType {
@@ -555,6 +556,15 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Profiles(..)
 					| Call::Domains(..)
 			),
+			ProxyType::OffChainProxy => {
+				if let Call::Proxy(pallet_proxy::Call::proxy { call, .. }) = c {
+					return matches!(
+						&**call,
+						Call::Proxy(pallet_proxy::Call::proxy { .. }),
+					);
+				}
+				false
+			},
 		}
 	}
 
