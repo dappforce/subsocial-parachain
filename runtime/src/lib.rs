@@ -549,6 +549,7 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Spaces(..)
 					| Call::Profiles(..)
 			),
+			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it. 
 			ProxyType::Management => matches!(
 				c,
 				Call::SpaceOwnership(..)
