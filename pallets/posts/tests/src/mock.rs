@@ -25,7 +25,6 @@ frame_support::construct_runtime!(
         Profiles: pallet_profiles,
         SpaceFollows: pallet_space_follows,
         Posts: pallet_posts,
-        Reactions: pallet_reactions,
         Spaces: pallet_spaces,
         SpaceOwnership: pallet_space_ownership,
     }
@@ -142,8 +141,4 @@ impl pallet_space_follows::Config for Test {
 impl pallet_space_ownership::Config for Test {
     type Event = Event;
     type ProfileManager = Profiles;
-}
-
-impl pallet_reactions::Config for Test {
-    type Event = Event;
 }

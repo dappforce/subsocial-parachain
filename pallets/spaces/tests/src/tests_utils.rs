@@ -59,22 +59,10 @@ impl ExtBuilder {
         assert_ok!(_create_space(None, None, Some(Some(permissions))));
     }
 
-    fn add_post() {
-        Self::add_default_space();
-        assert_ok!(_create_default_post());
-    }
-
     /// Custom ext configuration with SpaceId 1 and BlockNumber 1
     pub fn build_with_space() -> TestExternalities {
         let mut ext = Self::build();
         ext.execute_with(Self::add_default_space);
-        ext
-    }
-
-    /// Custom ext configuration with SpaceId 1, PostId 1 and BlockNumber 1
-    pub fn build_with_post() -> TestExternalities {
-        let mut ext = Self::build();
-        ext.execute_with(Self::add_post);
         ext
     }
 
@@ -84,8 +72,7 @@ impl ExtBuilder {
 
         ext.execute_with(|| {
             let user = User::Account(ACCOUNT2);
-            assert_ok!(_create_role(None, None, None, None, Some(perms)));
-            // RoleId 1
+            assert_ok!(_create_default_role_with_permissions(perms)); // RoleId 1
             assert_ok!(_create_default_role()); // RoleId 2
 
             assert_ok!(_grant_role(None, Some(ROLE1), Some(vec![user.clone()])));
@@ -264,27 +251,15 @@ pub(crate) fn _create_space(
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, content, permissions)
-}
-
-pub(crate) fn _create_subspace(
-    origin: Option<Origin>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, content, permissions)
-}
-
-pub(crate) fn _create_space_with_parent_id(
-    origin: Option<Origin>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
+}
+
+pub(crate) fn _create_space_with_content(content: Content) -> DispatchResultWithPostInfo {
+    _create_space(None, Some(content), None)
 }
 
 pub(crate) fn _update_space(
@@ -340,28 +315,17 @@ pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -
     )
 }
 
-pub(crate) fn _default_unfollow_space() -> DispatchResult {
-    _unfollow_space(None, None)
-}
-
-pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::unfollow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
 /////// Roles utils
 
 pub(crate) fn default_role_content_ipfs() -> Content {
     Content::IPFS(b"QmRAQB6YaCyidP37UdDnjFY5vQuiBrcqdyoW1CuDgwxkD4".to_vec())
 }
 
-pub fn _create_default_role() -> DispatchResult {
+pub(crate) fn _create_default_role() -> DispatchResult {
     _create_role(None, None, None, None, None)
 }
 
-pub fn _create_role(
+pub(crate) fn _create_role(
     origin: Option<Origin>,
     space_id: Option<SpaceId>,
     time_to_live: Option<Option<BlockNumber>>,
@@ -378,11 +342,11 @@ pub fn _create_role(
     )
 }
 
-pub fn _grant_default_role() -> DispatchResult {
-    _grant_role(None, None, None)
+pub(crate) fn _create_default_role_with_permissions(permissions: Vec<SpacePermission>) -> DispatchResult {
+    _create_role(None, None, None, None, Some(permissions))
 }
 
-pub fn _grant_role(
+pub(crate) fn _grant_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
@@ -394,11 +358,11 @@ pub fn _grant_role(
     )
 }
 
-pub fn _delete_default_role() -> DispatchResult {
+pub(crate) fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
+pub(crate) fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
     Roles::delete_role(origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)), role_id.unwrap_or(ROLE1))
 }
 

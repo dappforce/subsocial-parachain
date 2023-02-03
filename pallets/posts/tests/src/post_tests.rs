@@ -217,12 +217,16 @@ fn check_if_post_moved_correctly(moved_post_id: PostId, expected_new_space_id: S
 
 #[test]
 fn move_post_should_work() {
-    ExtBuilder::build_with_reacted_post_and_two_spaces().execute_with(|| {
+    ExtBuilder::build_with_post_and_two_spaces().execute_with(|| {
         assert_ok!(_move_post_1_to_space_2());
 
         let moved_post_id = POST1;
+        let old_space_id = SPACE1;
         let expected_new_space_id = SPACE2;
         check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
+
+        // Check that there are no posts ids in the old space
+        assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
 
         // Check that there is the post id in the new space
         assert_eq!(Posts::post_ids_by_space_id(expected_new_space_id), vec![moved_post_id]);
@@ -231,14 +235,18 @@ fn move_post_should_work() {
 
 #[test]
 fn move_post_should_work_when_space_id_none() {
-    ExtBuilder::build_with_reacted_post_and_two_spaces().execute_with(|| {
+    ExtBuilder::build_with_post_and_two_spaces().execute_with(|| {
         let moved_post_id = POST1;
+        let old_space_id = SPACE1; // Where post were before moving to `SpaceId:None`
         let expected_new_space_id = SPACE2;
 
         assert_ok!(_move_post_to_nowhere(moved_post_id));
         assert_ok!(_move_post_1_to_space_2());
 
         check_if_post_moved_correctly(moved_post_id, expected_new_space_id);
+
+        // Check that there are no posts ids in the old space
+        assert!(Posts::post_ids_by_space_id(old_space_id).is_empty());
 
         // Check that there is the post id in the new space
         assert_eq!(Posts::post_ids_by_space_id(expected_new_space_id), vec![moved_post_id]);
@@ -247,7 +255,7 @@ fn move_post_should_work_when_space_id_none() {
 
 #[test]
 fn move_hidden_post_should_work() {
-    ExtBuilder::build_with_reacted_post_and_two_spaces().execute_with(|| {
+    ExtBuilder::build_with_post_and_two_spaces().execute_with(|| {
         let moved_post_id = POST1;
         let old_space_id = SPACE1;
         let expected_new_space_id = SPACE2;
@@ -291,7 +299,7 @@ fn move_hidden_post_should_fail_when_provided_space_not_found() {
 fn move_hidden_post_should_fail_origin_has_no_permission_to_create_posts() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Create a space #2 from account #2
-        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), Some(None), None, None));
+        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), None, None));
 
         // Should not be possible to move the post b/c it's owner is account #1
         // when the space #2 is owned by account #2
@@ -323,7 +331,7 @@ fn move_post_should_fail_when_space_none_and_account_is_not_post_owner() {
 #[test]
 fn should_fail_when_trying_to_move_comment() {
     ExtBuilder::build_with_comment().execute_with(|| {
-        assert_ok!(_create_space(None, Some(None), None, None));
+        assert_ok!(_create_space(None, None, None));
 
         // Comments cannot be moved, they stick to their parent post
         assert_noop!(
@@ -395,7 +403,7 @@ fn update_post_should_fail_when_no_updates_for_post_provided() {
 #[test]
 fn update_post_should_fail_when_post_not_found() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(None, None, None, None)); // SpaceId 2
+        assert_ok!(_create_space(None, None, None)); // SpaceId 2
 
         // Try to catch an error updating a post with wrong post ID
         assert_noop!(
@@ -417,7 +425,7 @@ fn update_post_should_fail_when_post_not_found() {
 #[test]
 fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(None, None, None, None)); // SpaceId 2
+        assert_ok!(_create_space(None, None, None)); // SpaceId 2
 
         // Try to catch an error updating a post with different account
         assert_noop!(

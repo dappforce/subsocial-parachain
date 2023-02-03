@@ -10,7 +10,6 @@ use sp_io::TestExternalities;
 
 use pallet_permissions::{SpacePermission as SP, SpacePermission, SpacePermissions};
 use pallet_posts::{Comment, PostExtension, PostUpdate};
-use pallet_reactions::{ReactionId, ReactionKind};
 use pallet_spaces::types::SpaceUpdate;
 use subsocial_support::{
     mock_functions::*,
@@ -27,7 +26,7 @@ pub struct ExtBuilder;
 impl ExtBuilder {
     fn configure_storages(storage: &mut Storage) {
         let mut accounts = Vec::new();
-        for account in ACCOUNT1..=ACCOUNT3 {
+        for account in ACCOUNT1..=ACCOUNT2 {
             accounts.push(account);
         }
 
@@ -53,8 +52,8 @@ impl ExtBuilder {
         assert_ok!(_create_default_space());
     }
 
-    fn add_space_with_no_handle() {
-        assert_ok!(_create_space(None, Some(None), None, None));
+    fn add_another_space() {
+        assert_ok!(_create_space_with_content(another_space_content_ipfs()));
     }
 
     fn add_post() {
@@ -91,17 +90,7 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1-2, PostId 1 where BlockNumber 1
     pub fn build_with_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post();
-        ext.execute_with(Self::add_space_with_no_handle);
-        ext
-    }
-
-    /// Custom ext configuration with SpaceId 1, PostId 1 and ReactionId 1 (on post) where
-    /// BlockNumber is 1
-    pub fn build_with_reacted_post_and_two_spaces() -> TestExternalities {
-        let mut ext = Self::build_with_post_and_two_spaces();
-        ext.execute_with(|| {
-            assert_ok!(_create_default_post_reaction());
-        });
+        ext.execute_with(Self::add_another_space);
         ext
     }
 
@@ -127,7 +116,6 @@ impl ExtBuilder {
 
 pub(crate) const ACCOUNT1: AccountId = 1;
 pub(crate) const ACCOUNT2: AccountId = 2;
-pub(crate) const ACCOUNT3: AccountId = 3;
 
 pub(crate) const SPACE1: SpaceId = 1001;
 pub(crate) const SPACE2: SpaceId = 1002;
@@ -265,46 +253,32 @@ pub(crate) fn space_content_ipfs() -> Content {
     Content::IPFS(b"bafyreib3mgbou4xln42qqcgj6qlt3cif35x4ribisxgq7unhpun525l54e".to_vec())
 }
 
+pub(crate) fn another_space_content_ipfs() -> Content {
+    Content::IPFS(b"bafyrelt3cif35x4ribisxgq7unhpun525l54eib3mgbou4xln42qqcgj6q".to_vec())
+}
+
 pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
     SpaceUpdate { content, hidden, permissions: None }
 }
 
 pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
-    _create_space(None, None, None, None)
+    _create_space(None, None, None)
 }
 
 pub(crate) fn _create_space(
     origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, handle, content, permissions)
-}
-
-pub(crate) fn _create_subspace(
-    origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, handle, content, permissions)
-}
-
-pub(crate) fn _create_space_with_parent_id(
-    origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    if matches!(handle, Some(Some(_))) {
-        panic!("HANDLES ARE DISABLED");
-    }
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
+}
+
+pub(crate) fn _create_space_with_content(content: Content) -> DispatchResultWithPostInfo {
+    _create_space(None, Some(content), None)
 }
 
 pub(crate) fn _update_space(
@@ -353,8 +327,8 @@ pub(crate) fn extension_comment(parent_id: Option<PostId>, root_post_id: PostId)
     PostExtension::Comment(Comment { parent_id, root_post_id })
 }
 
-pub(crate) fn extension_shared_post(post_id: PostId) -> PostExtension {
-    PostExtension::SharedPost(post_id)
+pub(crate) fn extension_shared_post(original_post_id: PostId) -> PostExtension {
+    PostExtension::SharedPost(original_post_id)
 }
 
 pub(crate) fn _create_default_post() -> DispatchResult {
@@ -438,30 +412,6 @@ pub(crate) fn _update_comment(
     )
 }
 
-//// Space follows utils
-
-pub(crate) fn _default_follow_space() -> DispatchResult {
-    _follow_space(None, None)
-}
-
-pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::follow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
-pub(crate) fn _default_unfollow_space() -> DispatchResult {
-    _unfollow_space(None, None)
-}
-
-pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
-    SpaceFollows::unfollow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
-        space_id.unwrap_or(SPACE1),
-    )
-}
-
 /////// Roles utils
 
 pub(crate) fn default_role_content_ipfs() -> Content {
@@ -489,10 +439,6 @@ pub fn _create_role(
     )
 }
 
-pub fn _grant_default_role() -> DispatchResult {
-    _grant_role(None, None, None)
-}
-
 pub fn _grant_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
@@ -518,83 +464,6 @@ pub fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> Dispatch
 /// Permissions Set that includes next permission: ManageRoles
 pub(crate) fn permission_set_default() -> Vec<SpacePermission> {
     vec![SP::ManageRoles]
-}
-
-//////// Reaction utils
-
-pub(crate) fn reaction_upvote() -> ReactionKind {
-    ReactionKind::Upvote
-}
-
-pub(crate) fn _create_default_post_reaction() -> DispatchResult {
-    _create_post_reaction(None, None, None)
-}
-
-pub(crate) fn _create_default_comment_reaction() -> DispatchResult {
-    _create_comment_reaction(None, None, None)
-}
-
-pub(crate) fn _create_post_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    Reactions::create_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        post_id.unwrap_or(POST1),
-        kind.unwrap_or_else(reaction_upvote),
-    )
-}
-
-pub(crate) fn _create_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    _create_post_reaction(origin, Some(post_id.unwrap_or(2)), kind)
-}
-
-pub(crate) fn _update_post_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    Reactions::update_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        post_id.unwrap_or(POST1),
-        reaction_id,
-        kind.unwrap_or_else(reaction_upvote),
-    )
-}
-
-pub(crate) fn _update_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-    kind: Option<ReactionKind>,
-) -> DispatchResult {
-    _update_post_reaction(origin, Some(post_id.unwrap_or(2)), reaction_id, kind)
-}
-
-pub(crate) fn _delete_post_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-) -> DispatchResult {
-    Reactions::delete_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        post_id.unwrap_or(POST1),
-        reaction_id,
-    )
-}
-
-pub(crate) fn _delete_comment_reaction(
-    origin: Option<Origin>,
-    post_id: Option<PostId>,
-    reaction_id: ReactionId,
-) -> DispatchResult {
-    _delete_post_reaction(origin, Some(post_id.unwrap_or(2)), reaction_id)
 }
 
 pub(crate) fn _transfer_default_space_ownership() -> DispatchResult {

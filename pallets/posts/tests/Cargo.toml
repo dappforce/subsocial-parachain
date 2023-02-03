@@ -14,10 +14,8 @@ categories = ['cryptography::cryptocurrencies']
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-impl-trait-for-tuples = '0.2'
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-#serde = { features = ['derive'], optional = true, version = '1.0.132' }
 
 # Local dependencies
 subsocial-support = { default-features = false, path = '../../support' }
@@ -39,13 +37,11 @@ pallet-space-follows = { default-features = false, path = '../../space-follows' 
 pallet-space-ownership = { default-features = false, path = '../../space-ownership' }
 pallet-profiles = { default-features = false, path = '../../profiles' }
 pallet-posts = { default-features = false, path = '..' }
-pallet-reactions = { default-features = false, path = '../../reactions' }
 pallet-spaces = { default-features = false, path = '../../spaces' }
 
 [features]
 default = ['std']
 std = [
-    #    'serde',
     'codec/std',
     'scale-info/std',
     'pallet-timestamp/std',
