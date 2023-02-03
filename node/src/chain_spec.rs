@@ -172,9 +172,13 @@ pub fn subsocial_config() -> Result<ChainSpec, String> {
 	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
 }
 
+pub fn soonsocial_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/soonsocial.json")[..])
+}
+
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"SubsocialX",
+		"SoonSocialX",
 		"subsocialx",
 		ChainType::Live,
 		move || {
@@ -183,21 +187,21 @@ pub fn staging_testnet_config() -> ChainSpec {
 			let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 				(
 					// Collator 1
-					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].into(),
-					hex!["467d5f51e8ba14e840009bcc00bafb5de1dff2d2e7263632e0a261217d51ba02"].unchecked_into()
+					hex!["bc516b7df60503914def0084f7d9c03d1f35905715b60eb1a121d81f4e45e772"].into(),
+					hex!["bc516b7df60503914def0084f7d9c03d1f35905715b60eb1a121d81f4e45e772"].unchecked_into()
 				),
 				(
 					// Collator 2
-					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].into(),
-					hex!["22f17e92302cd511dd9c0c6cd3ef2912d195a0db33d586eeb77713fa17535672"].unchecked_into()
+					hex!["6cc6068f771181a7ba4c7dd9eb78767c985135512cf1037337442ef197fcad55"].into(),
+					hex!["6cc6068f771181a7ba4c7dd9eb78767c985135512cf1037337442ef197fcad55"].unchecked_into()
 				)
 			];
 
 			let initial_allocation = vec![
-				(hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into(), 100_000_000)
+				(hex!["ce7035e9f36c57ac8c3cc016b150ee5d36da10c4417c45e30c62c2f627f19d36"].into(), 1_000_000_000)
 			];
 
-			let root_key: AccountId = hex!["24d6d7cd9a0500be768efc7b5508e7861cbde7cfc06819e4dfd9120b97d46d3e"].into();
+			let root_key: AccountId = hex!["ce7035e9f36c57ac8c3cc016b150ee5d36da10c4417c45e30c62c2f627f19d36"].into();
 
 			const EXISTENTIAL_DEPOSIT_VALUE: Balance = EXISTENTIAL_DEPOSIT / UNIT;
 			let unique_allocation_accounts = initial_allocation
@@ -220,8 +224,8 @@ pub fn staging_testnet_config() -> ChainSpec {
 
 			assert_eq!(
 				total_allocated,
-				100_000_000, // 100 million SUB
-				"total allocation must be equal to 100 million SUB"
+				1_000_000_000, // 1 billion SUB
+				"total allocation must be equal to 1 billion SUB"
 			);
 
 			parachain_genesis(
@@ -237,7 +241,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 		None,
 		Some(subsocial_properties()),
 		Extensions {
-			relay_chain: "kusama".into(),
+			relay_chain: "rococo-local".into(),
 			para_id: DEFAULT_PARA_ID,
 		},
 	)
