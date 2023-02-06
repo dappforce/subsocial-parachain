@@ -11,8 +11,8 @@ pub mod pallet {
 
     use pallet_permissions::SpacePermissions;
     use subsocial_support::{
-        traits::{ProfileManager, SpacePermissionsProvider},
-        SpaceId, SpacePermissionsInfo,
+        traits::{ProfileManager, SpacePermissionsProvider, SpacesInterface},
+        Content, SpaceId, SpacePermissionsInfo,
     };
 
     type SpacePermissionsInfoOf<T> =
@@ -27,6 +27,8 @@ pub mod pallet {
             Self::AccountId,
             SpacePermissionsInfoOf<Self>,
         >;
+
+        type SpaceInterface: SpacesInterface<Self::AccountId, SpaceId>;
     }
 
     #[pallet::pallet]
@@ -82,6 +84,22 @@ pub mod pallet {
             <ProfileSpaceIdByAccount<T>>::remove(&sender);
 
             Self::deposit_event(Event::ProfileUpdated { account: sender, space_id: None });
+            Ok(())
+        }
+
+        #[pallet::weight(10_250_000 + T::DbWeight::get().reads_writes(3, 4))]
+        pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+
+            let space_id = T::SpaceInterface::create_space(&sender, content)?;
+
+            Self::do_set_profile(&sender, space_id)?;
+
+            Self::deposit_event(Event::ProfileUpdated {
+                account: sender,
+                space_id: Some(space_id),
+            });
+
             Ok(())
         }
 

@@ -11,12 +11,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{self as system, ensure_signed};
+use frame_support::{dispatch::DispatchResult, ensure};
+use frame_system as system;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
+pub use pallet::*;
 use pallet_permissions::{
     Pallet as Permissions, PermissionChecker, SpacePermission, SpacePermissionSet,
 };
@@ -25,12 +26,11 @@ use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, ModerationError, SpaceId, User, WhoAndWhenOf,
 };
+pub use types::*;
 
-pub use pallet::*;
 pub mod functions;
 
 pub mod types;
-pub use types::*;
 // pub mod rpc;
 
 #[cfg(test)]
@@ -41,11 +41,13 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
     use pallet_permissions::SpacePermissionsInfoOf;
     use subsocial_support::{remove_from_vec, WhoAndWhen};
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
@@ -180,32 +182,10 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
+            let role_id =
+                Pallet::<T>::do_create_role(&who, space_id, time_to_live, content, permissions)?;
 
-            ensure_content_is_valid(content.clone())?;
-            ensure!(
-                T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
-                ModerationError::ContentIsBlocked,
-            );
-
-            Self::ensure_role_manager(who.clone(), space_id)?;
-
-            let permissions_set = permissions.into_iter().collect();
-            let new_role =
-                Role::<T>::new(who.clone(), space_id, time_to_live, content, permissions_set)?;
-
-            // TODO review strange code:
-            let next_role_id = new_role.id.checked_add(1).ok_or(Error::<T>::RoleIdOverflow)?;
-            NextRoleId::<T>::put(next_role_id);
-
-            RoleById::<T>::insert(new_role.id, new_role.clone());
-            RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
-
-            Self::deposit_event(Event::RoleCreated {
-                account: who,
-                space_id,
-                role_id: new_role.id,
-            });
+            Self::deposit_event(Event::RoleCreated { account: who, space_id, role_id });
             Ok(())
         }
 
@@ -313,31 +293,9 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             ensure!(!users.is_empty(), Error::<T>::NoUsersProvided);
-            let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
 
-            let role = Self::require_role(role_id)?;
+            Pallet::<T>::do_grant_role(Some(who), role_id, users)?;
 
-            Self::ensure_role_manager(who.clone(), role.space_id)?;
-
-            for user in users_set.iter() {
-                if !Self::users_by_role_id(role_id).contains(user) {
-                    <UsersByRoleId<T>>::mutate(role_id, |users| {
-                        users.push(user.clone());
-                    });
-                }
-                if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id)
-                {
-                    <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
-                        roles.push(role_id);
-                    })
-                }
-            }
-
-            Self::deposit_event(Event::RoleGranted {
-                account: who,
-                role_id,
-                users: users_set.iter().cloned().collect(),
-            });
             Ok(())
         }
 

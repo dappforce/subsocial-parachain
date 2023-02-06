@@ -1,7 +1,9 @@
-use super::*;
-
 use frame_support::dispatch::DispatchError;
+
 use pallet_permissions::SpacePermissionsContext;
+use subsocial_support::traits::RolesInterface;
+
+use super::*;
 
 impl<T: Config> Pallet<T> {
     /// Check that there is a `Role` with such `role_id` in the storage
@@ -109,6 +111,74 @@ impl<T: Config> Pallet<T> {
 
         Err(error)
     }
+
+    pub fn do_create_role(
+        space_owner: &T::AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<T::BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
+    ) -> Result<RoleId, DispatchError> {
+        ensure!(!permissions.is_empty(), Error::<T>::NoPermissionsProvided);
+
+        ensure_content_is_valid(content.clone())?;
+        ensure!(
+            T::IsContentBlocked::is_allowed_content(content.clone(), space_id),
+            ModerationError::ContentIsBlocked,
+        );
+
+        Self::ensure_role_manager(space_owner.clone(), space_id)?;
+
+        let permissions_set = permissions.into_iter().collect();
+        let new_role =
+            Role::<T>::new(space_owner.clone(), space_id, time_to_live, content, permissions_set)?;
+
+        // TODO review strange code:
+        let next_role_id = new_role.id.checked_add(1).ok_or(Error::<T>::RoleIdOverflow)?;
+        NextRoleId::<T>::put(next_role_id);
+
+        RoleById::<T>::insert(new_role.id, new_role.clone());
+        RoleIdsBySpaceId::<T>::mutate(space_id, |role_ids| role_ids.push(new_role.id));
+
+        Ok(new_role.id)
+    }
+
+    pub fn do_grant_role(
+        manager: Option<T::AccountId>,
+        role_id: RoleId,
+        users: Vec<User<T::AccountId>>,
+    ) -> DispatchResult {
+        let users_set: BTreeSet<User<T::AccountId>> = convert_users_vec_to_btree_set(users)?;
+
+        let role = Self::require_role(role_id)?;
+
+        if let Some(who) = manager.clone() {
+            Self::ensure_role_manager(who, role.space_id)?;
+        }
+
+        for user in users_set.iter() {
+            if !Self::users_by_role_id(role_id).contains(user) {
+                <UsersByRoleId<T>>::mutate(role_id, |users| {
+                    users.push(user.clone());
+                });
+            }
+            if !Self::role_ids_by_user_in_space(user.clone(), role.space_id).contains(&role_id) {
+                <RoleIdsByUserInSpace<T>>::mutate(user.clone(), role.space_id, |roles| {
+                    roles.push(role_id);
+                })
+            }
+        }
+
+        Self::deposit_event(Event::RoleGranted {
+            account: manager.unwrap_or_else(|| {
+                T::AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap()
+            }),
+            role_id,
+            users: users_set.iter().cloned().collect(),
+        });
+
+        Ok(())
+    }
 }
 
 impl<T: Config> Role<T> {
@@ -183,5 +253,28 @@ impl<T: Config> PermissionChecker for Pallet<T> {
         error: DispatchError,
     ) -> DispatchResult {
         Self::ensure_user_has_space_permission(user, ctx, permission, error)
+    }
+}
+
+impl<T: Config> RolesInterface<RoleId, SpaceId, T::AccountId, SpacePermission, T::BlockNumber>
+    for Pallet<T>
+{
+    fn get_role_space(role_id: RoleId) -> Result<SpaceId, DispatchError> {
+        let role = Pallet::<T>::require_role(role_id)?;
+        Ok(role.space_id)
+    }
+
+    fn grant_role(account_id: T::AccountId, role_id: RoleId) -> DispatchResult {
+        Pallet::<T>::do_grant_role(None, role_id, vec![User::Account(account_id)])
+    }
+
+    fn create_role(
+        space_owner: &T::AccountId,
+        space_id: SpaceId,
+        time_to_live: Option<T::BlockNumber>,
+        content: Content,
+        permissions: Vec<SpacePermission>,
+    ) -> Result<RoleId, DispatchError> {
+        Pallet::<T>::do_create_role(space_owner, space_id, time_to_live, content, permissions)
     }
 }

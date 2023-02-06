@@ -21,22 +21,17 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// pub mod rpc;
-pub mod types;
-
 pub use pallet::*;
-
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
+// pub mod rpc;
+pub mod types;
+
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use types::*;
-
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-
     use sp_std::vec::Vec;
 
     use pallet_permissions::{
@@ -44,9 +39,12 @@ pub mod pallet {
     };
     use subsocial_support::{
         ensure_content_is_valid, remove_from_bounded_vec,
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
+    use types::*;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
@@ -146,26 +144,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             content: Content,
             permissions_opt: Option<SpacePermissions>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
 
-            ensure_content_is_valid(content.clone())?;
-            Self::ensure_space_limit_not_reached(&owner)?;
-
-            let permissions =
-                permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
-
-            let space_id = Self::next_space_id();
-            let new_space = &mut Space::new(space_id, owner.clone(), content, permissions);
-
-            SpaceById::<T>::insert(space_id, new_space);
-            SpaceIdsByOwner::<T>::mutate(&owner, |ids| {
-                ids.try_push(space_id).expect("qed; too many spaces per account")
-            });
-            NextSpaceId::<T>::mutate(|n| *n += 1);
-
-            Self::deposit_event(Event::SpaceCreated { account: owner, space_id });
-            Ok(().into())
+            Self::do_create_space(&owner, content, permissions_opt)?;
+            Ok(())
         }
 
         #[pallet::weight(62_000_000 + T::DbWeight::get().reads_writes(5, 1))]
@@ -331,6 +314,30 @@ pub mod pallet {
             }
         }
 
+        fn do_create_space(
+            owner: &T::AccountId,
+            content: Content,
+            permissions_opt: Option<SpacePermissions>,
+        ) -> Result<SpaceId, DispatchError> {
+            ensure_content_is_valid(content.clone())?;
+            Self::ensure_space_limit_not_reached(owner)?;
+
+            let permissions =
+                permissions_opt.map(|perms| Permissions::<T>::override_permissions(perms));
+
+            let space_id = Self::next_space_id();
+            let new_space = &mut Space::new(space_id, owner.clone(), content, permissions);
+
+            SpaceById::<T>::insert(space_id, new_space);
+            SpaceIdsByOwner::<T>::mutate(owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
+            NextSpaceId::<T>::mutate(|n| *n += 1);
+
+            Self::deposit_event(Event::SpaceCreated { account: owner.clone(), space_id });
+            Ok(space_id)
+        }
+
         /// Check that there is a `Space` with such `space_id` in the storage
         /// or return`SpaceNotFound` error.
         pub fn ensure_space_exists(space_id: SpaceId) -> DispatchResult {
@@ -371,7 +378,7 @@ pub mod pallet {
                     f(space);
                     *space_opt = Some(space.clone());
 
-                    return Ok(space.clone())
+                    return Ok(space.clone());
                 }
 
                 Err(Error::<T>::SpaceNotFound.into())
@@ -398,6 +405,17 @@ pub mod pallet {
             let space = Pallet::<T>::require_space(id)?;
             ensure!(space.is_owner(account), Error::<T>::NotASpaceOwner);
             Ok(())
+        }
+    }
+
+    impl<T: Config> SpacesInterface<T::AccountId, SpaceId> for Pallet<T> {
+        fn get_space_owner(space_id: SpaceId) -> Result<T::AccountId, DispatchError> {
+            let space = Pallet::<T>::require_space(space_id)?;
+            Ok(space.owner)
+        }
+
+        fn create_space(owner: &T::AccountId, content: Content) -> Result<SpaceId, DispatchError> {
+            Self::do_create_space(owner, content, None)
         }
     }
 }
