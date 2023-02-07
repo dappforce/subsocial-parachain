@@ -363,7 +363,12 @@ pub(crate) fn _delete_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
-    Roles::delete_role(origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)), role_id.unwrap_or(ROLE1))
+    let users_count = Roles::users_by_role_id(role_id.unwrap_or(ROLE1)).len();
+    Roles::delete_role(
+        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        role_id.unwrap_or(ROLE1),
+        users_count as u32,
+    )
 }
 
 /////// Permissions utils

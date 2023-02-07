@@ -105,6 +105,7 @@ impl pallet_roles::Config for Test {
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
+    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for Test {
@@ -119,13 +120,16 @@ impl pallet_spaces::Config for Test {
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
     type MaxSpacesPerAccount = ConstU32<100>;
+    type WeightInfo = ();
 }
 
 impl pallet_space_follows::Config for Test {
     type Event = Event;
+    type WeightInfo = ();
 }
 
 impl pallet_space_ownership::Config for Test {
     type Event = Event;
     type ProfileManager = Profiles;
+    type WeightInfo = ();
 }
