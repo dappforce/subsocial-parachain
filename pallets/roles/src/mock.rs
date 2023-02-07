@@ -1,24 +1,25 @@
 use super::*;
 
 use sp_core::H256;
-use sp_io::TestExternalities;
-use sp_std::{collections::btree_set::BTreeSet, prelude::Vec};
-
-use frame_support::{
-    assert_ok,
-    dispatch::{DispatchError, DispatchResult},
-    parameter_types,
-    traits::{ConstU32, Everything},
+use sp_std::{
+    collections::btree_set::BTreeSet,
+    prelude::Vec,
 };
+use sp_io::TestExternalities;
+
 use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup}, testing::Header,
+};
+use frame_support::{
+    parameter_types, assert_ok,
+    dispatch::{DispatchResult, DispatchError},
+    traits::Everything,
 };
 
 use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
 use subsocial_support::{
     traits::{SpaceFollowsProvider, SpacePermissionsProvider as SpacePermissionsProviderT},
-    Content, SpaceId, SpacePermissionsInfo, User,
+    SpacePermissionsInfo, SpaceId, User, Content,
 };
 
 use crate as roles;
@@ -36,7 +37,6 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Roles: roles::{Pallet, Call, Storage, Event<T>},
-        Spaces: pallet_spaces::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -45,8 +45,8 @@ pub(super) type Balance = u64;
 type BlockNumber = u64;
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const SS58Prefix: u8 = 42;
+	pub const BlockHashCount: u64 = 250;
+	pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Test {
@@ -88,7 +88,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
+	pub const ExistentialDeposit: u64 = 1;
 }
 
 impl pallet_balances::Config for Test {
@@ -116,29 +116,13 @@ parameter_types! {
 impl Config for Test {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    #[cfg(feature = "runtime-benchmarks")]
-    type SpacePermissionsProvider = Spaces;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();
     type IsContentBlocked = ();
-    type WeightInfo = ();
 }
 
-impl pallet_spaces::Config for Test {
-    type Event = Event;
-    type Roles = Roles;
-    type SpaceFollows = Roles;
-    type IsAccountBlocked = ();
-    type IsContentBlocked = ();
-    type MaxSpacesPerAccount = ConstU32<100>;
-    type WeightInfo = ();
-}
-
-impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpacePermissions>>
-    for Test
-{
+impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpacePermissions>> for Test {
     // This function should return an error every time Space doesn't exist by SpaceId
     // Currently, we have a list of valid space id's to check
     fn space_permissions_info(
@@ -148,17 +132,15 @@ impl SpacePermissionsProviderT<AccountId, SpacePermissionsInfo<AccountId, SpaceP
             return Ok(SpacePermissionsInfo { owner: ACCOUNT1, permissions: None })
         }
 
-        Err("mock:SpaceNotFound".into())
+        Err("SpaceNotFound".into())
     }
 
     fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult {
-        if valid_space_ids().contains(&id) {
-            if *account == ACCOUNT1 {
-                return Ok(())
-            }
+        if valid_space_ids().contains(&id) && *account == ACCOUNT1 {
+            return Ok(())
         }
 
-        Err("mock:NotSpaceOwner".into())
+        Err("NotSpaceOwner".into())
     }
 }
 
@@ -170,11 +152,14 @@ impl<T: Config> SpaceFollowsProvider for Pallet<T> {
     }
 }
 
+
 pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub fn build() -> TestExternalities {
-        let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let storage = system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));
@@ -183,14 +168,24 @@ impl ExtBuilder {
     }
 
     pub fn build_with_a_few_roles_granted_to_account2() -> TestExternalities {
-        let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let storage = system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
             System::set_block_number(1);
             let user = User::Account(ACCOUNT2);
 
-            assert_ok!(_create_role(None, None, None, None, Some(self::permission_set_random()))); // RoleId 1
+            assert_ok!(
+            _create_role(
+                None,
+                None,
+                None,
+                None,
+                Some(self::permission_set_random())
+            )
+        ); // RoleId 1
             assert_ok!(_create_default_role()); // RoleId 2
 
             assert_ok!(_grant_role(None, Some(ROLE1), Some(vec![user.clone()])));
@@ -200,6 +195,7 @@ impl ExtBuilder {
         ext
     }
 }
+
 
 pub(crate) const ACCOUNT1: AccountId = 1;
 pub(crate) const ACCOUNT2: AccountId = 2;
@@ -249,13 +245,14 @@ pub(crate) fn permission_set_empty() -> Vec<SpacePermission> {
     vec![]
 }
 
-pub(crate) fn role_update(
-    disabled: Option<bool>,
-    content: Option<Content>,
-    permissions: Option<BTreeSet<SpacePermission>>,
-) -> RoleUpdate {
-    RoleUpdate { disabled, content, permissions }
+pub(crate) fn role_update(disabled: Option<bool>, content: Option<Content>, permissions: Option<BTreeSet<SpacePermission>>) -> RoleUpdate {
+    RoleUpdate {
+        disabled,
+        content,
+        permissions,
+    }
 }
+
 
 pub(crate) fn _create_default_role() -> DispatchResult {
     _create_role(None, None, None, None, None)
@@ -284,18 +281,16 @@ pub(crate) fn _update_default_role() -> DispatchResult {
 pub(crate) fn _update_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
-    update: Option<RoleUpdate>,
+    update: Option<RoleUpdate>
 ) -> DispatchResult {
     Roles::update_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
-        update.unwrap_or_else(|| {
-            self::role_update(
-                Some(true),
-                Some(self::updated_role_content_ipfs()),
-                Some(self::permission_set_updated().into_iter().collect()),
-            )
-        }),
+        update.unwrap_or_else(|| self::role_update(
+            Some(true),
+            Some(self::updated_role_content_ipfs()),
+            Some(self::permission_set_updated().into_iter().collect())
+        )),
     )
 }
 
@@ -306,12 +301,12 @@ pub(crate) fn _grant_default_role() -> DispatchResult {
 pub(crate) fn _grant_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
-    users: Option<Vec<User<AccountId>>>,
+    users: Option<Vec<User<AccountId>>>
 ) -> DispatchResult {
     Roles::grant_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
-        users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
+        users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)])
     )
 }
 
@@ -322,12 +317,12 @@ pub(crate) fn _revoke_default_role() -> DispatchResult {
 pub(crate) fn _revoke_role(
     origin: Option<Origin>,
     role_id: Option<RoleId>,
-    users: Option<Vec<User<AccountId>>>,
+    users: Option<Vec<User<AccountId>>>
 ) -> DispatchResult {
     Roles::revoke_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
-        users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
+        users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)])
     )
 }
 
@@ -335,11 +330,12 @@ pub(crate) fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub(crate) fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
-    let role_id = role_id.unwrap_or(ROLE1);
+pub(crate) fn _delete_role(
+    origin: Option<Origin>,
+    role_id: Option<RoleId>
+) -> DispatchResult {
     Roles::delete_role(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
-        role_id,
-        UsersByRoleId::<Test>::get(role_id).len() as u32,
+        role_id.unwrap_or(ROLE1)
     )
 }

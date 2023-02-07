@@ -25,10 +25,6 @@ pub use pallet::*;
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-pub mod weights;
-
 // pub mod rpc;
 pub mod types;
 
@@ -47,8 +43,6 @@ pub mod pallet {
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
     use types::*;
-
-    pub use crate::weights::WeightInfo;
 
     use super::*;
 
@@ -69,18 +63,15 @@ pub mod pallet {
 
         #[pallet::constant]
         type MaxSpacesPerAccount: Get<u32>;
-
-        /// Weight information for extrinsics in this pallet.
-        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
-    #[pallet::generate_deposit(pub (super) fn deposit_event)]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         SpaceCreated { account: T::AccountId, space_id: SpaceId },
         SpaceUpdated { account: T::AccountId, space_id: SpaceId },
@@ -148,7 +139,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(< T as Config >::WeightInfo::create_space())]
+        #[pallet::weight(85_000_000 + T::DbWeight::get().reads_writes(8, 7))]
         pub fn create_space(
             origin: OriginFor<T>,
             content: Content,
@@ -160,7 +151,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(< T as Config >::WeightInfo::update_space())]
+        #[pallet::weight(62_000_000 + T::DbWeight::get().reads_writes(5, 1))]
         pub fn update_space(
             origin: OriginFor<T>,
             space_id: SpaceId,
