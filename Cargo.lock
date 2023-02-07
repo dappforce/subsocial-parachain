@@ -5689,30 +5689,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-posts-tests"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-permissions",
- "pallet-posts",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-space-ownership",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -5785,30 +5761,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-reactions-tests"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-permissions",
- "pallet-posts",
- "pallet-reactions",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
  "subsocial-support",
@@ -5932,29 +5884,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-space-follows-tests"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-permissions",
- "pallet-posts",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
 name = "pallet-space-ownership"
 version = "0.1.7"
 dependencies = [
@@ -5964,30 +5893,6 @@ dependencies = [
  "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership-tests"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-permissions",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-space-ownership",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
  "sp-std",
  "subsocial-support",
 ]
@@ -6004,29 +5909,6 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-spaces-tests"
-version = "0.1.7"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-permissions",
- "pallet-posts",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
  "subsocial-support",
