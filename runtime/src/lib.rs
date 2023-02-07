@@ -559,13 +559,7 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Domains(..)
 			),
 			ProxyType::OffChainProxy => {
-				if let Call::Proxy(pallet_proxy::Call::proxy { call, .. }) = c {
-					return matches!(
-						&**call,
-						Call::Proxy(pallet_proxy::Call::proxy { .. }),
-					);
-				}
-				false
+				matches!(c, RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. }))
 			},
 		}
 	}
