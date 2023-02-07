@@ -7,4 +7,5 @@ members = [
     "node",
     "runtime",
     "pallets/*",
+    "pallets/*/tests",
 ]
