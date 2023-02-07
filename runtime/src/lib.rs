@@ -48,6 +48,7 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 // XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
+use pallet_domains::SpaceId;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -633,6 +634,7 @@ impl pallet_domains::Config for Runtime {
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
+use pallet_roles::RoleId;
 
 impl pallet_permissions::Config for Runtime {
 	type DefaultSpacePermissions = DefaultSpacePermissions;
@@ -720,6 +722,16 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_subscriptions::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type SpaceId = SpaceId;
+	type SpacesInterface = Spaces;
+	type RoleId = RoleId;
+	type RolesInterface = Roles;
+	type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -770,6 +782,7 @@ construct_runtime!(
 		Spaces: pallet_spaces = 76,
 		Posts: pallet_posts = 77,
 		Reactions: pallet_reactions = 78,
+		Subscriptions: pallet_subscriptions = 79,
 
 		// Temporary
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
@@ -794,6 +807,7 @@ mod benches {
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[pallet_profiles, Profiles]
+		[pallet_subscriptions, Subscriptions]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
