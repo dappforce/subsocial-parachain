@@ -36,12 +36,16 @@ pub use types::*;
 #[cfg(test)]
 mod mock;
 
-#[cfg(test)]
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+#[cfg(all(test, not(feature = "runtime-benchmarks")))]
 mod tests;
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use pallet_permissions::SpacePermissionsInfoOf;
@@ -70,6 +74,9 @@ pub mod pallet {
         type IsAccountBlocked: IsAccountBlocked<Self::AccountId>;
 
         type IsContentBlocked: IsContentBlocked;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -112,6 +119,9 @@ pub mod pallet {
         /// Canot remove a role from this many users in a single transaction.
         /// See `MaxUsersToProcessPerDeleteRole` parameter of this trait.
         TooManyUsersToDeleteRole,
+
+        /// The user count sent doesn't match the real user count.
+        IncorrectUserCount,
 
         /// Cannot disable a role that is already disabled.
         RoleAlreadyDisabled,
@@ -170,7 +180,7 @@ pub mod pallet {
         /// such as a name, description, and image for a role. This may be useful for end users.
         ///
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(23_000_000 + T::DbWeight::get().reads_writes(4, 3))]
+        #[pallet::weight(<T as Config>::WeightInfo::create_role())]
         pub fn create_role(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -211,7 +221,7 @@ pub mod pallet {
 
         /// Update an existing role by a given id.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(21_000_000 + T::DbWeight::get().reads_writes(3, 1))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_role())]
         pub fn update_role(
             origin: OriginFor<T>,
             role_id: RoleId,
@@ -272,8 +282,12 @@ pub mod pallet {
 
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(1_030_869_000 + T::DbWeight::get().reads_writes(5, 4))]
-        pub fn delete_role(origin: OriginFor<T>, role_id: RoleId) -> DispatchResult {
+        #[pallet::weight(<T as Config>::WeightInfo::delete_role(*user_count))]
+        pub fn delete_role(
+            origin: OriginFor<T>,
+            role_id: RoleId,
+            user_count: u32,
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             let role = Self::require_role(role_id)?;
@@ -281,6 +295,7 @@ pub mod pallet {
             Self::ensure_role_manager(who.clone(), role.space_id)?;
 
             let users = Self::users_by_role_id(role_id);
+            ensure!(users.len() as u32 == user_count, Error::<T>::IncorrectUserCount);
             ensure!(
                 users.len() <= T::MaxUsersToProcessPerDeleteRole::get() as usize,
                 Error::<T>::TooManyUsersToDeleteRole
@@ -304,7 +319,7 @@ pub mod pallet {
 
         /// Grant a given role to a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(116_873_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::weight(<T as Config>::WeightInfo::grant_role(users.len() as u32))]
         pub fn grant_role(
             origin: OriginFor<T>,
             role_id: RoleId,
@@ -343,7 +358,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::weight(160_533_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::weight(<T as Config>::WeightInfo::revoke_role(users.len() as u32))]
         pub fn revoke_role(
             origin: OriginFor<T>,
             role_id: RoleId,

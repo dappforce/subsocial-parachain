@@ -25,6 +25,7 @@ pallet-permissions = { default-features = false, path = '../permissions' }
 
 # Substrate dependencies
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
@@ -32,11 +33,13 @@ sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v
 
 [features]
 default = ['std']
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
 #    'serde',
     'codec/std',
     'scale-info/std',
     'pallet-timestamp/std',
+    'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
     'sp-runtime/std',
@@ -44,4 +47,4 @@ std = [
     'subsocial-support/std',
     'pallet-permissions/std'
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = ['frame-support/try-runtime']
