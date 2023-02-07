@@ -559,7 +559,11 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Domains(..)
 			),
 			ProxyType::OffChainProxy => {
-				matches!(c, RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. }))
+				matches!(
+					c,
+					Call::Proxy(pallet_proxy::Call::proxy { call, .. })
+					if ProxyType::SocialActions.filter(call),
+				)
 			},
 		}
 	}
