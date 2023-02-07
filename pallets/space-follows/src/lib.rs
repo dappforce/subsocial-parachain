@@ -6,17 +6,12 @@ use frame_support::dispatch::DispatchResult;
 
 use pallet_spaces::Pallet as Spaces;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-pub mod weights;
-
 // pub mod rpc;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
 
-    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
@@ -30,8 +25,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_spaces::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
-        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -73,7 +66,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(<T as Config>::WeightInfo::follow_space())]
+        #[pallet::weight(101_000_000 + T::DbWeight::get().reads_writes(5, 5))]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -95,7 +88,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::unfollow_space())]
+        #[pallet::weight(67_000_000 + T::DbWeight::get().reads_writes(5, 5))]
         pub fn unfollow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 

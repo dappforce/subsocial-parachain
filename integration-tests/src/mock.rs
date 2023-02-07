@@ -120,7 +120,6 @@ impl pallet_posts::Config for TestRuntime {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
-    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for TestRuntime {
@@ -132,7 +131,6 @@ impl pallet_profiles::Config for TestRuntime {
 
 impl pallet_reactions::Config for TestRuntime {
     type Event = Event;
-    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -146,18 +144,15 @@ impl pallet_roles::Config for TestRuntime {
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
-    type WeightInfo = ();
 }
 
 impl pallet_space_follows::Config for TestRuntime {
     type Event = Event;
-    type WeightInfo = pallet_space_follows::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl pallet_space_ownership::Config for TestRuntime {
     type Event = Event;
     type ProfileManager = Profiles;
-    type WeightInfo = ();
 }
 
 impl pallet_spaces::Config for TestRuntime {
@@ -167,7 +162,6 @@ impl pallet_spaces::Config for TestRuntime {
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
-    type WeightInfo = ();
 }
 
 pub(crate) type AccountId = u64;
