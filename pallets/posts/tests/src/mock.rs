@@ -101,6 +101,7 @@ impl pallet_posts::Config for Test {
     type Event = Event;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
+    type WeightInfo = ();
 }
 
 impl pallet_permissions::Config for Test {
@@ -118,6 +119,7 @@ impl pallet_roles::Config for Test {
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
+    type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for Test {
@@ -132,13 +134,16 @@ impl pallet_spaces::Config for Test {
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
+    type WeightInfo = ();
 }
 
 impl pallet_space_follows::Config for Test {
     type Event = Event;
+    type WeightInfo = ();
 }
 
 impl pallet_space_ownership::Config for Test {
     type Event = Event;
     type ProfileManager = Profiles;
+    type WeightInfo = ();
 }

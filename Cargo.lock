@@ -5673,6 +5673,7 @@ dependencies = [
 name = "pallet-posts"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-permissions",
@@ -5774,6 +5775,7 @@ dependencies = [
 name = "pallet-reactions"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-permissions",
@@ -5831,10 +5833,12 @@ dependencies = [
 name = "pallet-roles"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-balances",
  "pallet-permissions",
+ "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -5917,6 +5921,7 @@ dependencies = [
 name = "pallet-space-follows"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-spaces",
@@ -5953,6 +5958,7 @@ dependencies = [
 name = "pallet-space-ownership"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-spaces",
@@ -5990,6 +5996,7 @@ dependencies = [
 name = "pallet-spaces"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",

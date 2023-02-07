@@ -21,22 +21,21 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// pub mod rpc;
-pub mod types;
-
 pub use pallet::*;
-
 use pallet_permissions::{SpacePermission, SpacePermissions};
 use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
+// pub mod rpc;
+pub mod types;
+
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use types::*;
-
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-
     use sp_std::vec::Vec;
 
     use pallet_permissions::{
@@ -47,6 +46,11 @@ pub mod pallet {
         traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
+    use types::*;
+
+    pub use crate::weights::WeightInfo;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
@@ -65,15 +69,18 @@ pub mod pallet {
 
         #[pallet::constant]
         type MaxSpacesPerAccount: Get<u32>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         SpaceCreated { account: T::AccountId, space_id: SpaceId },
         SpaceUpdated { account: T::AccountId, space_id: SpaceId },
@@ -141,7 +148,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(85_000_000 + T::DbWeight::get().reads_writes(8, 7))]
+        #[pallet::weight(< T as Config >::WeightInfo::create_space())]
         pub fn create_space(
             origin: OriginFor<T>,
             content: Content,
@@ -168,7 +175,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(62_000_000 + T::DbWeight::get().reads_writes(5, 1))]
+        #[pallet::weight(< T as Config >::WeightInfo::update_space())]
         pub fn update_space(
             origin: OriginFor<T>,
             space_id: SpaceId,

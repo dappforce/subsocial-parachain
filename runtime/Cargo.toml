@@ -179,9 +179,21 @@ runtime-benchmarks = [
 	"pallet-utility/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
+	"pallet-reactions/runtime-benchmarks",
+	"pallet-roles/runtime-benchmarks",
+	"pallet-space-follows/runtime-benchmarks",
+	"pallet-space-ownership/runtime-benchmarks",
+	"pallet-spaces/runtime-benchmarks",
+  "pallet-posts/runtime-benchmarks",
 ]
 
 try-runtime = [
 	"frame-executive/try-runtime",
 	"frame-try-runtime",
+	"pallet-reactions/try-runtime",
+	"pallet-roles/try-runtime",
+	"pallet-space-follows/try-runtime",
+	"pallet-space-ownership/try-runtime",
+	"pallet-spaces/try-runtime",
+  "pallet-posts/try-runtime",
 ]
