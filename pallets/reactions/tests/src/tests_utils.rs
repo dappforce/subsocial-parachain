@@ -43,8 +43,8 @@ impl ExtBuilder {
         assert_ok!(_create_default_space());
     }
 
-    fn add_space_with_no_handle() {
-        assert_ok!(_create_space(None, Some(None), None, None));
+    fn add_another_space() {
+        assert_ok!(_create_space_with_content(another_space_content_ipfs()));
     }
 
     fn add_post() {
@@ -62,7 +62,7 @@ impl ExtBuilder {
     /// Custom ext configuration with SpaceId 1-2, PostId 1 where BlockNumber 1
     pub fn build_with_post_and_two_spaces() -> TestExternalities {
         let mut ext = Self::build_with_post();
-        ext.execute_with(Self::add_space_with_no_handle);
+        ext.execute_with(Self::add_another_space);
         ext
     }
 
@@ -96,37 +96,32 @@ pub(crate) fn space_content_ipfs() -> Content {
     Content::IPFS(b"bafyreib3mgbou4xln42qqcgj6qlt3cif35x4ribisxgq7unhpun525l54e".to_vec())
 }
 
+pub(crate) fn another_space_content_ipfs() -> Content {
+    Content::IPFS(b"bafyrelt3cif35x4ribisxgq7unhpun525l54eib3mgbou4xln42qqcgj6q".to_vec())
+}
+
 pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
     SpaceUpdate { content, hidden, permissions: None }
 }
 
-pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
-    _create_space(None, None, None, None)
+pub(crate) fn _create_default_space() -> DispatchResult {
+    _create_space(None, None, None)
 }
 
 pub(crate) fn _create_space(
     origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    _create_space_with_parent_id(origin, handle, content, permissions)
-}
-
-pub(crate) fn _create_space_with_parent_id(
-    origin: Option<Origin>,
-    handle: Option<Option<Vec<u8>>>,
-    content: Option<Content>,
-    permissions: Option<Option<SpacePermissions>>,
-) -> DispatchResultWithPostInfo {
-    if matches!(handle, Some(Some(_))) {
-        panic!("HANDLES ARE DISABLED");
-    }
+) -> DispatchResult {
     Spaces::create_space(
         origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
+}
+
+pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
+    _create_space(None, Some(content), None)
 }
 
 pub(crate) fn _update_space(
