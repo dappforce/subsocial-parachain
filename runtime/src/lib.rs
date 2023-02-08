@@ -518,6 +518,7 @@ pub enum ProxyType {
 	DomainRegistrar,
 	SocialActions,
 	Management,
+	SocialActionsProxy,
 }
 
 impl Default for ProxyType {
@@ -545,7 +546,10 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Reactions(..)
 					| Call::AccountFollows(..)
 					| Call::SpaceFollows(..)
+					| Call::Spaces(..)
+					| Call::Profiles(..)
 			),
+			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it. 
 			ProxyType::Management => matches!(
 				c,
 				Call::Spaces(..)
@@ -554,6 +558,13 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Profiles(..)
 					| Call::Domains(..)
 			),
+			ProxyType::SocialActionsProxy => {
+				matches!(
+					c,
+					Call::Proxy(pallet_proxy::Call::proxy { call, .. })
+					if ProxyType::SocialActions.filter(call),
+				)
+			},
 		}
 	}
 
