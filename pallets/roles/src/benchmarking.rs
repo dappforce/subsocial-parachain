@@ -19,8 +19,7 @@ fn create_dummy_space<T: Config + pallet_spaces::Config>(
 ) -> Result<Space<T>, DispatchError> {
     let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)
-        .map_err(|e| e.error)?;
+    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)?;
 
     let space = pallet_spaces::SpaceById::<T>::get(space_id)
         .ok_or(DispatchError::Other("Space not found"))?;
