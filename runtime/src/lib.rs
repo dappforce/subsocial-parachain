@@ -577,13 +577,18 @@ impl InstanceFilter<Call> for ProxyType {
 	}
 }
 
+impl pallet_subsocial_proxy::Config for Runtime {
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+}
+
 impl pallet_proxy::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type Currency = Balances;
 	type ProxyType = ProxyType;
-	type ProxyDepositBase = ProxyDepositBase;
-	type ProxyDepositFactor = ProxyDepositFactor;
+	type ProxyDepositBase = pallet_subsocial_proxy::AdjustedProxyDepositBase<Runtime>;
+	type ProxyDepositFactor = pallet_subsocial_proxy::AdjustedProxyDepositFactor<Runtime>;
 	type MaxProxies = MaxProxies;
 	type WeightInfo = ();
 	type MaxPending = MaxPending;
@@ -760,6 +765,7 @@ construct_runtime!(
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
+		SubsocialProxy: pallet_subsocial_proxy = 62,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
