@@ -62,7 +62,7 @@ pub mod pallet {
         + pallet_timestamp::Config
     {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Max comments depth
         #[pallet::constant]
@@ -191,6 +191,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight(
             match extension {
                 PostExtension::RegularPost => <T as Config>::WeightInfo::create_post__regular(),
@@ -265,6 +266,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::update_post())]
         pub fn update_post(
             origin: OriginFor<T>,
@@ -322,6 +324,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::move_post())]
         pub fn move_post(
             origin: OriginFor<T>,
@@ -357,8 +360,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight((
-            50_000 + T::DbWeight::get().reads_writes(4, 3),
+            Weight::from_ref_time(50_000) + T::DbWeight::get().reads_writes(4, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -422,8 +426,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(4)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(2, 3),
+            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -462,8 +467,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

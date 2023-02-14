@@ -17,7 +17,7 @@ fn set_profile_should_work() {
         space_owner_ctx.expect().return_const(Ok(()));
 
         // when
-        let result = Profiles::set_profile(Origin::signed(account), space_id);
+        let result = Profiles::set_profile(RuntimeOrigin::signed(account), space_id);
 
         // then
         assert_ok!(result);
@@ -39,7 +39,7 @@ fn set_profile_should_fail_when_not_space_owner() {
         space_owner_ctx.expect().return_const(Err("NotSpaceOwner".into()));
 
         // when
-        let result = Profiles::set_profile(Origin::signed(account), space_id);
+        let result = Profiles::set_profile(RuntimeOrigin::signed(account), space_id);
 
         // then:
         //  - expecting error here
@@ -60,10 +60,10 @@ fn reset_profile_should_work() {
         let space_owner_ctx = MockSpaces::ensure_space_owner_context();
         space_owner_ctx.expect().return_const(Ok(()));
 
-        assert_ok!(Profiles::set_profile(Origin::signed(account), space_id));
+        assert_ok!(Profiles::set_profile(RuntimeOrigin::signed(account), space_id));
 
         // when
-        let result = Profiles::reset_profile(Origin::signed(account));
+        let result = Profiles::reset_profile(RuntimeOrigin::signed(account));
 
         // then
         assert_ok!(result);
@@ -79,7 +79,7 @@ fn reset_profile_should_fail_when_no_space_set_as_profile() {
         assert!(Profiles::profile_space_id_by_account(account).is_none());
 
         // when
-        let result = Profiles::reset_profile(Origin::signed(account));
+        let result = Profiles::reset_profile(RuntimeOrigin::signed(account));
 
         // then
         assert_err!(result, Error::<Test>::NoSpaceSetAsProfile);
@@ -105,7 +105,7 @@ fn create_space_as_profile_should_work() {
         create_space_ctx.expect().return_const(Ok(space_id));
 
         // when
-        let result = Profiles::create_space_as_profile(Origin::signed(account), content);
+        let result = Profiles::create_space_as_profile(RuntimeOrigin::signed(account), content);
 
         // then
         assert_ok!(result);
@@ -127,7 +127,7 @@ fn create_space_as_profile_should_fail_when_space_not_created() {
         create_space_ctx.expect().return_const(Err("UnableToCreateSpace".into()));
 
         // when
-        let result = Profiles::create_space_as_profile(Origin::signed(account), content);
+        let result = Profiles::create_space_as_profile(RuntimeOrigin::signed(account), content);
 
         // then
         //  - expecting error here
@@ -149,7 +149,7 @@ fn unlink_space_from_profile_should_work() {
         let space_owner_ctx = MockSpaces::ensure_space_owner_context();
         space_owner_ctx.expect().return_const(Ok(()));
 
-        assert_ok!(Profiles::set_profile(Origin::signed(account), space_id));
+        assert_ok!(Profiles::set_profile(RuntimeOrigin::signed(account), space_id));
 
         // when
         Profiles::unlink_space_from_profile(&account, space_id);
@@ -188,7 +188,7 @@ fn unlink_space_from_profile_should_work_when_provided_space_differs_from_profil
         let space_owner_ctx = MockSpaces::ensure_space_owner_context();
         space_owner_ctx.expect().return_const(Ok(()));
 
-        assert_ok!(Profiles::set_profile(Origin::signed(account), space_id));
+        assert_ok!(Profiles::set_profile(RuntimeOrigin::signed(account), space_id));
 
         // when
         Profiles::unlink_space_from_profile(&account, space_id_wrong);

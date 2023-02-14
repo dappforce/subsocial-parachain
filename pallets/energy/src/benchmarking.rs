@@ -14,7 +14,7 @@ benchmarks! {
     update_value_coefficient {
         let origin = T::UpdateOrigin::successful_origin();
         let coefficient = FixedI64::checked_from_rational(2_65, 100).unwrap();
-    }: _<T::Origin>(origin, coefficient)
+    }: _<T::RuntimeOrigin>(origin, coefficient)
     verify {
         let stored_coefficient = ValueCoefficient::<T>::get();
         assert_eq!(coefficient, stored_coefficient);

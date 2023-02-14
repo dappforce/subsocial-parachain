@@ -109,12 +109,12 @@ pub(crate) fn _create_default_space() -> DispatchResult {
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResult {
     Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
@@ -125,12 +125,12 @@ pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
 }
 
 pub(crate) fn _update_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     update: Option<SpaceUpdate>,
 ) -> DispatchResult {
     Spaces::update_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         update.unwrap_or_else(|| space_update(None, None)),
     )
@@ -159,13 +159,13 @@ pub(crate) fn _create_default_post() -> DispatchResult {
 }
 
 pub(crate) fn _create_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id_opt: Option<Option<SpaceId>>,
     extension: Option<PostExtension>,
     content: Option<Content>,
 ) -> DispatchResult {
     Posts::create_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id_opt.unwrap_or(Some(SPACE1)),
         extension.unwrap_or_else(extension_regular_post),
         content.unwrap_or_else(post_content_ipfs),
@@ -173,12 +173,12 @@ pub(crate) fn _create_post(
 }
 
 pub(crate) fn _update_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     update: Option<PostUpdate>,
 ) -> DispatchResult {
     Posts::update_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         update.unwrap_or_else(|| post_update(None, None, None)),
     )
@@ -199,25 +199,25 @@ pub(crate) fn _create_default_post_reaction() -> DispatchResult {
 }
 
 pub(crate) fn _create_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     kind: Option<ReactionKind>,
 ) -> DispatchResult {
     Reactions::create_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         kind.unwrap_or_else(reaction_upvote),
     )
 }
 
 pub(crate) fn _update_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
     kind: Option<ReactionKind>,
 ) -> DispatchResult {
     Reactions::update_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         reaction_id,
         kind.unwrap_or_else(reaction_upvote),
@@ -225,12 +225,12 @@ pub(crate) fn _update_post_reaction(
 }
 
 pub(crate) fn _delete_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
 ) -> DispatchResult {
     Reactions::delete_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         reaction_id,
     )
