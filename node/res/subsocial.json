@@ -1,6 +1,6 @@
 {
-  "name": "SubsocialX",
-  "id": "subsocialx",
+  "name": "Subsocial",
+  "id": "subsocial",
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": [
@@ -9,7 +9,7 @@
       0
     ]
   ],
-  "protocolId": "subx",
+  "protocolId": "sub",
   "properties": {
     "ss58Format": 28,
     "tokenDecimals": 10,
