@@ -1,21 +1,25 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 pub use pallet::*;
 
+pub use crate::weights::WeightInfo;
+
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
 
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Zero;
-    use pallet_proxy::WeightInfo;
+    use crate::weights::WeightInfo;
 
     type BalanceOf<T> = <<T as pallet_proxy::Config>::Currency as Currency<
         <T as frame_system::Config>::AccountId,
@@ -26,6 +30,9 @@ pub mod pallet {
         type ProxyDepositBase: Get<BalanceOf<Self>>;
 
         type ProxyDepositFactor: Get<BalanceOf<Self>>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -43,7 +50,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(< T as pallet_proxy::Config >::WeightInfo::add_proxy(T::MaxProxies::get()))]
+        // in weight pallet_proxy::add_proxy(...) is accounted for
+        #[pallet::weight(< T as Config >::WeightInfo::add_free_proxy())]
         pub fn add_free_proxy(
             origin: OriginFor<T>,
             delegate: T::AccountId,

@@ -580,6 +580,7 @@ impl InstanceFilter<Call> for ProxyType {
 impl pallet_subsocial_proxy::Config for Runtime {
 	type ProxyDepositBase = ProxyDepositBase;
 	type ProxyDepositFactor = ProxyDepositFactor;
+	type WeightInfo = pallet_subsocial_proxy::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_proxy::Config for Runtime {
@@ -806,7 +807,8 @@ mod benches {
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
-    [pallet_posts, Posts]
+		[pallet_posts, Posts]
+		[pallet_subsocial_proxy, SubsocialProxy]
 	);
 }
 

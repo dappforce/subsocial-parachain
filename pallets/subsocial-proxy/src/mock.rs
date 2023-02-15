@@ -1,30 +1,13 @@
-use codec::Decode;
-use frame_support::{
-    dispatch::RawOrigin,
-    pallet_prelude::{DispatchClass, Pays, Weight},
-    parameter_types,
-    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
-    weights::{
-        DispatchInfo, WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
-    },
-};
+use frame_support::{pallet_prelude::DispatchClass, parameter_types, traits::Everything};
 use frame_system::limits::BlockWeights;
-use pallet_balances::NegativeImbalance;
-use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf},
-    transaction_validity::TransactionValidityError,
-    FixedI64, Perbill,
+    traits::{BlakeTwo256, IdentityLookup},
+    Perbill,
 };
-use sp_std::{
-    cell::RefCell,
-    convert::{TryFrom, TryInto},
-    marker::PhantomData,
-};
+use sp_std::convert::{TryFrom, TryInto};
 
 pub(crate) use crate as pallet_subsocial_proxy;
 
@@ -108,17 +91,18 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub static ProxyDepositBase: Balance = 10;
-	pub static ProxyDepositFactor: Balance = 10;
-	pub const MaxProxies: u16 = 32;
-	pub const AnnouncementDepositBase: Balance = 9999999999999;
-	pub const AnnouncementDepositFactor: Balance = 9999999999999;
-	pub const MaxPending: u16 = 32;
+    pub static ProxyDepositBase: Balance = 10;
+    pub static ProxyDepositFactor: Balance = 10;
+    pub const MaxProxies: u16 = 32;
+    pub const AnnouncementDepositBase: Balance = 9999999999999;
+    pub const AnnouncementDepositFactor: Balance = 9999999999999;
+    pub const MaxPending: u16 = 32;
 }
 
 impl pallet_subsocial_proxy::Config for Test {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
+    type WeightInfo = ();
 }
 
 impl pallet_proxy::Config for Test {
@@ -136,7 +120,6 @@ impl pallet_proxy::Config for Test {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
-
 pub struct ExtBuilder {
     deposit_base: Balance,
     deposit_factor: Balance,
@@ -144,10 +127,7 @@ pub struct ExtBuilder {
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        ExtBuilder {
-            deposit_factor: 10,
-            deposit_base: 10,
-        }
+        ExtBuilder { deposit_factor: 10, deposit_base: 10 }
     }
 }
 
