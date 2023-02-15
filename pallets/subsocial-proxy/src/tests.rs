@@ -81,7 +81,48 @@ fn add_free_proxy_reserve_nothing() {
 
 
 #[test]
-fn remove_free_proxy_should_unreserve_one_proxy_deposit() {
+fn remove_free_proxy_should_unreserve_nothing_if_there_are_no_other_proxies() {
+    ExtBuilder::default()
+        .deposit_factor(1)
+        .deposit_base(10)
+        .build()
+        .execute_with(|| {
+            let delegator = account_with_balance(1, 100);
+            let proxy1 = account(2);
+
+            assert_eq!(Balances::reserved_balance(delegator), 0);
+
+            assert_ok!(
+                SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy1, (), 0),
+            );
+
+            assert_eq!(Balances::reserved_balance(delegator), 0);
+
+
+            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy1, (), 0));
+
+            assert_eq!(Balances::reserved_balance(delegator), 0);
+
+
+            ///////////
+            let proxy2 = account(3);
+            assert_ok!(Proxy::add_proxy(
+                Origin::signed(delegator),
+                proxy2,
+                (),
+                0,
+            ));
+            assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
+
+            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy2, (), 0));
+
+            assert_eq!(Balances::reserved_balance(delegator), 0);
+        });
+}
+
+
+#[test]
+fn remove_free_proxy_should_unreserve_one_proxy_deposit_when_user_have_two_proxies() {
     ExtBuilder::default()
         .deposit_factor(1)
         .deposit_base(10)
