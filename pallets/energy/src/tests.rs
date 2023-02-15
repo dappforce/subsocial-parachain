@@ -563,7 +563,7 @@ fn existential_deposit_and_providers() {
 
             assert_ok!(charge_transaction(&account1, 850, 850, 0, || {},),);
 
-            System::assert_last_event(
+            System::assert_has_event(
                 EnergyEvent::DustLost { account: account1, amount: 50 }.into(),
             );
 
