@@ -116,9 +116,6 @@ parameter_types! {
 impl Config for Test {
     type Event = Event;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    #[cfg(feature = "runtime-benchmarks")]
-    type SpacePermissionsProvider = Spaces;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();
