@@ -3,6 +3,7 @@ use frame_system::pallet_prelude::OriginFor;
 
 use pallet_posts::{Error as PostsError, Post, PostById, PostExtension, PostUpdate};
 use pallet_reactions::{Error as ReactionsError, ReactionKind};
+use pallet_reactions::Event::PostReactionCreated;
 use pallet_spaces::types::{Space, SpaceUpdate};
 use subsocial_support::{Content, SpaceId};
 
@@ -81,6 +82,13 @@ fn create_post_reaction_should_work_upvote() {
         assert_eq!(Reactions::reaction_ids_by_post_id(post.id), vec![reaction_id]);
         assert_eq!(Reactions::next_reaction_id(), next_reaction_id);
 
+        System::assert_last_event(PostReactionCreated {
+            account,
+            post_id: post.id,
+            reaction_id,
+            reaction_kind: ReactionKind::Upvote,
+        }.into());
+
         // Check post reaction counters again
         let post = Posts::post_by_id(post.id).unwrap();
         assert_eq!(post.upvotes_count, 1);
@@ -103,6 +111,13 @@ fn create_post_reaction_should_work_downvote() {
         let reaction_id = Reactions::next_reaction_id();
         assert_ok!(Reactions::create_post_reaction(origin, post.id, ReactionKind::Downvote));
         let next_reaction_id = Reactions::next_reaction_id();
+
+        System::assert_last_event(PostReactionCreated {
+            account,
+            post_id: post.id,
+            reaction_id,
+            reaction_kind: ReactionKind::Downvote,
+        }.into());
 
         // Check storages
         assert_eq!(Reactions::reaction_ids_by_post_id(post.id), vec![reaction_id]);
