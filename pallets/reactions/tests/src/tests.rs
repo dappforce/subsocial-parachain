@@ -1,62 +1,141 @@
 use frame_support::{assert_noop, assert_ok};
+use frame_system::pallet_prelude::OriginFor;
 
-use pallet_posts::Error as PostsError;
-use pallet_reactions::Error as ReactionsError;
+use pallet_posts::{Error as PostsError, Post, PostById, PostExtension, PostUpdate};
+use pallet_reactions::{Error as ReactionsError, ReactionKind};
+use pallet_spaces::types::{Space, SpaceUpdate};
+use subsocial_support::{Content, SpaceId};
 
-use crate::{mock::*, tests_utils::*};
+use crate::mock::*;
+
+fn create_space(origin: OriginFor<Test>) -> Space<Test> {
+    let space_id = pallet_spaces::NextSpaceId::<Test>::get();
+
+    Spaces::create_space(origin.clone(), Content::None, None).expect("Spaces::create_space failed");
+
+    let space = pallet_spaces::SpaceById::<Test>::get(space_id).expect("Space not found");
+
+    space
+}
+
+fn create_post_in_space(origin: OriginFor<Test>, space_id: SpaceId) -> Post<Test> {
+    let post_id = pallet_posts::NextPostId::<Test>::get();
+
+    Posts::create_post(
+        origin.clone().into(),
+        Some(space_id),
+        PostExtension::RegularPost,
+        Content::None,
+    )
+    .expect("Posts::create_post failed");
+
+    let post = PostById::<Test>::get(post_id).expect("Post not found");
+
+    post
+}
+
+fn create_post(origin: OriginFor<Test>) -> Post<Test> {
+    let space = create_space(origin.clone());
+
+    create_post_in_space(origin, space.id)
+}
+
+fn create_hidden_post(origin: OriginFor<Test>) -> Post<Test> {
+    let post = create_post(origin.clone());
+
+    Posts::update_post(
+        origin.clone(),
+        post.id,
+        PostUpdate { space_id: None, content: None, hidden: true.into() },
+    )
+    .expect("Couldn't hide post");
+
+    post
+}
+
+fn create_post_in_hidden_space(origin: OriginFor<Test>) -> Post<Test> {
+    let post = create_post(origin.clone());
+
+    Spaces::update_space(
+        origin.clone(),
+        post.space_id.unwrap(),
+        SpaceUpdate { content: None, hidden: true.into(), permissions: None },
+    )
+    .expect("Couldn't hide space");
+
+    post
+}
 
 #[test]
 fn create_post_reaction_should_work_upvote() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_post_reaction(Some(Origin::signed(ACCOUNT2)), None, None)); // ReactionId 1 by ACCOUNT2 which is permitted by default
+    ExtBuilder::build().execute_with(|| {
+        let account = 5;
+        let origin = Origin::signed(account);
+        let post = create_post(origin.clone());
+
+        let reaction_id = Reactions::next_reaction_id();
+        assert_ok!(Reactions::create_post_reaction(origin, post.id, ReactionKind::Upvote));
+        let next_reaction_id = Reactions::next_reaction_id();
 
         // Check storages
-        assert_eq!(Reactions::reaction_ids_by_post_id(POST1), vec![REACTION1]);
-        assert_eq!(Reactions::next_reaction_id(), REACTION2);
+        assert_eq!(Reactions::reaction_ids_by_post_id(post.id), vec![reaction_id]);
+        assert_eq!(Reactions::next_reaction_id(), next_reaction_id);
 
-        // Check post reaction counters
-        let post = Posts::post_by_id(POST1).unwrap();
+        // Check post reaction counters again
+        let post = Posts::post_by_id(post.id).unwrap();
         assert_eq!(post.upvotes_count, 1);
         assert_eq!(post.downvotes_count, 0);
 
         // Check whether data stored correctly
-        let reaction = Reactions::reaction_by_id(REACTION1).unwrap();
-        assert_eq!(reaction.created.account, ACCOUNT2);
-        assert_eq!(reaction.kind, reaction_upvote());
+        let reaction = Reactions::reaction_by_id(reaction_id).unwrap();
+        assert_eq!(reaction.created.account, account);
+        assert_eq!(reaction.kind, ReactionKind::Upvote);
     });
 }
 
 #[test]
 fn create_post_reaction_should_work_downvote() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_post_reaction(
-            Some(Origin::signed(ACCOUNT2)),
-            None,
-            Some(reaction_downvote())
-        )); // ReactionId 1 by ACCOUNT2 which is permitted by default
+    ExtBuilder::build().execute_with(|| {
+        let account = 5;
+        let origin = Origin::signed(account);
+        let post = create_post(origin.clone());
+
+        let reaction_id = Reactions::next_reaction_id();
+        assert_ok!(Reactions::create_post_reaction(origin, post.id, ReactionKind::Downvote));
+        let next_reaction_id = Reactions::next_reaction_id();
 
         // Check storages
-        assert_eq!(Reactions::reaction_ids_by_post_id(POST1), vec![REACTION1]);
-        assert_eq!(Reactions::next_reaction_id(), REACTION2);
+        assert_eq!(Reactions::reaction_ids_by_post_id(post.id), vec![reaction_id]);
+        assert_eq!(Reactions::next_reaction_id(), next_reaction_id);
 
-        // Check post reaction counters
-        let post = Posts::post_by_id(POST1).unwrap();
+        // Check post reaction counters again
+        let post = Posts::post_by_id(post.id).unwrap();
         assert_eq!(post.upvotes_count, 0);
         assert_eq!(post.downvotes_count, 1);
 
         // Check whether data stored correctly
-        let reaction = Reactions::reaction_by_id(REACTION1).unwrap();
-        assert_eq!(reaction.created.account, ACCOUNT2);
-        assert_eq!(reaction.kind, reaction_downvote());
+        let reaction = Reactions::reaction_by_id(reaction_id).unwrap();
+        assert_eq!(reaction.created.account, account);
+        assert_eq!(reaction.kind, ReactionKind::Downvote);
     });
 }
 
 #[test]
 fn create_post_reaction_should_fail_when_account_has_already_reacted() {
-    ExtBuilder::build_with_reacted_post_and_two_spaces().execute_with(|| {
-        // Try to catch an error creating reaction by the same account
+    ExtBuilder::build().execute_with(|| {
+        let account = 5;
+        let origin = Origin::signed(account);
+        let post = create_post(origin.clone());
+
+        assert_ok!(Reactions::create_post_reaction(origin.clone(), post.id, ReactionKind::Upvote));
+
         assert_noop!(
-            _create_default_post_reaction(),
+            Reactions::create_post_reaction(origin.clone(), post.id, ReactionKind::Downvote),
+            ReactionsError::<Test>::AccountAlreadyReacted
+        );
+
+        assert_noop!(
+            Reactions::create_post_reaction(origin.clone(), post.id, ReactionKind::Upvote),
             ReactionsError::<Test>::AccountAlreadyReacted
         );
     });
@@ -65,19 +144,24 @@ fn create_post_reaction_should_fail_when_account_has_already_reacted() {
 #[test]
 fn create_post_reaction_should_fail_when_post_not_found() {
     ExtBuilder::build().execute_with(|| {
-        // Try to catch an error creating reaction by the same account
-        assert_noop!(_create_default_post_reaction(), PostsError::<Test>::PostNotFound);
+        let origin = Origin::signed(34);
+        let non_existing_post_id = 56;
+
+        assert_noop!(
+            Reactions::create_post_reaction(origin, non_existing_post_id, ReactionKind::Upvote),
+            PostsError::<Test>::PostNotFound,
+        );
     });
 }
 
 #[test]
 fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        // Hide the space
-        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
+    ExtBuilder::build().execute_with(|| {
+        let origin = Origin::signed(8);
+        let post = create_post_in_hidden_space(origin.clone());
 
         assert_noop!(
-            _create_default_post_reaction(),
+            Reactions::create_post_reaction(origin, post.id, ReactionKind::Downvote),
             ReactionsError::<Test>::CannotReactWhenSpaceHidden
         );
     });
@@ -85,12 +169,12 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
 
 #[test]
 fn create_post_reaction_should_fail_when_trying_to_react_on_hidden_post() {
-    ExtBuilder::build_with_post().execute_with(|| {
-        // Hide the post
-        assert_ok!(_update_post(None, None, Some(post_update(None, None, Some(true)))));
+    ExtBuilder::build().execute_with(|| {
+        let origin = Origin::signed(2);
+        let post = create_hidden_post(origin.clone());
 
         assert_noop!(
-            _create_default_post_reaction(),
+            Reactions::create_post_reaction(origin, post.id, ReactionKind::Upvote),
             ReactionsError::<Test>::CannotReactWhenPostHidden
         );
     });
