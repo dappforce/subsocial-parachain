@@ -8,10 +8,10 @@ use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
 
 use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
-use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const DEFAULT_PROTOCOL_ID: &str = "subx";
+const DEFAULT_PARA_ID: u32 = 2100;
 
 const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 

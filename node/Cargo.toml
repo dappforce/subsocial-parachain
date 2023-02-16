@@ -11,10 +11,6 @@ description = "Parachain implementation of Subsocial node"
 keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
 categories = ["cryptography::cryptocurrencies"]
 
-[[bin]]
-name = "subsocial-collator"
-path = "src/main.rs"
-
 [dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
 log = "0.4.17"
