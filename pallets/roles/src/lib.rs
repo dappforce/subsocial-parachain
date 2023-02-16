@@ -222,7 +222,7 @@ pub mod pallet {
 
         /// Update an existing role by a given id.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::call_index(2)]
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::update_role())]
         pub fn update_role(
             origin: OriginFor<T>,
@@ -284,7 +284,7 @@ pub mod pallet {
 
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::call_index(3)]
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::delete_role(*user_count))]
         pub fn delete_role(
             origin: OriginFor<T>,
@@ -322,7 +322,7 @@ pub mod pallet {
 
         /// Grant a given role to a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::call_index(4)]
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as Config>::WeightInfo::grant_role(users.len() as u32))]
         pub fn grant_role(
             origin: OriginFor<T>,
@@ -362,7 +362,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
-        #[pallet::call_index(5)]
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::revoke_role(users.len() as u32))]
         pub fn revoke_role(
             origin: OriginFor<T>,
@@ -383,7 +383,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::call_index(6)]
+        #[pallet::call_index(5)]
         #[pallet::weight((
             Weight::from_ref_time(25_000) + T::DbWeight::get().reads_writes(1, 2),
             DispatchClass::Operational,
@@ -433,7 +433,7 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        #[pallet::call_index(7)]
+        #[pallet::call_index(6)]
         #[pallet::weight((
             Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
@@ -472,7 +472,7 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        #[pallet::call_index(8)]
+        #[pallet::call_index(7)]
         #[pallet::weight((
             Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
