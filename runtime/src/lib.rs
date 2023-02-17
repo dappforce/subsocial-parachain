@@ -702,6 +702,7 @@ impl pallet_space_ownership::Config for Runtime {
 
 impl pallet_account_follows::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_account_follows::weights::SubstrateWeight<Runtime>;
 }
 
 
@@ -791,6 +792,7 @@ mod benches {
 		[pallet_proxy, Proxy]
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
+		[pallet_account_follows, AccountFollows]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[pallet_profiles, Profiles]
