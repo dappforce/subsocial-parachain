@@ -34,6 +34,7 @@ try-runtime = ['frame-support/try-runtime']
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+cfg-if = "1.0.0"
 
 # Local dependencies
 pallet-permissions = { default-features = false, path = '../permissions' }

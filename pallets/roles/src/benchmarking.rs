@@ -4,6 +4,7 @@
 
 // FIXME: refactor once SpacesInterface is added.
 
+use cfg_if::cfg_if;
 use frame_benchmarking::{account, benchmarks};
 use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
@@ -17,37 +18,37 @@ use subsocial_support::{
 
 use super::*;
 
-#[cfg(not(test))]
 fn get_dummy_space_id<T: Config + pallet_spaces::Config>(
+    #[allow(unused_variables)]
     origin: RawOrigin<T::AccountId>,
 ) -> Result<SpaceId, DispatchError> {
-    let space_id = pallet_spaces::NextSpaceId::<T>::get();
+    cfg_if! {
+        if #[cfg(test)] {
+            Ok(crate::mock::SPACE1)
+        } else {
+            let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)?;
+            pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)?;
 
-    let space = pallet_spaces::SpaceById::<T>::get(space_id)
-        .ok_or(DispatchError::Other("Space not found"))?;
+            let space = pallet_spaces::SpaceById::<T>::get(space_id)
+                .ok_or(DispatchError::Other("Space not found"))?;
 
-    Ok(space.id)
+            Ok(space.id)
+        }
+    }
 }
 
-#[cfg(test)]
-fn get_dummy_space_id<T: Config>(
-    _origin: RawOrigin<T::AccountId>,
-) -> Result<SpaceId, DispatchError> {
-    Ok(crate::mock::SPACE1)
-}
-
-#[cfg(not(test))]
 fn get_caller_account<T: Config>() -> T::AccountId {
-    account::<T::AccountId>("Acc1", 1, 0)
+    cfg_if! {
+        if #[cfg(test)] {
+            let mut bytes: &[u8] = &crate::mock::ACCOUNT1.to_le_bytes();
+            T::AccountId::decode(&mut bytes).expect("failed to get caller_account")
+        } else {
+            account::<T::AccountId>("Acc1", 1, 0)
+        }
+    }
 }
 
-#[cfg(test)]
-fn get_caller_account<T: Config>() -> T::AccountId {
-    let mut bytes: &[u8] = &crate::mock::ACCOUNT1.to_le_bytes();
-    T::AccountId::decode(&mut bytes).expect("failed to get caller_account")
-}
 
 fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
     let mut users_to_grant = Vec::<User<T::AccountId>>::new();
