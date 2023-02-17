@@ -19,8 +19,7 @@ use subsocial_support::{
 use super::*;
 
 fn get_dummy_space_id<T: Config + pallet_spaces::Config>(
-    #[allow(unused_variables)]
-    origin: RawOrigin<T::AccountId>,
+    #[allow(unused_variables)] origin: RawOrigin<T::AccountId>,
 ) -> Result<SpaceId, DispatchError> {
     cfg_if! {
         if #[cfg(test)] {
@@ -48,7 +47,6 @@ fn get_caller_account<T: Config>() -> T::AccountId {
         }
     }
 }
-
 
 fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
     let mut users_to_grant = Vec::<User<T::AccountId>>::new();

@@ -17,6 +17,7 @@ use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
+pub use pallet::*;
 use pallet_permissions::{
     Pallet as Permissions, PermissionChecker, SpacePermission, SpacePermissionSet,
 };
@@ -25,12 +26,11 @@ use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, ModerationError, SpaceId, User, WhoAndWhenOf,
 };
+pub use types::*;
 
-pub use pallet::*;
 pub mod functions;
 
 pub mod types;
-pub use types::*;
 // pub mod rpc;
 
 #[cfg(test)]
@@ -44,12 +44,15 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
     use pallet_permissions::SpacePermissionsInfoOf;
     use subsocial_support::{remove_from_vec, WhoAndWhen};
+
+    use crate::weights::WeightInfo;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
