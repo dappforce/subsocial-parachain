@@ -1,4 +1,6 @@
 CARGO=cargo
+PALLET_NAME=${pallet}
+OUTPUT_DIR=$(output)
 
 .PHONY: init
 init: 
@@ -16,4 +18,4 @@ compare-ordering:
 
 .PHONY: benchmark
 benchmark: 
-	./scripts/run-benchmark-on.sh
+	./scripts/run-benchmark-on.sh  ${PALLET_NAME} ${OUTPUT_DIR}
