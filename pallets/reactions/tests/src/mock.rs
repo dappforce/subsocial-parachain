@@ -1,5 +1,6 @@
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::Everything};
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -137,4 +138,17 @@ impl pallet_space_follows::Config for Test {
 impl pallet_reactions::Config for Test {
     type Event = Event;
     type WeightInfo = ();
+}
+
+pub struct ExtBuilder;
+
+impl ExtBuilder {
+    pub fn build() -> TestExternalities {
+        let storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+        let mut ext = TestExternalities::from(storage);
+        ext.execute_with(|| System::set_block_number(1));
+
+        ext
+    }
 }
