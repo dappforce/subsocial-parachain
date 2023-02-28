@@ -5076,11 +5076,16 @@ dependencies = [
 name = "pallet-account-follows"
 version = "0.1.7"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-profiles",
  "parity-scale-codec",
  "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
  "subsocial-support",
 ]

@@ -177,6 +177,7 @@ runtime-benchmarks = [
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
+	"pallet-account-follows/runtime-benchmarks",
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
 	"pallet-reactions/runtime-benchmarks",
