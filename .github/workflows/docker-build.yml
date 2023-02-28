@@ -39,7 +39,7 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@master
         with:
-          username: ${{ secrets.DOCKERHUB_USER }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Cache Docker layers
