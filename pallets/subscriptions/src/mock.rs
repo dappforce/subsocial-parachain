@@ -53,8 +53,8 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -62,7 +62,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -83,7 +83,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -169,13 +169,13 @@ impl RolesInterface<RoleId, SpaceId, AccountId, SpacePermission, BlockNumber> fo
 }
 
 impl pallet_subscriptions::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type SpaceId = SpaceId;
     type SpacesInterface = MockSpaces;
     type RoleId = RoleId;
     type RolesInterface = MockRoles;
-    type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Test>;
+    // type WeightInfo = ();
 }
 
 #[derive(Default)]

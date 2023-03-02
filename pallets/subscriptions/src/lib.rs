@@ -2,10 +2,10 @@
 
 pub use pallet::*;
 
-pub use crate::weights::WeightInfo;
+// pub use crate::weights::WeightInfo;
 
 mod types;
-pub mod weights;
+// pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -42,7 +42,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The currency trait.
         type Currency: Currency<Self::AccountId>;
@@ -61,8 +61,8 @@ pub mod pallet {
             Self::BlockNumber,
         >;
 
-        /// Weight information for extrinsics in this pallet.
-        type WeightInfo: WeightInfo;
+        // /// Weight information for extrinsics in this pallet.
+        // type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -129,7 +129,8 @@ pub mod pallet {
         //     // Set up a subscriptions settings for the first time.
         // }
 
-        #[pallet::weight(< T as Config >::WeightInfo::update_subscription_settings())]
+        #[pallet::call_index(0)]
+        #[pallet::weight(Weight::from_ref_time(40_000_000))]
         pub fn update_subscription_settings(
             origin: OriginFor<T>,
             space_id: T::SpaceId,
@@ -157,7 +158,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(< T as Config >::WeightInfo::subscribe())]
+        #[pallet::call_index(1)]
+        #[pallet::weight(Weight::from_ref_time(40_000_000))]
         pub fn subscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 
@@ -203,7 +205,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(< T as Config >::WeightInfo::unsubscribe())]
+        #[pallet::call_index(2)]
+        #[pallet::weight(Weight::from_ref_time(40_000_000))]
         pub fn unsubscribe(origin: OriginFor<T>, space_id: T::SpaceId) -> DispatchResult {
             let subscriber = ensure_signed(origin)?;
 

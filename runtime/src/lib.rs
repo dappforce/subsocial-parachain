@@ -721,13 +721,13 @@ impl pallet_energy::Config for Runtime {
 }
 
 impl pallet_subscriptions::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type SpaceId = SpaceId;
 	type SpacesInterface = Spaces;
 	type RoleId = RoleId;
 	type RolesInterface = Roles;
-	type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Runtime>;
+	// type WeightInfo = pallet_subscriptions::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

@@ -9,7 +9,7 @@ fn update_subscription_settings_should_fail_when_caller_not_signed() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             Subscriptions::update_subscription_settings(
-                Origin::none(),
+                RuntimeOrigin::none(),
                 0,
                 SubscriptionSettings { subscription: 55, disabled: false, role_id: 22 },
             ),
@@ -29,7 +29,7 @@ fn update_subscription_settings_should_fail_when_caller_not_space_owner() {
 
         assert_noop!(
             Subscriptions::update_subscription_settings(
-                Origin::signed(not_space_owner),
+                RuntimeOrigin::signed(not_space_owner),
                 space_id,
                 SubscriptionSettings { subscription: 55, disabled: false, role_id: 22 },
             ),
@@ -53,7 +53,7 @@ fn update_subscription_settings_should_fail_when_role_not_in_space() {
 
         assert_noop!(
             Subscriptions::update_subscription_settings(
-                Origin::signed(space_owner),
+                RuntimeOrigin::signed(space_owner),
                 space1_id,
                 SubscriptionSettings {
                     subscription: 55,
@@ -81,7 +81,7 @@ fn update_subscription_settings_should_work_correctly() {
             SubscriptionSettings { subscription: 55, disabled: false, role_id };
 
         assert_ok!(Subscriptions::update_subscription_settings(
-            Origin::signed(space_owner),
+            RuntimeOrigin::signed(space_owner),
             space_id,
             subscription_settings,
         ),);
