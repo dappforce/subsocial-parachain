@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 19,
+	spec_version: 1901,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -549,7 +549,7 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Spaces(..)
 					| Call::Profiles(..)
 			),
-			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it. 
+			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it.
 			ProxyType::Management => matches!(
 				c,
 				Call::Spaces(..)
