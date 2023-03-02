@@ -6,7 +6,7 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks};
-use frame_support::dispatch::DispatchError;
+use frame_support::{dispatch::DispatchError, traits::Get};
 use frame_system::RawOrigin;
 use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::types::Space;
