@@ -110,7 +110,7 @@ jobs:
           rm build-runner build-runner.pub init.sh || true
 
   delete-runner:
-    if: github.event.inputs.action == 'Delete' || || github.event.workflow_run.status == 'completed'
+    if: github.event.inputs.action == 'Delete' || github.event.workflow_run.result == 'success'
     name: Delete self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
@@ -126,7 +126,7 @@ jobs:
               owner: context.repo.owner
             })
             const runner_id = runner.data.runners[0].id
-            console.log(`Deleting runner ${runner_id}`)
+            console.debug(`Deleting runner ${runner_id}`)
             await github.actions.deleteSelfHostedRunnerFromRepo({
               repo: context.repo.repo,
               owner: context.repo.owner,
