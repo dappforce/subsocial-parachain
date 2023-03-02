@@ -7,10 +7,13 @@ on:
         required: true
         type: choice
         options: [ 'Create', 'Delete' ]
+  workflow_run:
+    workflows: [ "Build a new docker image" ]
+    types: [ requested, completed ]
 
 jobs:
   create-runner:
-    if: github.event.inputs.action == 'Create'
+    if: github.event.inputs.action == 'Create' || github.event.workflow_run.status == 'requested'
     name: Create self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
@@ -25,9 +28,15 @@ jobs:
               repo: context.repo.repo,
               owner: context.repo.owner
             })
-            console.log(`Created runner ${runner.data.name}`)
-            console.log(`Runner expires_at: ${runner.data.expires_at}`)
+            const fs = require('fs')
+            fs.writeFileSync('mask.sh', `echo "::add-mask::${runner.data.token}"`, 'utf-8')
             return runner.data.token
+
+      - name: Masking token
+        run: |
+          chmod +x mask.sh
+          ./mask.sh
+          rm mask.sh
 
       - name: Prepare installation script
         run: |
@@ -101,7 +110,7 @@ jobs:
           rm build-runner build-runner.pub init.sh || true
 
   delete-runner:
-    if: github.event.inputs.action == 'Delete'
+    if: github.event.inputs.action == 'Delete' || || github.event.workflow_run.status == 'completed'
     name: Delete self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
