@@ -27,7 +27,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, dispatch::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
@@ -39,7 +39,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The currency trait.
         type Currency: ReservableCurrency<Self::AccountId>;
@@ -184,6 +184,7 @@ pub mod pallet {
         /// and set the domain to expire in [expires_in] number of blocks.
         /// [full_domain] is a full domain name including a dot (.) and TLD.
         /// Example of a [full_domain]: `mytoken.ksm`
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
@@ -198,6 +199,7 @@ pub mod pallet {
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
         /// and set the domain to expire in [expires_in] number of blocks.
+        #[pallet::call_index(1)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_register_domain(),
             DispatchClass::Operational,
@@ -216,6 +218,7 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
@@ -230,6 +233,7 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
+        #[pallet::call_index(3)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_inner_value(),
             DispatchClass::Operational,
@@ -247,6 +251,7 @@ pub mod pallet {
         }
 
         /// Sets the domain outer_value to be a custom string.
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         pub fn set_outer_value(
             origin: OriginFor<T>,
@@ -287,6 +292,7 @@ pub mod pallet {
         }
 
         /// Sets the domain content to be an outside link.
+        #[pallet::call_index(5)]
         #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         pub fn set_domain_content(
             origin: OriginFor<T>,
@@ -311,6 +317,7 @@ pub mod pallet {
         }
 
         /// Mark set of domains as not reservable by users.
+        #[pallet::call_index(6)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -332,6 +339,7 @@ pub mod pallet {
         }
 
         /// Add support for a set of top-level domains.
+        #[pallet::call_index(7)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,

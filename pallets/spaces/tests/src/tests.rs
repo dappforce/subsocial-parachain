@@ -64,7 +64,7 @@ fn create_post_should_work_overridden_space_permission_for_everyone() {
         permissions_where_everyone_can_create_post(),
     )
     .execute_with(|| {
-        assert_ok!(_create_post(Some(Origin::signed(ACCOUNT2)), None, None, None));
+        assert_ok!(_create_post(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None, None));
     });
 }
 
@@ -76,7 +76,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
     .execute_with(|| {
         assert_ok!(_default_follow_space());
 
-        assert_ok!(_create_post(Some(Origin::signed(ACCOUNT2)), None, None, None));
+        assert_ok!(_create_post(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None, None));
     });
 }
 
@@ -117,7 +117,7 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
             let space_update = space_update(Some(updated_space_content()), Some(true));
 
             assert_ok!(_update_space(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(SPACE1),
                 Some(space_update)
             ));
@@ -154,7 +154,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
         // Try to catch an error updating a space with an account that it not permitted
         assert_noop!(
             _update_space(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None,
                 Some(update_for_space_content(updated_space_content()))
             ),
@@ -183,7 +183,7 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
             assert_ok!(_delete_default_role());
 
             assert_noop!(
-                _update_space(Some(Origin::signed(ACCOUNT2)), Some(SPACE1), Some(space_update)),
+                _update_space(Some(RuntimeOrigin::signed(ACCOUNT2)), Some(SPACE1), Some(space_update)),
                 SpacesError::<Test>::NoPermissionToUpdateSpace
             );
         },

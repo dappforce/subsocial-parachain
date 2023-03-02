@@ -209,7 +209,7 @@ fn update_comment_should_fail_when_account_is_not_a_comment_author() {
     ExtBuilder::build_with_comment().execute_with(|| {
         // Try to catch an error updating a comment with wrong Account
         assert_noop!(
-            _update_comment(Some(Origin::signed(ACCOUNT2)), None, None),
+            _update_comment(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None),
             PostsError::<TestRuntime>::NotACommentAuthor
         );
     });
