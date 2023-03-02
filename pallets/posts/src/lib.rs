@@ -195,8 +195,8 @@ pub mod pallet {
         #[pallet::weight(
             match extension {
                 PostExtension::RegularPost => <T as Config>::WeightInfo::create_post__regular(),
-                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__shared(),
-                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__comment(),
+                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__comment(),
+                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__shared(),
             }
         )]
         pub fn create_post(

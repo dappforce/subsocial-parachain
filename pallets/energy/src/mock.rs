@@ -158,23 +158,27 @@ fn test_that_pallet_transaction_payment_works_as_expected() {
     assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(4000)), 4000);
     assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(1)), 1);
 
-    fn compute_fee(len: u32, weight: Weight, tip: Balance) -> Balance {
+    fn compute_fee(len: u32, weight: u64, tip: Balance) -> Balance {
         ExtBuilder::default().build().execute_with(|| {
             pallet_transaction_payment::Pallet::<Test>::compute_fee(
                 len,
-                &DispatchInfo { weight, class: DispatchClass::Normal, pays_fee: Pays::Yes },
+                &DispatchInfo {
+                    weight: Weight::from_ref_time(weight),
+                    class: DispatchClass::Normal,
+                    pays_fee: Pays::Yes,
+                },
                 tip,
             )
         })
     }
 
-    assert_eq!(compute_fee(0, Weight::from_ref_time(0), 0), 0);
-    assert_eq!(compute_fee(0, Weight::from_ref_time(1), 0), 1);
-    assert_eq!(compute_fee(0, Weight::from_ref_time(1), 1), 2);
-    assert_eq!(compute_fee(1, Weight::from_ref_time(1), 1), 2);
-    assert_eq!(compute_fee(10_000, Weight::from_ref_time(1), 1), 2);
-    assert_eq!(compute_fee(10_000, Weight::from_ref_time(10_000), 1), 10_001);
-    assert_eq!(compute_fee(100_000, Weight::from_ref_time(10_000), 10_000), 20_000);
+    assert_eq!(compute_fee(0, 0, 0), 0);
+    assert_eq!(compute_fee(0, 1, 0), 1);
+    assert_eq!(compute_fee(0, 1, 1), 2);
+    assert_eq!(compute_fee(1, 1, 1), 2);
+    assert_eq!(compute_fee(10_000, 1, 1), 2);
+    assert_eq!(compute_fee(10_000, 10_000, 1), 10_001);
+    assert_eq!(compute_fee(100_000, 10_000, 10_000), 20_000);
 }
 
 parameter_types! {
