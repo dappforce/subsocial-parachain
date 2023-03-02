@@ -83,7 +83,6 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          # TODO: fix this secret's name
           token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
       - name: Create ephemeral ssh-key
@@ -129,7 +128,7 @@ jobs:
     name: Delete self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
-      - name: Get runner configuration token
+      - name: Remove runner from repository
         uses: actions/github-script@v3
         id: token
         with:
@@ -152,7 +151,6 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          # TODO: fix this secret's name
           token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
       - name: Remove droplet
