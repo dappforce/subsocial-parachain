@@ -13,10 +13,25 @@ on:
 
 jobs:
   create-runner:
-    if: github.event.inputs.action == 'Create' || github.event.workflow_run.status == 'requested'
+    if: github.event.inputs.action == 'Create' || github.event.workflow_run.status != 'completed'
     name: Create self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
+      - name: Skip if self-hosted runner exists
+        id: skip
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GH_PAT}}
+          script: |
+            const runner = await github.actions.listSelfHostedRunnersForRepo({
+              repo: context.repo.repo,
+              owner: context.repo.owner
+            })
+            if (runner.data.runners.length > 0) {
+              console.debug(`Self-hosted runner already exists`)
+              process.exit(1)
+            }
+
       - name: Get runner configuration token
         uses: actions/github-script@v3
         id: token
@@ -101,7 +116,7 @@ jobs:
           doctl compute ssh build-runner --ssh-key-path build-runner --ssh-command "bash -s" < init.sh
 
       - name: Remove droplet on failure
-        if: failure()
+        if: failure() && steps.skip.outcome == 'success'
         run: |
           doctl compute droplet delete build-runner --force
 
@@ -110,7 +125,7 @@ jobs:
           rm build-runner build-runner.pub init.sh || true
 
   delete-runner:
-    if: github.event.inputs.action == 'Delete' || github.event.workflow_run.result == 'success'
+    if: github.event.inputs.action == 'Delete' || github.event.workflow_run.conclusion == 'success'
     name: Delete self-hosted runner for build actions
     runs-on: ubuntu-20.04
     steps:
