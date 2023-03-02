@@ -42,8 +42,8 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -51,7 +51,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -83,7 +83,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -97,7 +97,7 @@ parameter_types! {
 }
 
 impl pallet_posts::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
     type WeightInfo = ();
@@ -112,7 +112,7 @@ parameter_types! {
 }
 
 impl pallet_roles::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
@@ -122,14 +122,14 @@ impl pallet_roles::Config for Test {
 }
 
 impl pallet_profiles::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = Spaces;
     type SpacesInterface = Spaces;
     type WeightInfo = ();
 }
 
 impl pallet_spaces::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;
@@ -139,6 +139,6 @@ impl pallet_spaces::Config for Test {
 }
 
 impl pallet_space_follows::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

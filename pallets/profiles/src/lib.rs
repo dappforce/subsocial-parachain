@@ -33,7 +33,7 @@ pub mod pallet {
     /// The pallet's configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type SpacePermissionsProvider: SpacePermissionsProvider<
             Self::AccountId,
@@ -69,6 +69,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::set_profile())]
         pub fn set_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
@@ -77,6 +78,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::reset_profile())]
         pub fn reset_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
@@ -92,6 +94,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::create_space_as_profile())]
         pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
             let sender = ensure_signed(origin)?;

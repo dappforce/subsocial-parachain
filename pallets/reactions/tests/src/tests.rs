@@ -8,7 +8,7 @@ use crate::{mock::*, tests_utils::*};
 #[test]
 fn create_post_reaction_should_work_upvote() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_post_reaction(Some(Origin::signed(ACCOUNT2)), None, None)); // ReactionId 1 by ACCOUNT2 which is permitted by default
+        assert_ok!(_create_post_reaction(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None)); // ReactionId 1 by ACCOUNT2 which is permitted by default
 
         // Check storages
         assert_eq!(Reactions::reaction_ids_by_post_id(POST1), vec![REACTION1]);
@@ -30,7 +30,7 @@ fn create_post_reaction_should_work_upvote() {
 fn create_post_reaction_should_work_downvote() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_post_reaction(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None,
             Some(reaction_downvote())
         )); // ReactionId 1 by ACCOUNT2 which is permitted by default

@@ -24,19 +24,19 @@ pub(crate) fn _create_default_comment_reaction() -> DispatchResult {
 }
 
 pub(crate) fn _create_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     kind: Option<ReactionKind>,
 ) -> DispatchResult {
     Reactions::create_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         kind.unwrap_or_else(reaction_upvote),
     )
 }
 
 pub(crate) fn _create_comment_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     kind: Option<ReactionKind>,
 ) -> DispatchResult {
@@ -44,13 +44,13 @@ pub(crate) fn _create_comment_reaction(
 }
 
 pub(crate) fn _update_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
     kind: Option<ReactionKind>,
 ) -> DispatchResult {
     Reactions::update_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         reaction_id,
         kind.unwrap_or_else(reaction_upvote),
@@ -58,7 +58,7 @@ pub(crate) fn _update_post_reaction(
 }
 
 pub(crate) fn _update_comment_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
     kind: Option<ReactionKind>,
@@ -67,19 +67,19 @@ pub(crate) fn _update_comment_reaction(
 }
 
 pub(crate) fn _delete_post_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
 ) -> DispatchResult {
     Reactions::delete_post_reaction(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         reaction_id,
     )
 }
 
 pub(crate) fn _delete_comment_reaction(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     reaction_id: ReactionId,
 ) -> DispatchResult {

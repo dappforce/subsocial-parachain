@@ -108,7 +108,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
 
             assert_noop!(
                 Domains::register_domain(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     domain_from(b"second-domain".to_vec()),
                     valid_content_ipfs(),
                     ExtBuilder::default().reservation_period_limit,
@@ -122,7 +122,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
 fn force_register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            _force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
+            _force_register_domain_with_origin(RuntimeOrigin::signed(DOMAIN_OWNER)),
             BadOrigin
         );
     });
@@ -158,13 +158,13 @@ fn register_domain_should_fail_when_domain_reserved() {
         let domain = domain_from(b"split-wo-rd".to_vec());
 
         assert_ok!(Domains::reserve_words(
-            Origin::root(),
+            RuntimeOrigin::root(),
             vec![word].try_into().expect("qed; domains vector exceeds the limit"),
         ));
 
         assert_noop!(
             Domains::register_domain(
-                Origin::signed(DOMAIN_OWNER),
+                RuntimeOrigin::signed(DOMAIN_OWNER),
                 domain,
                 valid_content_ipfs(),
                 ExtBuilder::default().reservation_period_limit,
@@ -256,7 +256,7 @@ fn set_inner_value_should_work_when_value_changes() {
         assert_ok!(_set_default_inner_value());
 
         assert_ok!(Domains::set_inner_value(
-            Origin::signed(DOMAIN_OWNER),
+            RuntimeOrigin::signed(DOMAIN_OWNER),
             domain_lc.clone(),
             Some(new_value.clone()),
         ));
@@ -284,7 +284,7 @@ fn set_inner_value_should_fail_when_domain_has_expired() {
 fn set_inner_value_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_noop!(
-            _set_inner_value_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_inner_value_with_origin(RuntimeOrigin::signed(DUMMY_ACCOUNT)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -307,7 +307,7 @@ fn force_set_inner_value_should_work() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_ok!(
             Domains::force_set_inner_value(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 default_domain_lc(),
                 Some(inner_value_account_domain_owner()),
             )
@@ -320,7 +320,7 @@ fn force_set_inner_value_should_fail_when_origin_not_root() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_noop!(
             Domains::force_set_inner_value(
-                Origin::signed(DOMAIN_OWNER),
+                RuntimeOrigin::signed(DOMAIN_OWNER),
                 default_domain_lc(),
                 Some(inner_value_account_domain_owner()),
             ),
@@ -416,7 +416,7 @@ fn set_outer_value_should_fail_when_domain_has_expired() {
 fn set_outer_value_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_noop!(
-            _set_outer_value_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_outer_value_with_origin(RuntimeOrigin::signed(DUMMY_ACCOUNT)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -492,7 +492,7 @@ fn set_domain_content_should_fail_when_domain_expired() {
 fn set_domain_content_should_fail_when_not_domain_owner() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         assert_noop!(
-            _set_domain_content_with_origin(Origin::signed(DUMMY_ACCOUNT)),
+            _set_domain_content_with_origin(RuntimeOrigin::signed(DUMMY_ACCOUNT)),
             Error::<Test>::NotDomainOwner,
         );
     });
@@ -531,7 +531,7 @@ fn reserve_words_should_work() {
             Domains::bound_domain(b"word-three".to_vec()),
         ].try_into().expect("qed; domains vector exceeds the limit");
 
-        assert_ok!(Domains::reserve_words(Origin::root(), domains_list.clone()));
+        assert_ok!(Domains::reserve_words(RuntimeOrigin::root(), domains_list.clone()));
 
         assert!(Domains::is_word_reserved(&domains_list[0]));
         assert!(Domains::is_word_reserved(&domains_list[1]));
@@ -549,7 +549,7 @@ fn reserve_words_should_fail_when_word_is_invalid() {
             ].try_into().expect("qed; domains vector exceeds the limit");
 
             assert_noop!(
-                Domains::reserve_words(Origin::root(), domains_list),
+                Domains::reserve_words(RuntimeOrigin::root(), domains_list),
                 Error::<Test>::DomainContainsInvalidChar,
             );
         });
@@ -562,7 +562,7 @@ fn support_tlds_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(
             Domains::support_tlds(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
             )
         );
@@ -580,7 +580,7 @@ fn support_tlds_should_fail_when_tld_is_invalid() {
         ].try_into().expect("qed; domains vector exceeds the limit");
 
         assert_noop!(
-                Domains::support_tlds(Origin::root(), tlds_list),
+                Domains::support_tlds(RuntimeOrigin::root(), tlds_list),
                 Error::<Test>::DomainContainsInvalidChar,
             );
     });
