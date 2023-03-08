@@ -28,7 +28,6 @@ impl pallet_proxy::Config for Runtime {
     type ProxyDepositFactor = pallet_subsocial_proxy::AdjustedProxyDepositFactor<Runtime>;
     ...
 }
-
 ```
 
 ### Note!
