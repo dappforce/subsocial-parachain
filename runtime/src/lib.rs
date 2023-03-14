@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 18,
+	spec_version: 19,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -382,7 +382,7 @@ parameter_types! {
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
-	type OnSystemEvent = ();
+	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
@@ -701,6 +701,10 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+impl cumulus_pallet_solo_to_para::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -753,6 +757,7 @@ construct_runtime!(
 		Reactions: pallet_reactions = 78,
 
 		// Temporary
+		Migration: cumulus_pallet_solo_to_para = 254,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
