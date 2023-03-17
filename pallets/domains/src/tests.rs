@@ -108,7 +108,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
 
             assert_noop!(
                 Domains::register_domain(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     domain_from(b"second-domain".to_vec()),
                     ExtBuilder::default().reservation_period_limit,
                 ),
@@ -121,7 +121,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
 fn force_register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            _force_register_domain_with_origin(Origin::signed(DOMAIN_OWNER)),
+            _force_register_domain_with_origin(RuntimeOrigin::signed(DOMAIN_OWNER)),
             BadOrigin
         );
     });
@@ -157,13 +157,13 @@ fn register_domain_should_fail_when_domain_reserved() {
         let domain = domain_from(b"split-wo-rd".to_vec());
 
         assert_ok!(Domains::reserve_words(
-            Origin::root(),
+            RuntimeOrigin::root(),
             vec![word].try_into().expect("qed; domains vector exceeds the limit"),
         ));
 
         assert_noop!(
             Domains::register_domain(
-                Origin::signed(DOMAIN_OWNER),
+                RuntimeOrigin::signed(DOMAIN_OWNER),
                 domain,
                 ExtBuilder::default().reservation_period_limit,
             ),
@@ -183,7 +183,7 @@ fn reserve_words_should_work() {
             Domains::bound_domain(b"word-three".to_vec()),
         ].try_into().expect("qed; domains vector exceeds the limit");
 
-        assert_ok!(Domains::reserve_words(Origin::root(), domains_list.clone()));
+        assert_ok!(Domains::reserve_words(RuntimeOrigin::root(), domains_list.clone()));
 
         assert!(Domains::is_word_reserved(&domains_list[0]));
         assert!(Domains::is_word_reserved(&domains_list[1]));
@@ -201,7 +201,7 @@ fn reserve_words_should_fail_when_word_is_invalid() {
             ].try_into().expect("qed; domains vector exceeds the limit");
 
             assert_noop!(
-                Domains::reserve_words(Origin::root(), domains_list),
+                Domains::reserve_words(RuntimeOrigin::root(), domains_list),
                 Error::<Test>::DomainContainsInvalidChar,
             );
         });
@@ -214,7 +214,7 @@ fn support_tlds_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(
             Domains::support_tlds(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
             )
         );
@@ -232,7 +232,7 @@ fn support_tlds_should_fail_when_tld_is_invalid() {
         ].try_into().expect("qed; domains vector exceeds the limit");
 
         assert_noop!(
-                Domains::support_tlds(Origin::root(), tlds_list),
+                Domains::support_tlds(RuntimeOrigin::root(), tlds_list),
                 Error::<Test>::DomainContainsInvalidChar,
             );
     });

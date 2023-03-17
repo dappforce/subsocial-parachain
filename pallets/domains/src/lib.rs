@@ -21,7 +21,7 @@ pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, dispatch::DispatchClass};
     use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
@@ -33,7 +33,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The currency trait.
         type Currency: ReservableCurrency<Self::AccountId>;
@@ -201,6 +201,7 @@ pub mod pallet {
         /// the domain to expire in [expires_in] number of blocks.
         /// [full_domain] is a full domain name including a dot (.) and TLD.
         /// Example of a [full_domain]: `mytoken.ksm`
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
@@ -214,6 +215,7 @@ pub mod pallet {
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target],
         /// and set the domain to expire in [expires_in] number of blocks.
+        #[pallet::call_index(1)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_register_domain(),
             DispatchClass::Operational,
@@ -239,6 +241,7 @@ pub mod pallet {
         /// new value is smaller than the old value, part of the deposit will be refunded
         /// back to the domain owner. While if [value_opt] is None, the record will be
         /// deleted and the whole deposit will be refunded.
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::set_record())]
         pub fn set_record(
             origin: OriginFor<T>,
@@ -253,6 +256,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_record(),
             DispatchClass::Operational,
@@ -271,6 +275,7 @@ pub mod pallet {
         }
 
         /// Mark a set of domains as not reservable by users.
+        #[pallet::call_index(4)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -291,6 +296,7 @@ pub mod pallet {
         }
 
         /// Add support for a set of top-level domains.
+        #[pallet::call_index(5)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,

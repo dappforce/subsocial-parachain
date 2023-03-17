@@ -29,7 +29,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type WeightInfo: WeightInfo;
     }
@@ -73,6 +73,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::follow_space())]
         pub fn follow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
@@ -95,6 +96,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::unfollow_space())]
         pub fn unfollow_space(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
@@ -109,8 +111,9 @@ pub mod pallet {
             Self::remove_space_follower(follower, space_id)
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight((
-            100_000 + T::DbWeight::get().reads_writes(3, 4),
+            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(3, 4),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

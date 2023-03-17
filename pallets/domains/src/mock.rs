@@ -40,8 +40,8 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -49,7 +49,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -81,7 +81,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -110,7 +110,7 @@ parameter_types! {
 }
 
 impl pallet_domains::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type MinDomainLength = MinDomainLength;
     type MaxDomainLength = MaxDomainLength;
@@ -160,7 +160,7 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
 }
 
-pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
     _force_register_domain(Some(origin), None, None, None)
 }
 
@@ -173,13 +173,13 @@ pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) ->
 }
 
 fn _force_register_domain(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::force_register_domain(
-        origin.unwrap_or_else(Origin::root),
+        origin.unwrap_or_else(RuntimeOrigin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
@@ -191,12 +191,12 @@ pub(crate) fn _register_default_domain() -> DispatchResult {
 }
 
 fn _register_domain(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     domain: Option<DomainName<Test>>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
@@ -315,7 +315,7 @@ impl ExtBuilder {
             System::set_block_number(1);
             assert_ok!(
                 Domains::support_tlds(
-                    Origin::root(),
+                    RuntimeOrigin::root(),
                     vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
                 )
             );

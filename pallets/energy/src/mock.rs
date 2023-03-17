@@ -1,15 +1,14 @@
 use codec::Decode;
 use frame_support::{
-    dispatch::RawOrigin,
+    dispatch::{RawOrigin, DispatchInfo},
     pallet_prelude::{DispatchClass, Pays, Weight},
     parameter_types,
     traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
     weights::{
-        DispatchInfo, WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
 };
-use frame_system::limits::BlockWeights;
 use pallet_balances::NegativeImbalance;
 use pallet_transaction_payment::{CurrencyAdapter, OnChargeTransaction};
 use smallvec::smallvec;
@@ -53,25 +52,19 @@ frame_support::construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
-    pub MockBlockWeights: BlockWeights = BlockWeights::builder()
-        .base_block(0)
-        .for_class(DispatchClass::all(), |weights| {
-            // we set it to 0 to have a predictable and easy to write weight to fee function
-            weights.base_extrinsic = 0;
-            weights.max_extrinsic = 1_000_000_000.into();
-            weights.max_total = 1_000_000_000_000.into();
-            weights.reserved = None;
-        })
-        .avg_block_initialization(Perbill::zero())
-        .build_or_panic();
+    pub MockBlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(
+			frame_support::weights::Weight::from_ref_time(1_000_000)
+                .set_proof_size(u64::MAX)
+		);
 }
 
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = MockBlockWeights;
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -79,7 +72,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -100,7 +93,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -149,6 +142,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = Energy;
     type OperationalFeeMultiplier = ConstU8<0>;
     type WeightToFee = IdentityWeightToFeePolynomial;
@@ -158,17 +152,21 @@ impl pallet_transaction_payment::Config for Test {
 
 #[test]
 fn test_that_pallet_transaction_payment_works_as_expected() {
-    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&4000), 0);
-    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&1), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(4000)), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(1)), 0);
 
-    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&4000), 4000);
-    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&1), 1);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(4000)), 4000);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(1)), 1);
 
-    fn compute_fee(len: u32, weight: Weight, tip: Balance) -> Balance {
+    fn compute_fee(len: u32, weight: u64, tip: Balance) -> Balance {
         ExtBuilder::default().build().execute_with(|| {
             pallet_transaction_payment::Pallet::<Test>::compute_fee(
                 len,
-                &DispatchInfo { weight, class: DispatchClass::Normal, pays_fee: Pays::Yes },
+                &DispatchInfo {
+                    weight: Weight::from_ref_time(weight),
+                    class: DispatchClass::Normal,
+                    pays_fee: Pays::Yes,
+                },
                 tip,
             )
         })
@@ -212,7 +210,7 @@ where
 }
 
 impl pallet_energy::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type Balance = <Test as pallet_balances::Config>::Balance;
     type DefaultValueCoefficient = ValueCoefficient;
@@ -278,8 +276,8 @@ where
 
     fn withdraw_fee(
         who: &AccountId,
-        call: &<Test as frame_system::Config>::Call,
-        dispatch_info: &DispatchInfoOf<<Test as frame_system::Config>::Call>,
+        call: &<Test as frame_system::Config>::RuntimeCall,
+        dispatch_info: &DispatchInfoOf<<Test as frame_system::Config>::RuntimeCall>,
         fee: Self::Balance,
         tip: Self::Balance,
     ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
@@ -293,8 +291,8 @@ where
 
     fn correct_and_deposit_fee(
         who: &AccountId,
-        dispatch_info: &DispatchInfoOf<<Test as frame_system::Config>::Call>,
-        post_info: &PostDispatchInfoOf<<Test as frame_system::Config>::Call>,
+        dispatch_info: &DispatchInfoOf<<Test as frame_system::Config>::RuntimeCall>,
+        post_info: &PostDispatchInfoOf<<Test as frame_system::Config>::RuntimeCall>,
         corrected_fee: Self::Balance,
         tip: Self::Balance,
         already_withdrawn: Self::LiquidityInfo,

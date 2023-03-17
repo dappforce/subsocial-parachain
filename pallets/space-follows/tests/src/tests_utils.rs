@@ -83,14 +83,14 @@ pub(crate) fn _create_default_space() -> DispatchResult {
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     // FIXME: we don't have handles anymore
     _handle: Option<Option<Vec<u8>>>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResult {
     Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
@@ -98,12 +98,12 @@ pub(crate) fn _create_space(
 
 
 pub(crate) fn _update_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     update: Option<SpaceUpdate>,
 ) -> DispatchResult {
     Spaces::update_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         update.unwrap_or_else(|| space_update(None, None)),
     )
@@ -115,9 +115,9 @@ pub(crate) fn _default_follow_space() -> DispatchResult {
     _follow_space(None, None)
 }
 
-pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _follow_space(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
     SpaceFollows::follow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
     )
 }
@@ -126,9 +126,9 @@ pub(crate) fn _default_unfollow_space() -> DispatchResult {
     _unfollow_space(None, None)
 }
 
-pub(crate) fn _unfollow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _unfollow_space(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
     SpaceFollows::unfollow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
     )
 }
