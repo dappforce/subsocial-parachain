@@ -67,24 +67,6 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             .saturating_add(T::DbWeight::get().reads(3 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn set_inner_value() -> Weight {
-        (37_599_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(3 as Weight))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn force_set_inner_value() -> Weight {
-        (36_287_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(3 as Weight))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_outer_value() -> Weight {
-        (51_741_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn set_record() -> Weight {
@@ -92,10 +74,6 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             .saturating_add(T::DbWeight::get().reads(2 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_domain_content() -> Weight {
-        (30_119_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn force_set_record() -> Weight {
