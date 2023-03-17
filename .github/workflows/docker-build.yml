@@ -1,27 +1,36 @@
-name: Build and deploy a new release
+name: Build a new docker image
 on:
   workflow_dispatch:
+    inputs:
+      input-tag:
+        description: 'Put a desired tag here (latest by default)'
+        required: false
+        default: 'latest'
   pull_request:
     types:
       - closed
     branches:
       - main
 
+env:
+  IMAGE: dappforce/subsocial-parachain
+
 jobs:
   build:
     if: contains( github.event.pull_request.labels.*.name, 'CI') || github.event_name == 'workflow_dispatch'
     name: Create & push Docker image
-    runs-on: [ self-hosted, linux, x64, parachain ]
+    runs-on: [ self-hosted, linux, x64 ]
 
     steps:
       - uses: actions/checkout@v2
       - name: Prepare
         id: prep
         run: |
+          INPUT_TAG=${{ github.event.inputs.input-tag }}
           TAG=$(echo $GITHUB_SHA | head -c7)
-          IMAGE="dappforce/subsocial-parachain"
-          echo ::set-output name=tagged_image::${IMAGE}:${TAG}
-          echo ::set-output name=tag::${TAG}
+          echo sha_tagged_image=${IMAGE}:${TAG} >> $GITHUB_OUTPUT
+          [ -z $INPUT_TAG ] && INPUT_TAG=latest
+          echo custom_tagged_image=${IMAGE}:${INPUT_TAG} >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         id: buildx
@@ -30,8 +39,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@master
         with:
-          username: ${{ secrets.DOCKER_USERNAME_NEW }}
-          password: ${{ secrets.DOCKER_PASSWORD_NEW }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Cache Docker layers
         uses: actions/cache@v2
@@ -49,8 +58,8 @@ jobs:
           file: docker/Dockerfile
           push: true
           tags: |
-            ${{ steps.prep.outputs.tagged_image }}
-            dappforce/subsocial-parachain:latest
+            ${{ steps.prep.outputs.sha_tagged_image }}
+            ${{ steps.prep.outputs.custom_tagged_image }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -58,37 +67,3 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-
-  deploy_1:
-    name: deploy-collator-1
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /home/ops/
-            ./para-one.sh
-
-
-  deploy_2:
-    name: deploy-collator-2
-    needs: deploy_1
-    runs-on: ubuntu-latest
-    steps:
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST_2 }}
-          username: ${{ secrets.USERNAME_2 }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /home/ops/
-            ./para-two.sh

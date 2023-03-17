@@ -1,12 +1,9 @@
-name: Test Code
+name: Check and Test Code
 
 on:
   pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [ "main", "feature/*" ]
 
 jobs:
   test-code:
@@ -45,7 +42,7 @@ jobs:
       #   run: cargo +${{ env.rustc_version }} clippy -- -D warnings
 
       - name: Check Code
-        run: cargo check
+        run: cargo check --release
 
       - name: Test Code
         run: cargo test

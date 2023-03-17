@@ -3,6 +3,18 @@
 pub use pallet::*;
 // pub mod rpc;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
+pub use crate::weights::WeightInfo;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -11,8 +23,8 @@ pub mod pallet {
 
     use pallet_permissions::SpacePermissions;
     use subsocial_support::{
-        traits::{ProfileManager, SpacePermissionsProvider},
-        SpaceId, SpacePermissionsInfo,
+        traits::{ProfileManager, SpacePermissionsProvider, SpacesInterface},
+        Content, SpaceId, SpacePermissionsInfo,
     };
 
     type SpacePermissionsInfoOf<T> =
@@ -27,6 +39,10 @@ pub mod pallet {
             Self::AccountId,
             SpacePermissionsInfoOf<Self>,
         >;
+
+        type SpacesInterface: SpacesInterface<Self::AccountId, SpaceId>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -47,30 +63,21 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Social account was not found by id.
-        SocialAccountNotFound,
         /// There is no space set as profile.
         NoSpaceSetAsProfile,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        // FIXME: cover with tests
-        #[pallet::weight(1_250_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(<T as Config>::WeightInfo::set_profile())]
         pub fn set_profile(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
             Self::do_set_profile(&sender, space_id)?;
-
-            Self::deposit_event(Event::ProfileUpdated {
-                account: sender,
-                space_id: Some(space_id),
-            });
             Ok(())
         }
 
-        // FIXME: cover with tests
-        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(1, 1))]
+        #[pallet::weight(<T as Config>::WeightInfo::reset_profile())]
         pub fn reset_profile(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -85,63 +92,46 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
-            DispatchClass::Operational,
-            Pays::Yes,
-        ))]
-        pub fn force_set_space_as_profile(
-            origin: OriginFor<T>,
-            account: T::AccountId,
-            space_id_opt: Option<SpaceId>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+        #[pallet::weight(<T as Config>::WeightInfo::create_space_as_profile())]
+        pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
 
-            match space_id_opt {
-                Some(space_id) => <ProfileSpaceIdByAccount<T>>::insert(&account, space_id),
-                None => <ProfileSpaceIdByAccount<T>>::remove(&account),
-            }
+            let space_id = T::SpacesInterface::create_space(&sender, content)?;
 
-            Self::deposit_event(Event::ProfileUpdated { account, space_id: space_id_opt });
-            Ok(Pays::No.into())
+            Self::do_set_profile(&sender, space_id)?;
+
+            Ok(())
         }
     }
 
     impl<T: Config> Pallet<T> {
-        // FIXME: cover with tests
         pub fn do_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
             T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
 
             <ProfileSpaceIdByAccount<T>>::insert(account, space_id);
+
+            Self::deposit_event(Event::ProfileUpdated {
+                account: account.clone(),
+                space_id: Some(space_id),
+            });
             Ok(())
         }
 
-        // FIXME: cover with tests
-        pub fn unlink_space_from_profile(
-            account: &T::AccountId,
-            space_id: SpaceId,
-        ) -> DispatchResult {
-            T::SpacePermissionsProvider::ensure_space_owner(space_id, account)?;
-
+        pub fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) {
             if let Some(profile_space_id) = Self::profile_space_id_by_account(account) {
                 if profile_space_id == space_id {
                     <ProfileSpaceIdByAccount<T>>::remove(account);
+                    Self::deposit_event(Event::ProfileUpdated {
+                        account: account.clone(),
+                        space_id: None,
+                    });
                 }
             }
-            Ok(())
         }
     }
 
     impl<T: Config> ProfileManager<T::AccountId> for Pallet<T> {
-        fn profile_space_id(account: &T::AccountId) -> Option<SpaceId> {
-            Self::profile_space_id_by_account(account)
-        }
-
-        fn try_set_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
-            Self::do_set_profile(account, space_id)
-        }
-
-        fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) -> DispatchResult {
+        fn unlink_space_from_profile(account: &T::AccountId, space_id: SpaceId) {
             Self::unlink_space_from_profile(account, space_id)
         }
     }
