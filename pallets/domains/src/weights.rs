@@ -74,16 +74,16 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn set_record() -> Weight {
-        (29_000_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(29_000_000)
+            .saturating_add(T::DbWeight::get().reads(2))
+            .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn force_set_record() -> Weight {
-        (17_000_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(17_000_000)
+            .saturating_add(T::DbWeight::get().reads(2))
+            .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
             /// The range of component `s` is `[1, 2860]`.
@@ -131,16 +131,16 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn set_record() -> Weight {
-        (29_000_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(29_000_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: Domains RegisteredDomains (r:1 w:0)
             // Storage: Domains DomainRecords (r:1 w:1)
         fn force_set_record() -> Weight {
-        (17_000_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(17_000_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
             /// The range of component `s` is `[1, 2860]`.

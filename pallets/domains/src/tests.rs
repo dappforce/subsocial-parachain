@@ -283,7 +283,7 @@ fn set_record_should_fail_when_caller_unsigned() {
         .execute_with(|| {
             assert_noop!(
                 Domains::set_record(
-                    Origin::none(),
+                    RuntimeOrigin::none(),
                     default_domain(),
                     b"key".to_vec().try_into().unwrap(),
                     Some(b"value".to_vec().try_into().unwrap()),
@@ -300,7 +300,7 @@ fn set_record_should_fail_when_caller_is_not_domain_owner() {
         .execute_with(|| {
             assert_noop!(
                 Domains::set_record(
-                    Origin::signed(DUMMY_ACCOUNT),
+                    RuntimeOrigin::signed(DUMMY_ACCOUNT),
                     default_domain(),
                     record_key(b"key"),
                     record_value(b"value").into(),
@@ -317,7 +317,7 @@ fn set_record_should_fail_when_domain_is_not_found() {
         .execute_with(|| {
             assert_noop!(
                 Domains::set_record(
-                    Origin::signed(DUMMY_ACCOUNT),
+                    RuntimeOrigin::signed(DUMMY_ACCOUNT),
                     default_domain(),
                     record_key(b"key"),
                     record_value(b"value").into(),
@@ -338,7 +338,7 @@ fn set_record_should_work_correctly() {
             let value_opt: Option<RecordValue<Test>> = Some(value.clone());
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     value_opt.clone(),
@@ -367,7 +367,7 @@ fn set_record_should_fail_when_owner_have_no_record_deposit() {
         .execute_with(|| {
             assert_noop!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     record_key(b"key"),
                     record_value(b"value").into(),
@@ -392,7 +392,7 @@ fn set_record_should_reserve_correct_record_deposit() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -432,7 +432,7 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -456,7 +456,7 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     None,
@@ -495,7 +495,7 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -521,7 +521,7 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -559,7 +559,7 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -585,7 +585,7 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -634,7 +634,7 @@ fn set_record_should_refund_to_correct_depositor() {
 
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER),
+                    RuntimeOrigin::signed(DOMAIN_OWNER),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
@@ -660,7 +660,7 @@ fn set_record_should_refund_to_correct_depositor() {
             let value = record_value(b"6789");
             assert_ok!(
                 Domains::set_record(
-                    Origin::signed(DOMAIN_OWNER_2),
+                    RuntimeOrigin::signed(DOMAIN_OWNER_2),
                     default_domain(),
                     key.clone(),
                     Some(value.clone()),
