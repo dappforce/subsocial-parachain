@@ -10,8 +10,8 @@ use hex_literal::hex;
 use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
-const DEFAULT_PROTOCOL_ID: &str = "subx";
-const DEFAULT_PARA_ID: u32 = 2100;
+const DEFAULT_PROTOCOL_ID: &str = "sub-roc-v1";
+const DEFAULT_PARA_ID: u32 = 2101;
 
 const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 
@@ -178,8 +178,8 @@ pub fn soonsocial_config() -> Result<ChainSpec, String> {
 
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"SoonSocialX",
-		"subsocialx",
+		"SoonSocial",
+		"soonsocial",
 		ChainType::Live,
 		move || {
 			let mut total_allocated: Balance = Zero::zero();
@@ -241,7 +241,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 		None,
 		Some(subsocial_properties()),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "rococo".into(),
 			para_id: DEFAULT_PARA_ID,
 		},
 	)
