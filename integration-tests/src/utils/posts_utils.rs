@@ -51,13 +51,13 @@ pub(crate) fn _create_default_post() -> DispatchResult {
 }
 
 pub(crate) fn _create_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id_opt: Option<Option<SpaceId>>,
     extension: Option<PostExtension>,
     content: Option<Content>,
 ) -> DispatchResult {
     Posts::create_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id_opt.unwrap_or(Some(SPACE1)),
         extension.unwrap_or_else(extension_regular_post),
         content.unwrap_or_else(post_content_ipfs),
@@ -65,12 +65,12 @@ pub(crate) fn _create_post(
 }
 
 pub(crate) fn _update_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     update: Option<PostUpdate>,
 ) -> DispatchResult {
     Posts::update_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         update.unwrap_or_else(|| post_update(None, None, None)),
     )
@@ -86,12 +86,12 @@ pub(crate) fn _move_post_to_nowhere(post_id: PostId) -> DispatchResult {
 }
 
 pub(crate) fn _move_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     new_space_id: Option<Option<SpaceId>>,
 ) -> DispatchResult {
     Posts::move_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         new_space_id.unwrap_or(Some(SPACE2)),
     )
@@ -102,7 +102,7 @@ pub(crate) fn _create_default_comment() -> DispatchResult {
 }
 
 pub(crate) fn _create_comment(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     parent_id: Option<Option<PostId>>,
     content: Option<Content>,
@@ -119,7 +119,7 @@ pub(crate) fn _create_comment(
 }
 
 pub(crate) fn _update_comment(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     update: Option<PostUpdate>,
 ) -> DispatchResult {

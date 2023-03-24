@@ -1,9 +1,6 @@
-use crate::mock::*;
-use crate::*;
+use crate::{mock::*, *};
 
-use frame_support::{
-    assert_ok, assert_noop,
-};
+use frame_support::{assert_noop, assert_ok};
 use subsocial_support::ContentError;
 
 #[test]
@@ -21,25 +18,20 @@ fn create_role_should_work() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_default().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_default().into_iter().collect());
     });
 }
 
 #[test]
 fn create_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
-        assert_ok!(
-            _create_role(
-                Some(Origin::signed(ACCOUNT2)),
-                None, // On SpaceId 1
-                None, // Without time_to_live
-                None, // With default content
-                Some(self::permission_set_updated())
-            )
-        ); // RoleId 3
+        assert_ok!(_create_role(
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
+            None, // On SpaceId 1
+            None, // Without time_to_live
+            None, // With default content
+            Some(self::permission_set_updated())
+        )); // RoleId 3
 
         // Check whether Role is stored correctly
         assert!(Roles::role_by_id(ROLE3).is_some());
@@ -51,10 +43,7 @@ fn create_role_should_work_with_a_few_roles() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_updated().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_updated().into_iter().collect());
     });
 }
 
@@ -67,8 +56,9 @@ fn create_role_should_fail_with_space_not_found() {
                 Some(SPACE2),
                 None, // Without time_to_live
                 None, // With default content
-                None // With default permission set
-            ), "SpaceNotFound"
+                None  // With default permission set
+            ),
+            "mock:SpaceNotFound"
         );
     });
 }
@@ -78,12 +68,13 @@ fn create_role_should_fail_with_no_permission() {
     ExtBuilder::build().execute_with(|| {
         assert_noop!(
             _create_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On SpaceId 1
                 None, // Without time_to_live
                 None, // With default content
-                None // With default permission set
-            ), Error::<Test>::NoPermissionToManageRoles
+                None  // With default permission set
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -107,13 +98,16 @@ fn create_role_should_fail_with_no_permissions_provided() {
 #[test]
 fn create_role_should_fail_with_ipfs_is_incorrect() {
     ExtBuilder::build().execute_with(|| {
-        assert_noop!(_create_role(
-            None, // From ACCOUNT1
-            None, // On SpaceId 1
-            None, // Without time_to_live
-            Some(self::invalid_role_content_ipfs()),
-            None // With default permissions set
-        ), ContentError::InvalidIpfsCid);
+        assert_noop!(
+            _create_role(
+                None, // From ACCOUNT1
+                None, // On SpaceId 1
+                None, // Without time_to_live
+                Some(self::invalid_role_content_ipfs()),
+                None // With default permissions set
+            ),
+            ContentError::InvalidIpfsCid
+        );
     });
 }
 
@@ -123,12 +117,13 @@ fn create_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _create_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On SpaceId 1
                 None, // Without time_to_live
                 None, // With default content
                 Some(self::permission_set_random())
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -148,10 +143,7 @@ fn update_role_should_work() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, true);
         assert_eq!(role.content, self::updated_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_updated().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_updated().into_iter().collect());
     });
 }
 
@@ -159,19 +151,15 @@ fn update_role_should_work() {
 fn update_role_should_work_with_empty_perms_provided_no_changes() {
     ExtBuilder::build().execute_with(|| {
         assert_ok!(_create_default_role()); // RoleId 1
-        assert_ok!(
-            _update_role(
-                None, // From ACCOUNT1
-                None, // On RoleId 1
-                Some(
-                    self::role_update(
-                        Some(true),
-                        None,
-                        Some(self::permission_set_empty().into_iter().collect())
-                    )
-                )
-            )
-        );
+        assert_ok!(_update_role(
+            None, // From ACCOUNT1
+            None, // On RoleId 1
+            Some(self::role_update(
+                Some(true),
+                None,
+                Some(self::permission_set_empty().into_iter().collect())
+            ))
+        ));
 
         // Check whether data in Role structure is correct
         let role = Roles::role_by_id(ROLE1).unwrap();
@@ -179,10 +167,7 @@ fn update_role_should_work_with_empty_perms_provided_no_changes() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, true);
         assert_eq!(role.content, self::default_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_default().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_default().into_iter().collect());
     });
 }
 
@@ -217,17 +202,15 @@ fn update_role_should_work_with_same_perms_provided_no_update() {
 #[test]
 fn update_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
-        assert_ok!(
-            _update_role(
-                Some(Origin::signed(ACCOUNT2)),
-                Some(ROLE1),
-                Some(self::role_update(
-                    None,
-                    None,
-                    Some(self::permission_set_updated().into_iter().collect())
-                ))
-            )
-        );
+        assert_ok!(_update_role(
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
+            Some(ROLE1),
+            Some(self::role_update(
+                None,
+                None,
+                Some(self::permission_set_updated().into_iter().collect())
+            ))
+        ));
 
         // Check whether Role is stored correctly
         assert!(Roles::role_by_id(ROLE1).is_some());
@@ -238,10 +221,7 @@ fn update_role_should_work_with_a_few_roles() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_updated().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_updated().into_iter().collect());
     });
 }
 
@@ -249,19 +229,15 @@ fn update_role_should_work_with_a_few_roles() {
 fn update_role_should_work_not_updated_all_the_same() {
     ExtBuilder::build().execute_with(|| {
         assert_ok!(_create_default_role()); // RoleId 1
-        assert_ok!(
-            _update_role(
-                None, // From ACCOUNT1
-                None, // On RoleId 1
-                Some(
-                    self::role_update(
-                        Some(false),
-                        Some(self::default_role_content_ipfs()),
-                        Some(self::permission_set_default().into_iter().collect())
-                    )
-                )
-            )
-        );
+        assert_ok!(_update_role(
+            None, // From ACCOUNT1
+            None, // On RoleId 1
+            Some(self::role_update(
+                Some(false),
+                Some(self::default_role_content_ipfs()),
+                Some(self::permission_set_default().into_iter().collect())
+            ))
+        ));
 
         // Check whether Role is stored correctly
         assert!(Roles::role_by_id(ROLE1).is_some());
@@ -272,10 +248,7 @@ fn update_role_should_work_not_updated_all_the_same() {
         assert_eq!(role.space_id, SPACE1);
         assert_eq!(role.disabled, false);
         assert_eq!(role.content, self::default_role_content_ipfs());
-        assert_eq!(
-            role.permissions,
-            self::permission_set_default().into_iter().collect()
-        );
+        assert_eq!(role.permissions, self::permission_set_default().into_iter().collect());
     });
 }
 
@@ -292,10 +265,11 @@ fn update_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _update_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On RoleId 1
-                None // With RoleUpdate that updates every mutable (updatable) field
-            ), Error::<Test>::NoPermissionToManageRoles
+                None  // With RoleUpdate that updates every mutable (updatable) field
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -304,11 +278,14 @@ fn update_role_should_fail_with_no_permission() {
 fn update_role_should_fail_with_no_role_updates() {
     ExtBuilder::build().execute_with(|| {
         assert_ok!(_create_default_role()); // RoleId 1
-        assert_noop!(_update_role(
-            None, // From ACCOUNT1
-            None, // On RoleId 1
-            Some(self::role_update(None, None, None))
-        ), Error::<Test>::NoUpdatesProvided);
+        assert_noop!(
+            _update_role(
+                None, // From ACCOUNT1
+                None, // On RoleId 1
+                Some(self::role_update(None, None, None))
+            ),
+            Error::<Test>::NoUpdatesProvided
+        );
     });
 }
 
@@ -316,11 +293,14 @@ fn update_role_should_fail_with_no_role_updates() {
 fn update_role_should_fail_with_ipfs_is_incorrect() {
     ExtBuilder::build().execute_with(|| {
         assert_ok!(_create_default_role()); // RoleId 1
-        assert_noop!(_update_role(
-            None, // From ACCOUNT1
-            None, // On RoleId 1
-            Some(self::role_update(None, Some(self::invalid_role_content_ipfs()), None))
-        ), ContentError::InvalidIpfsCid);
+        assert_noop!(
+            _update_role(
+                None, // From ACCOUNT1
+                None, // On RoleId 1
+                Some(self::role_update(None, Some(self::invalid_role_content_ipfs()), None))
+            ),
+            ContentError::InvalidIpfsCid
+        );
     });
 }
 
@@ -330,14 +310,15 @@ fn update_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _update_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On RoleId 1
                 Some(self::role_update(
                     None,
                     None,
                     Some(self::permission_set_default().into_iter().collect())
                 ))
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -360,16 +341,17 @@ fn grant_role_should_work() {
 fn grant_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         let user = User::Account(ACCOUNT3);
-        assert_ok!(
-            _grant_role(
-                Some(Origin::signed(ACCOUNT2)),
-                None, // RoleId 1
-                Some(vec![User::Account(ACCOUNT3)])
-            )
-        );
+        assert_ok!(_grant_role(
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
+            None, // RoleId 1
+            Some(vec![User::Account(ACCOUNT3)])
+        ));
 
         // Check whether data is stored correctly
-        assert_eq!(Roles::users_by_role_id(ROLE1), vec![User::Account(ACCOUNT2), User::Account(ACCOUNT3)]);
+        assert_eq!(
+            Roles::users_by_role_id(ROLE1),
+            vec![User::Account(ACCOUNT2), User::Account(ACCOUNT3)]
+        );
         assert_eq!(Roles::role_ids_by_user_in_space(user, SPACE1), vec![ROLE1]);
     });
 }
@@ -387,10 +369,11 @@ fn grant_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _grant_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -404,7 +387,8 @@ fn grant_role_should_fail_with_no_users_provided() {
                 None, // From ACCOUNT1
                 None, // RoleId 1
                 Some(vec![])
-            ), Error::<Test>::NoUsersProvided
+            ),
+            Error::<Test>::NoUsersProvided
         );
     });
 }
@@ -413,12 +397,13 @@ fn grant_role_should_fail_with_no_users_provided() {
 fn grant_role_should_fail_with_a_few_roles_no_permission() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_delete_role(None, Some(ROLE2)));
-        assert_noop! (
+        assert_noop!(
             _grant_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -442,13 +427,11 @@ fn revoke_role_should_work() {
 fn revoke_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         let user = User::Account(ACCOUNT3);
-        assert_ok!(
-            _revoke_role(
-                Some(Origin::signed(ACCOUNT2)),
-                None, // RoleId 1
-                Some(vec![User::Account(ACCOUNT2)])
-            )
-        );
+        assert_ok!(_revoke_role(
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
+            None, // RoleId 1
+            Some(vec![User::Account(ACCOUNT2)])
+        ));
 
         // Check whether data is stored correctly
         assert!(Roles::users_by_role_id(ROLE1).is_empty());
@@ -477,7 +460,7 @@ fn revoke_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _revoke_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
             ),
@@ -490,12 +473,13 @@ fn revoke_role_should_fail_with_no_permission() {
 fn revoke_role_should_fail_with_a_few_roles_no_permission() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_delete_role(None, Some(ROLE2)));
-        assert_noop! (
+        assert_noop!(
             _revoke_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -519,12 +503,10 @@ fn delete_role_should_work() {
 #[test]
 fn delete_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
-        assert_ok!(
-            _delete_role(
-                Some(Origin::signed(ACCOUNT2)),
-                None // RoleId 1
-            )
-        );
+        assert_ok!(_delete_role(
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
+            None // RoleId 1
+        ));
 
         // Check whether storages are cleaned up
         assert!(Roles::role_by_id(ROLE1).is_none());
@@ -548,9 +530,10 @@ fn delete_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _delete_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None // RoleId 1
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }
@@ -573,11 +556,12 @@ fn delete_role_should_fail_with_too_many_users_for_delete_role() {
 fn delete_role_should_fail_with_a_few_roles_no_permission() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_delete_role(None, Some(ROLE2)));
-        assert_noop! (
+        assert_noop!(
             _delete_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None // RoleId 1
-            ), Error::<Test>::NoPermissionToManageRoles
+            ),
+            Error::<Test>::NoPermissionToManageRoles
         );
     });
 }

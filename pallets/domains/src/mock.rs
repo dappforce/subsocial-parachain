@@ -46,8 +46,8 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -55,7 +55,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -87,7 +87,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -114,7 +114,7 @@ parameter_types! {
 }
 
 impl pallet_domains::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type MinDomainLength = MinDomainLength;
     type MaxDomainLength = MaxDomainLength;
@@ -139,12 +139,12 @@ pub(crate) const ACCOUNT_B: u64 = 20;
 
 pub(crate) const DEFAULT_TLD: [u8; 3] = *b"sub";
 
-pub(crate) fn origin_a() -> Origin {
-    Origin::signed(ACCOUNT_A)
+pub(crate) fn origin_a() -> RuntimeOrigin {
+    RuntimeOrigin::signed(ACCOUNT_A)
 }
 
-pub(crate) fn origin_b() -> Origin {
-    Origin::signed(ACCOUNT_B)
+pub(crate) fn origin_b() -> RuntimeOrigin {
+    RuntimeOrigin::signed(ACCOUNT_B)
 }
 
 pub(crate) fn default_tld() -> DomainName<Test> {
@@ -201,7 +201,7 @@ pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
         .try_into().expect("qed; outer value exceeds max length")
 }
 
-pub(crate) fn _force_register_domain_with_origin(origin: Origin) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
     _force_register_domain(Some(origin), None, None, None, None)
 }
 
@@ -214,14 +214,14 @@ pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) ->
 }
 
 fn _force_register_domain(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::force_register_domain(
-        origin.unwrap_or_else(Origin::root),
+        origin.unwrap_or_else(RuntimeOrigin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
@@ -234,20 +234,20 @@ pub(crate) fn _register_default_domain() -> DispatchResult {
 }
 
 fn _register_domain(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
-pub(crate) fn _set_inner_value_with_origin(origin: Origin) -> DispatchResult {
+pub(crate) fn _set_inner_value_with_origin(origin: RuntimeOrigin) -> DispatchResult {
     _set_inner_value(Some(origin), None, None)
 }
 
@@ -256,18 +256,18 @@ pub(crate) fn _set_default_inner_value() -> DispatchResult {
 }
 
 fn _set_inner_value(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     domain: Option<DomainName<Test>>,
     value: Option<Option<InnerValueOf<Test>>>,
 ) -> DispatchResult {
     Domains::set_inner_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
         value.unwrap_or_else(|| Some(inner_value_account_domain_owner())),
     )
 }
 
-pub(crate) fn _set_outer_value_with_origin(origin: Origin) -> DispatchResult {
+pub(crate) fn _set_outer_value_with_origin(origin: RuntimeOrigin) -> DispatchResult {
     _set_outer_value(Some(origin), None, None)
 }
 
@@ -280,18 +280,18 @@ pub(crate) fn _set_default_outer_value() -> DispatchResult {
 }
 
 fn _set_outer_value(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     domain: Option<DomainName<Test>>,
     value: Option<Option<OuterValue<Test>>>,
 ) -> DispatchResult {
     Domains::set_outer_value(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
         value.unwrap_or_else(|| Some(default_outer_value(None))),
     )
 }
 
-pub(crate) fn _set_domain_content_with_origin(origin: Origin) -> DispatchResult {
+pub(crate) fn _set_domain_content_with_origin(origin: RuntimeOrigin) -> DispatchResult {
     _set_domain_content(Some(origin), None, None)
 }
 
@@ -304,12 +304,12 @@ pub(crate) fn _set_default_domain_content() -> DispatchResult {
 }
 
 fn _set_domain_content(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
 ) -> DispatchResult {
     Domains::set_domain_content(
-        origin.unwrap_or_else(|| Origin::signed(DOMAIN_OWNER)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain_lc),
         content.unwrap_or_else(another_valid_content_ipfs),
     )
@@ -412,7 +412,7 @@ impl ExtBuilder {
             System::set_block_number(1);
             assert_ok!(
                 Domains::support_tlds(
-                    Origin::root(),
+                    RuntimeOrigin::root(),
                     vec![default_tld()].try_into().expect("qed; domains vector exceeds the limit"),
                 )
             );

@@ -10,12 +10,12 @@ pub(crate) fn _transfer_default_space_ownership() -> DispatchResult {
 }
 
 pub(crate) fn _transfer_space_ownership(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     transfer_to: Option<AccountId>,
 ) -> DispatchResult {
     SpaceOwnership::transfer_space_ownership(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         transfer_to.unwrap_or(ACCOUNT2),
     )
@@ -25,9 +25,9 @@ pub(crate) fn _accept_default_pending_ownership() -> DispatchResult {
     _accept_pending_ownership(None, None)
 }
 
-pub(crate) fn _accept_pending_ownership(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _accept_pending_ownership(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
     SpaceOwnership::accept_pending_ownership(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
     )
 }
@@ -37,12 +37,12 @@ pub(crate) fn _reject_default_pending_ownership() -> DispatchResult {
 }
 
 pub(crate) fn _reject_default_pending_ownership_by_current_owner() -> DispatchResult {
-    _reject_pending_ownership(Some(Origin::signed(ACCOUNT1)), None)
+    _reject_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None)
 }
 
-pub(crate) fn _reject_pending_ownership(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _reject_pending_ownership(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
     SpaceOwnership::reject_pending_ownership(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
     )
 }

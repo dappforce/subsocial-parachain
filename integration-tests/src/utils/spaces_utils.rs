@@ -36,33 +36,33 @@ pub(crate) fn space_update(
     }
 }
 
-pub(crate) fn _create_default_space() -> DispatchResultWithPostInfo {
+pub(crate) fn _create_default_space() -> DispatchResult {
     _create_space(None, None, None)
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>
-) -> DispatchResultWithPostInfo {
+) -> DispatchResult {
     Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default()
     )
 }
 
-pub(crate) fn _create_space_with_content(content: Content) -> DispatchResultWithPostInfo {
+pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
     _create_space(None, Some(content), None)
 }
 
 pub(crate) fn _update_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     update: Option<SpaceUpdate>,
 ) -> DispatchResult {
     Spaces::update_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         update.unwrap_or_else(|| space_update(None, None)),
     )

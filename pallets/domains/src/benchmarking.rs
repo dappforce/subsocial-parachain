@@ -24,7 +24,7 @@ fn account_with_balance<T: Config>() -> T::AccountId {
 	owner
 }
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
@@ -54,7 +54,7 @@ fn mock_bounded_string_array<T: Config>(length: usize) -> BoundedDomainsVec<T> {
 }
 
 fn mock_tld<T: Config>() -> DomainName<T> {
-	Pallet::<T>::bound_domain(b"tld".to_vec())
+	Pallet::<T>::bound_domain(b"sub".to_vec())
 }
 
 fn add_default_tld<T: Config>() -> Result<DomainName<T>, DispatchErrorWithPostInfo> {

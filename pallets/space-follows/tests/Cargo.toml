@@ -1,0 +1,58 @@
+[package]
+name = 'pallet-space-follows-tests'
+version = '0.1.7'
+authors = ['DappForce <dappforce@pm.me>']
+edition = '2021'
+license = 'GPL-3.0-only'
+homepage = 'https://subsocial.network'
+repository = 'https://github.com/dappforce/subsocial-parachain'
+description = 'Tests for Space Follows pallet'
+keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
+categories = ['cryptography::cryptocurrencies']
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
+
+# Local dependencies
+subsocial-support = { default-features = false, path = '../../support' }
+pallet-permissions = { default-features = false, path = '../../permissions' }
+pallet-space-follows = { default-features = false, path = '..' }
+
+# Substrate dependencies
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+
+[dev-dependencies]
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-roles = { default-features = false, path = '../../roles' }
+pallet-profiles = { default-features = false, path = '../../profiles' }
+pallet-posts = { default-features = false, path = '../../posts' }
+pallet-spaces = { default-features = false, path = '../../spaces' }
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'scale-info/std',
+    'pallet-timestamp/std',
+    'frame-support/std',
+    'frame-system/std',
+    'sp-runtime/std',
+    'sp-std/std',
+    'pallet-permissions/std',
+    'pallet-balances/std',
+    'pallet-roles/std',
+    'pallet-space-follows/std',
+    'pallet-profiles/std',
+    'pallet-posts/std',
+]
+try-runtime = ["frame-support/try-runtime"]

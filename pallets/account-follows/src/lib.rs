@@ -18,7 +18,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::pallet]
@@ -68,7 +68,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::call_index(0)]
+        #[pallet::weight(Weight::from_ref_time(1_250_000) + T::DbWeight::get().reads_writes(2, 3))]
         pub fn follow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -88,7 +89,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(1_250_000 + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::call_index(1)]
+        #[pallet::weight(Weight::from_ref_time(1_250_000) + T::DbWeight::get().reads_writes(2, 3))]
         pub fn unfollow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -110,8 +112,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(4, 4),
+            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(4, 4),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

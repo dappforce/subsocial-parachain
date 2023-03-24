@@ -19,6 +19,10 @@ use subsocial_support::{
 };
 
 pub use pallet::*;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
 // pub mod rpc;
 
 pub type ReactionId = u64;
@@ -57,10 +61,14 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use subsocial_support::WhoAndWhen;
 
+    use crate::weights::WeightInfo;
+
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -147,7 +155,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(79_000_000 + T::DbWeight::get().reads_writes(7, 5))]
+        #[pallet::call_index(0)]
+        #[pallet::weight(< T as Config >::WeightInfo::create_post_reaction())]
         pub fn create_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -208,7 +217,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(49_000_000 + T::DbWeight::get().reads_writes(4, 2))]
+        #[pallet::call_index(1)]
+        #[pallet::weight(< T as Config >::WeightInfo::update_post_reaction())]
         pub fn update_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -260,7 +270,8 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(52_000_000 + T::DbWeight::get().reads_writes(4, 4))]
+        #[pallet::call_index(2)]
+        #[pallet::weight(< T as Config >::WeightInfo::delete_post_reaction())]
         pub fn delete_post_reaction(
             origin: OriginFor<T>,
             post_id: PostId,
@@ -304,8 +315,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight((
-            100_000 + T::DbWeight::get().reads_writes(2, 3),
+            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -341,8 +353,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(4)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(3, 3),
+            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(3, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -374,8 +387,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
