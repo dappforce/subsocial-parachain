@@ -416,6 +416,7 @@ pub mod pallet {
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
         }
 
+        #[pallet::call_index(8)]
         #[pallet::weight(10_000)]
         pub fn set_payment_beneficiary(
             origin: OriginFor<T>,
@@ -426,8 +427,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(9)]
         #[pallet::weight(
-            T::DbWeight::get().writes(1) + (100_000 * new_prices_config.len() * 2)
+            T::DbWeight::get().writes(1).ref_time() + (100_000 * new_prices_config.len() as u64 * 2)
         )]
         pub fn set_price_config(
             origin: OriginFor<T>,
@@ -729,7 +731,7 @@ pub mod pallet {
             Ok(())
         }
 
-        fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
+        pub(crate) fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
             let price_config = Self::prices_config();
             let subdomain_len = subdomain.len() as u32;
 

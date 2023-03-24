@@ -81,7 +81,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
+    pub const ExistentialDeposit: u64 = 0;
 }
 
 impl pallet_balances::Config for Test {
@@ -424,9 +424,19 @@ impl ExtBuilder {
     pub(crate) fn build_with_default_domain_registered(self) -> TestExternalities {
         let mut ext = self.clone().build();
         ext.execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit);
+            let balance = full_domain_price(&default_domain());
+            let _ = account_with_balance(DOMAIN_OWNER, balance);
             assert_ok!(_register_default_domain());
         });
         ext
     }
+}
+
+
+pub(crate) fn full_domain_price(domain: &DomainName<Test>) -> Balance {
+    let parts = pallet_domains::Pallet::<Test>::split_domain_by_dot(domain);
+    let (subdomain, _) = pallet_domains::Pallet::<Test>::get_domain_subset(&parts);
+    let price = pallet_domains::Pallet::<Test>::calculate_price(&subdomain);
+
+    return price.saturating_add(<Test as pallet_domains::Config>::BaseDomainDeposit::get());
 }

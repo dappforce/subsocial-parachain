@@ -1,4 +1,5 @@
 use frame_support::{assert_noop, assert_ok};
+use frame_support::traits::Currency;
 use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
 
@@ -140,6 +141,8 @@ fn register_domain_should_fail_when_domain_reserved() {
             vec![word].try_into().expect("qed; domains vector exceeds the limit"),
         ));
 
+        Balances::make_free_balance_be(&DOMAIN_OWNER, full_domain_price(&domain));
+
         assert_noop!(
             Domains::register_domain(
                 RuntimeOrigin::signed(DOMAIN_OWNER),
@@ -189,9 +192,11 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .base_domain_deposit(0)
         .build()
         .execute_with(|| {
+            Balances::make_free_balance_be(&ACCOUNT_A, full_domain_price(&domain_one));
             assert_ok!(Domains::register_domain(
                 origin_a(), domain_one.clone(), valid_content_ipfs(), 1
             ));
+            Balances::make_free_balance_be(&ACCOUNT_B, full_domain_price(&domain_two));
             assert_ok!(Domains::register_domain(
                 origin_b(), domain_two.clone(), valid_content_ipfs(), 1
             ));
