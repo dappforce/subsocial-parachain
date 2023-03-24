@@ -27,7 +27,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, dispatch::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::{ReservableCurrency, Currency, ExistenceRequirement::KeepAlive, tokens::WithdrawReasons}, dispatch::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
@@ -77,7 +77,7 @@ pub mod pallet {
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
         /// The governance origin to control this pallet.
-        type ForceOrigin: EnsureOrigin<Self::Origin>;
+        type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Account that receives funds spent for domain purchase.
         /// Used only once, when the pallet is initialized.
@@ -427,7 +427,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(
-            T::DbWeight::get().writes(1) + (100_000 * new_prices_config.len() as Weight * 2)
+            T::DbWeight::get().writes(1) + (100_000 * new_prices_config.len() * 2)
         )]
         pub fn set_price_config(
             origin: OriginFor<T>,
