@@ -20,6 +20,9 @@
   },
   "relay_chain": "kusama",
   "para_id": 2100,
+  "bad_blocks": [
+    "0x19d6ab9b4a757607557f237f85ea7b7c2810c0ef02aabd11e873ea3836958702"
+  ],
   "consensusEngine": null,
   "codeSubstitutes": {},
   "genesis": {

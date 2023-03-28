@@ -20,6 +20,7 @@
   },
   "relay_chain": "polkadot",
   "para_id": 2101,
+  "bad_blocks": null,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {
