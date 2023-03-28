@@ -140,7 +140,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn prices_config)]
     pub(super) type PricesConfig<T: Config> =
-        StorageValue<_, PricesConfigVec<T>, ValueQuery>;
+        StorageValue<_, PricesConfigVec<T>, ValueQuery, T::InitialPrices>;
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
@@ -156,7 +156,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
-        pub payment_beneficiary: T::AccountId,
+        pub initial_payment_beneficiary: T::AccountId,
     }
 
     #[cfg(feature = "std")]
@@ -164,7 +164,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 initial_prices: T::InitialPrices::get(),
-                payment_beneficiary: T::InitialPaymentBeneficiary::get(),
+                initial_payment_beneficiary: T::InitialPaymentBeneficiary::get(),
             }
         }
     }
@@ -173,7 +173,7 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             Pallet::<T>::init_pallet(&self.initial_prices);
-            PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
+            PaymentBeneficiary::<T>::set(self.initial_payment_beneficiary.clone());
         }
     }
 
