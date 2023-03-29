@@ -169,11 +169,11 @@ pub fn kusama_local_testnet_config() -> ChainSpec {
 }
 
 pub fn subsocialx_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocialx.json")[..])
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-kusama.json")[..])
 }
 
 pub fn subsocial_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-polkadot.json")[..])
 }
 
 pub fn staging_testnet_config() -> ChainSpec {
