@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod weights;
 pub mod xcm_config;
 
-use cumulus_pallet_parachain_system::AnyRelayNumber;
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -166,7 +166,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 21,
+	spec_version: 22,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -263,10 +263,12 @@ parameter_types! {
 pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
 	fn contains(c: &RuntimeCall) -> bool {
+		let is_force_transfer =
+			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
+
 		match *c {
-			RuntimeCall::Balances(..) => false,
-			RuntimeCall::Vesting(..) => false,
-			RuntimeCall::Energy(..) => false,
+			RuntimeCall::Balances(..) => is_force_transfer,
+			RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. }) => false,
 			_ => true,
 		}
 	}
@@ -382,7 +384,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
-	type CheckAssociatedRelayNumber = AnyRelayNumber;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
