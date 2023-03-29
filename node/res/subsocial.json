@@ -3,7 +3,7 @@
   "id": "subsocial",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/dot-collator-1.subsocial.network/tcp/40333/p2p/12D3KooWLtpfmUZitgS1y8K9vnfJLBrY6WtVJEUBFjC4rSqXXV5f",
+    "/dns/dot-collator-1.subsocial.network/tcp/40333/p2p/12D3KooWE4RpCHdU6Wrx7NYN4PxCW5yuAtxq92BPascGJMxhmQSx",
     "/dns/dot-collator-2.subsocial.network/tcp/40333/p2p/12D3KooW9w6HaGrKj8Mg1c8hiM4YDR8VsNe6uvr76aec9Npy6c1v"
   ],
   "telemetryEndpoints": [
