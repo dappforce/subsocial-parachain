@@ -572,7 +572,58 @@ fn existential_deposit_and_providers() {
         });
 }
 
-// TODO Add a test for DustLost event
+
+///// tests for dust lost event
+
+#[test]
+fn dust_lost_should_not_be_emitted_when_ed_is_zero() {
+    ExtBuilder::default()
+        .energy_existential_deposit(0)
+        .build()
+        .execute_with(|| {
+            let account = 1;
+            set_energy_balance(account, 100);
+
+            assert_ok!(charge_transaction(&account, 100, 100, 0, || {}));
+
+            assert!(!System::events()
+                .iter()
+                .any(|record| matches!(record.event, RuntimeEvent::Energy(EnergyEvent::DustLost { .. }))));
+        });
+}
+
+#[test]
+fn dust_lost_should_not_be_emitted_when_energy_still_above_ed() {
+    ExtBuilder::default()
+        .energy_existential_deposit(10)
+        .build()
+        .execute_with(|| {
+            let account = 1;
+            set_energy_balance(account, 100);
+
+            assert_ok!(charge_transaction(&account, 90, 90, 0, || {}));
+
+            assert!(!System::events()
+                .iter()
+                .any(|record| matches!(record.event, RuntimeEvent::Energy(EnergyEvent::DustLost { .. }))));
+        });
+}
+
+#[test]
+fn dust_lost_should_be_emitted_when_energy_still_below_ed() {
+    ExtBuilder::default()
+        .energy_existential_deposit(10)
+        .build()
+        .execute_with(|| {
+            let account = 1;
+            set_energy_balance(account, 100);
+
+            assert_ok!(charge_transaction(&account, 98, 98, 0, || {}));
+
+            System::assert_has_event(EnergyEvent::DustLost { account, amount: 2 }.into());
+        });
+}
+
 
 ///// test native_token_to_energy
 
