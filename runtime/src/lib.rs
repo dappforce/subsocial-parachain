@@ -95,6 +95,7 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -204,6 +205,7 @@ mod currency {
 }
 
 pub use currency::*;
+use pallet_evm_accounts::Call;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = 10 * MILLIUNIT;
@@ -719,6 +721,23 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_evm_accounts::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type CallHasher = BlakeTwo256;
+}
+
+// impl TryInto<pallet_evm_accounts::Call<Runtime>> for RuntimeCall {
+// 	type Error = ();
+//
+// 	fn try_into(self) -> Result<Call<Runtime>, Self::Error> {
+// 		match self {
+// 			Self::EvmAccounts(call) => Ok(call),
+// 			_ => Err(()),
+// 		}
+// 	}
+// }
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -759,6 +778,7 @@ construct_runtime!(
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
+		EvmAccounts: pallet_evm_accounts = 62,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
