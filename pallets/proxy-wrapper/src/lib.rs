@@ -19,13 +19,15 @@ pub mod weights;
 pub mod pallet {
     use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::Zero;
+    use sp_runtime::traits::{Zero, StaticLookup};
 
     use crate::weights::WeightInfo;
 
     type BalanceOf<T> = <<T as pallet_proxy::Config>::Currency as Currency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
+
+    type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_proxy::Config {
@@ -53,10 +55,11 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // in weight pallet_proxy::add_proxy(...) is accounted for
+        #[pallet::call_index(0)]
         #[pallet::weight(< T as Config >::WeightInfo::add_free_proxy())]
         pub fn add_free_proxy(
             origin: OriginFor<T>,
-            delegate: T::AccountId,
+            delegate: AccountIdLookupOf<T>,
             proxy_type: T::ProxyType,
             delay: T::BlockNumber,
         ) -> DispatchResult {

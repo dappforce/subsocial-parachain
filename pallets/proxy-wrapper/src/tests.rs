@@ -32,13 +32,13 @@ fn add_free_proxy_should_fail_if_not_first_proxy() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(Proxy::add_proxy(Origin::signed(delegator), proxy1, (), 0,));
+            assert_ok!(Proxy::add_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0,));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
 
             let proxy2 = account(3);
             assert_noop!(
-                SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy2, (), 0),
+                SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0),
                 Error::<Test>::OnlyFirstProxyCanBeFree
             );
         });
@@ -56,12 +56,12 @@ fn add_free_proxy_reserve_nothing() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy1, (), 0),);
+            assert_ok!(SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0),);
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
             let proxy2 = account(3);
-            assert_ok!(Proxy::add_proxy(Origin::signed(delegator), proxy2, (), 0,));
+            assert_ok!(Proxy::add_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0,));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(2));
         });
@@ -79,20 +79,20 @@ fn remove_free_proxy_should_unreserve_nothing_if_there_are_no_other_proxies() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy1, (), 0),);
+            assert_ok!(SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0),);
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy1, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
             ///////////
             let proxy2 = account(3);
-            assert_ok!(Proxy::add_proxy(Origin::signed(delegator), proxy2, (), 0,));
+            assert_ok!(Proxy::add_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0,));
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy2, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
         });
@@ -110,20 +110,20 @@ fn remove_free_proxy_should_unreserve_one_proxy_deposit_when_user_have_two_proxi
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy1, (), 0),);
+            assert_ok!(SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0),);
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
             let proxy2 = account(3);
-            assert_ok!(Proxy::add_proxy(Origin::signed(delegator), proxy2, (), 0,));
+            assert_ok!(Proxy::add_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0,));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(2));
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy1, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy2, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
         });
@@ -141,20 +141,20 @@ fn remove_paid_proxy_should_unreserve_one_proxy_deposit() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(Origin::signed(delegator), proxy1, (), 0),);
+            assert_ok!(SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0),);
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
             let proxy2 = account(3);
-            assert_ok!(Proxy::add_proxy(Origin::signed(delegator), proxy2, (), 0,));
+            assert_ok!(Proxy::add_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0,));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(2));
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy2, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
 
-            assert_ok!(Proxy::remove_proxy(Origin::signed(delegator), proxy1, (), 0));
+            assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy1, (), 0));
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
         });

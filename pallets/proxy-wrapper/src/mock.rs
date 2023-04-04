@@ -1,11 +1,9 @@
-use frame_support::{pallet_prelude::DispatchClass, parameter_types, traits::Everything};
-use frame_system::limits::BlockWeights;
+use frame_support::{parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
@@ -34,25 +32,14 @@ frame_support::construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
-    pub MockBlockWeights: BlockWeights = BlockWeights::builder()
-        .base_block(0)
-        .for_class(DispatchClass::all(), |weights| {
-            // we set it to 0 to have a predictable and easy to write weight to fee function
-            weights.base_extrinsic = 0;
-            weights.max_extrinsic = 1_000_000_000.into();
-            weights.max_total = 1_000_000_000_000.into();
-            weights.reserved = None;
-        })
-        .avg_block_initialization(Perbill::zero())
-        .build_or_panic();
 }
 
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
-    type BlockWeights = MockBlockWeights;
+    type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -60,7 +47,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -81,7 +68,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -106,8 +93,8 @@ impl pallet_proxy_wrapper::Config for Test {
 }
 
 impl pallet_proxy::Config for Test {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type ProxyType = ();
     type ProxyDepositBase = pallet_proxy_wrapper::AdjustedProxyDepositBase<Test>;
