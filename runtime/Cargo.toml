@@ -216,6 +216,7 @@ try-runtime = [
 	"pallet-permissions/try-runtime",
 	"pallet-posts/try-runtime",
 	"pallet-profiles/try-runtime",
+	"pallet-proxy-wrapper/try-runtime",
 	"pallet-reactions/try-runtime",
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
