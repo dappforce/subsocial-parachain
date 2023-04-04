@@ -1,6 +1,6 @@
 [package]
 name = 'pallet-account-follows'
-version = '0.1.7'
+version = '0.1.8'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
@@ -21,16 +21,17 @@ std = [
     'pallet-profiles/std',
     'subsocial-support/std',
 ]
+try-runtime = [ "frame-support/try-runtime" ]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Local dependencies
 pallet-profiles = { default-features = false, path = '../profiles' }
 subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.24', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
