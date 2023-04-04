@@ -221,5 +221,4 @@ try-runtime = [
 	"pallet-space-follows/try-runtime",
 	"pallet-space-ownership/try-runtime",
 	"pallet-spaces/try-runtime",
-	"pallet-posts/try-runtime",
 ]
