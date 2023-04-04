@@ -9,7 +9,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-pub(crate) use crate as pallet_subsocial_proxy;
+pub(crate) use crate as pallet_proxy_wrapper;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -27,7 +27,7 @@ frame_support::construct_runtime!(
         System: frame_system,
         Balances: pallet_balances,
         Proxy: pallet_proxy,
-        SubsocialProxy: pallet_subsocial_proxy,
+        SubsocialProxy: pallet_proxy_wrapper,
     }
 );
 
@@ -99,7 +99,7 @@ parameter_types! {
     pub const MaxPending: u16 = 32;
 }
 
-impl pallet_subsocial_proxy::Config for Test {
+impl pallet_proxy_wrapper::Config for Test {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
     type WeightInfo = ();
@@ -110,8 +110,8 @@ impl pallet_proxy::Config for Test {
     type Call = Call;
     type Currency = Balances;
     type ProxyType = ();
-    type ProxyDepositBase = pallet_subsocial_proxy::AdjustedProxyDepositBase<Test>;
-    type ProxyDepositFactor = pallet_subsocial_proxy::AdjustedProxyDepositFactor<Test>;
+    type ProxyDepositBase = pallet_proxy_wrapper::AdjustedProxyDepositBase<Test>;
+    type ProxyDepositFactor = pallet_proxy_wrapper::AdjustedProxyDepositFactor<Test>;
     type MaxProxies = MaxProxies;
     type WeightInfo = ();
     type MaxPending = MaxPending;

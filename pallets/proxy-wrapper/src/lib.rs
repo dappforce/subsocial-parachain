@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+
 pub use pallet::*;
 
 pub use crate::weights::WeightInfo;
@@ -19,6 +20,7 @@ pub mod pallet {
     use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Zero;
+
     use crate::weights::WeightInfo;
 
     type BalanceOf<T> = <<T as pallet_proxy::Config>::Currency as Currency<

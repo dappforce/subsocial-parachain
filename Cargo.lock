@@ -5823,6 +5823,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-proxy-wrapper"
+version = "0.1.8"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-proxy",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -6138,24 +6156,6 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#81
 dependencies = [
  "log",
  "sp-arithmetic",
-]
-
-[[package]]
-name = "pallet-subsocial-proxy"
-version = "0.1.7"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-proxy",
- "parity-scale-codec",
- "scale-info",
- "smallvec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -11046,6 +11046,7 @@ dependencies = [
  "pallet-posts",
  "pallet-profiles",
  "pallet-proxy",
+ "pallet-proxy-wrapper",
  "pallet-randomness-collective-flip",
  "pallet-reactions",
  "pallet-roles",
@@ -11053,7 +11054,6 @@ dependencies = [
  "pallet-space-follows",
  "pallet-space-ownership",
  "pallet-spaces",
- "pallet-subsocial-proxy",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
