@@ -5561,6 +5561,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-free-proxy"
+version = "0.1.8"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-proxy",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
@@ -5892,24 +5910,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-proxy-wrapper"
-version = "0.1.8"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-proxy",
- "parity-scale-codec",
- "scale-info",
- "smallvec",
- "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -11277,11 +11277,11 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-domains",
  "pallet-energy",
+ "pallet-free-proxy",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
  "pallet-proxy",
- "pallet-proxy-wrapper",
  "pallet-randomness-collective-flip",
  "pallet-reactions",
  "pallet-roles",

@@ -38,7 +38,7 @@ fn add_free_proxy_should_fail_if_not_first_proxy() {
 
             let proxy2 = account(3);
             assert_noop!(
-                SubsocialProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0),
+                FreeProxy::add_free_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0),
                 Error::<Test>::OnlyFirstProxyCanBeFree
             );
         });
@@ -56,7 +56,7 @@ fn add_free_proxy_reserve_nothing() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(
+            assert_ok!(FreeProxy::add_free_proxy(
                 RuntimeOrigin::signed(delegator),
                 proxy1,
                 (),
@@ -84,7 +84,7 @@ fn remove_free_proxy_should_unreserve_nothing_if_there_are_no_other_proxies() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(
+            assert_ok!(FreeProxy::add_free_proxy(
                 RuntimeOrigin::signed(delegator),
                 proxy1,
                 (),
@@ -120,7 +120,7 @@ fn remove_free_proxy_should_unreserve_one_proxy_deposit_when_user_have_two_proxi
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(
+            assert_ok!(FreeProxy::add_free_proxy(
                 RuntimeOrigin::signed(delegator),
                 proxy1,
                 (),
@@ -156,7 +156,7 @@ fn remove_paid_proxy_should_unreserve_one_proxy_deposit() {
 
             assert_eq!(Balances::reserved_balance(delegator), 0);
 
-            assert_ok!(SubsocialProxy::add_free_proxy(
+            assert_ok!(FreeProxy::add_free_proxy(
                 RuntimeOrigin::signed(delegator),
                 proxy1,
                 (),

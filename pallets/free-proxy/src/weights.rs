@@ -27,7 +27,7 @@
     // --heap-pages
     // 4096
     // --output
-    // ./pallets/proxy-wrapper/src/weights.rs
+    // ./pallets/free-proxy/src/weights.rs
     // --template
     // ./.maintain/weight-template.hbs
 

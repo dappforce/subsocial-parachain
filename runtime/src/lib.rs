@@ -576,10 +576,10 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	}
 }
 
-impl pallet_proxy_wrapper::Config for Runtime {
+impl pallet_free_proxy::Config for Runtime {
 	type ProxyDepositBase = ProxyDepositBase;
 	type ProxyDepositFactor = ProxyDepositFactor;
-	type WeightInfo = pallet_proxy_wrapper::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_free_proxy::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_proxy::Config for Runtime {
@@ -587,8 +587,8 @@ impl pallet_proxy::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ProxyType;
-	type ProxyDepositBase = pallet_proxy_wrapper::AdjustedProxyDepositBase<Runtime>;
-	type ProxyDepositFactor = pallet_proxy_wrapper::AdjustedProxyDepositFactor<Runtime>;
+	type ProxyDepositBase = pallet_free_proxy::AdjustedProxyDepositBase<Runtime>;
+	type ProxyDepositFactor = pallet_free_proxy::AdjustedProxyDepositFactor<Runtime>;
 	type MaxProxies = MaxProxies;
 	type WeightInfo = ();
 	type MaxPending = MaxPending;
@@ -765,7 +765,7 @@ construct_runtime!(
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
-		ProxyWrapper: pallet_proxy_wrapper = 62,
+		FreeProxy: pallet_free_proxy = 62,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -807,7 +807,7 @@ mod benches {
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
 		[pallet_posts, Posts]
-		[pallet_proxy_wrapper, ProxyWrapper]
+		[pallet_free_proxy, FreeProxy]
 	);
 }
 
