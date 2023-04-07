@@ -15,31 +15,36 @@ pub type Eip712Signature = [u8; 65];
 
 pub(crate) type MessageHash = [u8; 32];
 
+#[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+pub(crate) fn eth_secret_key(seed: &[u8]) -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(seed)).unwrap()
+}
+
+// Returns an Ethereum public key derived from an Ethereum secret key.
+#[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
+    libsecp256k1::PublicKey::from_secret_key(secret)
+}
+
+// Returns an Ethereum address derived from an Ethereum secret key.
+// Only for tests
+#[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EthAddress {
+    EthAddress::from_slice(&keccak_256(&eth_public(secret).serialize()[1..65])[12..])
+}
+
+// Constructs a message and signs it.
+#[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+pub fn eth_sign(secret: &libsecp256k1::SecretKey, msg_hash: &MessageHash) -> Eip712Signature {
+    let (sig, recovery_id) =
+        libsecp256k1::sign(&libsecp256k1::Message::parse(&msg_hash), secret);
+    let mut r = [0u8; 65];
+    r[0..64].copy_from_slice(&sig.serialize()[..]);
+    r[64] = recovery_id.serialize();
+    r
+}
+
 impl<T: Config> Pallet<T> {
-    // Returns an Ethereum public key derived from an Ethereum secret key.
-    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
-    pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
-        libsecp256k1::PublicKey::from_secret_key(secret)
-    }
-
-    // Returns an Ethereum address derived from an Ethereum secret key.
-    // Only for tests
-    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
-    pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EthAddress {
-        EthAddress::from_slice(&keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..])
-    }
-
-    // Constructs a message and signs it.
-    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
-    pub fn eth_sign(secret: &libsecp256k1::SecretKey, msg_hash: &MessageHash) -> Eip712Signature {
-        let (sig, recovery_id) =
-            libsecp256k1::sign(&libsecp256k1::Message::parse(&msg_hash), secret);
-        let mut r = [0u8; 65];
-        r[0..64].copy_from_slice(&sig.serialize()[..]);
-        r[64] = recovery_id.serialize();
-        r
-    }
-
     pub(crate) fn verify_eip712_signature(
         message: &SingableMessage<T>,
         sig: &Eip712Signature,

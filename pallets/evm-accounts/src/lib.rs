@@ -8,7 +8,6 @@ use frame_support::{
     traits::{tokens::Balance, Currency, IsSubType},
 };
 use frame_system::pallet_prelude::*;
-pub use pallet::*;
 use pallet_transaction_payment::{ChargeTransactionPayment, OnChargeTransaction};
 use sp_runtime::{
     traits::{
@@ -24,8 +23,12 @@ use sp_std::{
     marker::{Send, Sync},
 };
 
+pub use pallet::*;
+
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod test;
 
 mod eth;
 

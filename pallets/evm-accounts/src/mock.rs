@@ -1,37 +1,36 @@
 use codec::Decode;
 use frame_support::{
-    dispatch::{RawOrigin, DispatchInfo},
-    pallet_prelude::{DispatchClass, Pays, Weight},
     parameter_types,
     traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
     weights::{
-        WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        constants::ExtrinsicBaseWeight, ConstantMultiplier, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
-use frame_support::weights::ConstantMultiplier;
-use frame_support::weights::constants::ExtrinsicBaseWeight;
-use pallet_balances::NegativeImbalance;
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, OnChargeTransaction};
+use pallet_transaction_payment::OnChargeTransaction;
 use smallvec::smallvec;
-use sp_core::{ConstU32, H256};
+use sp_core::{H256, keccak_256};
 use sp_io::TestExternalities;
 use sp_runtime::{
+    generic,
     testing::Header,
-    traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf},
-    transaction_validity::TransactionValidityError,
+    traits::{BlakeTwo256, IdentityLookup, One},
     FixedI64, Perbill,
 };
-use sp_std::{
-    cell::RefCell,
-    convert::{TryFrom, TryInto},
-    marker::PhantomData,
-};
+use sp_std::convert::{TryFrom, TryInto};
 
 pub(crate) use crate as pallet_evm_accounts;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type SignedExtra = (
+    pallet_transaction_payment::ChargeTransactionPayment<Test>,
+    pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Test>,
+);
+type Signature = ();
+type UncheckedExtrinsic = generic::UncheckedExtrinsic<AccountId, RuntimeCall, Signature, SignedExtra>;
+type Block = generic::Block<
+    generic::Header<BlockNumber, BlakeTwo256>,
+    UncheckedExtrinsic,
+>;
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
@@ -46,13 +45,13 @@ frame_support::construct_runtime!(
         System: frame_system,
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
+        EvmAccounts: pallet_evm_accounts,
     }
 );
 
-
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 42;
+    pub const BlockHashCount: u64 = 250;
+    pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Test {
@@ -93,14 +92,13 @@ impl WeightToFeePolynomial for WeightToFee {
         let p = 10 * 10_000_000;
         let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
-		}]
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
     }
 }
-
 
 impl pallet_balances::Config for Test {
     type Balance = Balance;
@@ -113,7 +111,6 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = ();
 }
-
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 0;
@@ -129,10 +126,10 @@ impl pallet_transaction_payment::Config for Test {
     type FeeMultiplierUpdate = ();
 }
 
-parameter_types! {
-    pub static ValueCoefficient: FixedI64 = FixedI64::one();
-    pub static TestUpdateOrigin: AccountId = 1235;
-    pub static EnergyExistentialDeposit: Balance = 1;
+impl pallet_evm_accounts::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CallHasher = BlakeTwo256;
 }
 
 pub(crate) fn account(id: AccountId) -> AccountId {
@@ -149,22 +146,17 @@ pub(crate) fn set_native_balance(id: AccountId, balance: Balance) {
     let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&id, balance);
 }
 
-pub struct ExtBuilder {
 
-}
+pub struct ExtBuilder {}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        ExtBuilder {
-
-        }
+        ExtBuilder {}
     }
 }
 
 impl ExtBuilder {
-    fn set_configs(&self) {
-
-    }
+    fn set_configs(&self) {}
 
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
