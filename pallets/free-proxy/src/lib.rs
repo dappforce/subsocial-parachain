@@ -50,7 +50,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn is_free_proxy)]
-    pub type FreeProxyFlag<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub type CanAddFreeProxy<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -68,7 +68,7 @@ pub mod pallet {
 
             ensure!(proxy_count == 0, Error::<T>::OnlyFirstProxyCanBeFree);
 
-            FreeProxyFlag::<T>::set(true);
+            CanAddFreeProxy::<T>::set(true);
 
             let add_proxy_res = pallet_proxy::Pallet::<T>::add_proxy(
                 RawOrigin::Signed(who).into(),
@@ -77,7 +77,7 @@ pub mod pallet {
                 delay,
             );
 
-            FreeProxyFlag::<T>::kill();
+            CanAddFreeProxy::<T>::kill();
 
             add_proxy_res
         }
@@ -86,7 +86,7 @@ pub mod pallet {
     pub struct AdjustedProxyDepositBase<T>(PhantomData<T>);
     impl<T: Config> Get<BalanceOf<T>> for AdjustedProxyDepositBase<T> {
         fn get() -> BalanceOf<T> {
-            if FreeProxyFlag::<T>::get() {
+            if CanAddFreeProxy::<T>::get() {
                 Zero::zero()
             } else {
                 <T as Config>::ProxyDepositBase::get()
@@ -97,7 +97,7 @@ pub mod pallet {
     pub struct AdjustedProxyDepositFactor<T>(PhantomData<T>);
     impl<T: Config> Get<BalanceOf<T>> for AdjustedProxyDepositFactor<T> {
         fn get() -> BalanceOf<T> {
-            if FreeProxyFlag::<T>::get() {
+            if CanAddFreeProxy::<T>::get() {
                 Zero::zero()
             } else {
                 <T as Config>::ProxyDepositFactor::get()
