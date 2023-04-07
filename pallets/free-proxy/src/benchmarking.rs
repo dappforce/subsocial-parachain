@@ -25,7 +25,7 @@ benchmarks! {
                 proxy_type: Default::default(),
                 delay: 0u32.into(),
             },
-            "deposits should be zero",
+            "proxy definition is not correct",
         );
     }
 
