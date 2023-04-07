@@ -24,6 +24,9 @@ use sp_std::{
     marker::{Send, Sync},
 };
 
+#[cfg(test)]
+mod mock;
+
 mod eth;
 
 type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
