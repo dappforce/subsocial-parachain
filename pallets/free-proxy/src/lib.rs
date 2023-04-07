@@ -17,7 +17,7 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency};
+    use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency, transactional};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{StaticLookup, Zero};
 
@@ -56,6 +56,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
         #[pallet::weight(< T as Config >::WeightInfo::add_free_proxy())]
+        #[transactional]
         pub fn add_free_proxy(
             origin: OriginFor<T>,
             delegate: AccountIdLookupOf<T>,
