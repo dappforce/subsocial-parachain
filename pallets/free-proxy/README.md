@@ -1,4 +1,5 @@
 # Free Proxy
+
 This pallet provides a simple wrapper around the proxy
 pallet, it aims to give users first proxy for free (without
 reserving any SUB).
