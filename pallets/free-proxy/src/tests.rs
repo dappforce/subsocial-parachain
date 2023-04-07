@@ -103,7 +103,6 @@ fn remove_free_proxy_should_unreserve_nothing_if_there_are_no_other_proxies() {
             assert_eq!(Balances::reserved_balance(delegator), proxy_deposit(1));
 
             assert_ok!(Proxy::remove_proxy(RuntimeOrigin::signed(delegator), proxy2, (), 0));
-
             assert_eq!(Balances::reserved_balance(delegator), 0);
         });
 }
