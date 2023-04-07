@@ -15,7 +15,7 @@ correctly again.
 
 
 FreeProxy takes the original `ProxyDepositBase` and `ProxyDepositFactor` 
-configs, and provide you with `AdjustedProxyDepositBase` and `AdjustedProxyDepositBase`.
+configs, and provide you with `AdjustedProxyDepositBase` and `AdjustedProxyDepositFactor`.
 
 ```rust
 impl pallet_subsocial_proxy::Config for Runtime {
