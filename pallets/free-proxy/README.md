@@ -5,7 +5,7 @@ pallet, it aims to give users first proxy for free (without
 reserving any SUB).
 
 This pallet works using the following method:
-- Users calls `FreeProxy::add_free_proxy(....)`.
+- User calls `FreeProxy::add_free_proxy(....)`.
 - The pallet will check if the user have no proxy defined before.
 - if so the pallet sets a temporary storage flag so deposits are overridden to zero, and calls
 `Proxy::add_proxy(....)`.
