@@ -54,7 +54,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        // in weight pallet_proxy::add_proxy(...) is accounted for
         #[pallet::call_index(0)]
         #[pallet::weight(< T as Config >::WeightInfo::add_free_proxy())]
         pub fn add_free_proxy(
