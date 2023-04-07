@@ -36,7 +36,7 @@ impl pallet_proxy::Config for Runtime {
 - If the user tries to add a new proxy after the first "free" proxy, he will
 have to reserve deposit for 2 proxies.
 - And if the user tries to remove any proxy, he will be refunded deposits of only one proxy
-- Other part of deposit will be refunded when the other proxy is also removed.
+- Other part of deposit will be refunded when the free proxy is also removed.
 
 **So we can think of it as "pay later" proxy, not "free" proxy.** Since users will
 reserve deposit for that "free" proxy when they add other proxy.
