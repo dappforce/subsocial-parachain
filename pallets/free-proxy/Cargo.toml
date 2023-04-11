@@ -6,7 +6,7 @@ edition = "2021"
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
-description = "Module for allowing accounts to get free proxy."
+description = "Pallet for allowing accounts to get free proxy."
 keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
 categories = ["cryptography::cryptocurrencies"]
 
