@@ -7,7 +7,7 @@ reserving any SUB).
 This pallet works using the following method:
 - User calls `FreeProxy::add_free_proxy(....)`.
 - The pallet will check if the user have no proxy defined before.
-- If so the pallet sets a temporary storage flag so deposit are overridden to zero, and calls
+-  If so the pallet sets a temporary storage flag so deposit is overridden to zero, and calls
 `Proxy::add_proxy(....)`.
 - When proxy pallet tries to calculate deposit it will result to zero
 - After the proxy is added, `FreeProxy` pallet removes the flag so deposits can be calculated
