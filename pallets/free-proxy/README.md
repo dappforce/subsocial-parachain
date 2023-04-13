@@ -1,8 +1,6 @@
 # Free Proxy
 
-This pallet provides a simple wrapper around the proxy
-pallet, it aims to give users first proxy for free (without
-reserving any SUB).
+This pallet provides a simple wrapper around the standard proxy pallet, allowing accounts to add their first proxy without a deposit.
 
 This pallet works using the following method:
 - User calls `FreeProxy::add_free_proxy(....)`.
