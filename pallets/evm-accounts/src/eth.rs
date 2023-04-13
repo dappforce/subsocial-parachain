@@ -60,7 +60,7 @@ fn recover_eth_signer(sig: &Eip712Signature, msg_hash: &MessageHash) -> Option<E
 }
 
 pub(crate) enum SingableMessage<T: Config> {
-    MapEthAddress { eth_address: EthAddress, substrate_address: T::AccountId },
+    LinkEthAddress { eth_address: EthAddress, substrate_address: T::AccountId },
     EthAddressCall { call_hash: <<T as Config>::CallHasher as Hash>::Output, account_nonce: T::Index },
 }
 
@@ -74,12 +74,12 @@ impl<T: Config> SingableMessage<T> {
 
     pub(crate) fn payload_hash(&self) -> MessageHash {
         match self {
-            SingableMessage::MapEthAddress { eth_address, substrate_address } => {
+            SingableMessage::LinkEthAddress { eth_address, substrate_address } => {
                 let tx_type_hash = keccak256!(
                     "Transaction(string transactionName,bytes substrateAddress, bytes ethAddress)"
                 );
                 let mut tx_msg = tx_type_hash.to_vec();
-                tx_msg.extend_from_slice(keccak256!("MapEthAddress")); // transactionName
+                tx_msg.extend_from_slice(keccak256!("LinkEthAddress")); // transactionName
                 tx_msg.extend_from_slice(&keccak_256(&substrate_address.encode())); // substrateAddress
                 tx_msg.extend_from_slice(&keccak_256(&eth_address.encode())); // ethAddress
                 keccak_256(tx_msg.as_slice())
@@ -98,7 +98,7 @@ impl<T: Config> SingableMessage<T> {
     pub(crate) fn domain_separator(&self) -> MessageHash {
         let domain_hash = keccak256!("EIP712Domain(string name,string version,bytes32 salt)");
         let mut domain_seperator_msg = domain_hash.to_vec();
-        domain_seperator_msg.extend_from_slice(keccak256!("SubSocial Eth Address Mapping")); // name
+        domain_seperator_msg.extend_from_slice(keccak256!("SubSocial Eth Address Linkage")); // name
         domain_seperator_msg.extend_from_slice(keccak256!("1")); // version
         domain_seperator_msg.extend_from_slice(
             frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),

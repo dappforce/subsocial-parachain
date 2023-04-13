@@ -9,13 +9,13 @@ use frame_support::{
 };
 use pallet_transaction_payment::OnChargeTransaction;
 use smallvec::smallvec;
-use sp_core::{H256, keccak_256};
+use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     generic,
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup, One},
-    FixedI64, Perbill,
+    Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
@@ -23,14 +23,12 @@ pub(crate) use crate as pallet_evm_accounts;
 
 type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Test>,
-    pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Test>,
+    // pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Test>,
 );
 type Signature = ();
-type UncheckedExtrinsic = generic::UncheckedExtrinsic<AccountId, RuntimeCall, Signature, SignedExtra>;
-type Block = generic::Block<
-    generic::Header<BlockNumber, BlakeTwo256>,
-    UncheckedExtrinsic,
->;
+type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<AccountId, RuntimeCall, Signature, SignedExtra>;
+type Block = generic::Block<generic::Header<BlockNumber, BlakeTwo256>, UncheckedExtrinsic>;
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
@@ -126,10 +124,15 @@ impl pallet_transaction_payment::Config for Test {
     type FeeMultiplierUpdate = ();
 }
 
+parameter_types! {
+    pub static MaxLinkedAccounts: u32 = 1;
+}
+
 impl pallet_evm_accounts::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallHasher = BlakeTwo256;
+    type MaxLinkedAccounts = MaxLinkedAccounts;
 }
 
 pub(crate) fn account(id: AccountId) -> AccountId {
@@ -146,17 +149,25 @@ pub(crate) fn set_native_balance(id: AccountId, balance: Balance) {
     let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&id, balance);
 }
 
-
-pub struct ExtBuilder {}
+pub struct ExtBuilder {
+    pub(crate) max_linked_accounts: u32,
+}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        ExtBuilder {}
+        ExtBuilder { max_linked_accounts: 1 }
     }
 }
 
 impl ExtBuilder {
-    fn set_configs(&self) {}
+    pub(crate) fn max_linked_accounts(mut self, max_linked_accounts: u32) -> Self {
+        self.max_linked_accounts = max_linked_accounts;
+        self
+    }
+
+    fn set_configs(&self) {
+        MAX_LINKED_ACCOUNTS.with(|x| *x.borrow_mut() = self.max_linked_accounts);
+    }
 
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
