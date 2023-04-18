@@ -23,7 +23,7 @@ fn link_substrate_account_should_fail_if_unsigned() {
 
         let sig = eth_sign(&eth_sec, &message.message_hash());
 
-        assert_noop!(EvmAccounts::link_substrate_account(RuntimeOrigin::none(), eth_pub, sig), BadOrigin);
+        assert_noop!(EvmAccounts::link_eth_address(RuntimeOrigin::none(), eth_pub, sig), BadOrigin);
     });
 }
 
@@ -38,7 +38,7 @@ fn link_substrate_account_should_fail_if_bad_signature() {
         let bad_sig: Eip712Signature = [0; 65]; // all zeros
 
         assert_noop!(
-            EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account), eth_pub, bad_sig),
+            EvmAccounts::link_eth_address(RuntimeOrigin::signed(account), eth_pub, bad_sig),
             Error::<Test>::BadSignature,
         );
     });
@@ -61,7 +61,7 @@ fn link_substrate_account_should_fail_if_signed_with_another_address() {
 
         let sig = eth_sign(&eth_sec2, &message.message_hash());
         assert_noop!(
-            EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account), eth_pub1, sig),
+            EvmAccounts::link_eth_address(RuntimeOrigin::signed(account), eth_pub1, sig),
             Error::<Test>::BadSignature,
         );
     });
@@ -87,7 +87,7 @@ fn link_substrate_account_should_fail_if_message_is_incorrect() {
             .message_hash(),
         );
         assert_noop!(
-            EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account1), eth_pub1, sig),
+            EvmAccounts::link_eth_address(RuntimeOrigin::signed(account1), eth_pub1, sig),
             Error::<Test>::BadSignature,
         );
 
@@ -103,7 +103,7 @@ fn link_substrate_account_should_fail_if_message_is_incorrect() {
             .message_hash(),
         );
         assert_noop!(
-            EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account1), eth_pub1, sig),
+            EvmAccounts::link_eth_address(RuntimeOrigin::signed(account1), eth_pub1, sig),
             Error::<Test>::BadSignature,
         );
     });
@@ -126,7 +126,7 @@ fn link_substrate_account_should_work_correctly() {
                 .message_hash(),
         );
 
-        assert_ok!(EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account1), eth_pub1, sig));
+        assert_ok!(EvmAccounts::link_eth_address(RuntimeOrigin::signed(account1), eth_pub1, sig));
 
         assert_eq!(Accounts::<Test>::get(eth_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EthAddresses::<Test>::get(account1.clone()), Some(eth_pub1.clone()));
@@ -153,7 +153,7 @@ fn link_substrate_account_should_work_correctly_with_multiple_accounts() {
                 .message_hash(),
         );
 
-        assert_ok!(EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account1), eth_pub1, sig));
+        assert_ok!(EvmAccounts::link_eth_address(RuntimeOrigin::signed(account1), eth_pub1, sig));
 
         assert_eq!(Accounts::<Test>::get(eth_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EthAddresses::<Test>::get(account1.clone()), Some(eth_pub1.clone()));
@@ -169,7 +169,7 @@ fn link_substrate_account_should_work_correctly_with_multiple_accounts() {
                 .message_hash(),
         );
 
-        assert_ok!(EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account2), eth_pub1, sig));
+        assert_ok!(EvmAccounts::link_eth_address(RuntimeOrigin::signed(account2), eth_pub1, sig));
         assert_eq!(Accounts::<Test>::get(eth_pub1.clone()), vec![account1.clone(), account2.clone()]);
         assert_eq!(EthAddresses::<Test>::get(account2.clone()), Some(eth_pub1.clone()));
     });
@@ -194,7 +194,7 @@ fn link_substrate_account_should_fail_when_linking_more_than_max_linked_accounts
                 .message_hash(),
         );
 
-        assert_ok!(EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account1), eth_pub1, sig));
+        assert_ok!(EvmAccounts::link_eth_address(RuntimeOrigin::signed(account1), eth_pub1, sig));
 
         assert_eq!(Accounts::<Test>::get(eth_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EthAddresses::<Test>::get(account1.clone()), Some(eth_pub1.clone()));
@@ -211,7 +211,7 @@ fn link_substrate_account_should_fail_when_linking_more_than_max_linked_accounts
         );
 
         assert_noop!(
-            EvmAccounts::link_substrate_account(RuntimeOrigin::signed(account2), eth_pub1, sig),
+            EvmAccounts::link_eth_address(RuntimeOrigin::signed(account2), eth_pub1, sig),
             Error::<Test>::CannotLinkMoreAccounts,
 
         );

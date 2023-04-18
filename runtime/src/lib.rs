@@ -725,6 +725,7 @@ impl pallet_evm_accounts::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type CallHasher = BlakeTwo256;
+	type MaxLinkedAccounts = ConstU32<256>;
 }
 
 // impl TryInto<pallet_evm_accounts::Call<Runtime>> for RuntimeCall {

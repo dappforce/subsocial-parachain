@@ -117,7 +117,7 @@ pub mod pallet {
         #[pallet::weight(Weight::from_ref_time(340_000_000)
             .saturating_add(T::DbWeight::get().reads(3 as u64))
             .saturating_add(T::DbWeight::get().writes(2 as u64)))]
-        pub fn link_substrate_account(
+        pub fn link_eth_address(
             origin: OriginFor<T>,
             eth_address: EthAddress,
             eth_signature: Eip712Signature,
