@@ -398,7 +398,7 @@ pub mod pallet {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            let (old_depositor, old_deposit): (<T as frame_system::pallet::Config>::AccountId, BalanceOf<T>) = if let Some(value_with_deposit_info) =
+            let (old_depositor, old_deposit) = if let Some(value_with_deposit_info) =
                 DomainRecords::<T>::get(domain_lc.clone(), key.clone())
             {
                 (value_with_deposit_info.1, value_with_deposit_info.2)
