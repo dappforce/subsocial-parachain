@@ -205,7 +205,6 @@ mod currency {
 }
 
 pub use currency::*;
-use pallet_evm_accounts::Call;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = 10 * MILLIUNIT;

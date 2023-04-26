@@ -95,7 +95,7 @@ pub mod pallet {
 
     /// The Substrate Account for EthAddresses
     #[pallet::storage]
-    #[pallet::getter(fn eth_address_to_account)]
+    #[pallet::getter(fn evm_address_to_account)]
     pub type Accounts<T: Config> = StorageMap<
         _,
         Twox64Concat,
@@ -212,7 +212,7 @@ pub mod pallet {
     //         call_signature: &Eip712Signature,
     //     ) -> Result<T::AccountId, ValidityError> {
     //         let substrate_account =
-    //             Self::eth_address_to_account(caller).ok_or(ValidityError::NoMappedAccount)?;
+    //             Self::evm_address_to_account(caller).ok_or(ValidityError::NoMappedAccount)?;
     //
     //         let message = SingableMessage::EthAddressCall {
     //             call_hash: T::CallHasher::hash_of(&call),
