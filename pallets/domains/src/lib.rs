@@ -234,7 +234,7 @@ pub mod pallet {
 
         /// Change the record associated with a domain name.
         ///
-        /// ## Record Deposit
+        /// **Record Deposit:**
         ///
         /// Deposit value is calculated based on how many bytes are in the key+value.
         /// if the new value is bigger than the old value, the reminder will be reserved, and if the
