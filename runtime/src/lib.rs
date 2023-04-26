@@ -21,9 +21,9 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, parameter_types, PalletId,
 	dispatch::DispatchClass,
-	traits::{ConstU32, ConstU64, ConstU8, Contains, WithdrawReasons},
+	traits::{ConstU32, ConstU64, ConstU8, Contains, WithdrawReasons, Everything},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
