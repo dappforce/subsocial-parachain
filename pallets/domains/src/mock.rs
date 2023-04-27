@@ -224,8 +224,8 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
-    pub(crate) max_record_key_size: u32,
-    pub(crate) max_record_value_size: u32,
+    pub(crate) max_record_key_length: u32,
+    pub(crate) max_record_value_length: u32,
     pub(crate) record_byte_deposit: Balance,
 }
 
@@ -238,8 +238,8 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
-            max_record_key_size: 250,
-            max_record_value_size: 250,
+            max_record_key_length: 250,
+            max_record_value_length: 250,
             record_byte_deposit: 0,
         }
     }
@@ -276,13 +276,13 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn max_record_key_size(mut self, max_record_key_size: u32) -> Self {
-        self.max_record_key_size = max_record_key_size;
+    pub(crate) fn max_record_key_length(mut self, max_record_key_length: u32) -> Self {
+        self.max_record_key_length = max_record_key_length;
         self
     }
 
-    pub(crate) fn max_record_value_size(mut self, max_record_value_size: u32) -> Self {
-        self.max_record_value_size = max_record_value_size;
+    pub(crate) fn max_record_value_length(mut self, max_record_value_length: u32) -> Self {
+        self.max_record_value_length = max_record_value_length;
         self
     }
 
@@ -298,8 +298,8 @@ impl ExtBuilder {
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
-        MAX_RECORD_KEY_SIZE.with(|x| *x.borrow_mut() = self.max_record_key_size);
-        MAX_RECORD_VALUE_SIZE.with(|x| *x.borrow_mut() = self.max_record_value_size);
+        MAX_RECORD_KEY_LENGTH.with(|x| *x.borrow_mut() = self.max_record_key_length);
+        MAX_RECORD_VALUE_LENGTH.with(|x| *x.borrow_mut() = self.max_record_value_length);
         RECORD_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.record_byte_deposit);
     }
 
