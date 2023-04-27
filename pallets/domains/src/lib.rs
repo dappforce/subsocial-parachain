@@ -393,36 +393,22 @@ pub mod pallet {
             let domain_lc = Self::lower_domain_then_bound(&domain);
             let meta = Self::require_domain(domain_lc.clone())?;
             let owner = meta.owner.clone();
-            let reserve_deposit = check_ownership.is_some();
+            let should_reserve_deposit = check_ownership.is_some();
 
             if let Some(should_be_owner) = check_ownership {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            let (old_depositor, old_deposit) = if let Some(value_with_deposit_info) =
-                DomainRecords::<T>::get(domain_lc.clone(), key.clone())
-            {
-                (value_with_deposit_info.depositor, value_with_deposit_info.deposit)
-            } else {
-                (owner.clone(), 0u32.into())
-            };
+            let current_record = DomainRecords::<T>::get(domain_lc.clone(), key.clone());
 
-            let new_deposit: BalanceOf<T> = if reserve_deposit {
-                let new_deposit = Self::calc_record_deposit(key.clone(), value_opt.clone());
+            let (old_depositor, old_deposit) =
+                current_record.map_or((owner.clone(), 0u32.into()), |r| (r.depositor, r.deposit));
 
-                if owner == old_depositor {
-                    Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
-                } else {
-                    <T as Config>::Currency::reserve(&owner, new_deposit)?;
-                    let err_amount =
-                        <T as Config>::Currency::unreserve(&old_depositor, old_deposit);
-                    debug_assert!(err_amount.is_zero());
-                }
+            let new_deposit = should_reserve_deposit
+                .then(|| Self::calc_record_deposit(key.clone(), value_opt.clone()))
+                .unwrap_or_default();
 
-                new_deposit
-            } else {
-                old_deposit
-            };
+            Self::try_reserve_deposit(&old_depositor, old_deposit, &owner, new_deposit)?;
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
                 *current_opt = value_opt.clone().map(|value| RecordValueWithDepositInfo::<T> {
@@ -564,21 +550,39 @@ pub mod pallet {
             Ok(())
         }
 
-        /// If the new deposit is bigger, reserve more deposit. Otherwise, unreserved the difference.
+        /// Reserve new_deposit from new_depositor, and refunds the old_deposit to old_depositor.
         pub fn try_reserve_deposit(
-            depositor: &T::AccountId,
+            old_depositor: &T::AccountId,
             old_deposit: BalanceOf<T>,
+            new_depositor: &T::AccountId,
             new_deposit: BalanceOf<T>,
         ) -> DispatchResult {
-            match old_deposit.cmp(&new_deposit) {
-                Ordering::Less =>
-                    <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
-                Ordering::Greater => {
-                    let err_amount =
-                        <T as Config>::Currency::unreserve(depositor, old_deposit - new_deposit);
-                    debug_assert!(err_amount.is_zero());
-                },
-                _ => (),
+            let (balance_to_reserve, balance_to_unreserve) = if old_depositor == new_depositor {
+                (
+                    new_deposit.saturating_sub(old_deposit), /* will result in a zero
+                                                              * old_deposit is bigger than
+                                                              * new_deposit. */
+                    old_deposit.saturating_sub(new_deposit), /* will result in a zero
+                                                              * new_deposit is bigger than
+                                                              * old_deposit. */
+                )
+            } else {
+                (
+                    new_deposit, /* since the new_depositor didn't reserve anything, the whole
+                                  * new deposit should be reserved. */
+                    old_deposit, /* since the old_depositor is no longer maintaining the
+                                  * deposit, the whole previous deposit should be refunded. */
+                )
+            };
+
+            if !balance_to_reserve.is_zero() {
+                <T as Config>::Currency::reserve(new_depositor, balance_to_reserve)?;
+            }
+
+            if !balance_to_unreserve.is_zero() {
+                let err_amount =
+                    <T as Config>::Currency::unreserve(old_depositor, balance_to_unreserve);
+                debug_assert!(err_amount.is_zero());
             }
 
             Ok(())
