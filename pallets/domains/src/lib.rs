@@ -104,7 +104,7 @@ pub mod pallet {
         Blake2_128Concat,
         DomainName<T>,
         Blake2_128Concat,
-        RecordKey<T>,
+        DomainRecordKey<T>,
         RecordValueWithDepositInfo<T>,
     >;
 
@@ -158,8 +158,8 @@ pub mod pallet {
         DomainRecordUpdated {
             account: T::AccountId,
             domain: DomainName<T>,
-            key: RecordKey<T>,
-            value: Option<RecordValue<T>>,
+            key: DomainRecordKey<T>,
+            value: Option<DomainRecordValue<T>>,
             deposit: BalanceOf<T>,
         },
     }
@@ -246,8 +246,8 @@ pub mod pallet {
         pub fn set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            key: RecordKey<T>,
-            value_opt: Option<RecordValue<T>>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
@@ -264,8 +264,8 @@ pub mod pallet {
         pub fn force_set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            key: RecordKey<T>,
-            value_opt: Option<RecordValue<T>>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -385,8 +385,8 @@ pub mod pallet {
 
         fn do_set_record(
             domain: DomainName<T>,
-            key: RecordKey<T>,
-            value_opt: Option<RecordValue<T>>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
             check_ownership: Option<T::AccountId>,
             reserve_deposit: bool,
         ) -> DispatchResult {
@@ -437,8 +437,8 @@ pub mod pallet {
         }
 
         pub(crate) fn calc_record_deposit(
-            key: RecordKey<T>,
-            value_opt: Option<RecordValue<T>>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
         ) -> BalanceOf<T> {
             let num_of_bytes: u32 =
                 if let Some(value) = value_opt {

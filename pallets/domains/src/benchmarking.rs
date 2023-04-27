@@ -132,8 +132,8 @@ benchmarks! {
 
         let full_domain = add_domain::<T>(&who)?;
 
-        let key: RecordKey<T> = b"key".to_vec().try_into().unwrap();
-        let value: RecordValue<T> = b"value".to_vec().try_into().unwrap();
+        let key: DomainRecordKey<T> = b"key".to_vec().try_into().unwrap();
+        let value: DomainRecordValue<T> = b"value".to_vec().try_into().unwrap();
     }: _(owner_origin, full_domain.clone(), key.clone(), Some(value.clone()))
     verify {
         let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
@@ -156,8 +156,8 @@ benchmarks! {
 
         let full_domain = add_domain::<T>(&who)?;
 
-        let key: RecordKey<T> = b"key".to_vec().try_into().unwrap();
-        let value: RecordValue<T> = b"value".to_vec().try_into().unwrap();
+        let key: DomainRecordKey<T> = b"key".to_vec().try_into().unwrap();
+        let value: DomainRecordValue<T> = b"value".to_vec().try_into().unwrap();
     }: _(RawOrigin::Root, full_domain.clone(), key.clone(), Some(value.clone()))
     verify {
         let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);

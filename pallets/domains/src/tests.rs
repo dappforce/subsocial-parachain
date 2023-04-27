@@ -273,8 +273,8 @@ fn ensure_valid_domain_should_work() {
 // Tests for set_record
 
 // helper for records
-fn record_key(k: &[u8]) -> RecordKey<Test> { k.to_vec().try_into().unwrap() }
-fn record_value(v: &[u8]) -> RecordValue<Test> { v.to_vec().try_into().unwrap() }
+fn record_key(k: &[u8]) -> DomainRecordKey<Test> { k.to_vec().try_into().unwrap() }
+fn record_value(v: &[u8]) -> DomainRecordValue<Test> { v.to_vec().try_into().unwrap() }
 
 #[test]
 fn set_record_should_fail_when_caller_unsigned() {
@@ -335,7 +335,7 @@ fn set_record_should_work_correctly() {
         .execute_with(|| {
             let key = record_key(b"key");
             let value = record_value(b"value");
-            let value_opt: Option<RecordValue<Test>> = Some(value.clone());
+            let value_opt: Option<DomainRecordValue<Test>> = Some(value.clone());
             assert_ok!(
                 Domains::set_record(
                     RuntimeOrigin::signed(DOMAIN_OWNER),
@@ -687,8 +687,8 @@ fn set_record_should_refund_to_correct_depositor() {
 #[test]
 fn test_calc_record_deposit() {
     let test = |deposit: Balance, key: &[u8], value_opt: Option<&[u8]>, expected: Balance| {
-        let key: RecordKey<Test> = key.to_vec().try_into().unwrap();
-        let value_opt: Option<RecordValue<Test>> = value_opt.map(|value| value.to_vec().try_into().unwrap());
+        let key: DomainRecordKey<Test> = key.to_vec().try_into().unwrap();
+        let value_opt: Option<DomainRecordValue<Test>> = value_opt.map(|value| value.to_vec().try_into().unwrap());
 
         ExtBuilder::default()
             .record_byte_deposit(deposit)
