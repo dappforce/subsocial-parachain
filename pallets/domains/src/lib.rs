@@ -214,7 +214,7 @@ pub mod pallet {
             Self::do_register_domain(owner, full_domain, expires_in, IsForced::No)
         }
 
-        /// Registers a domain ([full_domain]) using root on behalf of a [target],
+        /// Registers a domain ([full_domain]) using root on behalf of a [recipient],
         /// and set the domain to expire in [expires_in] number of blocks.
         #[pallet::call_index(1)]
         #[pallet::weight((
@@ -223,14 +223,14 @@ pub mod pallet {
         ))]
         pub fn force_register_domain(
             origin: OriginFor<T>,
-            target: <T::Lookup as StaticLookup>::Source,
+            recipient: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            let owner = T::Lookup::lookup(target)?;
+            let recipient = T::Lookup::lookup(recipient)?;
 
-            Self::do_register_domain(owner, full_domain, expires_in, IsForced::Yes)
+            Self::do_register_domain(recipient, full_domain, expires_in, IsForced::Yes)
         }
 
         /// Change the record associated with a domain name.
