@@ -104,7 +104,7 @@ pub mod pallet {
         ValueQuery,
     >;
 
-    /// The EthAddress for Substrate Accounts
+    /// Map of EVM address to Substrate account
     #[pallet::storage]
     #[pallet::getter(fn account_to_eth_address)]
     pub type EthAddresses<T: Config> =
