@@ -1,6 +1,6 @@
 [package]
 name = "subsocial-parachain-runtime"
-version = "0.1.7"
+version = "0.1.9"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -35,6 +35,7 @@ pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
+pallet-free-proxy = { path = "../pallets/free-proxy", default-features = false }
 pallet-evm-accounts = { path = '../pallets/evm-accounts', default-features = false }
 
 # Substrate
@@ -154,6 +155,7 @@ std = [
 	"pallet-space-follows/std",
 	"pallet-space-ownership/std",
 	"pallet-spaces/std",
+	"pallet-free-proxy/std",
 	"pallet-evm-accounts/std",
 ]
 
@@ -184,6 +186,7 @@ runtime-benchmarks = [
 	"pallet-spaces/runtime-benchmarks",
 	"pallet-posts/runtime-benchmarks",
 	"pallet-profiles/runtime-benchmarks",
+	"pallet-free-proxy/runtime-benchmarks",
 	"pallet-evm-accounts/runtime-benchmarks",
 ]
 
@@ -216,6 +219,7 @@ try-runtime = [
 	"pallet-permissions/try-runtime",
 	"pallet-posts/try-runtime",
 	"pallet-profiles/try-runtime",
+	"pallet-free-proxy/try-runtime",
 	"pallet-reactions/try-runtime",
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
