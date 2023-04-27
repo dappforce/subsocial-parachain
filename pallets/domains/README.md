@@ -56,9 +56,9 @@ A key of records regarding payment in crypto follows one of the following format
 
 ### Main types
 
-* `DomainName`: an array of characters representing a domain name (maximum length `Config::MaxDomainLength`)
-* `RecordKey`: an array of characters representing record key (maximum length `Config::MaxRecordKeySize`)
-* `RecordValue`: an array of characters representing record value (maximum length `Config::MaxRecordValueSize`)
+* `DomainName` – A byte array of maximum length of `Config::MaxDomainLength` bytes.
+* `RecordKey` – A byte array of maximum length of `Config::MaxRecordKeySize` bytes.
+* `RecordValue` – A byte array of maximum length of `Config::MaxRecordValueSize` bytes.
 
 ```rust
 pub struct DomainMeta<T: Config> {
