@@ -13,12 +13,29 @@ pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLengt
 pub(crate) type DomainRecordKey<T> = BoundedVec<u8, <T as Config>::MaxRecordKeySize>;
 pub(crate) type DomainRecordValue<T> = BoundedVec<u8, <T as Config>::MaxRecordValueSize>;
 
-pub(crate) type RecordValueWithDepositInfo<T> = (DomainRecordValue<T>, <T as frame_system::pallet::Config>::AccountId, BalanceOf<T>);
-
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
 
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
+
+
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct  RecordValueWithDepositInfo<T: Config> {
+    pub record_value: DomainRecordValue<T>,
+    pub depositor: <T as frame_system::pallet::Config>::AccountId,
+    pub deposit: BalanceOf<T>,
+}
+
+impl<T: Config> From<(DomainRecordValue<T>, <T as frame_system::pallet::Config>::AccountId, BalanceOf<T>)> for RecordValueWithDepositInfo<T> {
+    fn from(value: (DomainRecordValue<T>, <T as frame_system::Config>::AccountId, BalanceOf<T>)) -> Self {
+        RecordValueWithDepositInfo {
+            record_value: value.0,
+            depositor: value.1,
+            deposit: value.2,
+        }
+    }
+}
 
 /// Domains inner value variants
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]

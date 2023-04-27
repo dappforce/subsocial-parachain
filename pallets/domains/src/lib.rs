@@ -21,7 +21,7 @@ pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, dispatch::DispatchClass};
+    use frame_support::{dispatch::DispatchClass, pallet_prelude::*, traits::ReservableCurrency};
     use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
@@ -401,7 +401,7 @@ pub mod pallet {
             let (old_depositor, old_deposit) = if let Some(value_with_deposit_info) =
                 DomainRecords::<T>::get(domain_lc.clone(), key.clone())
             {
-                (value_with_deposit_info.1, value_with_deposit_info.2)
+                (value_with_deposit_info.depositor, value_with_deposit_info.deposit)
             } else {
                 (owner.clone(), 0u32.into())
             };
@@ -413,7 +413,8 @@ pub mod pallet {
                     Self::try_reserve_deposit(&owner, old_deposit, new_deposit)?;
                 } else {
                     <T as Config>::Currency::reserve(&owner, new_deposit)?;
-                    let err_amount = <T as Config>::Currency::unreserve(&old_depositor, old_deposit);
+                    let err_amount =
+                        <T as Config>::Currency::unreserve(&old_depositor, old_deposit);
                     debug_assert!(err_amount.is_zero());
                 }
 
@@ -423,7 +424,11 @@ pub mod pallet {
             };
 
             DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
-                *current_opt = value_opt.clone().map(|value| (value, owner.clone(), new_deposit));
+                *current_opt = value_opt.clone().map(|value| RecordValueWithDepositInfo::<T> {
+                    record_value: value,
+                    depositor: owner.clone(),
+                    deposit: new_deposit,
+                });
             });
 
             Self::deposit_event(Event::DomainRecordUpdated {
@@ -440,13 +445,11 @@ pub mod pallet {
             key: DomainRecordKey<T>,
             value_opt: Option<DomainRecordValue<T>>,
         ) -> BalanceOf<T> {
-            let num_of_bytes: u32 =
-                if let Some(value) = value_opt {
-                    key.len().saturating_add(value.len()) as u32
-                } else {
-                    return 0u32.into();
-                };
-
+            let num_of_bytes: u32 = if let Some(value) = value_opt {
+                key.len().saturating_add(value.len()) as u32
+            } else {
+                return 0u32.into()
+            };
 
             T::RecordByteDeposit::get().saturating_mul(num_of_bytes.into())
         }

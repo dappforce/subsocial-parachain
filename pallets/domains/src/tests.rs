@@ -345,7 +345,7 @@ fn set_record_should_work_correctly() {
                 ),
             );
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value, DOMAIN_OWNER, 0)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value, DOMAIN_OWNER, 0).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -402,7 +402,7 @@ fn set_record_should_reserve_correct_record_deposit() {
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
 
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -442,7 +442,7 @@ fn set_record_should_refund_full_record_deposit_when_record_is_deleted() {
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
 
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -505,7 +505,7 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
 
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -530,7 +530,7 @@ fn set_record_should_refund_part_of_deposit_when_new_record_is_smaller() {
 
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 520);
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 480)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 480).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -569,7 +569,7 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 280);
 
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 720).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -594,7 +594,7 @@ fn set_record_should_reserve_more_deposit_when_new_record_is_bigger() {
 
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 40);
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 960)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 960).into()));
 
             System::assert_last_event(
                 Event::DomainRecordUpdated {
@@ -643,7 +643,7 @@ fn set_record_should_refund_to_correct_depositor() {
 
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 900);
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 100)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER, 100).into()));
             System::assert_last_event(
                 Event::DomainRecordUpdated {
                     account: DOMAIN_OWNER,
@@ -670,7 +670,7 @@ fn set_record_should_refund_to_correct_depositor() {
             assert_eq!(Balances::free_balance(DOMAIN_OWNER), 1000);
             assert_eq!(Balances::free_balance(DOMAIN_OWNER_2), 910);
 
-            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER_2, 90)));
+            assert_eq!(DomainRecords::<Test>::get(default_domain_lc(), key.clone()), Some((value.clone(), DOMAIN_OWNER_2, 90).into()));
             System::assert_last_event(
                 Event::DomainRecordUpdated {
                     account: DOMAIN_OWNER_2,

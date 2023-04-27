@@ -146,7 +146,7 @@ benchmarks! {
 				deposit: 0u32.into(),
 			}.into(),
         );
-        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.0);
+        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
         assert_eq!(found_value, Some(value.clone()));
         ensure!(found_value == Some(value), "Value isn't correct");
     }
@@ -170,7 +170,7 @@ benchmarks! {
 				deposit: 0u32.into(),
 			}.into(),
         );
-        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.0);
+        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
         assert_eq!(found_value, Some(value.clone()));
         ensure!(found_value == Some(value), "Value isn't correct");
     }
