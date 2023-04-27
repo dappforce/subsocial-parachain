@@ -252,7 +252,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::do_set_record(domain, key, value_opt, Some(sender), true)?;
+            Self::do_set_record(domain, key, value_opt, Some(sender))?;
 
             Ok(())
         }
@@ -270,7 +270,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::do_set_record(domain, key, value_opt, None, false)?;
+            Self::do_set_record(domain, key, value_opt, None)?;
 
             Ok(Pays::No.into())
         }
@@ -389,11 +389,11 @@ pub mod pallet {
             key: DomainRecordKey<T>,
             value_opt: Option<DomainRecordValue<T>>,
             check_ownership: Option<T::AccountId>,
-            reserve_deposit: bool,
         ) -> DispatchResult {
             let domain_lc = Self::lower_domain_then_bound(&domain);
             let meta = Self::require_domain(domain_lc.clone())?;
             let owner = meta.owner.clone();
+            let reserve_deposit = check_ownership.is_some();
 
             if let Some(should_be_owner) = check_ownership {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
@@ -564,6 +564,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// If the new deposit is bigger, reserve more deposit. Otherwise, unreserved the difference.
         pub fn try_reserve_deposit(
             depositor: &T::AccountId,
             old_deposit: BalanceOf<T>,
