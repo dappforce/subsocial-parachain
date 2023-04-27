@@ -93,7 +93,7 @@ pub mod pallet {
         CannotLinkMoreAccounts,
     }
 
-    /// The Substrate Account for EthAddresses
+    /// Map of one Substrate account to many EVM addresses
     #[pallet::storage]
     #[pallet::getter(fn evm_address_to_account)]
     pub type Accounts<T: Config> = StorageMap<
