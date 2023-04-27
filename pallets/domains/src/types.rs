@@ -12,8 +12,8 @@ pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>
 #[deprecated]
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
 
-pub(crate) type DomainRecordKey<T> = BoundedVec<u8, <T as Config>::MaxRecordKeySize>;
-pub(crate) type DomainRecordValue<T> = BoundedVec<u8, <T as Config>::MaxRecordValueSize>;
+pub(crate) type DomainRecordKey<T> = BoundedVec<u8, <T as Config>::MaxRecordKeyLength>;
+pub(crate) type DomainRecordValue<T> = BoundedVec<u8, <T as Config>::MaxRecordValueLength>;
 
 pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::DomainsInsertLimit>;
 

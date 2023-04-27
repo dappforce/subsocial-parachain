@@ -68,11 +68,11 @@ pub mod pallet {
 
         /// The maximum length of the domain's record key.
         #[pallet::constant]
-        type MaxRecordKeySize: Get<u32>;
+        type MaxRecordKeyLength: Get<u32>;
 
         /// The maximum length of the domain's record value.
         #[pallet::constant]
-        type MaxRecordValueSize: Get<u32>;
+        type MaxRecordValueLength: Get<u32>;
 
         /// The amount held on deposit for storing the domain's structure.
         #[pallet::constant]

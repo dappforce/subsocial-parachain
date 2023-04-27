@@ -104,8 +104,8 @@ parameter_types! {
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
 
-    pub static MaxRecordKeySize: u32 = 250;
-    pub static MaxRecordValueSize: u32 = 250;
+    pub static MaxRecordKeyLength: u32 = 250;
+    pub static MaxRecordValueLength: u32 = 250;
     pub static RecordByteDeposit: Balance = 0;
 }
 
@@ -119,8 +119,8 @@ impl pallet_domains::Config for Test {
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
-    type MaxRecordKeySize = MaxRecordKeySize;
-    type MaxRecordValueSize = MaxRecordValueSize;
+    type MaxRecordKeyLength = MaxRecordKeyLength;
+    type MaxRecordValueLength = MaxRecordValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type RecordByteDeposit = RecordByteDeposit;
     type WeightInfo = ();

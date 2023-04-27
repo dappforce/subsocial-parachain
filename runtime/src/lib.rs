@@ -626,8 +626,8 @@ impl pallet_domains::Config for Runtime {
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;
-	type MaxRecordKeySize = ConstU32<256>;
-	type MaxRecordValueSize = ConstU32<4096>;
+	type MaxRecordKeyLength = ConstU32<256>;
+	type MaxRecordValueLength = ConstU32<4096>;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type RecordByteDeposit = TransactionByteFee;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
