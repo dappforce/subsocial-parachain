@@ -12,7 +12,6 @@ codegen-units = 1
 [profile.dev.package]
 libsecp256k1 = { opt-level = 3 }
 
-
 [workspace]
 members = [
     "integration-tests",
