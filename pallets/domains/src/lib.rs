@@ -129,7 +129,7 @@ pub mod pallet {
 
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
-    #[deprecated] // remove after migration
+    #[deprecated] // remove after migration to new style of record key/value
     pub(super) type DomainByInnerValue<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
