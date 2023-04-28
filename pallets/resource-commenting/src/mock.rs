@@ -1,4 +1,10 @@
-use frame_support::{dispatch::DispatchResult, parameter_types, traits::Everything};
+use frame_support::{
+    assert_ok,
+    dispatch::{DispatchResult, RawOrigin},
+    parameter_types,
+    traits::Everything,
+};
+use frame_system::Origin;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -6,12 +12,14 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     DispatchError,
 };
-use sp_std::convert::{TryFrom, TryInto};
 
-use pallet_permissions::{PermissionChecker, SpacePermission, SpacePermissionsContext};
+use pallet_permissions::{
+    default_permissions::DefaultSpacePermissions, PermissionChecker, SpacePermission,
+    SpacePermissionsContext,
+};
 use pallet_spaces::NextSpaceId;
-use subsocial_support::{SpaceId, User};
-use subsocial_support::traits::SpaceFollowsProvider;
+use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId, User};
+use sp_std::convert::{TryInto, TryFrom};
 
 pub(crate) use crate as pallet_resource_commenting;
 
@@ -98,8 +106,6 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-use pallet_permissions::default_permissions::DefaultSpacePermissions;
-
 impl pallet_permissions::Config for Test {
     type DefaultSpacePermissions = DefaultSpacePermissions;
 }
@@ -120,7 +126,7 @@ impl pallet_posts::Config for Test {
     type WeightInfo = ();
 }
 
-pub(crate) struct FakeImpls;
+pub struct FakeImpls;
 
 impl PermissionChecker for FakeImpls {
     type AccountId = AccountId;
@@ -170,12 +176,17 @@ impl pallet_resource_commenting::Config for Test {
 
 pub struct ExtBuilder {
     resources_space_id: SpaceId,
+    resources_space_owner: AccountId,
     max_resource_id_length: u32,
 }
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        ExtBuilder { resources_space_id: 0, max_resource_id_length: 10 }
+        ExtBuilder {
+            resources_space_id: 0,
+            resources_space_owner: 991199,
+            max_resource_id_length: 10,
+        }
     }
 }
 
@@ -187,6 +198,11 @@ impl ExtBuilder {
 
     pub(crate) fn max_resource_id_length(mut self, max_resource_id_length: u32) -> Self {
         self.max_resource_id_length = max_resource_id_length;
+        self
+    }
+
+    pub(crate) fn resources_space_owner(mut self, resources_space_owner: AccountId) -> Self {
+        self.resources_space_owner = resources_space_owner;
         self
     }
 
@@ -203,8 +219,16 @@ impl ExtBuilder {
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
             System::set_block_number(1);
-            NextSpaceId::set(self.resources_space_id);
-            // Spaces::create_space()
+            NextSpaceId::<Test>::set(self.resources_space_id);
+            assert_ok!(Spaces::create_space(
+                RuntimeOrigin::signed(self.resources_space_owner),
+                Content::None,
+                None,
+            ));
+            assert_eq!(
+                Spaces::require_space(self.resources_space_id).expect("ResSpace not found").owner,
+                self.resources_space_owner
+            );
         });
 
         ext
