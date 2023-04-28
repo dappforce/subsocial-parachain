@@ -4,8 +4,8 @@ pub use pallet::*;
 
 // pub use crate::weights::WeightInfo;
 //
-// #[cfg(test)]
-// mod mock;
+#[cfg(test)]
+mod mock;
 //
 // #[cfg(test)]
 // mod tests;
@@ -24,6 +24,7 @@ pub mod pallet {
 
     use pallet_posts::{NextPostId, PostExtension};
     use subsocial_support::{Content, PostId, SpaceId};
+    use sp_std::{convert::TryInto, fmt::Debug};
 
     // use crate::weights::WeightInfo;
 
@@ -52,6 +53,11 @@ pub mod pallet {
         ResourcePostCreated { resource_id: ResourceId<T>, post_id: PostId },
     }
 
+    #[pallet::error]
+    pub enum Error<T> {
+        ResourcePostAlreadyCreated,
+    }
+
     #[pallet::storage]
     #[pallet::getter(fn resource_post)]
     pub type ResourcePost<T: Config> = StorageMap<_, Twox64Concat, ResourceId<T>, PostId>;
@@ -66,6 +72,11 @@ pub mod pallet {
             resource_id: ResourceId<T>,
         ) -> DispatchResult {
             let _ = ensure_signed(origin)?;
+
+            ensure!(
+                ResourcePost::<T>::contains_key(resource_id.clone()),
+                Error::<T>::ResourcePostAlreadyCreated,
+            );
 
             let resource_space =
                 pallet_spaces::Pallet::<T>::require_space(T::ResourcesSpaceId::get())?;

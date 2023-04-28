@@ -28,10 +28,13 @@ pallet-spaces = { path = "../spaces" }
 subsocial-support = { path = "../support" }
 
 [dev-dependencies]
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 smallvec = "1.6.1"
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-permissions = { path = "../permissions" }
+pallet-space-follows = { path = "../space-follows" }
 
 [features]
 default = ["std"]
@@ -45,11 +48,14 @@ std = [
     "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
-    "pallet-balances/std",
     "pallet-posts/std",
     "pallet-spaces/std",
     "sp-runtime/std",
     "sp-std/std",
+    "pallet-balances/std",
+    "pallet-timestamp/std",
+    "pallet-permissions/std",
+    "pallet-space-follows/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
 
