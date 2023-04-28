@@ -6025,6 +6025,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-resource-commenting"
+version = "0.1.8"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-posts",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-roles"
 version = "0.1.8"
 dependencies = [
