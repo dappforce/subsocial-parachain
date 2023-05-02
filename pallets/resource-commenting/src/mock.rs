@@ -170,7 +170,7 @@ parameter_types! {
 
 impl pallet_resource_commenting::Config for Test {
     type RuntimeEvent = RuntimeEvent;
-    type MaxResourcesIdLength = MaxResourcesIdLength;
+    type MaxResourceIdLength = MaxResourceIdLength;
 }
 
 pub struct ExtBuilder {
