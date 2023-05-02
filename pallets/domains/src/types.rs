@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{StaticLookup, Zero};
 use sp_std::vec::Vec;
 
 use subsocial_support::{WhoAndWhenOf, new_who_and_when};
@@ -30,6 +30,10 @@ pub(crate) type DomainParts<T> =
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
+pub(crate) type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
+
+pub(crate) type LookupOf<T> = <T as frame_system::Config>::Lookup;
+
 /// Domains inner value variants
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum InnerValue<AccountId> {
@@ -41,6 +45,11 @@ pub enum InnerValue<AccountId> {
 pub(super) enum IsForced {
     Yes,
     No,
+}
+
+pub(super) enum DomainPayer<T: Config> {
+    ForceOrigin,
+    Account(T::AccountId),
 }
 
 /// A domain metadata.

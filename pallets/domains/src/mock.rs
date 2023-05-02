@@ -9,12 +9,14 @@ use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header, traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_runtime::traits::StaticLookup;
 use sp_std::convert::{TryInto, TryFrom};
 
 use subsocial_support::Content;
 use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
 
 pub(crate) use crate as pallet_domains;
+use crate::Config;
 use crate::types::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -230,17 +232,19 @@ fn _force_register_domain(
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None, None)
+    _register_domain(None, None, None, None, None)
 }
 
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
+    owner_target: Option<AccountIdLookupOf<Test>>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
+        owner_target.unwrap_or_else(|| LookupOf::<Test>::unlookup(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),

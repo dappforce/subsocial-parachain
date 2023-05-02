@@ -2,6 +2,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate core;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -241,14 +243,16 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
+            owner_target: AccountIdLookupOf<T>,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
-            let owner = ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
+            let owner = T::Lookup::lookup(owner_target)?;
             let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
 
-            Self::do_register_domain(domain_data, IsForced::No)
+            Self::do_register_domain(domain_data, DomainPayer::<T>::Account(caller))
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
@@ -270,7 +274,7 @@ pub mod pallet {
             let owner = T::Lookup::lookup(target)?;
             let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
 
-            Self::do_register_domain(domain_data, IsForced::Yes)
+            Self::do_register_domain(domain_data, DomainPayer::<T>::ForceOrigin)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
@@ -447,7 +451,12 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         // TODO: refactor long method
-        fn do_register_domain(domain_data: DomainRegisterData<T>, is_forced: IsForced) -> DispatchResult {
+        fn do_register_domain(domain_data: DomainRegisterData<T>, payer: DomainPayer<T>) -> DispatchResult {
+            let is_forced = match payer {
+                DomainPayer::ForceOrigin => IsForced::Yes,
+                DomainPayer::Account(_) => IsForced::No,
+            };
+
             let DomainRegisterData { owner, full_domain, content, expires_in } = domain_data;
 
             // Perform checks that doesn't require storage access.
@@ -477,14 +486,14 @@ pub mod pallet {
             Self::ensure_within_domains_limit(&owner)?;
             let price = Self::calculate_price(&subdomain);
 
-            if let IsForced::No = is_forced {
+            if let DomainPayer::Account(payer) = payer {
                 // TODO: this check is duplicating one, which happens in one of the functions above
                 Self::ensure_word_is_not_reserved(&subdomain)?;
-                Self::ensure_can_pay_for_domain(&owner, price)?;
+                Self::ensure_can_pay_for_domain(&payer, price)?;
 
                 // Perform write operations.
                 <T as Config>::Currency::transfer(
-                    &owner,
+                    &payer,
                     &Self::payment_beneficiary(),
                     price,
                     KeepAlive,

@@ -1,6 +1,7 @@
 use frame_support::{assert_noop, assert_ok};
+use frame_support::traits::Bounded::Lookup;
 use frame_support::traits::Currency;
-use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
+use sp_runtime::{DispatchError::BadOrigin, traits::{Zero, StaticLookup}};
 use sp_std::convert::TryInto;
 
 use subsocial_support::mock_functions::{another_valid_content_ipfs, invalid_content_ipfs, valid_content_ipfs};
@@ -146,6 +147,7 @@ fn register_domain_should_fail_when_domain_reserved() {
         assert_noop!(
             Domains::register_domain(
                 RuntimeOrigin::signed(DOMAIN_OWNER),
+                LookupOf::<Test>::unlookup(DOMAIN_OWNER),
                 domain,
                 valid_content_ipfs(),
                 ExtBuilder::default().reservation_period_limit,
@@ -194,11 +196,11 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .execute_with(|| {
             Balances::make_free_balance_be(&ACCOUNT_A, full_domain_price(&domain_one));
             assert_ok!(Domains::register_domain(
-                origin_a(), domain_one.clone(), valid_content_ipfs(), 1
+                origin_a(), LookupOf::<Test>::unlookup(ACCOUNT_A),domain_one.clone(), valid_content_ipfs(), 1
             ));
             Balances::make_free_balance_be(&ACCOUNT_B, full_domain_price(&domain_two));
             assert_ok!(Domains::register_domain(
-                origin_b(), domain_two.clone(), valid_content_ipfs(), 1
+                origin_b(), LookupOf::<Test>::unlookup(ACCOUNT_B), domain_two.clone(), valid_content_ipfs(), 1
             ));
 
             assert_ok!(Domains::set_inner_value(
