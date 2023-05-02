@@ -170,7 +170,6 @@ parameter_types! {
 
 impl pallet_resource_commenting::Config for Test {
     type RuntimeEvent = RuntimeEvent;
-    type ResourcesSpaceId = ResourcesSpaceId;
     type MaxResourcesIdLength = MaxResourcesIdLength;
 }
 

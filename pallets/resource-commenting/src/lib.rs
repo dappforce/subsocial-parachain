@@ -20,11 +20,10 @@ pub mod pallet {
     use frame_support::{dispatch::RawOrigin, pallet_prelude::*, traits::Currency, transactional};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{StaticLookup, Zero};
-    use sp_std::vec::Vec;
+    use sp_std::{convert::TryInto, fmt::Debug, vec::Vec};
 
     use pallet_posts::{NextPostId, PostExtension};
     use subsocial_support::{Content, PostId, SpaceId};
-    use sp_std::{convert::TryInto, fmt::Debug};
 
     // use crate::weights::WeightInfo;
 
@@ -34,9 +33,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-        /// The id of the space, where all resource posts will reside.
-        type ResourcesSpaceId: Get<SpaceId>;
 
         /// The maximum number of characters in a resource id.
         #[pallet::constant]
@@ -50,51 +46,129 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        ResourcePostCreated { resource_id: ResourceId<T>, post_id: PostId },
+        ResourcePostLinked { resource_id: ResourceId<T>, account_id: T::AccountId, post_id: PostId },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        ResourcePostAlreadyCreated,
+        ResourcePostAlreadyLinked,
     }
 
     #[pallet::storage]
     #[pallet::getter(fn resource_post)]
-    pub type ResourcePost<T: Config> = StorageMap<_, Twox64Concat, ResourceId<T>, PostId>;
+    pub type ResourcePost<T: Config> =
+        StorageDoubleMap<_, Blake2_128Concat, ResourceId<T>, Twox64Concat, T::AccountId, PostId>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        // #[pallet::call_index(0)]
+        // #[pallet::weight(Weight::from_ref_time(10_000))]
+        // #[transactional]
+        // pub fn create_resource_post(
+        //     origin: OriginFor<T>,
+        //     resource_id: ResourceId<T>,
+        // ) -> DispatchResult {
+        //     let _ = ensure_signed(origin)?;
+        //
+        //     ensure!(
+        //         ResourcePost::<T>::contains_key(resource_id.clone()),
+        //         Error::<T>::ResourcePostAlreadyCreated,
+        //     );
+        //
+        //     let resource_space =
+        //         pallet_spaces::Pallet::<T>::require_space(T::ResourcesSpaceId::get())?;
+        //
+        //     pallet_posts::Pallet::<T>::create_post(
+        //         RawOrigin::Signed(resource_space.owner).into(),
+        //         Some(resource_space.id),
+        //         PostExtension::RegularPost,
+        //         Content::None,
+        //     )?;
+        //
+        //     let post_id = NextPostId::<T>::get();
+        //
+        //     ResourcePost::<T>::insert(resource_id.clone(), post_id);
+        //
+        //     Self::deposit_event(Event::ResourcePostCreated { resource_id, post_id });
+        //
+        //     Ok(())
+        // }
+
         #[pallet::call_index(0)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
         #[transactional]
-        pub fn create_resource_post(
+        pub fn link_post_to_resource(
             origin: OriginFor<T>,
             resource_id: ResourceId<T>,
+            post_id: PostId,
         ) -> DispatchResult {
-            let _ = ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
 
+            Self::do_link_post_to_resource(caller, resource_id, post_id)
+        }
+
+        #[pallet::call_index(1)]
+        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[transactional]
+        pub fn create_resource_discussion(
+            origin: OriginFor<T>,
+            resource_id: ResourceId<T>,
+            space_id: PostId,
+        ) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            Self::do_create_resource_discussion(caller, resource_id, space_id)
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        fn do_link_post_to_resource(
+            caller: T::AccountId,
+            resource_id: ResourceId<T>,
+            post_id: PostId,
+        ) -> DispatchResult {
             ensure!(
-                ResourcePost::<T>::contains_key(resource_id.clone()),
-                Error::<T>::ResourcePostAlreadyCreated,
+                ResourcePost::<T>::contains_key(resource_id.clone(), caller.clone()),
+                Error::<T>::ResourcePostAlreadyLinked,
             );
 
-            let resource_space =
-                pallet_spaces::Pallet::<T>::require_space(T::ResourcesSpaceId::get())?;
+            let post = pallet_posts::Pallet::<T>::require_post(post_id)?;
+            post.ensure_owner(&caller)?;
 
+            ResourcePost::<T>::insert(resource_id.clone(), caller.clone(), post_id);
+
+            Self::deposit_event(Event::ResourcePostLinked {
+                resource_id,
+                account_id: caller.clone(),
+                post_id,
+            });
+
+            Ok(())
+        }
+
+        fn do_create_resource_discussion(
+            caller: T::AccountId,
+            resource_id: ResourceId<T>,
+            space_id: PostId,
+        ) -> DispatchResult {
+            ensure!(
+                ResourcePost::<T>::contains_key(resource_id.clone(), caller.clone()),
+                Error::<T>::ResourcePostAlreadyLinked,
+            );
+
+            let space = pallet_spaces::Pallet::<T>::require_space(space_id)?;
+
+            // this call ensures that [caller] have the correct permissions to create posts in that space
             pallet_posts::Pallet::<T>::create_post(
-                RawOrigin::Signed(resource_space.owner).into(),
-                Some(resource_space.id),
+                RawOrigin::Signed(caller.clone()).into(),
+                Some(space.id),
                 PostExtension::RegularPost,
                 Content::None,
             )?;
 
             let post_id = NextPostId::<T>::get();
 
-            ResourcePost::<T>::insert(resource_id.clone(), post_id);
-
-            Self::deposit_event(Event::ResourcePostCreated { resource_id, post_id });
-
-            Ok(())
+            Self::do_link_post_to_resource(caller, resource_id, post_id)
         }
     }
 }
