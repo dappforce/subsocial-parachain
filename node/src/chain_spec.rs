@@ -186,8 +186,8 @@ pub fn soonsocial_config() -> Result<ChainSpec, String> {
 
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"SoonSocialX",
-		"subsocialx",
+		"SoonSocial",
+		"soonsocial",
 		ChainType::Live,
 		move || {
 			let mut total_allocated: Balance = Zero::zero();
