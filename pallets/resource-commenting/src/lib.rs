@@ -114,10 +114,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             resource_id: ResourceId<T>,
             space_id: PostId,
+            content: Content,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
 
-            Self::do_create_resource_discussion(caller, resource_id, space_id)
+            Self::do_create_resource_discussion(caller, resource_id, space_id, content)
         }
     }
 
@@ -150,6 +151,7 @@ pub mod pallet {
             caller: T::AccountId,
             resource_id: ResourceId<T>,
             space_id: PostId,
+            content: Content,
         ) -> DispatchResult {
             ensure!(
                 ResourcePost::<T>::contains_key(resource_id.clone(), caller.clone()),
@@ -163,7 +165,7 @@ pub mod pallet {
                 RawOrigin::Signed(caller.clone()).into(),
                 Some(space.id),
                 PostExtension::RegularPost,
-                Content::None,
+                content,
             )?;
 
             let post_id = NextPostId::<T>::get();
