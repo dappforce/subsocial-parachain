@@ -2,7 +2,7 @@
 
 use frame_support::dispatch::{DispatchError, DispatchResult};
 
-use crate::{Content, SpaceId};
+use crate::{Content, PostId, SpaceId};
 
 pub trait SpacePermissionsProvider<AccountId, SpacePermissionsInfo> {
     fn space_permissions_info(id: SpaceId) -> Result<SpacePermissionsInfo, DispatchError>;
@@ -14,6 +14,12 @@ pub trait SpaceFollowsProvider {
     type AccountId;
 
     fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool;
+}
+
+pub trait PostFollowsProvider {
+    type AccountId;
+
+    fn is_post_follower(account: Self::AccountId, post_id: PostId) -> bool;
 }
 
 pub trait ProfileManager<AccountId> {
