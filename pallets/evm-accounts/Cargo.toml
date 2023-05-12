@@ -18,7 +18,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 libsecp256k1 = { version = "0.7", default-features = false, features = ["hmac", "static-context"], optional = true }
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
-module-evm-utility-macro = { git = "https://github.com/AcalaNetwork/Acala", rev="104e2774c08611ce334bc1d7fe66921a4a654bec", default-features = false }
 
 frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
