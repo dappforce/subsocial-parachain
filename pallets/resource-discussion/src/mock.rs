@@ -190,7 +190,7 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub(crate) fn resources_space_id(mut self, resources_space_id: Balance) -> Self {
+    pub(crate) fn resources_space_id(mut self, resources_space_id: SpaceId) -> Self {
         self.resources_space_id = resources_space_id;
         self
     }
