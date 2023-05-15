@@ -1,10 +1,11 @@
-use sp_core::{H160, keccak_256};
+use sp_core_hashing::keccak_256;
 use sp_io::{crypto::secp256k1_ecdsa_recover};
+use sp_std::vec::Vec;
 
 use crate::{Config, Pallet};
 
 /// Evm Address.
-pub(crate) type EvmAddress = H160;
+pub(crate) type EvmAddress = sp_core::H160;
 
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
 pub(crate) type EcdsaSignature = [u8; 65];
