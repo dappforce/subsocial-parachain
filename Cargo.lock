@@ -5829,6 +5829,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-posts",
+ "pallet-spaces",
  "parity-scale-codec",
  "scale-info",
  "sp-std",
