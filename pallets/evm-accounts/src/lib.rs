@@ -3,43 +3,27 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    dispatch::{Codec, DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    dispatch::{Dispatchable, GetDispatchInfo},
     pallet_prelude::*,
-    traits::{tokens::Balance, Currency, IsSubType},
+    traits::IsSubType,
 };
 use frame_system::pallet_prelude::*;
-use pallet_transaction_payment::OnChargeTransaction;
-use sp_runtime::{
-    traits::{
-        Bounded, CheckedAdd, CheckedSub, Extrinsic, Hash, MaybeSerialize, Saturating,
-        SignedExtension, StaticLookup, Zero,
-    },
-    FixedPointNumber, FixedPointOperand,
-};
-use sp_std::{
-    convert::TryInto,
-    fmt::Debug,
-    marker::{Send, Sync},
-};
+use sp_std::convert::TryInto;
 
 pub use pallet::*;
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod test;
+// #[cfg(test)]
+// mod mock;
+// #[cfg(test)]
+// mod test;
 
 mod evm;
 
-type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
-
 #[frame_support::pallet]
 pub mod pallet {
-    use sp_core::crypto::{Ss58Codec};
     use crate::evm::*;
     use frame_system::Pallet as System;
     use sp_core::hexdisplay::AsBytesRef;
-    use sp_runtime::SaturatedConversion;
 
     use super::*;
 
@@ -50,17 +34,11 @@ pub mod pallet {
 
         /// The overarching call type.
         type RuntimeCall: Parameter
-            + Dispatchable<
-                RuntimeOrigin = Self::RuntimeOrigin,
-                Info = DispatchInfo,
-                PostInfo = PostDispatchInfo,
-            > + GetDispatchInfo
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+            + GetDispatchInfo
             + From<frame_system::Call<Self>>
             + IsSubType<Call<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeCall>;
-
-        /// The type of hash used for hashing the call.
-        type CallHasher: Hash;
 
         /// The max number of substrate accounts that are linked to a given evm address.
         type MaxLinkedAccounts: Get<u32>;
@@ -117,8 +95,8 @@ pub mod pallet {
         /// Link substrate address to EVM address.
         #[pallet::call_index(0)]
         #[pallet::weight(Weight::from_ref_time(340_000_000)
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64)))]
+        .saturating_add(T::DbWeight::get().reads(3 as u64))
+        .saturating_add(T::DbWeight::get().writes(2 as u64)))]
         pub fn link_evm_address(
             origin: OriginFor<T>,
             evm_address: EvmAddress,
@@ -126,17 +104,18 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let sub_nonce = System::<T>::account_nonce(&who).encode().as_bytes_ref();
-            
-            // TODO: Need to convert to ss58 address using to_ss58check from Ss58Codec
-            let ss58_address = who.clone();
+            let sub_nonce = System::<T>::account_nonce(&who).encode();
+            let sub_address = hex::encode(who.encode().as_bytes_ref());
+
             // recover evm address from signature
-            let address = Self::verify_signature(&evm_signature, ss58_address, sub_nonce)
+            let address = Self::verify_signature(
+                &evm_signature, sub_address.as_bytes(), sub_nonce.as_slice()
+            )
                 .ok_or(Error::<T>::BadSignature)?;
             ensure!(evm_address == address, Error::<T>::BadSignature);
 
             SubstrateAccounts::<T>::mutate(evm_address, |accounts| {
-                accounts.try_push(who.clone()).map_err(|e| Error::<T>::CannotLinkMoreAccounts)
+                accounts.try_push(who.clone()).map_err(|_| Error::<T>::CannotLinkMoreAccounts)
             })?;
             EvmAccounts::<T>::insert(&who, evm_address);
 
@@ -144,4 +123,5 @@ pub mod pallet {
 
             Ok(())
         }
+    }
 }

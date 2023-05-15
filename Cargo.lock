@@ -5549,6 +5549,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "libsecp256k1",
  "pallet-balances",
  "pallet-transaction-payment",

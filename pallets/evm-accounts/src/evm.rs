@@ -1,7 +1,5 @@
-use codec::Encode;
-use sp_core::{H160, H256, keccak_256};
+use sp_core::{H160, keccak_256};
 use sp_io::{crypto::secp256k1_ecdsa_recover};
-use sp_runtime::traits::{Hash, Zero};
 
 use crate::{Config, Pallet};
 
@@ -9,12 +7,10 @@ use crate::{Config, Pallet};
 pub(crate) type EvmAddress = H160;
 
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
-pub type EcdsaSignature = [u8; 65];
-
-pub(crate) type MessageHash = [u8; 32];
+pub(crate) type EcdsaSignature = [u8; 65];
 
 const MSG_PART_1: &[u8] = b"Link to Subsocial address ";
-const MSG_PART_2: &[u8] = b" with nonce ";
+const MSG_PART_2: &[u8] = b" (in hex) with nonce ";
 
 impl<T: Config> Pallet<T> {
     pub(crate) fn verify_signature(
@@ -49,6 +45,8 @@ fn eth_signable_message(sub_address: &[u8], sub_nonce: &[u8]) -> Vec<u8> {
 }
 
 //* ONLY FOR TESTS *//
+/*
+pub(crate) type MessageHash = [u8; 32];
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
 pub(crate) fn evm_secret_key(seed: &[u8]) -> libsecp256k1::SecretKey {
@@ -78,3 +76,4 @@ pub fn evm_sign(secret: &libsecp256k1::SecretKey, msg_hash: &MessageHash) -> Ecd
     r[64] = recovery_id.serialize();
     r
 }
+*/

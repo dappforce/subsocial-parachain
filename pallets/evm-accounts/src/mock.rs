@@ -1,20 +1,18 @@
-use codec::Decode;
 use frame_support::{
     parameter_types,
-    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
+    traits::{ConstU8, Currency, Everything},
     weights::{
         constants::ExtrinsicBaseWeight, ConstantMultiplier, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
-use pallet_transaction_payment::OnChargeTransaction;
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     generic,
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup, One},
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -131,7 +129,6 @@ parameter_types! {
 impl pallet_evm_accounts::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type CallHasher = BlakeTwo256;
     type MaxLinkedAccounts = MaxLinkedAccounts;
 }
 
