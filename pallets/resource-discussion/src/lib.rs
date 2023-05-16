@@ -3,7 +3,7 @@
 pub use pallet::*;
 
 // pub use crate::weights::WeightInfo;
-//
+
 #[cfg(test)]
 mod mock;
 
@@ -12,21 +12,20 @@ mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
-//
 // pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{dispatch::RawOrigin, pallet_prelude::*, transactional};
     use frame_system::pallet_prelude::*;
-    use sp_std::{convert::TryInto};
+    use sp_std::convert::TryInto;
 
     use pallet_posts::{NextPostId, PostExtension};
     use subsocial_support::{Content, PostId, SpaceId};
 
     // use crate::weights::WeightInfo;
 
-    type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourcesIdLength>;
+    type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourceIdLength>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
@@ -35,7 +34,7 @@ pub mod pallet {
 
         /// The maximum number of characters in a resource id.
         #[pallet::constant]
-        type MaxResourcesIdLength: Get<u32>;
+        type MaxResourceIdLength: Get<u32>;
     }
 
     #[pallet::pallet]
@@ -45,12 +44,16 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        ResourceDiscussionLinked { resource_id: ResourceId<T>, account_id: T::AccountId, post_id: PostId },
+        ResourceDiscussionLinked {
+            resource_id: ResourceId<T>,
+            account_id: T::AccountId,
+            post_id: PostId,
+        },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        ResourceDiscussionAlreadyLinked,
+        ResourceDiscussionAlreadyCreated,
     }
 
     #[pallet::storage]
@@ -60,9 +63,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_ref_time(500_000_000))]
         #[transactional]
         pub fn link_post_to_resource(
             origin: OriginFor<T>,
@@ -75,7 +77,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_ref_time(750_000_000))]
         #[transactional]
         pub fn create_resource_discussion(
             origin: OriginFor<T>,
@@ -85,7 +87,25 @@ pub mod pallet {
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
 
-            Self::do_create_resource_discussion(caller, resource_id, space_id, content)
+            // No need to create discussion, use "link post to resource instead"
+            ensure!(
+                ResourceDiscussion::<T>::contains_key(resource_id.clone(), caller.clone()),
+                Error::<T>::ResourceDiscussionAlreadyCreated,
+            );
+
+            let space = pallet_spaces::Pallet::<T>::require_space(space_id)?;
+
+            let post_id = NextPostId::<T>::get();
+
+            // This call also ensures that [caller] has permission to create posts in that space
+            pallet_posts::Pallet::<T>::create_post(
+                RawOrigin::Signed(caller.clone()).into(),
+                Some(space.id),
+                PostExtension::RegularPost,
+                content,
+            )?;
+
+            Self::do_link_post_to_resource(caller, resource_id, post_id)
         }
     }
 
@@ -107,33 +127,6 @@ pub mod pallet {
             });
 
             Ok(())
-        }
-
-        fn do_create_resource_discussion(
-            caller: T::AccountId,
-            resource_id: ResourceId<T>,
-            space_id: SpaceId,
-            content: Content,
-        ) -> DispatchResult {
-            // doesnt make sense new discussion post if already exists, you can relink it using link_post_to_resource
-            ensure!(
-                ResourceDiscussion::<T>::contains_key(resource_id.clone(), caller.clone()),
-                Error::<T>::ResourceDiscussionAlreadyLinked,
-            );
-
-            let space = pallet_spaces::Pallet::<T>::require_space(space_id)?;
-
-            let post_id = NextPostId::<T>::get();
-
-            // this call ensures that [caller] have the correct permissions to create posts in that space
-            pallet_posts::Pallet::<T>::create_post(
-                RawOrigin::Signed(caller.clone()).into(),
-                Some(space.id),
-                PostExtension::RegularPost,
-                content,
-            )?;
-
-            Self::do_link_post_to_resource(caller, resource_id, post_id)
         }
     }
 }

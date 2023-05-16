@@ -6025,7 +6025,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-resource-discussion"
+name = "pallet-resource-discussions"
 version = "0.1.8"
 dependencies = [
  "frame-benchmarking",
