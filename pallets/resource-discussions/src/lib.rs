@@ -21,7 +21,7 @@ pub mod pallet {
     use sp_std::convert::TryInto;
 
     use pallet_posts::{NextPostId, PostExtension};
-    use subsocial_support::{Content, PostId, SpaceId};
+    use subsocial_support::{Content, PostId};
 
     // use crate::weights::WeightInfo;
 

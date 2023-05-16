@@ -10,7 +10,6 @@ description = "Pallet for commenting on external resources."
 keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
 categories = ["cryptography::cryptocurrencies"]
 
-
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
@@ -23,23 +22,24 @@ frame-support = { git = "https://github.com/paritytech/substrate", branch = "pol
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
-pallet-posts = { path = "../posts" }
-pallet-spaces = { path = "../spaces" }
-subsocial-support = { path = "../support" }
+pallet-posts = { path = "../posts", default-features = false }
+pallet-spaces = { path = "../spaces", default-features = false }
+subsocial-support = { path = "../support", default-features = false }
 
 [dev-dependencies]
-smallvec = "1.10.0"
+smallvec = "1.6.1"
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
-pallet-permissions = { path = "../permissions" }
-pallet-space-follows = { path = "../space-follows" }
+pallet-permissions = { path = "../permissions", default-features = false }
+pallet-space-follows = { path = "../space-follows", default-features = false }
 
 [features]
 default = ["std"]
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
 ]
 std = [
     "codec/std",
@@ -58,4 +58,3 @@ std = [
     "pallet-space-follows/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
-
