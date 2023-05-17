@@ -1,6 +1,6 @@
 [package]
 name = "pallet-evm-accounts"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -30,8 +30,8 @@ sp-core-hashing = { git = "https://github.com/paritytech/substrate", branch = "p
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 
 [dev-dependencies]
+smallvec = "1.10.0"
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
-smallvec = "1.6.1"
 
 [features]
 default = ["std"]
