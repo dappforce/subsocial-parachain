@@ -89,7 +89,7 @@ pub mod pallet {
 
             // No need to create discussion, use "link post to resource instead"
             ensure!(
-                ResourceDiscussion::<T>::contains_key(resource_id.clone(), caller.clone()),
+                !ResourceDiscussion::<T>::contains_key(resource_id.clone(), caller.clone()),
                 Error::<T>::ResourceDiscussionAlreadyCreated,
             );
 
