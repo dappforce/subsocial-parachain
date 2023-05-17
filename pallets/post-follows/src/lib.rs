@@ -110,29 +110,6 @@ pub mod pallet {
 
             Self::remove_post_follower(follower, post_id)
         }
-
-        #[pallet::call_index(2)]
-        #[pallet::weight((
-            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(3, 4),
-            DispatchClass::Operational,
-            Pays::Yes,
-        ))]
-        pub fn force_follow_post(
-            origin: OriginFor<T>,
-            follower: T::AccountId,
-            post_id: PostId,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            ensure!(
-                !Self::post_followed_by_account((follower.clone(), post_id)),
-                Error::<T>::AlreadyPostFollower
-            );
-
-            Self::add_post_follower(follower, post_id);
-
-            Ok(Pays::No.into())
-        }
     }
 
     impl<T: Config> Pallet<T> {
