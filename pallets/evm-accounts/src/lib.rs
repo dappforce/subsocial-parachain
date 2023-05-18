@@ -23,7 +23,6 @@ mod evm;
 pub mod pallet {
     use crate::evm::*;
     use frame_system::Pallet as System;
-    use sp_core::hexdisplay::AsBytesRef;
 
     use super::*;
 
@@ -94,14 +93,13 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let sub_nonce = System::<T>::account_nonce(&who).encode();
-            let sub_address = hex::encode(who.encode().as_bytes_ref());
+            let sub_nonce = System::<T>::account_nonce(&who);
 
             // recover evm address from signature
             let address = Self::verify_signature(
                 &evm_signature,
-                sub_address.as_bytes(),
-                sub_nonce.as_slice(),
+                &who,
+                sub_nonce,
             )
             .ok_or(Error::<T>::BadSignature)?;
 

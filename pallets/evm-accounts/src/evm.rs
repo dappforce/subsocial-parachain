@@ -1,5 +1,7 @@
+use codec::Encode;
+use scale_info::prelude::format;
 use sp_core_hashing::keccak_256;
-use sp_io::{crypto::secp256k1_ecdsa_recover};
+use sp_io::crypto::secp256k1_ecdsa_recover;
 use sp_std::vec::Vec;
 
 use crate::{Config, Pallet};
@@ -10,39 +12,33 @@ pub(crate) type EvmAddress = sp_core::H160;
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
 pub(crate) type EcdsaSignature = [u8; 65];
 
-const MSG_PART_1: &[u8] = b"Link to Subsocial address ";
-const MSG_PART_2: &[u8] = b" (in hex) with nonce ";
+const MSG_PART_1: &str = "Link to Subsocial address ";
+const MSG_PART_2: &str = " (in hex) with nonce ";
 
 impl<T: Config> Pallet<T> {
     pub(crate) fn verify_signature(
         sig: &EcdsaSignature,
-        sub_address: &[u8],
-        sub_nonce: &[u8]
+        sub_address: &T::AccountId,
+        sub_nonce: T::Index,
     ) -> Option<EvmAddress> {
-        let msg = keccak_256(&eth_signable_message(sub_address, sub_nonce));
+        let msg = keccak_256(&Self::eth_signable_message(sub_address, sub_nonce));
 
         let mut evm_addr = EvmAddress::default();
         let pub_key = &secp256k1_ecdsa_recover(&sig, &msg).ok()?[..];
         evm_addr.0.copy_from_slice(&keccak_256(pub_key)[12..]);
         Some(evm_addr)
     }
-}
 
-/// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
-fn eth_signable_message(sub_address: &[u8], sub_nonce: &[u8]) -> Vec<u8> {
-    let mut l = MSG_PART_1.len() + sub_address.len() + MSG_PART_2.len() + sub_nonce.len();
-    let mut rev = Vec::new();
-    while l > 0 {
-        rev.push(b'0' + (l % 10) as u8);
-        l /= 10;
+    /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+    fn eth_signable_message(sub_address: &T::AccountId, sub_nonce: T::Index) -> Vec<u8> {
+        let addr = hex::encode(sub_address.encode());
+        let nonce = format!("{:?}", sub_nonce);
+        let l = MSG_PART_1.len() + addr.len() + MSG_PART_2.len() + nonce.len();
+
+        format!("\x19Ethereum Signed Message:\n{l}{MSG_PART_1}{addr}{MSG_PART_2}{nonce}")
+            .as_bytes()
+            .to_vec()
     }
-    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-    v.extend(rev.into_iter().rev());
-    v.extend_from_slice(MSG_PART_1);
-    v.extend_from_slice(sub_address);
-    v.extend_from_slice(MSG_PART_2);
-    v.extend_from_slice(sub_nonce);
-    v
 }
 
 //* ONLY FOR TESTS *//
