@@ -78,6 +78,7 @@ benchmarks! {
         let other_kind = match reaction.kind {
             ReactionKind::Upvote => ReactionKind::Downvote,
             ReactionKind::Downvote => ReactionKind::Upvote,
+            _ => ReactionKind::Upvote,
         };
     }: _(origin, post.id, reaction.id, other_kind)
     verify {
