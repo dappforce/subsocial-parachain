@@ -726,7 +726,7 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_evm_accounts::Config for Runtime {
+impl pallet_evm_addresses::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type CallHasher = BlakeTwo256;
@@ -785,7 +785,7 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
-		EvmAccounts: pallet_evm_accounts = 63,
+		EvmAddresses: pallet_evm_addresses = 63,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,

@@ -5691,7 +5691,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-evm-accounts"
+name = "pallet-evm-addresses"
 version = "0.1.7"
 dependencies = [
  "frame-benchmarking",
@@ -11468,7 +11468,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-domains",
  "pallet-energy",
- "pallet-evm-accounts",
+ "pallet-evm-addresses",
  "pallet-free-proxy",
  "pallet-permissions",
  "pallet-posts",

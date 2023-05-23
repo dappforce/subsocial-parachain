@@ -36,7 +36,7 @@ pallet-space-follows = { path = '../pallets/space-follows', default-features = f
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
 pallet-free-proxy = { path = "../pallets/free-proxy", default-features = false }
-pallet-evm-accounts = { path = '../pallets/evm-accounts', default-features = false }
+pallet-evm-addresses = { path = '../pallets/evm-addresses', default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.37" }
@@ -156,7 +156,7 @@ std = [
 	"pallet-space-ownership/std",
 	"pallet-spaces/std",
 	"pallet-free-proxy/std",
-	"pallet-evm-accounts/std",
+	"pallet-evm-addresses/std",
 ]
 
 runtime-benchmarks = [
@@ -187,7 +187,7 @@ runtime-benchmarks = [
 	"pallet-posts/runtime-benchmarks",
 	"pallet-profiles/runtime-benchmarks",
 	"pallet-free-proxy/runtime-benchmarks",
-	"pallet-evm-accounts/runtime-benchmarks",
+	"pallet-evm-addresses/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -225,5 +225,5 @@ try-runtime = [
 	"pallet-space-follows/try-runtime",
 	"pallet-space-ownership/try-runtime",
 	"pallet-spaces/try-runtime",
-	"pallet-evm-accounts/try-runtime",
+	"pallet-evm-addresses/try-runtime",
 ]
