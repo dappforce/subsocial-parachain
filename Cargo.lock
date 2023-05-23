@@ -5822,6 +5822,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-post-follows"
+version = "0.1.8"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-posts",
+ "pallet-spaces",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-posts"
 version = "0.1.8"
 dependencies = [
