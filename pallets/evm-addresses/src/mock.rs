@@ -132,7 +132,7 @@ impl pallet_evm_accounts::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallHasher = BlakeTwo256;
-    type MaxLinkedAccounts = MaxLinkedAccounts;
+    type MaxLinkedAddresses = MaxLinkedAccounts;
 }
 
 pub(crate) fn account(id: AccountId) -> AccountId {

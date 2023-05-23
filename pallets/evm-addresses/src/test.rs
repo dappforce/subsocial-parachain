@@ -4,7 +4,7 @@ use sp_runtime::DispatchError::BadOrigin;
 use crate::{
     evm::{evm_address, evm_secret_key, evm_sign, Eip712Signature, SingableMessage},
     mock::*,
-    pallet::{*, EvmAccounts as EvmAccountsStorage},
+    pallet::{*, EvmAddresses as EvmAccountsStorage},
     Error,
 };
 
@@ -128,7 +128,7 @@ fn link_substrate_account_should_work_correctly() {
 
         assert_ok!(crate::mock::EvmAccounts::link_evm_address(RuntimeOrigin::signed(account1), evm_pub1, sig));
 
-        assert_eq!(SubstrateAccounts::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
+        assert_eq!(SubstrateAddresses::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EvmAccountsStorage::<Test>::get(account1.clone()), Some(evm_pub1.clone()));
     });
 }
@@ -155,7 +155,7 @@ fn link_substrate_account_should_work_correctly_with_multiple_accounts() {
 
         assert_ok!(crate::mock::EvmAccounts::link_evm_address(RuntimeOrigin::signed(account1), evm_pub1, sig));
 
-        assert_eq!(SubstrateAccounts::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
+        assert_eq!(SubstrateAddresses::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EvmAccountsStorage::<Test>::get(account1.clone()), Some(evm_pub1.clone()));
 
         let account2 = account(2);
@@ -170,7 +170,7 @@ fn link_substrate_account_should_work_correctly_with_multiple_accounts() {
         );
 
         assert_ok!(crate::mock::EvmAccounts::link_evm_address(RuntimeOrigin::signed(account2), evm_pub1, sig));
-        assert_eq!(SubstrateAccounts::<Test>::get(evm_pub1.clone()), vec![account1.clone(), account2.clone()]);
+        assert_eq!(SubstrateAddresses::<Test>::get(evm_pub1.clone()), vec![account1.clone(), account2.clone()]);
         assert_eq!(EvmAccountsStorage::<Test>::get(account2.clone()), Some(evm_pub1.clone()));
     });
 }
@@ -196,7 +196,7 @@ fn link_substrate_account_should_fail_when_linking_more_than_max_linked_accounts
 
         assert_ok!(crate::mock::EvmAccounts::link_evm_address(RuntimeOrigin::signed(account1), evm_pub1, sig));
 
-        assert_eq!(SubstrateAccounts::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
+        assert_eq!(SubstrateAddresses::<Test>::get(evm_pub1.clone()), vec![account1.clone()]);
         assert_eq!(EvmAccountsStorage::<Test>::get(account1.clone()), Some(evm_pub1.clone()));
 
         let account2 = account(2);
@@ -212,7 +212,7 @@ fn link_substrate_account_should_fail_when_linking_more_than_max_linked_accounts
 
         assert_noop!(
             crate::mock::EvmAccounts::link_evm_address(RuntimeOrigin::signed(account2), evm_pub1, sig),
-            Error::<Test>::CannotLinkMoreAccounts,
+            Error::<Test>::CannotLinkMoreAddresses,
 
         );
     });

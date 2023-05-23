@@ -6,7 +6,7 @@ edition = "2021"
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
-description = "Link EVM accounts to Substrate accounts"
+description = "Link EVM addresses to Substrate accounts"
 keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
 categories = ["cryptography::cryptocurrencies"]
 
