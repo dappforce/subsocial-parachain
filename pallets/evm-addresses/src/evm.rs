@@ -68,9 +68,9 @@ pub fn evm_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
 
 // Constructs a message and signs it.
 #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
-pub fn evm_sign(secret: &libsecp256k1::SecretKey, msg_hash: &MessageHash) -> EcdsaSignature {
+pub fn evm_sign(secret: &libsecp256k1::SecretKey, msg_hash: &[u8]) -> EcdsaSignature {
     let (sig, recovery_id) =
-        libsecp256k1::sign(&libsecp256k1::Message::parse(&msg_hash), secret);
+        libsecp256k1::sign(&libsecp256k1::Message::parse_slice(&msg_hash).unwrap(), secret);
     let mut r = [0u8; 65];
     r[0..64].copy_from_slice(&sig.serialize()[..]);
     r[64] = recovery_id.serialize();
