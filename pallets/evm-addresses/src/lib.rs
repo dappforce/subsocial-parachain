@@ -41,12 +41,16 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Account have been linked to evm address
         EvmAddressLinkedToAccount { ethereum: EvmAddress, substrate: T::AccountId },
+        /// Account have been unlinked from evm address
+        EvmAddressUnlinkedFromAccount { ethereum: EvmAddress, substrate: T::AccountId },
     }
 
     #[pallet::error]
     pub enum Error<T> {
         /// The substrate address have an existing linkage already.
         EvmAddressAlreadyLinkedToThisAccount,
+        /// The evm address has not an existing linkage.
+        EvmAddressNotLinkedToThisAccount,
         /// The provided signature is invalid
         BadSignature,
         /// Either provided payload (message or nonce) or evm address is invalid.
@@ -68,9 +72,10 @@ pub mod pallet {
         /// Link substrate address to EVM address.
         #[pallet::call_index(0)]
         // FIXME: put here at least something near real weights
-        #[pallet::weight(Weight::from_ref_time(3_000_000_000))]
-        // .saturating_add(T::DbWeight::get().reads(3 as u64))
-        // .saturating_add(T::DbWeight::get().writes(2 as u64)))]
+        #[pallet::weight(
+            Weight::from_ref_time(300_000_000)
+                .saturating_add(T::DbWeight::get().reads_writes(2, 2))
+        )]
         pub fn link_evm_address(
             origin: OriginFor<T>,
             evm_address: EvmAddress,
@@ -94,6 +99,31 @@ pub mod pallet {
             EvmAddressByAccount::<T>::insert(&who, evm_address);
 
             Self::deposit_event(Event::EvmAddressLinkedToAccount {
+                substrate: who,
+                ethereum: evm_address,
+            });
+
+            Ok(())
+        }
+
+        /// Unlink substrate address from EVM address.
+        #[pallet::call_index(1)]
+        // FIXME: put here at least something near real weights
+        #[pallet::weight(
+            Weight::from_ref_time(300_000_000)
+                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+        )]
+        pub fn unlink_evm_address(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            AccountsByEvmAddress::<T>::try_mutate(evm_address, |accounts| {
+                ensure!(accounts.contains(&who), Error::<T>::EvmAddressNotLinkedToThisAccount);
+                accounts.remove(&who);
+                Ok::<(), DispatchError>(())
+            })?;
+            EvmAddressByAccount::<T>::remove(&who);
+
+            Self::deposit_event(Event::EvmAddressUnlinkedFromAccount {
                 substrate: who,
                 ethereum: evm_address,
             });
