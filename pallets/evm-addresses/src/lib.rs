@@ -2,12 +2,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo},
-    pallet_prelude::*,
-    traits::IsSubType,
-};
-use frame_system::pallet_prelude::*;
 use sp_std::{collections::btree_set::BTreeSet, convert::TryInto};
 
 pub use pallet::*;
@@ -21,8 +15,10 @@ mod evm;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
+
     use crate::evm::*;
-    use frame_system::Pallet as System;
 
     use super::*;
 
@@ -30,17 +26,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-        /// The overarching call type.
-        type RuntimeCall: Parameter
-            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
-            + GetDispatchInfo
-            + From<frame_system::Call<Self>>
-            + IsSubType<Call<Self>>
-            + IsType<<Self as frame_system::Config>::RuntimeCall>;
-
-        /// The max number of substrate accounts that are linked to a given evm address.
-        type MaxLinkedAccounts: Get<u32>;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -93,15 +78,11 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let sub_nonce = System::<T>::account_nonce(&who);
+            let sub_nonce = frame_system::Pallet::<T>::account_nonce(&who);
 
             // recover evm address from signature
-            let address = Self::verify_signature(
-                &evm_signature,
-                &who,
-                sub_nonce,
-            )
-            .ok_or(Error::<T>::BadSignature)?;
+            let address = Self::verify_signature(&evm_signature, &who, sub_nonce)
+                .ok_or(Error::<T>::BadSignature)?;
 
             ensure!(evm_address == address, Error::<T>::EitherBadAddressOrPayload);
 
