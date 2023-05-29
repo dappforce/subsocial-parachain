@@ -196,7 +196,7 @@ fn _force_register_domain(
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None)
+    _register_domain(None, None, None, None)
 }
 
 fn _register_domain(

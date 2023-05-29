@@ -23,10 +23,9 @@ pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{dispatch::DispatchClass, pallet_prelude::*, traits::ReservableCurrency};
-    use frame_system::{pallet_prelude::*, Pallet as System};
+    use frame_support::{pallet_prelude::*, traits::{ReservableCurrency, Currency, ExistenceRequirement::KeepAlive, tokens::WithdrawReasons}, dispatch::DispatchClass};    use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-    use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+    use sp_std::{convert::TryInto, vec::Vec};
 
     use types::*;
 
@@ -266,7 +265,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
             let owner = T::Lookup::lookup(owner_target)?;
-            let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
+            let domain_data = DomainRegisterData::new(owner, full_domain, expires_in);
 
             Self::do_register_domain(domain_data, DomainPayer::<T>::Account(caller))
         }
@@ -287,7 +286,7 @@ pub mod pallet {
             T::ForceOrigin::ensure_origin(origin)?;
 
             let recipient = T::Lookup::lookup(recipient)?;
-            let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
+            let domain_data = DomainRegisterData::new(recipient, full_domain, expires_in);
 
             Self::do_register_domain(domain_data, DomainPayer::<T>::ForceOrigin)
         }
@@ -413,7 +412,7 @@ pub mod pallet {
                 DomainPayer::Account(_) => IsForced::No,
             };
 
-            let DomainRegisterData { owner, full_domain, content, expires_in } = domain_data;
+            let DomainRegisterData { owner, full_domain, expires_in } = domain_data;
 
             // Perform checks that doesn't require storage access.
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
@@ -421,8 +420,6 @@ pub mod pallet {
                 expires_in <= T::RegistrationPeriodLimit::get(),
                 Error::<T>::TooBigRegistrationPeriod,
             );
-
-            ensure_content_is_valid(content.clone())?;
 
             // Note that while upper and lower case letters are allowed in domain
             // names, domain names are not case-sensitive. That is, two names with
@@ -443,7 +440,8 @@ pub mod pallet {
             let price = Self::calculate_price(&subdomain);
 
             if let DomainPayer::Account(payer) = payer {
-                // TODO: this check is duplicating one, which happens in one of the functions aboveSelf::ensure_word_is_not_reserved(&subdomain)?;
+                // TODO: this check is duplicating one, which happens in one of the functions above
+                Self::ensure_word_is_not_reserved(&subdomain)?;
                 Self::ensure_can_pay_for_domain(&payer, price)?;
 
                 // Perform write operations.
@@ -465,12 +463,6 @@ pub mod pallet {
                     domains.try_push(domain_lc).expect("qed; too many domains per account")
                 }
             );
-            // TODO: withdraw balance when it will be possible to purchase domains.
-
-            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
-            DomainsByOwner::<T>::mutate(&owner, |domains| {
-                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
-            });
 
             Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
             Ok(())
@@ -718,7 +710,12 @@ pub mod pallet {
                 IsForced::No => {
                     // TODO: unreserve the balance for expired domains
                     let deposit = T::BaseDomainDeposit::get();
-                    Self::try_reserve_deposit(depositor, Zero::zero(), deposit)?;
+                    Self::try_reserve_deposit(
+                        depositor,
+                        Zero::zero(),
+                        depositor,
+                        deposit,
+                    )?;
                     Ok(deposit)
                 },
                 IsForced::Yes => Ok(Zero::zero()),

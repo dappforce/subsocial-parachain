@@ -111,7 +111,6 @@ pub struct DomainMeta<T: Config> {
 pub(crate) struct DomainRegisterData<T: Config> {
     pub owner: T::AccountId,
     pub full_domain: DomainName<T>,
-    pub content: Content,
     pub expires_in: T::BlockNumber,
 }
 
@@ -119,10 +118,9 @@ impl<T: Config> DomainRegisterData<T> {
     pub fn new(
         owner: T::AccountId,
         full_domain: DomainName<T>,
-        content: Content,
         expires_in: T::BlockNumber,
     ) -> Self {
-        Self { owner, full_domain, content, expires_in }
+        Self { owner, full_domain, expires_in }
     }
 }
 

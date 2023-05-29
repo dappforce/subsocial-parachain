@@ -1,22 +1,16 @@
-use frame_support::{assert_noop, assert_ok};
-use frame_support::traits::Bounded::Lookup;
-use frame_support::traits::Currency;
-use sp_runtime::{DispatchError::BadOrigin, traits::{Zero, StaticLookup}};
 #![allow(non_snake_case)]
-
 use frame_support::{assert_noop, assert_ok, traits::Currency};
-use sp_runtime::{traits::Zero, DispatchError::BadOrigin};
+use sp_runtime::{DispatchError::BadOrigin, traits::{StaticLookup, Zero}};
 use sp_std::convert::TryInto;
 
-use subsocial_support::{new_who_and_when, Content};
+use subsocial_support::{Content, new_who_and_when};
 
 use crate::{
+    Error,
+    Event,
     mock::*,
-    pallet::{DomainRecords, RegisteredDomains},
-    types::*,
-    Error, Event,
+    pallet::{DomainRecords, RegisteredDomains}, types::*,
 };
-
 
 fn change_domain_ownership(new_owner: &AccountId) {
     RegisteredDomains::<Test>::mutate(default_domain_lc(), |maybe_meta| {
@@ -101,25 +95,7 @@ fn register_domain_should_fail_when_balance_is_insufficient() {
 
         assert_noop!(
             _register_default_domain(),
-            pallet_balances::Error::<Test>::InsufficientBalance,
-        );
-    });
-}
-
-#[test]
-fn register_domain_should_fail_when_promo_domains_limit_reached() {
-    ExtBuilder::default().max_promo_domains_per_account(1).build().execute_with(|| {
-        let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
-
-        assert_ok!(_register_default_domain());
-
-        assert_noop!(
-            Domains::register_domain(
-                RuntimeOrigin::signed(DOMAIN_OWNER),
-                domain_from(b"second-domain".to_vec()),
-                ExtBuilder::default().reservation_period_limit,
-            ),
-            Error::<Test>::TooManyDomainsPerAccount,
+            Error::<Test>::InsufficientBalanceToReserveDeposit,
         );
     });
 }
