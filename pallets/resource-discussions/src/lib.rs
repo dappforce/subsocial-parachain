@@ -25,7 +25,7 @@ pub mod pallet {
 
     // use crate::weights::WeightInfo;
 
-    type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourceIdLength>;
+    pub(crate) type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourceIdLength>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
