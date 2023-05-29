@@ -5,7 +5,7 @@ use sp_runtime::DispatchError;
 
 use subsocial_support::{Content, PostId, SpaceId};
 
-use crate::{mock::*, pallet::ResourceId, Event, ResourceDiscussion};
+use crate::{mock::*, pallet::ResourceId, Event, ResourceDiscussion, Error};
 
 fn resource_id(resource_id: &[u8]) -> ResourceId<Test> {
     ResourceId::<Test>::try_from(Vec::from(resource_id))
@@ -14,6 +14,10 @@ fn resource_id(resource_id: &[u8]) -> ResourceId<Test> {
 
 fn account(account: AccountId) -> AccountId {
     account
+}
+
+fn next_post_id() -> PostId {
+    pallet_posts::NextPostId::<Test>::get()
 }
 
 fn create_space(owner: AccountId) -> SpaceId {
@@ -27,7 +31,7 @@ fn create_space(owner: AccountId) -> SpaceId {
 }
 
 fn create_post(owner: AccountId, space_id: SpaceId) -> PostId {
-    let post_id = pallet_posts::NextPostId::<Test>::get();
+    let post_id = next_post_id();
 
     assert_ok!(Posts::create_post(
         RuntimeOrigin::signed(owner),
@@ -117,6 +121,108 @@ fn link_post_to_resource_should_link_post_to_new_resource_id() {
                 post_id,
             }
             .into(),
+        );
+    });
+}
+
+
+#[test]
+fn create_resource_discussion_should_fail_when_caller_is_unsigned() {
+    ExtBuilder::default().build().execute_with(|| {
+        let space_id = 213;
+        let resource_id = resource_id(b"test");
+        let content = Content::None;
+
+        assert_noop!(
+            ResourceDiscussions::create_resource_discussion(
+                RuntimeOrigin::none(),
+                resource_id.clone(),
+                space_id,
+                content,
+            ),
+            DispatchError::BadOrigin,
+        );
+    });
+}
+
+#[test]
+fn create_resource_discussion_should_fail_when_space_not_found() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(3);
+        let space_id = 213;
+        let resource_id = resource_id(b"test");
+        let content = Content::None;
+
+        assert_noop!(
+            ResourceDiscussions::create_resource_discussion(
+                RuntimeOrigin::signed(caller),
+                resource_id.clone(),
+                space_id,
+                content,
+            ),
+            pallet_spaces::Error::<Test>::SpaceNotFound,
+        );
+    });
+}
+
+#[test]
+fn create_resource_discussion_should_create_post_and_link_resource_id() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(3);
+        let space_id = create_space(caller);
+        let resource_id = resource_id(b"test");
+        let content = Content::None;
+
+        let post_id = next_post_id();
+
+        assert_ok!(
+            ResourceDiscussions::create_resource_discussion(
+                RuntimeOrigin::signed(caller),
+                resource_id.clone(),
+                space_id,
+                content,
+            ),
+        );
+
+        assert_ok!(Posts::require_post(post_id));
+
+        assert_eq!(ResourceDiscussion::<Test>::get(resource_id.clone(), caller), Some(post_id));
+        System::assert_last_event(
+            Event::ResourceDiscussionLinked {
+                resource_id: resource_id.clone(),
+                account_id: caller,
+                post_id,
+            }
+                .into(),
+        );
+    });
+}
+
+#[test]
+fn create_resource_discussion_should_fail_when_discussion_already_created() {
+    ExtBuilder::default().build().execute_with(|| {
+        let caller = account(3);
+        let space_id = create_space(caller);
+        let resource_id = resource_id(b"test");
+        let content = Content::None;
+
+        assert_ok!(
+            ResourceDiscussions::create_resource_discussion(
+                RuntimeOrigin::signed(caller),
+                resource_id.clone(),
+                space_id,
+                content.clone(),
+            ),
+        );
+
+        assert_noop!(
+            ResourceDiscussions::create_resource_discussion(
+                RuntimeOrigin::signed(caller),
+                resource_id.clone(),
+                space_id,
+                content,
+            ),
+            Error::<Test>::ResourceDiscussionAlreadyCreated,
         );
     });
 }
