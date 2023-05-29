@@ -375,7 +375,7 @@ pub mod pallet {
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
         }
 
-        #[pallet::call_index(8)]
+        #[pallet::call_index(6)]
         #[pallet::weight(10_000)]
         pub fn set_payment_beneficiary(
             origin: OriginFor<T>,
@@ -386,7 +386,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::call_index(9)]
+        #[pallet::call_index(7)]
         #[pallet::weight(
             T::DbWeight::get().writes(1).ref_time() + (100_000 * new_prices_config.len() as u64 * 2)
         )]
