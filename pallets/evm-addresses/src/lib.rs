@@ -112,11 +112,7 @@ pub mod pallet {
 
         /// Unlink Substrate address from EVM address.
         #[pallet::call_index(1)]
-        // FIXME: put here at least something near real weights
-        #[pallet::weight(
-            Weight::from_parts(300_000_000, 0)
-                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
-        )]
+        #[pallet::weight(< T as Config >::WeightInfo::unlink_evm_address())]
         pub fn unlink_evm_address(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
             let who = ensure_signed(origin)?;
 

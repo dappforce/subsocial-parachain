@@ -42,6 +42,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_evm_addresses.
 pub trait WeightInfo {
     fn link_evm_address() -> Weight;
+    fn unlink_evm_address() -> Weight;
 }
 
 /// Weights for pallet_evm_addresses using the Substrate node and recommended hardware.
@@ -51,9 +52,17 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: EvmAddresses AccountsByEvmAddress (r:1 w:1)
             // Storage: EvmAddresses EvmAddressByAccount (r:0 w:1)
         fn link_evm_address() -> Weight {
-        // Minimum execution time: 57_000 nanoseconds.
-        Weight::from_ref_time(59_000_000)
+        // Minimum execution time: 56_000 nanoseconds.
+        Weight::from_ref_time(58_000_000)
             .saturating_add(T::DbWeight::get().reads(2))
+            .saturating_add(T::DbWeight::get().writes(2))
+        }
+            // Storage: EvmAddresses AccountsByEvmAddress (r:1 w:1)
+            // Storage: EvmAddresses EvmAddressByAccount (r:0 w:1)
+        fn unlink_evm_address() -> Weight {
+        // Minimum execution time: 17_000 nanoseconds.
+        Weight::from_ref_time(18_000_000)
+            .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(2))
         }
     }
@@ -64,9 +73,17 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: EvmAddresses AccountsByEvmAddress (r:1 w:1)
             // Storage: EvmAddresses EvmAddressByAccount (r:0 w:1)
         fn link_evm_address() -> Weight {
-        // Minimum execution time: 57_000 nanoseconds.
-        Weight::from_ref_time(59_000_000)
+        // Minimum execution time: 56_000 nanoseconds.
+        Weight::from_ref_time(58_000_000)
             .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(2))
+        }
+            // Storage: EvmAddresses AccountsByEvmAddress (r:1 w:1)
+            // Storage: EvmAddresses EvmAddressByAccount (r:0 w:1)
+        fn unlink_evm_address() -> Weight {
+        // Minimum execution time: 17_000 nanoseconds.
+        Weight::from_ref_time(18_000_000)
+            .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(2))
         }
     }

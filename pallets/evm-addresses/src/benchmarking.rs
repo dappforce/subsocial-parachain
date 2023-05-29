@@ -31,6 +31,23 @@ benchmarks! {
         );
     }
 
+    unlink_evm_address {
+        let account: T::AccountId = account("account", 23, 0);
+
+        let linked_evm_sec = evm_secret_key(b"linked_account");
+        let linked_evm_address = evm_address(&linked_evm_sec);
+
+        AccountsByEvmAddress::<T>::insert(linked_evm_address.clone(), BTreeSet::from([account.clone()]));
+        EvmAddressByAccount::<T>::insert(account.clone(), linked_evm_address.clone());
+
+    }: _(RawOrigin::Signed(account.clone()), linked_evm_address.clone())
+    verify {
+       ensure!(
+            AccountsByEvmAddress::<T>::get(linked_evm_address.clone()) == BTreeSet::from([]),
+            "account is still linked",
+        );
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::mock::ExtBuilder::default().build(),
