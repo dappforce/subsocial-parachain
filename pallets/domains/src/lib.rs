@@ -100,6 +100,8 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    /// Reserved words that can not be used in the domain name, making domains with these words unavailable
+    /// for registeration.
     #[pallet::storage]
     #[pallet::getter(fn is_word_reserved)]
     pub(super) type ReservedWords<T: Config> =
@@ -148,22 +150,69 @@ pub mod pallet {
         DomainName<T>,
     >;
 
+    /// Supported TLDs available for registration.
     #[pallet::storage]
     #[pallet::getter(fn is_tld_supported)]
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    /// Price configuration domains, depending on the length of the domain the price would change.
+    ///
+    /// **NOTE:** the stored array must be sorted in ascending order based on the length of the domain
+    /// (first element of the tuple).
+    ///
+    /// ## Example:
+    /// assume we have the following setup for price config.
+    /// ```rust
+    /// let price_config = [
+    ///     (0, 200),
+    ///     (3, 170),
+    ///     (5, 100),
+    ///     (9, 30),
+    /// ];
+    ///```
+    /// would make a relationship between price and domain length described by the following graph.
+    /// ```
+    /// //    ▲
+    /// //    │ price
+    /// // 200├────────┐
+    /// //    │        │
+    /// // 180│        │
+    /// //    │        └─────┐
+    /// // 160│        ^     │
+    /// //    │        ^     │
+    /// // 140│        ^     │
+    /// //    │        ^     │
+    /// // 120│        ^     │
+    /// //    │        ^     │
+    /// // 100│        ^     └───────────┐
+    /// //    │        ^     ^           │
+    /// //  80│        ^     ^           │
+    /// //    │        ^     ^           │
+    /// //  60│        ^     ^           │
+    /// //    │        ^     ^           │
+    /// //  40│        ^     ^           │
+    /// //    │        ^     ^           └───────────────────
+    /// //  20│        ^     ^           ^            domain
+    /// //    │        ^     ^           ^            length
+    /// //   0└─────────────────────────────────────────────►
+    /// //    0  1  2  3  4  5  6  7  8  9  10 11 12 13 14
+    ///
+    /// ```
+    ///
+    ///
     #[pallet::storage]
     #[pallet::getter(fn prices_config)]
     pub(super) type PricesConfig<T: Config> =
         StorageValue<_, PricesConfigVec<T>, ValueQuery, T::InitialPrices>;
 
+    /// The default value for [PaymentBeneficiary]
     #[pallet::type_value]
     pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
         T::InitialPaymentBeneficiary::get()
     }
 
-    /// A list of accounts that receive payment for the domain registration.
+    /// Account that receives payment for the domain registration.
     #[pallet::storage]
     #[pallet::getter(fn payment_beneficiary)]
     pub(super) type PaymentBeneficiary<T: Config> =
@@ -315,6 +364,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Calls [Pallet::set_record] with the [Config::ForceOrigin].
         #[pallet::call_index(3)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_record(),
@@ -375,6 +425,7 @@ pub mod pallet {
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
         }
 
+        /// Change [PaymentBeneficiary], only callable from [Config::ForceOrigin].
         #[pallet::call_index(6)]
         #[pallet::weight(10_000)]
         pub fn set_payment_beneficiary(
@@ -386,6 +437,9 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Change [PricesConfig], only callable from [Config::ForceOrigin].
+        ///
+        /// This call must ensure that provided prices configs are sorted by the first element in the tuple.
         #[pallet::call_index(7)]
         #[pallet::weight(
             T::DbWeight::get().writes(1).ref_time() + (100_000 * new_prices_config.len() as u64 * 2)
@@ -595,6 +649,7 @@ pub mod pallet {
             domain.try_into().expect("qed; domain exceeds max length")
         }
 
+        /// lowercase the given domain then bound it to [DomainName] type.
         pub fn lower_domain_then_bound(domain: &[u8]) -> DomainName<T> {
             Self::bound_domain(domain.to_ascii_lowercase())
         }
