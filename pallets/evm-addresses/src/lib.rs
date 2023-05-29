@@ -16,12 +16,15 @@ mod benchmarking;
 
 mod evm;
 
+pub mod weights;
+
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
     use crate::evm::*;
+    use crate::weights::*;
 
     use super::*;
 
@@ -29,6 +32,9 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);

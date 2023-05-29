@@ -852,6 +852,7 @@ mod benches {
 		[pallet_spaces, Spaces]
 		[pallet_posts, Posts]
 		[pallet_free_proxy, FreeProxy]
+		[pallet_evm_addresses, EvmAddresses]
 	);
 }
 

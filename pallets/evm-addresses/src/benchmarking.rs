@@ -3,6 +3,7 @@
 use frame_benchmarking::{account, benchmarks, Zero};
 use frame_support::ensure;
 use frame_system::RawOrigin;
+use sp_core_hashing::keccak_256;
 
 use crate::{
     evm::{evm_address, evm_secret_key, evm_sign},
@@ -19,7 +20,7 @@ benchmarks! {
         let linked_evm_sec = evm_secret_key(b"linked_account");
         let linked_evm_address = evm_address(&linked_evm_sec);
 
-        let message = Pallet::<T>::eth_signable_message(&linker, linker_nonce);
+        let message = keccak_256(&Pallet::<T>::eth_signable_message(&linker, linker_nonce));
         let sig = evm_sign(&linked_evm_sec, message.as_slice());
 
     }: _(RawOrigin::Signed(linker.clone()), linked_evm_address.clone(), sig)

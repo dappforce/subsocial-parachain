@@ -128,8 +128,7 @@ parameter_types! {
 
 impl pallet_evm_accounts::Config for Test {
     type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type MaxLinkedAccounts = MaxLinkedAccounts;
+    type WeightInfo = ();
 }
 
 pub(crate) fn account(id: AccountId) -> AccountId {
