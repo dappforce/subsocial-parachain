@@ -11,10 +11,6 @@ use sp_runtime::{
 };
 use sp_runtime::traits::StaticLookup;
 use sp_std::convert::{TryInto, TryFrom};
-
-use subsocial_support::Content;
-use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};
-
 pub(crate) use crate as pallet_domains;
 use crate::Config;
 use crate::types::*;
@@ -83,7 +79,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 0;
+    pub const ExistentialDeposit: u64 = 1;
 }
 
 impl pallet_balances::Config for Test {
@@ -111,6 +107,10 @@ parameter_types! {
     pub static BaseDomainDeposit: Balance = 0;
     pub static OuterValueByteDeposit: Balance = 0;
 
+    pub static MaxRecordKeyLength: u32 = 250;
+    pub static MaxRecordValueLength: u32 = 250;
+    pub static RecordByteDeposit: Balance = 0;
+
     pub static InitialPrices: Vec<(DomainLength, Balance)> = Vec::new();
     pub const InitialPaymentBeneficiary: AccountId = PAYMENT_BENEFICIARY;
 }
@@ -124,8 +124,10 @@ impl pallet_domains::Config for Test {
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
+    type MaxRecordKeyLength = MaxRecordKeyLength;
+    type MaxRecordValueLength = MaxRecordValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
-    type OuterValueByteDeposit = OuterValueByteDeposit;
+    type RecordByteDeposit = RecordByteDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
     type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
     type InitialPrices = InitialPrices;
@@ -136,18 +138,7 @@ pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 pub(crate) const PAYMENT_BENEFICIARY: u64 = 3;
 
-pub(crate) const ACCOUNT_A: u64 = 10;
-pub(crate) const ACCOUNT_B: u64 = 20;
-
 pub(crate) const DEFAULT_TLD: [u8; 3] = *b"sub";
-
-pub(crate) fn origin_a() -> RuntimeOrigin {
-    RuntimeOrigin::signed(ACCOUNT_A)
-}
-
-pub(crate) fn origin_b() -> RuntimeOrigin {
-    RuntimeOrigin::signed(ACCOUNT_B)
-}
 
 pub(crate) fn default_tld() -> DomainName<Test> {
     Domains::bound_domain(DEFAULT_TLD.to_vec())
@@ -174,158 +165,62 @@ pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
     )
 }
 
-pub(crate) fn get_inner_value(domain: &DomainName<Test>) -> Option<InnerValueOf<Test>> {
-    Domains::registered_domain(domain).unwrap().inner_value
-}
-
-pub(crate) fn get_outer_value(domain: &DomainName<Test>) -> Option<OuterValue<Test>> {
-    Domains::registered_domain(domain).unwrap().outer_value
-}
-
-pub(crate) fn get_domain_content(domain: &DomainName<Test>) -> Content {
-    Domains::registered_domain(domain).unwrap().content
-}
-
 pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
 }
 
-pub(crate) fn inner_value_account_domain_owner() -> InnerValueOf<Test> {
-    InnerValue::Account(DOMAIN_OWNER)
-}
-
-pub(crate) fn inner_value_space_id() -> InnerValueOf<Test> {
-    InnerValue::Space(1)
-}
-
-pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
-    vec![b'A'; length.unwrap_or(MaxOuterValueLength::get() as usize)]
-        .try_into().expect("qed; outer value exceeds max length")
-}
-
 pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _force_register_domain(Some(origin), None, None, None, None)
+    _force_register_domain(Some(origin), None, None, None)
 }
 
 pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
-    _force_register_domain(None, None, None, None, Some(expires_in))
+    _force_register_domain(None, None, None, Some(expires_in))
 }
 
 pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain_name), None, None)
+    _force_register_domain(None, None, Some(domain_name), None)
 }
 
 fn _force_register_domain(
     origin: Option<RuntimeOrigin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
-    content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::force_register_domain(
         origin.unwrap_or_else(RuntimeOrigin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
-        content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None, None, None)
+    _register_domain(None, None, None)
 }
 
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
     owner_target: Option<AccountIdLookupOf<Test>>,
     domain: Option<DomainName<Test>>,
-    content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         owner_target.unwrap_or_else(|| LookupOf::<Test>::unlookup(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
-        content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
-pub(crate) fn _set_inner_value_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _set_inner_value(Some(origin), None, None)
-}
-
-pub(crate) fn _set_default_inner_value() -> DispatchResult {
-    _set_inner_value(None, None, None)
-}
-
-fn _set_inner_value(
-    origin: Option<RuntimeOrigin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<Option<InnerValueOf<Test>>>,
-) -> DispatchResult {
-    Domains::set_inner_value(
-        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or_else(|| Some(inner_value_account_domain_owner())),
-    )
-}
-
-pub(crate) fn _set_outer_value_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _set_outer_value(Some(origin), None, None)
-}
-
-pub(crate) fn _set_outer_value_with_value(value_opt: Option<OuterValue<Test>>) -> DispatchResult {
-    _set_outer_value(None, None, Some(value_opt))
-}
-
-pub(crate) fn _set_default_outer_value() -> DispatchResult {
-    _set_outer_value(None, None, None)
-}
-
-fn _set_outer_value(
-    origin: Option<RuntimeOrigin>,
-    domain: Option<DomainName<Test>>,
-    value: Option<Option<OuterValue<Test>>>,
-) -> DispatchResult {
-    Domains::set_outer_value(
-        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        value.unwrap_or_else(|| Some(default_outer_value(None))),
-    )
-}
-
-pub(crate) fn _set_domain_content_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _set_domain_content(Some(origin), None, None)
-}
-
-pub(crate) fn _set_domain_content_with_content(content: Content) -> DispatchResult {
-    _set_domain_content(None, None, Some(content))
-}
-
-pub(crate) fn _set_default_domain_content() -> DispatchResult {
-    _set_domain_content(None, None, None)
-}
-
-fn _set_domain_content(
-    origin: Option<RuntimeOrigin>,
-    domain: Option<DomainName<Test>>,
-    content: Option<Content>,
-) -> DispatchResult {
-    Domains::set_domain_content(
-        origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
-        domain.unwrap_or_else(default_domain_lc),
-        content.unwrap_or_else(another_valid_content_ipfs),
-    )
-}
-
-pub(super) fn set_account_balance_as(account: &AccountId, balance: Balance) {
-    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(account, balance);
-}
-
-pub(crate) fn account_with_balance(account: AccountId, balance: Balance) -> AccountId {
-    set_account_balance_as(&account, balance);
+pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
+    let account = account(id);
+    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(&account, balance);
     account
+}
+
+pub(crate) fn account(id: AccountId) -> AccountId {
+    id
 }
 
 pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
@@ -339,6 +234,9 @@ pub struct ExtBuilder {
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
+    pub(crate) max_record_key_length: u32,
+    pub(crate) max_record_value_length: u32,
+    pub(crate) record_byte_deposit: Balance,
     pub(crate) initial_prices: Vec<(DomainLength, Balance)>,
 }
 
@@ -350,6 +248,9 @@ impl Default for ExtBuilder {
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
+            max_record_key_length: 250,
+            max_record_value_length: 250,
+            record_byte_deposit: 0,
             initial_prices: vec![
                 (3, 50),
                 (4, 25),
@@ -385,6 +286,21 @@ impl ExtBuilder {
         self
     }
 
+    pub(crate) fn max_record_key_length(mut self, max_record_key_length: u32) -> Self {
+        self.max_record_key_length = max_record_key_length;
+        self
+    }
+
+    pub(crate) fn max_record_value_length(mut self, max_record_value_length: u32) -> Self {
+        self.max_record_value_length = max_record_value_length;
+        self
+    }
+
+    pub(crate) fn record_byte_deposit(mut self, record_byte_deposit: Balance) -> Self {
+        self.record_byte_deposit = record_byte_deposit;
+        self
+    }
+
     pub(crate) fn initial_prices(mut self, initial_prices: Vec<(DomainLength, Balance)>) -> Self {
         self.initial_prices = initial_prices;
         self
@@ -397,6 +313,9 @@ impl ExtBuilder {
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
         INITIAL_PRICES.with(|x| *x.borrow_mut() = self.initial_prices.clone());
+        MAX_RECORD_KEY_LENGTH.with(|x| *x.borrow_mut() = self.max_record_key_length);
+        MAX_RECORD_VALUE_LENGTH.with(|x| *x.borrow_mut() = self.max_record_value_length);
+        RECORD_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.record_byte_deposit);
     }
 
     pub(crate) fn build(self) -> TestExternalities {

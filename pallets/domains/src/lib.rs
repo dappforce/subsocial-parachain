@@ -5,6 +5,9 @@
 extern crate core;
 
 pub use pallet::*;
+pub use subsocial_support::{PostId, SpaceId};
+
+pub use crate::weights::WeightInfo;
 
 #[cfg(test)]
 mod mock;
@@ -16,27 +19,18 @@ mod tests;
 mod benchmarking;
 pub mod weights;
 
-pub use crate::weights::WeightInfo;
-
 pub mod types;
-
-pub use subsocial_support::{SpaceId, PostId, Content};
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use types::*;
-
-    use frame_system::Pallet as System;
-
-    use frame_support::{pallet_prelude::*, traits::{ReservableCurrency, Currency, ExistenceRequirement::KeepAlive, tokens::WithdrawReasons}, dispatch::DispatchClass};
-
-    use frame_system::pallet_prelude::*;
-
+    use frame_support::{dispatch::DispatchClass, pallet_prelude::*, traits::ReservableCurrency};
+    use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
-    use subsocial_support::ensure_content_is_valid;
+    use types::*;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -70,13 +64,21 @@ pub mod pallet {
         #[pallet::constant]
         type MaxOuterValueLength: Get<u32>;
 
+        /// The maximum length of the domain's record key.
+        #[pallet::constant]
+        type MaxRecordKeyLength: Get<u32>;
+
+        /// The maximum length of the domain's record value.
+        #[pallet::constant]
+        type MaxRecordValueLength: Get<u32>;
+
         /// The amount held on deposit for storing the domain's structure.
         #[pallet::constant]
         type BaseDomainDeposit: Get<BalanceOf<Self>>;
 
-        /// The amount held on deposit per byte of the domain's outer value.
+        /// The amount held on deposit per byte of the domain's record key and its value.
         #[pallet::constant]
-        type OuterValueByteDeposit: Get<BalanceOf<Self>>;
+        type RecordByteDeposit: Get<BalanceOf<Self>>;
 
         /// The governance origin to control this pallet.
         type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -104,6 +106,18 @@ pub mod pallet {
     pub(super) type ReservedWords<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    /// Records associated per domain.
+    #[pallet::storage]
+    #[pallet::getter(fn domain_record)]
+    pub(super) type DomainRecords<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        DomainName<T>,
+        Blake2_128Concat,
+        DomainRecordKey<T>,
+        RecordValueWithDepositInfo<T>,
+    >;
+
     /// Metadata associated per domain.
     #[pallet::storage]
     #[pallet::getter(fn registered_domain)]
@@ -115,24 +129,25 @@ pub mod pallet {
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
     #[pallet::getter(fn domains_by_owner)]
-    pub(super) type DomainsByOwner<T: Config> =
-        StorageMap<_,
-            Twox64Concat,
-            T::AccountId,
-            BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
-            ValueQuery,
-        >;
+    pub(super) type DomainsByOwner<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        BoundedVec<DomainName<T>, T::MaxDomainsPerAccount>,
+        ValueQuery,
+    >;
 
     /// TWOX-NOTE: Safe as `AccountId`s are crypto hashes anyway.
     #[pallet::storage]
-    pub(super) type DomainByInnerValue<T: Config> =
-        StorageDoubleMap<_,
-            Twox64Concat,
-            T::AccountId,
-            Blake2_128Concat,
-            InnerValue<T::AccountId>,
-            DomainName<T>,
-        >;
+    #[deprecated] // remove after migration to new style of record key/value
+    pub(super) type DomainByInnerValue<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        Blake2_128Concat,
+        InnerValue<T::AccountId>,
+        DomainName<T>,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn is_tld_supported)]
@@ -190,13 +205,19 @@ pub mod pallet {
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
+        /// The domain record has been updated
+        DomainRecordUpdated {
+            account: T::AccountId,
+            domain: DomainName<T>,
+            key: DomainRecordKey<T>,
+            value: Option<DomainRecordValue<T>>,
+            deposit: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The content stored in a domain metadata was not changed.
-        DomainContentNotChanged,
-        /// Cannot register more than [`Config::MaxDomainsPerAccount`] domains.
+        /// Cannot register more than `MaxDomainsPerAccount` domains.
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
@@ -211,15 +232,11 @@ pub mod pallet {
         DomainIsReserved,
         /// This domain is already held by another account.
         DomainAlreadyOwned,
-        /// A new inner value is the same as the old one.
-        InnerValueNotChanged,
         /// Lower than the second-level domains are not allowed.
         SubdomainsNotAllowed,
         /// This account is not allowed to update the domain metadata.
         NotDomainOwner,
-        /// A new outer value is the same as the old one.
-        OuterValueNotChanged,
-        /// Reservation period cannot be a zero value.
+        /// The reservation period cannot be a zero value.
         ZeroReservationPeriod,
         /// Cannot store a domain for such a long period of time.
         TooBigRegistrationPeriod,
@@ -235,8 +252,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Registers a domain ([full_domain]) using origin with [content],
-        /// and set the domain to expire in [expires_in] number of blocks.
+        /// Registers a domain ([full_domain]) using origin, and set
+        /// the domain to expire in [expires_in] number of blocks.
         /// [full_domain] is a full domain name including a dot (.) and TLD.
         /// Example of a [full_domain]: `mytoken.ksm`
         #[pallet::call_index(0)]
@@ -245,7 +262,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             owner_target: AccountIdLookupOf<T>,
             full_domain: DomainName<T>,
-            content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
@@ -255,7 +271,7 @@ pub mod pallet {
             Self::do_register_domain(domain_data, DomainPayer::<T>::Account(caller))
         }
 
-        /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
+        /// Registers a domain ([full_domain]) using root on behalf of a [recipient],
         /// and set the domain to expire in [expires_in] number of blocks.
         #[pallet::call_index(1)]
         #[pallet::weight((
@@ -264,120 +280,62 @@ pub mod pallet {
         ))]
         pub fn force_register_domain(
             origin: OriginFor<T>,
-            target: <T::Lookup as StaticLookup>::Source,
+            recipient: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
-            content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             T::ForceOrigin::ensure_origin(origin)?;
 
-            let owner = T::Lookup::lookup(target)?;
+            let recipient = T::Lookup::lookup(recipient)?;
             let domain_data = DomainRegisterData::new(owner, full_domain, content, expires_in);
 
             Self::do_register_domain(domain_data, DomainPayer::<T>::ForceOrigin)
         }
 
-        /// Sets the domain inner_value to be one of Subsocial account, space, or post.
+        /// Change the record associated with a domain name.
+        ///
+        /// **Record Deposit:**
+        ///
+        /// Deposit value is calculated based on how many bytes are in the key+value.
+        /// If the new value is bigger than the old value, the reminder will be reserved. And if the
+        /// new value is smaller than the old value, part of the deposit will be refunded
+        /// back to the domain owner. While if [value_opt] is None, the record will be
+        /// deleted and the whole deposit will be refunded.
         #[pallet::call_index(2)]
-        #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
-        pub fn set_inner_value(
+        #[pallet::weight(<T as Config>::WeightInfo::set_record())]
+        pub fn set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: Option<InnerValueOf<T>>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::do_set_inner_value(domain, value_opt, Some(sender))?;
+            Self::do_set_record(domain, key, value_opt, Some(sender))?;
 
             Ok(())
         }
 
-        /// Sets the domain inner_value to be one of subsocial account, space, or post.
         #[pallet::call_index(3)]
         #[pallet::weight((
-            <T as Config>::WeightInfo::force_set_inner_value(),
+            <T as Config>::WeightInfo::force_set_record(),
             DispatchClass::Operational,
         ))]
-        pub fn force_set_inner_value(
+        pub fn force_set_record(
             origin: OriginFor<T>,
             domain: DomainName<T>,
-            value_opt: Option<InnerValueOf<T>>,
-        ) -> DispatchResult {
-            T::ForceOrigin::ensure_origin(origin)?;
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
 
-            Self::do_set_inner_value(domain, value_opt, None)?;
+            Self::do_set_record(domain, key, value_opt, None)?;
 
-            Ok(())
+            Ok(Pays::No.into())
         }
 
-        /// Sets the domain outer_value to be a custom string.
+        /// Mark a set of domains as not reservable by users.
         #[pallet::call_index(4)]
-        #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
-        pub fn set_outer_value(
-            origin: OriginFor<T>,
-            domain: DomainName<T>,
-            value_opt: Option<OuterValue<T>>,
-        ) -> DispatchResult {
-            let sender = ensure_signed(origin)?;
-
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let meta = Self::require_domain(domain_lc.clone())?;
-
-            Self::ensure_allowed_to_update_domain(&meta, &sender)?;
-
-            ensure!(meta.outer_value != value_opt, Error::<T>::OuterValueNotChanged);
-
-            let mut new_deposit = Zero::zero();
-            if let Some(value) = &value_opt {
-                new_deposit = T::OuterValueByteDeposit::get()
-                    .saturating_mul(<BalanceOf<T>>::from(value.len() as u32));
-
-                Self::try_reserve_deposit(&sender, meta.outer_value_deposit, new_deposit)?;
-            } else {
-                <T as Config>::Currency::unreserve(&sender, meta.outer_value_deposit);
-            }
-
-            RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {
-                if let Some(stored_meta) = meta_opt {
-                    if stored_meta.outer_value_deposit != new_deposit {
-                        stored_meta.outer_value_deposit = new_deposit;
-                    }
-
-                    stored_meta.outer_value = value_opt;
-                }
-            });
-
-            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain });
-            Ok(())
-        }
-
-        /// Sets the domain content to be an outside link.
-        #[pallet::call_index(5)]
-        #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
-        pub fn set_domain_content(
-            origin: OriginFor<T>,
-            domain: DomainName<T>,
-            new_content: Content,
-        ) -> DispatchResult {
-            let sender = ensure_signed(origin)?;
-
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let mut meta = Self::require_domain(domain_lc.clone())?;
-
-            Self::ensure_allowed_to_update_domain(&meta, &sender)?;
-
-            ensure!(meta.content != new_content, Error::<T>::DomainContentNotChanged);
-            ensure_content_is_valid(new_content.clone())?;
-
-            meta.content = new_content;
-            RegisteredDomains::<T>::insert(&domain_lc, meta);
-
-            Self::deposit_event(Event::DomainMetaUpdated { who: sender, domain });
-            Ok(())
-        }
-
-        /// Mark set of domains as not reservable by users.
-        #[pallet::call_index(6)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -388,18 +346,17 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             T::ForceOrigin::ensure_origin(origin)?;
 
-            let inserted_words_count = Self::insert_domains(
-                &words,
-                Self::ensure_domain_contains_valid_chars,
-                |domain| ReservedWords::<T>::insert(Self::lower_domain_then_bound(domain), true),
-            )?;
+            let inserted_words_count =
+                Self::insert_domains(&words, Self::ensure_domain_contains_valid_chars, |domain| {
+                    ReservedWords::<T>::insert(Self::lower_domain_then_bound(domain), true)
+                })?;
 
             Self::deposit_event(Event::NewWordsReserved { count: inserted_words_count });
             Ok(Some(<T as Config>::WeightInfo::reserve_words(inserted_words_count)).into())
         }
 
         /// Add support for a set of top-level domains.
-        #[pallet::call_index(7)]
+        #[pallet::call_index(5)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -410,11 +367,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             T::ForceOrigin::ensure_origin(origin)?;
 
-            let inserted_tlds_count = Self::insert_domains(
-                &tlds,
-                Self::ensure_ascii_alphanumeric,
-                |domain| SupportedTlds::<T>::insert(Self::lower_domain_then_bound(domain), true),
-            )?;
+            let inserted_tlds_count =
+                Self::insert_domains(&tlds, Self::ensure_ascii_alphanumeric, |domain| {
+                    SupportedTlds::<T>::insert(Self::lower_domain_then_bound(domain), true)
+                })?;
 
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
@@ -487,8 +443,7 @@ pub mod pallet {
             let price = Self::calculate_price(&subdomain);
 
             if let DomainPayer::Account(payer) = payer {
-                // TODO: this check is duplicating one, which happens in one of the functions above
-                Self::ensure_word_is_not_reserved(&subdomain)?;
+                // TODO: this check is duplicating one, which happens in one of the functions aboveSelf::ensure_word_is_not_reserved(&subdomain)?;
                 Self::ensure_can_pay_for_domain(&payer, price)?;
 
                 // Perform write operations.
@@ -502,7 +457,7 @@ pub mod pallet {
 
             let deposit = Self::try_reserve_domain_deposit(&owner, &is_forced)?;
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
-            let domain_meta = DomainMeta::new(expires_at, owner.clone(), content, deposit);
+            let domain_meta = DomainMeta::new(expires_at, owner.clone(), deposit);
 
             RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
             DomainsByOwner::<T>::mutate(
@@ -510,41 +465,72 @@ pub mod pallet {
                     domains.try_push(domain_lc).expect("qed; too many domains per account")
                 }
             );
+            // TODO: withdraw balance when it will be possible to purchase domains.
+
+            RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
+            DomainsByOwner::<T>::mutate(&owner, |domains| {
+                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+            });
 
             Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
             Ok(())
         }
 
-        fn do_set_inner_value(
-            full_domain: DomainName<T>,
-            new_value_opt: Option<InnerValueOf<T>>,
+        fn do_set_record(
+            domain: DomainName<T>,
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
             check_ownership: Option<T::AccountId>,
         ) -> DispatchResult {
-            let domain_lc = Self::lower_domain_then_bound(&full_domain);
+            let domain_lc = Self::lower_domain_then_bound(&domain);
             let meta = Self::require_domain(domain_lc.clone())?;
+            let owner = meta.owner.clone();
+            let should_reserve_deposit = check_ownership.is_some();
 
             if let Some(should_be_owner) = check_ownership {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            ensure!(meta.inner_value != new_value_opt, Error::<T>::InnerValueNotChanged);
+            let current_record = DomainRecords::<T>::get(domain_lc.clone(), key.clone());
 
-            if let Some(old_value) = &meta.inner_value {
-                DomainByInnerValue::<T>::remove(&meta.owner, old_value);
-            }
+            let (old_depositor, old_deposit) =
+                current_record.map_or((owner.clone(), 0u32.into()), |r| (r.depositor, r.deposit));
 
-            if let Some(new_value) = &new_value_opt {
-                DomainByInnerValue::<T>::insert(&meta.owner, new_value, domain_lc.clone());
-            }
+            let new_deposit = should_reserve_deposit
+                .then(|| Self::calc_record_deposit(key.clone(), value_opt.clone()))
+                .unwrap_or_default();
 
-            RegisteredDomains::<T>::mutate(&domain_lc, |meta_opt| {
-                if let Some(stored_meta) = meta_opt {
-                    stored_meta.inner_value = new_value_opt;
-                }
+            Self::try_reserve_deposit(&old_depositor, old_deposit, &owner, new_deposit)?;
+
+            DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
+                *current_opt = value_opt.clone().map(|value| RecordValueWithDepositInfo::<T> {
+                    record_value: value,
+                    depositor: owner.clone(),
+                    deposit: new_deposit,
+                });
             });
 
-            Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain: domain_lc });
+            Self::deposit_event(Event::DomainRecordUpdated {
+                account: owner,
+                domain: domain_lc,
+                key,
+                value: value_opt,
+                deposit: new_deposit,
+            });
             Ok(())
+        }
+
+        pub(crate) fn calc_record_deposit(
+            key: DomainRecordKey<T>,
+            value_opt: Option<DomainRecordValue<T>>,
+        ) -> BalanceOf<T> {
+            let num_of_bytes: u32 = if let Some(value) = value_opt {
+                key.len().saturating_add(value.len()) as u32
+            } else {
+                return 0u32.into()
+            };
+
+            T::RecordByteDeposit::get().saturating_mul(num_of_bytes.into())
         }
 
         fn ensure_ascii_alphanumeric(domain: &[u8]) -> DispatchResult {
@@ -562,7 +548,10 @@ pub mod pallet {
             let first_char_alphanumeric = domain.first().filter(is_char_alphanumeric).is_some();
             let last_char_alphanumeric = domain.last().filter(is_char_alphanumeric).is_some();
 
-            ensure!(first_char_alphanumeric && last_char_alphanumeric, Error::<T>::DomainContainsInvalidChar);
+            ensure!(
+                first_char_alphanumeric && last_char_alphanumeric,
+                Error::<T>::DomainContainsInvalidChar
+            );
 
             let mut prev_char_hyphen = false;
             let domain_correct = domain.iter().all(|c| {
@@ -653,22 +642,40 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Reserve new_deposit from new_depositor, and refunds the old_deposit to old_depositor.
         // TODO: move to subsocial-support crate
         pub fn try_reserve_deposit(
-            depositor: &T::AccountId,
+            old_depositor: &T::AccountId,
             old_deposit: BalanceOf<T>,
+            new_depositor: &T::AccountId,
             new_deposit: BalanceOf<T>,
         ) -> DispatchResult {
-            match old_deposit.cmp(&new_deposit) {
-                Ordering::Less =>
-                    <T as Config>::Currency::reserve(depositor, new_deposit - old_deposit)?,
-                Ordering::Greater => {
-                    let err_amount = <T as Config>::Currency::unreserve(
-                        depositor, old_deposit - new_deposit,
-                    );
-                    debug_assert!(err_amount.is_zero());
-                },
-                _ => (),
+            let (balance_to_reserve, balance_to_unreserve) = if old_depositor == new_depositor {
+                (
+                    new_deposit.saturating_sub(old_deposit), /* will result in a zero
+                                                              * old_deposit is bigger than
+                                                              * new_deposit. */
+                    old_deposit.saturating_sub(new_deposit), /* will result in a zero
+                                                              * new_deposit is bigger than
+                                                              * old_deposit. */
+                )
+            } else {
+                (
+                    new_deposit, /* since the new_depositor didn't reserve anything, the whole
+                                  * new deposit should be reserved. */
+                    old_deposit, /* since the old_depositor is no longer maintaining the
+                                  * deposit, the whole previous deposit should be refunded. */
+                )
+            };
+
+            if !balance_to_reserve.is_zero() {
+                <T as Config>::Currency::reserve(new_depositor, balance_to_reserve)?;
+            }
+
+            if !balance_to_unreserve.is_zero() {
+                let err_amount =
+                    <T as Config>::Currency::unreserve(old_depositor, balance_to_unreserve);
+                debug_assert!(err_amount.is_zero());
             }
 
             Ok(())
@@ -732,9 +739,8 @@ pub mod pallet {
         }
 
         fn ensure_word_is_not_reserved(word: &DomainName<T>) -> DispatchResult {
-            let word_without_hyphens = Self::bound_domain(
-                word.iter().filter(|c| **c != b'-').cloned().collect()
-            );
+            let word_without_hyphens =
+                Self::bound_domain(word.iter().filter(|c| **c != b'-').cloned().collect());
 
             ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())

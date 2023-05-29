@@ -43,10 +43,8 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
     fn register_domain() -> Weight;
     fn force_register_domain() -> Weight;
-    fn set_inner_value() -> Weight;
-    fn force_set_inner_value() -> Weight;
-    fn set_outer_value() -> Weight;
-    fn set_domain_content() -> Weight;
+    fn set_record() -> Weight;
+    fn force_set_record() -> Weight;
     fn reserve_words(s: u32, ) -> Weight;
     fn support_tlds(s: u32, ) -> Weight;
 }
@@ -73,34 +71,18 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().writes(2))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn set_inner_value() -> Weight {
-        // Minimum execution time: 45_544 nanoseconds.
-        Weight::from_ref_time(46_048_000)
-            .saturating_add(T::DbWeight::get().reads(1))
-            .saturating_add(T::DbWeight::get().writes(3))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn force_set_inner_value() -> Weight {
-        // Minimum execution time: 44_561 nanoseconds.
-        Weight::from_ref_time(45_635_000)
-            .saturating_add(T::DbWeight::get().reads(1))
-            .saturating_add(T::DbWeight::get().writes(3))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_outer_value() -> Weight {
-        // Minimum execution time: 57_639 nanoseconds.
-        Weight::from_ref_time(58_498_000)
-            .saturating_add(T::DbWeight::get().reads(1))
+            // Storage: Domains RegisteredDomains (r:1 w:0)
+            // Storage: Domains DomainRecords (r:1 w:1)
+        fn set_record() -> Weight {
+        Weight::from_ref_time(29_000_000)
+            .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(1))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_domain_content() -> Weight {
-        // Minimum execution time: 38_702 nanoseconds.
-        Weight::from_ref_time(38_974_000)
-            .saturating_add(T::DbWeight::get().reads(1))
+            // Storage: Domains RegisteredDomains (r:1 w:0)
+            // Storage: Domains DomainRecords (r:1 w:1)
+        fn force_set_record() -> Weight {
+        Weight::from_ref_time(17_000_000)
+            .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
@@ -146,34 +128,18 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().writes(2))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn set_inner_value() -> Weight {
-        // Minimum execution time: 45_544 nanoseconds.
-        Weight::from_ref_time(46_048_000)
-            .saturating_add(RocksDbWeight::get().reads(1))
-            .saturating_add(RocksDbWeight::get().writes(3))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-            // Storage: Domains DomainByInnerValue (r:0 w:2)
-        fn force_set_inner_value() -> Weight {
-        // Minimum execution time: 44_561 nanoseconds.
-        Weight::from_ref_time(45_635_000)
-            .saturating_add(RocksDbWeight::get().reads(1))
-            .saturating_add(RocksDbWeight::get().writes(3))
-        }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_outer_value() -> Weight {
-        // Minimum execution time: 57_639 nanoseconds.
-        Weight::from_ref_time(58_498_000)
-            .saturating_add(RocksDbWeight::get().reads(1))
+            // Storage: Domains RegisteredDomains (r:1 w:0)
+            // Storage: Domains DomainRecords (r:1 w:1)
+        fn set_record() -> Weight {
+        Weight::from_ref_time(29_000_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
-            // Storage: Domains RegisteredDomains (r:1 w:1)
-        fn set_domain_content() -> Weight {
-        // Minimum execution time: 38_702 nanoseconds.
-        Weight::from_ref_time(38_974_000)
-            .saturating_add(RocksDbWeight::get().reads(1))
+            // Storage: Domains RegisteredDomains (r:1 w:0)
+            // Storage: Domains DomainRecords (r:1 w:1)
+        fn force_set_record() -> Weight {
+        Weight::from_ref_time(17_000_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: Domains ReservedWords (r:0 w:1)
