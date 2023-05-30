@@ -610,6 +610,7 @@ parameter_types! {
 	// 	(([MAXIMUM_BLOCK_WEIGHT] * 0.75) / ("function_weight")) * 0.33
     pub const DomainsInsertLimit: u32 = 2860;
     pub const RegistrationPeriodLimit: BlockNumber = 365 * DAYS;
+	pub const TimeBeforeRenewal: BlockNumber = 3 * 30 * DAYS;
     pub const MaxOuterValueLength: u32 = 261;
 
     pub const BaseDomainDeposit: Balance = 10 * UNIT;
@@ -633,6 +634,7 @@ impl pallet_domains::Config for Runtime {
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriod = RegistrationPeriodLimit;
+	type TimeBeforeRenewal = TimeBeforeRenewal;
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type MaxRecordKeyLength = ConstU32<256>;
 	type MaxRecordValueLength = ConstU32<4096>;

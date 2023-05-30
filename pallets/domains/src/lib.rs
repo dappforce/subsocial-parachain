@@ -59,6 +59,10 @@ pub mod pallet {
         #[pallet::constant]
         type RegistrationPeriod: Get<Self::BlockNumber>;
 
+        /// The period of time before the expiry of the domain, in which renewing expiry is possible.
+        #[pallet::constant]
+        type TimeBeforeRenewal: Get<Self::BlockNumber>;
+
         /// The maximum length of the domain's outer value.
         #[pallet::constant]
         type MaxOuterValueLength: Get<u32>;
@@ -497,14 +501,16 @@ pub mod pallet {
                 )?;
             }
 
-            let deposit = Self::try_reserve_domain_deposit(&owner, &is_forced)?;
+            let deposit = Self::try_reserve_domain_deposit(&owner, &domain_lc, &is_forced)?;
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(expires_at, owner.clone(), deposit);
 
             RegisteredDomains::<T>::insert(&domain_lc, domain_meta);
             DomainsByOwner::<T>::mutate(
                 &owner, |domains| {
-                    domains.try_push(domain_lc).expect("qed; too many domains per account")
+                    if !domains.contains(&domain_lc) {
+                        domains.try_push(domain_lc).expect("qed; too many domains per account")
+                    }
                 }
             );
 
@@ -741,7 +747,14 @@ pub mod pallet {
 
         pub(crate) fn ensure_domain_is_free(domain_lc: &DomainName<T>) -> DispatchResult {
             ensure!(
-                !RegisteredDomains::<T>::contains_key(domain_lc),
+                !matches!(
+                    RegisteredDomains::<T>::get(domain_lc),
+                    Some(DomainMeta::<T> {
+                        expires_at,
+                        ..
+                    })
+                    if expires_at > System::<T>::block_number()
+                ),
                 Error::<T>::DomainAlreadyOwned,
             );
             Ok(())
@@ -749,21 +762,37 @@ pub mod pallet {
 
         pub(crate) fn try_reserve_domain_deposit(
             depositor: &T::AccountId,
+            domain_lc: &DomainName<T>,
             is_forced: &IsForced,
         ) -> Result<BalanceOf<T>, DispatchError> {
+            let (old_depositor, old_deposit) = match RegisteredDomains::<T>::get(domain_lc) {
+                Some(DomainMeta::<T> {
+                         owner,
+                         domain_deposit,
+                         ..
+                     }) => (owner, domain_deposit),
+                None => (depositor.clone(), Zero::zero()),
+            };
             match is_forced {
                 IsForced::No => {
-                    // TODO: unreserve the balance for expired domains
                     let deposit = T::BaseDomainDeposit::get();
                     Self::try_reserve_deposit(
-                        depositor,
-                        Zero::zero(),
+                        &old_depositor,
+                        old_deposit,
                         depositor,
                         deposit,
                     )?;
                     Ok(deposit)
                 },
-                IsForced::Yes => Ok(Zero::zero()),
+                IsForced::Yes => {
+                    Self::try_reserve_deposit(
+                        &old_depositor,
+                        old_deposit,
+                        &old_depositor,
+                        Zero::zero(),
+                    )?;
+                    Ok(Zero::zero())
+                },
             }
         }
 

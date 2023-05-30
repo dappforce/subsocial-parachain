@@ -5,12 +5,7 @@ use sp_std::convert::TryInto;
 
 use subsocial_support::{Content, new_who_and_when};
 
-use crate::{
-    Error,
-    Event,
-    mock::*,
-    pallet::{DomainRecords, RegisteredDomains}, types::*,
-};
+use crate::{Config, Error, Event, mock::*, pallet::{DomainRecords, RegisteredDomains}, types::*};
 
 fn change_domain_ownership(new_owner: &AccountId) {
     RegisteredDomains::<Test>::mutate(default_domain_lc(), |maybe_meta| {
@@ -58,6 +53,63 @@ fn register_domain_should_work() {
             );
 
             assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
+
+            System::assert_last_event(
+                Event::<Test>::DomainRegistered { who: owner, domain: expected_domain }.into(),
+            );
+        });
+}
+
+#[test]
+fn register_domain_should_work_for_expired_domains() {
+    const LOCAL_DOMAIN_DEPOSIT: Balance = 10;
+
+    ExtBuilder::default()
+        .base_domain_deposit(LOCAL_DOMAIN_DEPOSIT)
+        .reservation_period_limit(100)
+        .build()
+        .execute_with(|| {
+            let previous_owner = account_with_balance(12, BalanceOf::<Test>::max_value());
+
+            assert_ok!(Domains::register_domain(
+                RuntimeOrigin::signed(previous_owner),
+                LookupOf::<Test>::unlookup(previous_owner),
+                default_domain(),
+            ));
+            assert_eq!(get_reserved_balance(&previous_owner), LOCAL_DOMAIN_DEPOSIT);
+
+            System::set_block_number(System::block_number() + 100);
+
+
+            let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
+            let expected_domain = default_domain();
+            let expected_domain_lc = default_domain_lc();
+
+            assert!(get_reserved_balance(&owner).is_zero());
+
+            assert_ok!(_register_default_domain());
+
+            assert_eq!(Domains::domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
+
+            let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
+            assert_eq!(
+                domain_meta,
+                DomainMeta {
+                    created: new_who_and_when::<Test>(DOMAIN_OWNER),
+                    updated: None,
+                    expires_at: System::block_number() + 100,
+                    owner: DOMAIN_OWNER,
+                    content: Content::None,
+                    inner_value: None,
+                    outer_value: None,
+                    domain_deposit: LOCAL_DOMAIN_DEPOSIT,
+                    outer_value_deposit: Zero::zero()
+                }
+            );
+
+            assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
+            assert_eq!(get_reserved_balance(&previous_owner), 0);
 
             System::assert_last_event(
                 Event::<Test>::DomainRegistered { who: owner, domain: expected_domain }.into(),

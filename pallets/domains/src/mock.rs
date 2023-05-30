@@ -102,6 +102,7 @@ parameter_types! {
 
     pub const DomainsInsertLimit: u32 = 2860;
     pub static ReservationPeriodLimit: BlockNumber = 0;
+    pub static TimeBeforeRenewal: BlockNumber = 0;
     pub const MaxOuterValueLength: u16 = 256;
 
     pub static BaseDomainDeposit: Balance = 0;
@@ -123,6 +124,7 @@ impl pallet_domains::Config for Test {
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriod = ReservationPeriodLimit;
+    type TimeBeforeRenewal = TimeBeforeRenewal;
     type MaxOuterValueLength = MaxOuterValueLength;
     type MaxRecordKeyLength = MaxRecordKeyLength;
     type MaxRecordValueLength = MaxRecordValueLength;
