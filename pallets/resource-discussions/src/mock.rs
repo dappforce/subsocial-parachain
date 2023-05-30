@@ -165,6 +165,7 @@ parameter_types! {
 impl pallet_resource_discussions::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type MaxResourceIdLength = MaxResourcesIdLength;
+    type WeightInfo = ();
 }
 
 pub struct ExtBuilder {

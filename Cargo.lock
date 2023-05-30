@@ -11733,6 +11733,7 @@ dependencies = [
  "pallet-profiles",
  "pallet-proxy",
  "pallet-reactions",
+ "pallet-resource-discussions",
  "pallet-roles",
  "pallet-session",
  "pallet-space-follows",
