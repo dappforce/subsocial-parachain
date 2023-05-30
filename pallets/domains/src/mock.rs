@@ -122,7 +122,7 @@ impl pallet_domains::Config for Test {
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
-    type RegistrationPeriodLimit = ReservationPeriodLimit;
+    type RegistrationPeriod = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
     type MaxRecordKeyLength = MaxRecordKeyLength;
     type MaxRecordValueLength = MaxRecordValueLength;
@@ -170,46 +170,38 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _force_register_domain(Some(origin), None, None, None)
-}
-
-pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
-    _force_register_domain(None, None, None, Some(expires_in))
+    _force_register_domain(Some(origin), None, None)
 }
 
 pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain_name), None)
+    _force_register_domain(None, None, Some(domain_name))
 }
 
 fn _force_register_domain(
     origin: Option<RuntimeOrigin>,
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
-    expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::force_register_domain(
         origin.unwrap_or_else(RuntimeOrigin::root),
         owner.unwrap_or(DOMAIN_OWNER),
         domain.unwrap_or_else(default_domain),
-        expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None, None)
+    _register_domain(None, None, None)
 }
 
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
     owner_target: Option<AccountIdLookupOf<Test>>,
     domain: Option<DomainName<Test>>,
-    expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
         owner_target.unwrap_or_else(|| LookupOf::<Test>::unlookup(DOMAIN_OWNER)),
         domain.unwrap_or_else(default_domain),
-        expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
 }
 

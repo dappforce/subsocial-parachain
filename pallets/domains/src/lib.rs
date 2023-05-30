@@ -55,9 +55,9 @@ pub mod pallet {
         #[pallet::constant]
         type DomainsInsertLimit: Get<u32>;
 
-        /// The maximum period of time the domain may be held for.
+        /// The period of time the domain may be held for.
         #[pallet::constant]
-        type RegistrationPeriodLimit: Get<Self::BlockNumber>;
+        type RegistrationPeriod: Get<Self::BlockNumber>;
 
         /// The maximum length of the domain's outer value.
         #[pallet::constant]
@@ -300,8 +300,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Registers a domain ([full_domain]) using origin, and set
-        /// the domain to expire in [expires_in] number of blocks.
+        /// Registers a domain ([full_domain]) using origin.
         /// [full_domain] is a full domain name including a dot (.) and TLD.
         /// Example of a [full_domain]: `mytoken.ksm`
         #[pallet::call_index(0)]
@@ -310,17 +309,15 @@ pub mod pallet {
             origin: OriginFor<T>,
             owner_target: AccountIdLookupOf<T>,
             full_domain: DomainName<T>,
-            expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
             let owner = T::Lookup::lookup(owner_target)?;
-            let domain_data = DomainRegisterData::new(owner, full_domain, expires_in);
+            let domain_data = DomainRegisterData::new(owner, full_domain);
 
             Self::do_register_domain(domain_data, DomainPayer::<T>::Account(caller))
         }
 
-        /// Registers a domain ([full_domain]) using root on behalf of a [recipient],
-        /// and set the domain to expire in [expires_in] number of blocks.
+        /// Registers a domain ([full_domain]) using root on behalf of a [recipient].
         #[pallet::call_index(1)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_register_domain(),
@@ -330,12 +327,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             recipient: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
-            expires_in: T::BlockNumber,
         ) -> DispatchResult {
             T::ForceOrigin::ensure_origin(origin)?;
 
             let recipient = T::Lookup::lookup(recipient)?;
-            let domain_data = DomainRegisterData::new(recipient, full_domain, expires_in);
+            let domain_data = DomainRegisterData::new(recipient, full_domain);
 
             Self::do_register_domain(domain_data, DomainPayer::<T>::ForceOrigin)
         }
@@ -466,14 +462,8 @@ pub mod pallet {
                 DomainPayer::Account(_) => IsForced::No,
             };
 
-            let DomainRegisterData { owner, full_domain, expires_in } = domain_data;
-
-            // Perform checks that doesn't require storage access.
-            ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
-            ensure!(
-                expires_in <= T::RegistrationPeriodLimit::get(),
-                Error::<T>::TooBigRegistrationPeriod,
-            );
+            let expires_in = T::RegistrationPeriod::get();
+            let DomainRegisterData { owner, full_domain} = domain_data;
 
             // Note that while upper and lower case letters are allowed in domain
             // names, domain names are not case-sensitive. That is, two names with

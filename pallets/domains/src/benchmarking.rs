@@ -81,11 +81,10 @@ fn mock_domain<T: Config>() -> DomainName<T> {
 fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, DispatchError> {
 	add_default_tld::<T>().map_err(|e| e.error)?;
 	let domain = mock_domain::<T>();
-	let expires_in = T::RegistrationPeriodLimit::get();
 	let owner_lookup = lookup_source_from_account::<T>(owner);
 
 	Pallet::<T>::force_register_domain(
-		RawOrigin::Root.into(), owner_lookup, domain.clone(), expires_in,
+		RawOrigin::Root.into(), owner_lookup, domain.clone(),
 	)?;
 
 	Ok(domain)
@@ -100,10 +99,9 @@ benchmarks! {
 
 		let domain = mock_domain::<T>();
 
-		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(who.clone()), owner_lookup, domain.clone(), expires_in)
+	}: _(RawOrigin::Signed(who.clone()), owner_lookup, domain.clone())
 	verify {
 		assert_last_event::<T>(
 			Event::DomainRegistered { who, domain }.into()
@@ -118,10 +116,9 @@ benchmarks! {
 
 		let domain = mock_domain::<T>();
 
-		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner_lookup, domain.clone(), expires_in)
+	}: _(RawOrigin::Root, owner_lookup, domain.clone())
 	verify {
 		assert_last_event::<T>(
 			Event::DomainRegistered { who, domain }.into()

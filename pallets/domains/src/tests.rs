@@ -111,26 +111,6 @@ fn force_register_domain_should_fail_with_bad_origin() {
 }
 
 #[test]
-fn force_register_domain_should_fail_when_reservation_period_zero() {
-    ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(
-            _force_register_domain_with_expires_in(0),
-            Error::<Test>::ZeroReservationPeriod,
-        );
-    });
-}
-
-#[test]
-fn force_register_domain_should_fail_when_reservation_above_limit() {
-    ExtBuilder::default().reservation_period_limit(1000).build().execute_with(|| {
-        assert_noop!(
-            _force_register_domain_with_expires_in(1001),
-            Error::<Test>::TooBigRegistrationPeriod,
-        );
-    });
-}
-
-#[test]
 fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
         let word = Domains::bound_domain(b"splitword".to_vec());
@@ -148,7 +128,6 @@ fn register_domain_should_fail_when_domain_reserved() {
                 RuntimeOrigin::signed(DOMAIN_OWNER),
                 LookupOf::<Test>::unlookup(DOMAIN_OWNER),
                 domain,
-                ExtBuilder::default().reservation_period_limit,
             ),
             Error::<Test>::DomainIsReserved,
         );
