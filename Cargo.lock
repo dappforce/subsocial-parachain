@@ -11315,6 +11315,7 @@ dependencies = [
  "pallet-domains",
  "pallet-energy",
  "pallet-free-proxy",
+ "pallet-moderation",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",

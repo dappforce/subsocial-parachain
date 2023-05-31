@@ -29,154 +29,188 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_signed};
 
-use pallet_utils::{Content, WhoAndWhen, SpaceId, Module as Utils, PostId};
+use subsocial_support::{Content, new_who_and_when, PostId, SpaceId, ensure_content_is_valid, ensure_content_is_some, WhoAndWhenOf};
 use pallet_spaces::Module as Spaces;
 
-// TODO: move all tests to df-integration-tests
-#[cfg(test)]
-mod mock;
+pub use pallet::*;
 
-#[cfg(test)]
-mod tests;
+
+// // TODO: move all tests to df-integration-tests
+// #[cfg(test)]
+// mod mock;
+//
+// #[cfg(test)]
+// mod tests;
 
 pub mod functions;
 
-pub type ReportId = u64;
+#[frame_support::pallet]
+pub mod pallet {
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub enum EntityId<AccountId> {
-    Content(Content),
-    Account(AccountId),
-    Space(SpaceId),
-    Post(PostId),
-}
+    use super::*;
+    use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
 
-/// Entity status is used in two cases: when moderators suggest a moderation status
-/// for a reported entity; or when a space owner makes a final decision to either block
-/// or allow this entity within the space.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub enum EntityStatus {
-    Allowed,
-    Blocked,
-}
+    pub type ReportId = u64;
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-pub struct Report<T: Config> {
-    id: ReportId,
-    created: WhoAndWhen<T>,
-    /// An id of reported entity: account, space, post or IPFS CID.
-    reported_entity: EntityId<T::AccountId>,
-    /// Within what space (scope) this entity has been reported.
-    reported_within: SpaceId, // TODO rename: reported_in_space
-    /// A reason should describe why this entity should be blocked in this space.
-    reason: Content,
-}
-
-// TODO rename to SuggestedEntityStatus
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-pub struct SuggestedStatus<T: Config> {
-    /// An account id of a moderator who suggested this status.
-    suggested: WhoAndWhen<T>,
-    /// `None` if a moderator wants to signal that they have reviewed the entity,
-    /// but they are not sure about what status should be applied to it.
-    status: Option<EntityStatus>,
-    /// `None` if a suggested status is not based on any reports.
-    report_id: Option<ReportId>,
-}
-
-// TODO rename to ModerationSettings?
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct SpaceModerationSettings {
-    autoblock_threshold: Option<u16>
-}
-
-// TODO rename to ModerationSettingsUpdate?
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct SpaceModerationSettingsUpdate {
-    pub autoblock_threshold: Option<Option<u16>>
-}
-
-/// The pallet's configuration trait.
-pub trait Config: system::Config
-+ pallet_posts::Config
-+ pallet_spaces::Config
-+ pallet_space_follows::Config
-+ pallet_utils::Config
-{
-    /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
-
-    type DefaultAutoblockThreshold: Get<u16>;
-}
-
-pub const FIRST_REPORT_ID: u64 = 1;
-
-// This pallet's storage items.
-decl_storage! {
-    trait Store for Module<T: Config> as ModerationModule {
-
-        /// The next moderation report id.
-        pub NextReportId get(fn next_report_id): ReportId = FIRST_REPORT_ID;
-
-        /// Report details by its id (key).
-        pub ReportById get(fn report_by_id):
-            map hasher(twox_64_concat) ReportId
-            => Option<Report<T>>;
-
-        /// Report id if entity (key 1) was reported by a specific account (key 2)
-        pub ReportIdByAccount get(fn report_id_by_account):
-            map hasher(twox_64_concat) (EntityId<T::AccountId>, T::AccountId)
-            => Option<ReportId>;
-
-        /// Ids of all reports in this space (key).
-        pub ReportIdsBySpaceId get(fn report_ids_by_space_id):
-            map hasher(twox_64_concat) SpaceId
-            => Vec<ReportId>;
-
-        /// Ids of all reports related to a specific entity (key 1) sent to this space (key 2).
-        pub ReportIdsByEntityInSpace get(fn report_ids_by_entity_in_space): double_map
-            hasher(twox_64_concat) EntityId<T::AccountId>,
-            hasher(twox_64_concat) SpaceId
-            => Vec<ReportId>;
-
-        /// An entity (key 1) status (`Blocked` or `Allowed`) in this space (key 2).
-        pub StatusByEntityInSpace get(fn status_by_entity_in_space): double_map
-            hasher(twox_64_concat) EntityId<T::AccountId>,
-            hasher(twox_64_concat) SpaceId
-            => Option<EntityStatus>;
-
-        /// Entity (key 1) statuses suggested by space (key 2) moderators.
-        pub SuggestedStatusesByEntityInSpace get(fn suggested_statuses): double_map
-            hasher(twox_64_concat) EntityId<T::AccountId>,
-            hasher(twox_64_concat) SpaceId
-            => Vec<SuggestedStatus<T>>;
-
-        /// A custom moderation settings for a certain space (key).
-        pub ModerationSettings get(fn moderation_settings):
-            map hasher(twox_64_concat) SpaceId
-            => Option<SpaceModerationSettings>;
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    pub enum EntityId<AccountId> {
+        Content(Content),
+        Account(AccountId),
+        Space(SpaceId),
+        Post(PostId),
     }
-}
 
-// The pallet's events
-decl_event!(
-    pub enum Event<T> where
-        AccountId = <T as system::Config>::AccountId,
-        EntityId = EntityId<<T as system::Config>::AccountId>
+    /// Entity status is used in two cases: when moderators suggest a moderation status
+    /// for a reported entity; or when a space owner makes a final decision to either block
+    /// or allow this entity within the space.
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    pub enum EntityStatus {
+        Allowed,
+        Blocked,
+    }
+
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    #[scale_info(skip_type_params(T))]
+    pub struct Report<T: Config> {
+        pub(crate) id: ReportId,
+        pub(crate) created: WhoAndWhenOf<T>,
+        /// An id of reported entity: account, space, post or IPFS CID.
+        pub(crate) reported_entity: EntityId<T::AccountId>,
+        /// Within what space (scope) this entity has been reported.
+        pub(crate) reported_within: SpaceId, // TODO rename: reported_in_space
+        /// A reason should describe why this entity should be blocked in this space.
+        pub(crate) reason: Content,
+    }
+
+    // TODO rename to SuggestedEntityStatus
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    #[scale_info(skip_type_params(T))]
+    pub struct SuggestedStatus<T: Config> {
+        /// An account id of a moderator who suggested this status.
+        pub(crate) suggested: WhoAndWhenOf<T>,
+        /// `None` if a moderator wants to signal that they have reviewed the entity,
+        /// but they are not sure about what status should be applied to it.
+        pub(crate) status: Option<EntityStatus>,
+        /// `None` if a suggested status is not based on any reports.
+        pub(crate) report_id: Option<ReportId>,
+    }
+
+    // TODO rename to ModerationSettings?
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    pub struct SpaceModerationSettings {
+        pub(crate) autoblock_threshold: Option<u16>
+    }
+
+    // TODO rename to ModerationSettingsUpdate?
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+    pub struct SpaceModerationSettingsUpdate {
+        pub autoblock_threshold: Option<Option<u16>>
+    }
+
+    pub const FIRST_REPORT_ID: u64 = 1;
+
+
+    #[pallet::config]
+    pub trait Config:
+        frame_system::Config
+        + pallet_posts::Config
+        + pallet_spaces::Config
+        + pallet_space_follows::Config
     {
-        EntityReported(AccountId, SpaceId, EntityId, ReportId),
-        EntityStatusSuggested(AccountId, SpaceId, EntityId, Option<EntityStatus>),
-        EntityStatusUpdated(AccountId, SpaceId, EntityId, Option<EntityStatus>),
-        EntityStatusDeleted(AccountId, SpaceId, EntityId),
-        ModerationSettingsUpdated(AccountId, SpaceId),
-    }
-);
+        /// The overarching event type.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-// The pallet's errors
-decl_error! {
-    pub enum Error for Module<T: Config> {
+        #[pallet::constant]
+        type DefaultAutoblockThreshold: Get<u16>;
+    }
+
+
+    #[pallet::pallet]
+    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
+
+    #[pallet::type_value]
+    pub fn DefaultForNextReportId() -> PostId {
+        FIRST_REPORT_ID
+    }
+
+    /// The next moderation report id.
+    #[pallet::storage]
+    #[pallet::getter(fn next_report_id)]
+    pub type NextReportId<T: Config> = StorageValue<_, ReportId, ValueQuery, DefaultForNextReportId>;
+
+    /// Report details by its id (key).
+    #[pallet::storage]
+    #[pallet::getter(fn report_by_id)]
+    pub type ReportById<T: Config> = StorageMap<_, Twox64Concat, ReportId, Report<T>>;
+
+    /// Report id if entity (key 1) was reported by a specific account (key 2)
+    #[pallet::storage]
+    #[pallet::getter(fn report_id_by_account)]
+    pub type ReportIdByAccount<T: Config> = StorageMap<_, Twox64Concat, (EntityId<T::AccountId>, T::AccountId), ReportId>;
+
+    /// Ids of all reports in this space (key).
+    #[pallet::storage]
+    #[pallet::getter(fn report_ids_by_space_id)]
+    pub type ReportIdsBySpaceId<T: Config> = StorageMap<_, Twox64Concat, SpaceId, Vec<ReportId>, ValueQuery>;
+
+    /// Ids of all reports related to a specific entity (key 1) sent to this space (key 2).
+    #[pallet::storage]
+    #[pallet::getter(fn report_ids_by_entity_in_space)]
+    pub type ReportIdsByEntityInSpace<T: Config> = StorageDoubleMap<_,
+        Twox64Concat,
+        EntityId<T::AccountId>,
+        Twox64Concat,
+        SpaceId,
+        Vec<ReportId>,
+        ValueQuery,
+    >;
+
+    /// An entity (key 1) status (`Blocked` or `Allowed`) in this space (key 2).
+    #[pallet::storage]
+    #[pallet::getter(fn status_by_entity_in_space)]
+    pub type StatusByEntityInSpace<T: Config> = StorageDoubleMap<_,
+        Twox64Concat,
+        EntityId<T::AccountId>,
+        Twox64Concat,
+        SpaceId,
+        EntityStatus,
+    >;
+
+    /// Entity (key 1) statuses suggested by space (key 2) moderators.
+    #[pallet::storage]
+    #[pallet::getter(fn suggested_statuses)]
+    pub type SuggestedStatusesByEntityInSpace<T: Config> = StorageDoubleMap<_,
+        Twox64Concat,
+        EntityId<T::AccountId>,
+        Twox64Concat,
+        SpaceId,
+        Vec<SuggestedStatus<T>>,
+        ValueQuery,
+    >;
+
+    /// A custom moderation settings for a certain space (key).
+    #[pallet::storage]
+    #[pallet::getter(fn moderation_settings)]
+    pub type ModerationSettings<T: Config> = StorageMap<_, Twox64Concat, SpaceId, SpaceModerationSettings>;
+
+    // The pallet's events
+    #[pallet::event]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        EntityReported(T::AccountId, SpaceId, EntityId<T::AccountId>, ReportId),
+        EntityStatusSuggested(T::AccountId, SpaceId, EntityId<T::AccountId>, Option<EntityStatus>),
+        EntityStatusUpdated(T::AccountId, SpaceId, EntityId<T::AccountId>, Option<EntityStatus>),
+        EntityStatusDeleted(T::AccountId, SpaceId, EntityId<T::AccountId>),
+        ModerationSettingsUpdated(T::AccountId, SpaceId),
+    }
+
+    // The pallet's errors
+    #[pallet::error]
+    pub enum Error<T> {
         /// The account has already reported this entity.
         AlreadyReportedEntity,
         /// The entity has no status in this space. Nothing to delete.
@@ -207,26 +241,15 @@ decl_error! {
         /// Entity status has already been suggested by this moderator account.
         AlreadySuggestedEntityStatus,
     }
-}
 
-// The pallet's dispatchable functions.
-decl_module! {
-    /// The module declaration.
-    pub struct Module<T: Config> for enum Call where origin: T::Origin {
 
-        const DefaultAutoblockThreshold: u16 = T::DefaultAutoblockThreshold::get();
-
-        // Initializing errors
-        type Error = Error<T>;
-
-        // Initializing events
-        fn deposit_event() = default;
-
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
         /// Report any entity by any person with mandatory reason.
         /// `entity` scope and the `scope` provided mustn't differ
-        #[weight = 10_000 + T::DbWeight::get().reads_writes(6, 5)]
+        #[pallet::weight((Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(6, 5)))]
         pub fn report_entity(
-            origin,
+            origin: OriginFor<T>,
             entity: EntityId<T::AccountId>,
             scope: SpaceId,
             reason: Content
@@ -234,9 +257,9 @@ decl_module! {
             let who = ensure_signed(origin)?;
 
             // TODO check this func, if looks strange
-            Utils::<T>::ensure_content_is_some(&reason).map_err(|_| Error::<T>::ReasonIsEmpty)?;
+            ensure_content_is_some(&reason).map_err(|_| Error::<T>::ReasonIsEmpty)?;
 
-            Utils::<T>::is_valid_content(reason.clone())?;
+            ensure_content_is_valid(reason.clone())?;
 
             ensure!(Spaces::<T>::require_space(scope).is_ok(), Error::<T>::ScopeNotFound);
             Self::ensure_entity_in_scope(&entity, scope)?;
@@ -249,19 +272,19 @@ decl_module! {
 
             ReportById::<T>::insert(report_id, new_report);
             ReportIdByAccount::<T>::insert((&entity, &who), report_id);
-            ReportIdsBySpaceId::mutate(scope, |ids| ids.push(report_id));
+            ReportIdsBySpaceId::<T>::mutate(scope, |ids| ids.push(report_id));
             ReportIdsByEntityInSpace::<T>::mutate(&entity, scope, |ids| ids.push(report_id));
-            NextReportId::mutate(|n| { *n += 1; });
+            NextReportId::<T>::mutate(|n| { *n += 1; });
 
-            Self::deposit_event(RawEvent::EntityReported(who, scope, entity, report_id));
+            Self::deposit_event(Event::EntityReported(who, scope, entity, report_id));
             Ok(())
         }
 
         /// Leave a feedback on the report either it's confirmation or ignore.
         /// `origin` - any permitted account (e.g. Space owner or moderator that's set via role)
-        #[weight = 10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */]
+        #[pallet::weight(Weight::from_ref_time(10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */))]
         pub fn suggest_entity_status(
-            origin,
+            origin: OriginFor<T>,
             entity: EntityId<T::AccountId>,
             scope: SpaceId, // TODO make scope as Option, but either scope or report_id_opt should be Some
             status: Option<EntityStatus>,
@@ -306,14 +329,14 @@ decl_module! {
 
             SuggestedStatusesByEntityInSpace::<T>::insert(entity.clone(), scope, suggestions);
 
-            Self::deposit_event(RawEvent::EntityStatusSuggested(who, scope, entity, status));
+            Self::deposit_event(Event::EntityStatusSuggested(who, scope, entity, status));
             Ok(())
         }
 
         /// Allows a space owner/admin to update the final moderation status of a reported entity.
-        #[weight = 10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */]
+        #[pallet::weight(Weight::from_ref_time(10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */))]
         pub fn update_entity_status(
-            origin,
+            origin: OriginFor<T>,
             entity: EntityId<T::AccountId>,
             scope: SpaceId,
             status_opt: Option<EntityStatus>
@@ -338,14 +361,14 @@ decl_module! {
                 StatusByEntityInSpace::<T>::remove(entity.clone(), scope);
             }
 
-            Self::deposit_event(RawEvent::EntityStatusUpdated(who, scope, entity, status_opt));
+            Self::deposit_event(Event::EntityStatusUpdated(who, scope, entity, status_opt));
             Ok(())
         }
 
         /// Allows a space owner/admin to delete a current status of a reported entity.
-        #[weight = 10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */]
+        #[pallet::weight(Weight::from_ref_time(10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */))]
         pub fn delete_entity_status(
-            origin,
+            origin: OriginFor<T>,
             entity: EntityId<T::AccountId>,
             scope: SpaceId
         ) -> DispatchResult {
@@ -359,16 +382,16 @@ decl_module! {
 
             StatusByEntityInSpace::<T>::remove(&entity, scope);
 
-            Self::deposit_event(RawEvent::EntityStatusDeleted(who, scope, entity));
+            Self::deposit_event(Event::EntityStatusDeleted(who, scope, entity));
             Ok(())
         }
 
         // todo: add ability to delete report_ids
 
         // TODO rename to update_settings?
-        #[weight = 10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */]
-        fn update_moderation_settings(
-            origin,
+        #[pallet::weight(Weight::from_ref_time(10_000 /* TODO + T::DbWeight::get().reads_writes(_, _) */))]
+        pub fn update_moderation_settings(
+            origin: OriginFor<T>,
             space_id: SpaceId,
             update: SpaceModerationSettingsUpdate
         ) -> DispatchResult {
@@ -400,8 +423,8 @@ decl_module! {
             }
 
             if should_update {
-                ModerationSettings::insert(space_id, settings);
-                Self::deposit_event(RawEvent::ModerationSettingsUpdated(who, space_id));
+                ModerationSettings::<T>::insert(space_id, settings);
+                Self::deposit_event(Event::ModerationSettingsUpdated(who, space_id));
             }
             Ok(())
         }

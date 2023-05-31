@@ -1,12 +1,15 @@
 use crate::*;
 
 use frame_support::dispatch::DispatchError;
-use pallet_posts::Module as Posts;
-use pallet_spaces::Space;
-use pallet_space_follows::Module as SpaceFollows;
-use df_traits::moderation::*;
+use pallet_posts::Pallet as Posts;
+use pallet_spaces::Pallet as Spaces;
+use pallet_spaces::types::Space;
+use pallet_space_follows::Pallet as SpaceFollows;
+use subsocial_support::{Content, ensure_content_is_some, new_who_and_when, PostId, SpaceId};
+use subsocial_support::traits::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
+use crate::pallet::{Config, EntityId, EntityStatus, Error, Pallet, Report, ReportId, SpaceModerationSettings, StatusByEntityInSpace, SuggestedStatus};
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
     pub fn require_report(report_id: ReportId) -> Result<Report<T>, DispatchError> {
         Ok(Self::report_by_id(report_id).ok_or(Error::<T>::ReportNotFound)?)
     }
@@ -16,14 +19,16 @@ impl<T: Config> Module<T> {
     fn get_entity_scope(entity: &EntityId<T::AccountId>) -> Result<Option<SpaceId>, DispatchError> {
         match entity {
             EntityId::Content(content) => {
-                Utils::<T>::ensure_content_is_some(content).map(|_| None)
+                ensure_content_is_some(content).map(|_| None)
             },
             EntityId::Account(_) => Ok(None),
             EntityId::Space(space_id) => {
-                let space = Spaces::<T>::require_space(*space_id)?;
-                let root_space_id = space.try_get_parent()?;
-
-                Ok(Some(root_space_id))
+                // TODO: refactor
+                // let space = Spaces::<T>::require_space(*space_id)?;
+                // let root_space_id = space.try_get_parent()?;
+                //
+                // Ok(Some(root_space_id))
+                Ok(None)
             },
             EntityId::Post(post_id) => {
                 let post = Posts::<T>::require_post(*post_id)?;
@@ -38,7 +43,7 @@ impl<T: Config> Module<T> {
     // fixme: do we need this?
     fn ensure_entity_exists(entity: &EntityId<T::AccountId>) -> DispatchResult {
         match entity {
-            EntityId::Content(content) => Utils::<T>::ensure_content_is_some(content),
+            EntityId::Content(content) => ensure_content_is_some(content),
             EntityId::Account(_) => Ok(()),
             EntityId::Space(space_id) => Spaces::<T>::ensure_space_exists(*space_id),
             EntityId::Post(post_id) => Posts::<T>::ensure_post_exists(*post_id),
@@ -51,8 +56,8 @@ impl<T: Config> Module<T> {
         match entity {
             EntityId::Content(_) => (),
             EntityId::Account(account_id)
-            => SpaceFollows::<T>::unfollow_space_by_account(account_id.clone(), scope)?,
-            EntityId::Space(space_id) => Spaces::<T>::try_move_space_to_root(*space_id)?,
+            => SpaceFollows::<T>::remove_space_follower(account_id.clone(), scope)?,
+            EntityId::Space(space_id) => /*TODO:refactor*//*Spaces::<T>::try_move_space_to_root(*space_id)?*/{},
             EntityId::Post(post_id) => Posts::<T>::delete_post_from_space(*post_id)?,
         }
         StatusByEntityInSpace::<T>::insert(entity, scope, EntityStatus::Blocked);
@@ -92,7 +97,7 @@ impl<T: Config> Report<T> {
     ) -> Self {
         Self {
             id,
-            created: WhoAndWhen::<T>::new(created_by),
+            created: new_who_and_when::<T>(created_by),
             reported_entity,
             reported_within: scope,
             reason
@@ -103,7 +108,7 @@ impl<T: Config> Report<T> {
 impl<T: Config> SuggestedStatus<T> {
     pub fn new(who: T::AccountId, status: Option<EntityStatus>, report_id: Option<ReportId>) -> Self {
         Self {
-            suggested: WhoAndWhen::<T>::new(who),
+            suggested: new_who_and_when::<T>(who),
             status,
             report_id
         }
@@ -111,7 +116,7 @@ impl<T: Config> SuggestedStatus<T> {
 }
 
 // TODO: maybe simplify using one common trait?
-impl<T: Config> IsAccountBlocked<T::AccountId> for Module<T> {
+impl<T: Config> IsAccountBlocked<T::AccountId> for Pallet<T> {
     fn is_blocked_account(account: T::AccountId, scope: SpaceId) -> bool {
         let entity = EntityId::Account(account);
 
@@ -125,7 +130,7 @@ impl<T: Config> IsAccountBlocked<T::AccountId> for Module<T> {
     }
 }
 
-impl<T: Config> IsSpaceBlocked for Module<T> {
+impl<T: Config> IsSpaceBlocked for Pallet<T> {
     fn is_blocked_space(space_id: SpaceId, scope: SpaceId) -> bool {
         let entity = EntityId::Space(space_id);
 
@@ -139,7 +144,7 @@ impl<T: Config> IsSpaceBlocked for Module<T> {
     }
 }
 
-impl<T: Config> IsPostBlocked<PostId> for Module<T> {
+impl<T: Config> IsPostBlocked<PostId> for Pallet<T> {
     fn is_blocked_post(post_id: PostId, scope: SpaceId) -> bool {
         let entity = EntityId::Post(post_id);
 
@@ -153,7 +158,7 @@ impl<T: Config> IsPostBlocked<PostId> for Module<T> {
     }
 }
 
-impl<T: Config> IsContentBlocked for Module<T> {
+impl<T: Config> IsContentBlocked for Pallet<T> {
     fn is_blocked_content(content: Content, scope: SpaceId) -> bool {
         let entity = EntityId::Content(content);
 

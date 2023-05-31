@@ -48,5 +48,11 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "subsocial-support/std",
+    "pallet-permissions/std",
+    "pallet-posts/std",
+    "pallet-roles/std",
+    "pallet-space-follows/std",
+    "pallet-spaces/std",
+
 ]
 try-runtime = ["frame-support/try-runtime"]
