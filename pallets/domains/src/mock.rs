@@ -327,10 +327,10 @@ impl ExtBuilder {
             .build_storage::<Test>()
             .unwrap();
 
-        let _ = pallet_domains::GenesisConfig::<Test> {
-            initial_prices: self.initial_prices,
-            initial_payment_beneficiary: PAYMENT_BENEFICIARY,
-        }.assimilate_storage(storage);
+        // let _ = pallet_domains::GenesisConfig::<Test> {
+        //     initial_prices: self.initial_prices,
+        //     initial_payment_beneficiary: PAYMENT_BENEFICIARY,
+        // }.assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {

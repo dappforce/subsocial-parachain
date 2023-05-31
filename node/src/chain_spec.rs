@@ -291,7 +291,7 @@ fn parachain_genesis(
 		sudo: subsocial_parachain_runtime::SudoConfig {
 			key: Some(root_key.clone()),
 		},
-		domains: Default::default(),
+		// domains: Default::default(),
 		spaces: subsocial_parachain_runtime::SpacesConfig {
 			endowed_account: Some(root_key),
 		},

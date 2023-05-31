@@ -222,29 +222,29 @@ pub mod pallet {
     pub(super) type PaymentBeneficiary<T: Config> =
         StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
 
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {
-        pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
-        pub initial_payment_beneficiary: T::AccountId,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                initial_prices: T::InitialPrices::get(),
-                initial_payment_beneficiary: T::InitialPaymentBeneficiary::get(),
-            }
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {
-            Pallet::<T>::init_pallet(&self.initial_prices);
-            PaymentBeneficiary::<T>::set(self.initial_payment_beneficiary.clone());
-        }
-    }
+    // // #[pallet::genesis_config]
+    // pub struct GenesisConfig<T: Config> {
+    //     pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
+    //     pub initial_payment_beneficiary: T::AccountId,
+    // }
+    //
+    // #[cfg(feature = "std")]
+    // impl<T: Config> Default for GenesisConfig<T> {
+    //     fn default() -> Self {
+    //         Self {
+    //             initial_prices: T::InitialPrices::get(),
+    //             initial_payment_beneficiary: T::InitialPaymentBeneficiary::get(),
+    //         }
+    //     }
+    // }
+    //
+    // // #[pallet::genesis_build]
+    // impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    //     fn build(&self) {
+    //         Pallet::<T>::init_pallet(&self.initial_prices);
+    //         PaymentBeneficiary::<T>::set(self.initial_payment_beneficiary.clone());
+    //     }
+    // }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -465,7 +465,7 @@ pub mod pallet {
 
         /// Extend the expiration of a domain name.
         #[pallet::call_index(8)]
-        #[pallet::weight(<T as Config>::WeightInfo::force_set_record())]
+        #[pallet::weight(<T as Config>::WeightInfo::extend_domain_expiration())]
         pub fn extend_domain_expiration(
             origin: OriginFor<T>,
             domain: DomainName<T>,
