@@ -265,6 +265,10 @@ pub mod pallet {
             value: Option<DomainRecordValue<T>>,
             deposit: BalanceOf<T>,
         },
+        DomainExpiryExtended {
+            domain: DomainName<T>,
+            until: T::BlockNumber,
+        }
     }
 
     #[pallet::error]
@@ -300,6 +304,8 @@ pub mod pallet {
         CannotCalculatePrice,
         /// There are not enough funds to reserve domain deposit.
         InsufficientBalanceToReserveDeposit,
+        /// Can't extend the expiration of the domain yet.
+        CannotExtendDomainExpiryYet,
     }
 
     #[pallet::call]
@@ -442,7 +448,7 @@ pub mod pallet {
         /// This call must ensure that provided prices configs are sorted by the first element in the tuple.
         #[pallet::call_index(7)]
         #[pallet::weight(
-            T::DbWeight::get().writes(1).ref_time() + (100_000 * new_prices_config.len() as u64 * 2)
+        T::DbWeight::get().writes(1).ref_time() + (100_000 * new_prices_config.len() as u64 * 2)
         )]
         pub fn set_price_config(
             origin: OriginFor<T>,
@@ -454,6 +460,29 @@ pub mod pallet {
             new_prices_config.dedup_by_key(|(length, _)| *length);
 
             PricesConfig::<T>::set(new_prices_config);
+            Ok(())
+        }
+
+        /// Extend the expiration of a domain name.
+        #[pallet::call_index(8)]
+        #[pallet::weight(<T as Config>::WeightInfo::force_set_record())]
+        pub fn extend_domain_expiration(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+        ) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            let domain_lc = Self::lower_domain_then_bound(&domain);
+            let mut meta = Self::require_domain(domain_lc.clone())?;
+            Self::ensure_allowed_to_update_domain(&meta, &caller)?;
+
+            ensure!(System::<T>::block_number() > meta.expires_at - T::TimeBeforeRenewal::get(), Error::<T>::CannotExtendDomainExpiryYet);
+
+            meta.expires_at = meta.expires_at.saturating_add(T::RegistrationPeriod::get());
+            RegisteredDomains::<T>::insert(&domain_lc, meta.clone());
+
+            Self::deposit_event(Event::DomainExpiryExtended { domain: domain_lc, until: meta.expires_at });
+
             Ok(())
         }
     }

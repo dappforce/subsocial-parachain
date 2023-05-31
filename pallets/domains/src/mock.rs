@@ -101,7 +101,7 @@ parameter_types! {
     pub static MaxDomainsPerAccount: u32 = 0;
 
     pub const DomainsInsertLimit: u32 = 2860;
-    pub static ReservationPeriodLimit: BlockNumber = 0;
+    pub static ReservationPeriod: BlockNumber = 0;
     pub static TimeBeforeRenewal: BlockNumber = 0;
     pub const MaxOuterValueLength: u16 = 256;
 
@@ -123,7 +123,7 @@ impl pallet_domains::Config for Test {
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
-    type RegistrationPeriod = ReservationPeriodLimit;
+    type RegistrationPeriod = ReservationPeriod;
     type TimeBeforeRenewal = TimeBeforeRenewal;
     type MaxOuterValueLength = MaxOuterValueLength;
     type MaxRecordKeyLength = MaxRecordKeyLength;
@@ -225,7 +225,8 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
-    pub(crate) reservation_period_limit: BlockNumber,
+    pub(crate) reservation_period: BlockNumber,
+    pub(crate) time_before_renewal: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
     pub(crate) max_record_key_length: u32,
@@ -239,7 +240,8 @@ impl Default for ExtBuilder {
         ExtBuilder {
             min_domain_length: 3,
             max_domains_per_account: 10,
-            reservation_period_limit: 1000,
+            reservation_period: 1000,
+            time_before_renewal: 10,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
             max_record_key_length: 250,
@@ -265,8 +267,13 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
-        self.reservation_period_limit = reservation_period_limit;
+    pub(crate) fn reservation_period(mut self, reservation_period: BlockNumber) -> Self {
+        self.reservation_period = reservation_period;
+        self
+    }
+
+    pub(crate) fn time_before_renewal(mut self, time_before_renewal: BlockNumber) -> Self {
+        self.time_before_renewal = time_before_renewal;
         self
     }
 
@@ -305,7 +312,8 @@ impl ExtBuilder {
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
-        RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+        RESERVATION_PERIOD.with(|x| *x.borrow_mut() = self.reservation_period);
+        TIME_BEFORE_RENEWAL.with(|x| *x.borrow_mut() = self.time_before_renewal);
         INITIAL_PRICES.with(|x| *x.borrow_mut() = self.initial_prices.clone());
         MAX_RECORD_KEY_LENGTH.with(|x| *x.borrow_mut() = self.max_record_key_length);
         MAX_RECORD_VALUE_LENGTH.with(|x| *x.borrow_mut() = self.max_record_value_length);

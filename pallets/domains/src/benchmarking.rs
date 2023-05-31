@@ -5,6 +5,7 @@ use types::*;
 
 use crate::Pallet as Pallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::log::debug;
 use frame_support::{
 	ensure, assert_ok,
 	dispatch::{DispatchError, DispatchErrorWithPostInfo},
@@ -124,6 +125,31 @@ benchmarks! {
 			Event::DomainRegistered { who, domain }.into()
 		);
 	}
+
+	extend_domain_expiration {
+        let who = account_with_balance::<T>();
+        let owner_origin = RawOrigin::Signed(who.clone());
+
+		let block_number_1: T::BlockNumber = frame_system::Pallet::<T>::block_number();
+
+        let full_domain = add_domain::<T>(&who)?;
+
+		let domain_old_expires_at: T::BlockNumber = T::RegistrationPeriod::get() + block_number_1;
+
+		let new_block_number = domain_old_expires_at - T::TimeBeforeRenewal::get() + 1u32.into();
+		frame_system::Pallet::<T>::set_block_number(new_block_number);
+
+		let domain_new_expires_at: T::BlockNumber = domain_old_expires_at + T::RegistrationPeriod::get();
+    }: _(owner_origin, full_domain.clone())
+    verify {
+        let full_domain = Pallet::<T>::lower_domain_then_bound(&full_domain);
+        assert_last_event::<T>(
+            Event::DomainExpiryExtended {
+				domain: full_domain.clone(),
+				until: domain_new_expires_at,
+			}.into(),
+        );
+    }
 
     set_record {
         let who = account_with_balance::<T>();

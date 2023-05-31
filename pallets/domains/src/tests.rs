@@ -42,7 +42,7 @@ fn register_domain_should_work() {
                 DomainMeta {
                     created: new_who_and_when::<Test>(DOMAIN_OWNER),
                     updated: None,
-                    expires_at: ExtBuilder::default().reservation_period_limit + 1,
+                    expires_at: ExtBuilder::default().reservation_period + 1,
                     owner: DOMAIN_OWNER,
                     content: Content::None,
                     inner_value: None,
@@ -66,7 +66,7 @@ fn register_domain_should_work_for_expired_domains() {
 
     ExtBuilder::default()
         .base_domain_deposit(LOCAL_DOMAIN_DEPOSIT)
-        .reservation_period_limit(100)
+        .reservation_period(100)
         .build()
         .execute_with(|| {
             let previous_owner = account_with_balance(12, BalanceOf::<Test>::max_value());
