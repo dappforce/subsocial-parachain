@@ -35,12 +35,11 @@ use pallet_spaces::Module as Spaces;
 pub use pallet::*;
 
 
-// // TODO: move all tests to df-integration-tests
-// #[cfg(test)]
-// mod mock;
-//
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
 
 pub mod functions;
 

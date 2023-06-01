@@ -5701,6 +5701,7 @@ dependencies = [
  "pallet-roles",
  "pallet-space-follows",
  "pallet-spaces",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
