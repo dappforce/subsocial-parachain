@@ -12,7 +12,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update &&
+          sudo apt-get install build-essential git clang curl libssl-dev protobuf-compiler wget unzip -y
 
       - name: Get rustc version from file
         run: |
@@ -20,26 +25,21 @@ jobs:
 
       # Steps taken from https://github.com/actions/cache/blob/master/examples.md#rust---cargo
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
           toolchain: ${{ env.rustc_version }}
           components: rustfmt
           target: wasm32-unknown-unknown
-          override: true
-          default: true
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
 
       - name: Check Code
         run: cargo check --release
