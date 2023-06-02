@@ -22,7 +22,7 @@ fn update_space_should_fail_when_content_is_blocked() {
     ExtBuilder::build_with_space().execute_with(|| {
         block_content_in_space_1();
         assert_noop!(
-            _update_space(None, None, Some(space_update(Some(valid_content_ipfs()), None))),
+            _update_space(None, None, Some(space_update(Some(valid_content_ipfs())))),
             ModerationError::ContentIsBlocked,
         );
     });
@@ -100,13 +100,12 @@ fn update_space_should_work() {
         assert_ok!(_update_space(
             None, // From ACCOUNT1 (has permission as he's an owner)
             None,
-            Some(space_update(Some(expected_content_ipfs.clone()), Some(true),))
+            Some(space_update(Some(expected_content_ipfs.clone())))
         ));
 
         // Check whether space updates correctly
         let space = Spaces::space_by_id(SPACE1).unwrap();
         assert_eq!(space.content, expected_content_ipfs);
-        assert!(space.hidden);
     });
 }
 
@@ -114,7 +113,7 @@ fn update_space_should_work() {
 fn update_space_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
-            let space_update = space_update(Some(updated_space_content()), Some(true));
+            let space_update = space_update(Some(updated_space_content()),);
 
             assert_ok!(_update_space(
                 Some(RuntimeOrigin::signed(ACCOUNT2)),
@@ -168,7 +167,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
     ExtBuilder::build_with_space().execute_with(|| {
         // Try to catch an error updating a space with invalid content
         assert_noop!(
-            _update_space(None, None, Some(space_update(Some(invalid_content_ipfs()), None,))),
+            _update_space(None, None, Some(space_update(Some(invalid_content_ipfs()),))),
             ContentError::InvalidIpfsCid,
         );
     });
@@ -178,7 +177,7 @@ fn update_space_should_fail_when_ipfs_cid_is_invalid() {
 fn update_space_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateSpace]).execute_with(
         || {
-            let space_update = space_update(Some(updated_space_content()), Some(true));
+            let space_update = space_update(Some(updated_space_content()),);
 
             assert_ok!(_delete_default_role());
 

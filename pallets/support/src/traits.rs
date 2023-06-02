@@ -1,5 +1,5 @@
 pub use common::{
-    ProfileManager, SpaceFollowsProvider, SpacePermissionsProvider, SpacesInterface, PostFollowsProvider,
+    ProfileManager, SpaceFollowsProvider, SpacePermissionsProvider, SpacesInterface, HideSpace, PostFollowsProvider,
 };
 pub use moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
 

@@ -26,8 +26,12 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId);
 }
 
-pub trait SpacesInterface<AccountId, SpaceId> {
+pub trait SpacesInterface<AccountId, SpaceId>: HideSpace<AccountId, SpaceId> {
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
+}
+
+pub trait HideSpace<AccountId, SpaceId> {
+    fn hide_space(caller: Option<AccountId>, space_id: SpaceId, hidden: bool) -> DispatchResult;
 }

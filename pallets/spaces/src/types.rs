@@ -38,7 +38,6 @@ pub struct Space<T: Config> {
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct SpaceUpdate {
     pub content: Option<Content>,
-    pub hidden: Option<bool>,
     pub permissions: Option<Option<SpacePermissions>>,
 }
 

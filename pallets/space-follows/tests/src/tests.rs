@@ -33,7 +33,11 @@ fn follow_space_should_fail_when_account_is_already_space_follower() {
 #[test]
 fn follow_space_should_fail_when_trying_to_follow_hidden_space() {
     ExtBuilder::build_with_space().execute_with(|| {
-        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
+        assert_ok!(Spaces::hide_space(
+            RuntimeOrigin::signed(ACCOUNT1),
+            SPACE1,
+            true,
+        ));
 
         assert_noop!(_default_follow_space(), SpaceFollowsError::<Test>::CannotFollowHiddenSpace);
     });

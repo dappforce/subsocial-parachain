@@ -100,8 +100,8 @@ pub(crate) fn another_space_content_ipfs() -> Content {
     Content::IPFS(b"bafyrelt3cif35x4ribisxgq7unhpun525l54eib3mgbou4xln42qqcgj6q".to_vec())
 }
 
-pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
-    SpaceUpdate { content, hidden, permissions: None }
+pub(crate) fn space_update(content: Option<Content>) -> SpaceUpdate {
+    SpaceUpdate { content, permissions: None }
 }
 
 pub(crate) fn _create_default_space() -> DispatchResult {
@@ -132,7 +132,7 @@ pub(crate) fn _update_space(
     Spaces::update_space(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
-        update.unwrap_or_else(|| space_update(None, None)),
+        update.unwrap_or_else(|| space_update(None)),
     )
 }
 

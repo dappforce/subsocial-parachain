@@ -96,10 +96,10 @@ fn create_comment_should_fail_when_ipfs_cid_is_invalid() {
 #[test]
 fn create_comment_should_fail_when_trying_to_create_in_hidden_space_scope() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_update_space(
-            None,
-            None,
-            Some(space_update(None, Some(true)))
+        assert_ok!(Spaces::hide_space(
+            RuntimeOrigin::signed(ACCOUNT1),
+            SPACE1,
+            true,
         ));
 
         assert_noop!(
