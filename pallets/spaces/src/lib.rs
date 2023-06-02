@@ -303,6 +303,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(4)]
+        // TODO fix weight
         #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
         pub fn hide_space(
             origin: OriginFor<T>,
