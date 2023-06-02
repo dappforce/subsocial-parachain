@@ -2,6 +2,7 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::Saturating;
 
 use subsocial_support::{remove_from_vec, SpaceId};
+use subsocial_support::traits::HidePost;
 
 use super::*;
 
@@ -334,4 +335,36 @@ impl<T: Config> Pallet<T> {
 
         Ok(())
     }
+
+    pub fn do_hide_post(
+        caller: Option<T::AccountId>,
+        post_id: PostId,
+        hidden: bool,
+    ) -> DispatchResult {
+        let mut post = Self::require_post(post_id)?;
+
+        if let (Some(caller), Some(space)) = (caller, &post.try_get_space()) {
+            ensure!(
+                T::IsAccountBlocked::is_allowed_account(caller.clone(), space.id),
+                ModerationError::AccountIsBlocked
+            );
+            Self::ensure_account_can_update_post(&caller, &post, space)?;
+        }
+
+        if hidden != post.hidden {
+            post.hidden = hidden;
+
+            <PostById<T>>::insert(post.id, post);
+            Self::deposit_event(Event::PostHiddenChanged { hidden, post_id });
+        }
+
+        Ok(())
+    }
+}
+
+impl<T: Config> HidePost<T::AccountId, SpaceId> for Pallet<T> {
+    fn hide_post(caller: Option<T::AccountId>, post_id: PostId, hidden: bool) -> DispatchResult {
+        Self::do_hide_post(caller, post_id, hidden)
+    }
+
 }

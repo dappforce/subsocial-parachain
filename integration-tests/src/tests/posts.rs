@@ -44,7 +44,7 @@ fn update_post_should_fail_when_content_is_blocked() {
             _update_post(
                 None, // From ACCOUNT1 (has default permission to UpdateOwnPosts)
                 None,
-                Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
+                Some(post_update(None, Some(valid_content_ipfs())))
             ),
             ModerationError::ContentIsBlocked,
         );
@@ -59,7 +59,7 @@ fn update_post_should_fail_when_account_is_blocked() {
             _update_post(
                 None, // From ACCOUNT1 (has default permission to UpdateOwnPosts)
                 None,
-                Some(post_update(None, Some(valid_content_ipfs()), Some(true)))
+                Some(post_update(None, Some(valid_content_ipfs())))
             ),
             ModerationError::AccountIsBlocked,
         );
@@ -208,7 +208,6 @@ fn update_post_should_work() {
             Some(post_update(
                 None,
                 Some(expected_content_ipfs.clone()),
-                Some(true)
             ))
         ));
 
@@ -216,7 +215,6 @@ fn update_post_should_work() {
         let post = Posts::post_by_id(POST1).unwrap();
         assert_eq!(post.space_id, Some(SPACE1));
         assert_eq!(post.content, expected_content_ipfs);
-        assert!(post.hidden);
     });
 }
 
@@ -283,10 +281,10 @@ fn move_hidden_post_should_work() {
         let expected_new_space_id = SPACE2;
 
         // Hide the post before moving it
-        assert_ok!(_update_post(
-            None,
-            Some(moved_post_id),
-            Some(post_update(None, None, Some(true)))
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            moved_post_id,
+            true,
         ));
 
         assert_ok!(_move_post_1_to_space_2());
@@ -382,7 +380,7 @@ fn should_fail_when_trying_to_move_comment() {
 #[test]
 fn update_post_should_work_after_transfer_space_ownership() {
     ExtBuilder::build_with_post().execute_with(|| {
-        let post_update = post_update(None, Some(updated_post_content()), Some(true));
+        let post_update = post_update(None, Some(updated_post_content()));
 
         assert_ok!(_transfer_default_space_ownership());
 
@@ -395,7 +393,7 @@ fn update_post_should_work_after_transfer_space_ownership() {
 fn update_any_post_should_work_when_account_has_default_permission() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::CreatePosts]).execute_with(
         || {
-            let post_update = post_update(None, Some(updated_post_content()), Some(true));
+            let post_update = post_update(None, Some(updated_post_content()));
             assert_ok!(_create_post(
                 Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // SpaceId 1
@@ -417,7 +415,7 @@ fn update_any_post_should_work_when_account_has_default_permission() {
 fn update_any_post_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateAnyPost]).execute_with(
         || {
-            let post_update = post_update(None, Some(updated_post_content()), Some(true));
+            let post_update = post_update(None, Some(updated_post_content()));
             assert_ok!(_create_default_post()); // PostId 1
 
             // Post update with ID 1 should be fine
@@ -458,8 +456,7 @@ fn update_post_should_fail_when_post_not_found() {
                 Some(post_update(
                     // FIXME: when Post's `space_id` update is fully implemented
                     None, /*Some(SPACE2)*/
-                    None,
-                    Some(true) /*None*/
+                    valid_content_ipfs().into(),
                 ))
             ),
             PostsError::<TestRuntime>::PostNotFound
@@ -484,8 +481,7 @@ fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
                 Some(post_update(
                     // FIXME: when Post's `space_id` update is fully implemented
                     None, /*Some(SPACE2)*/
-                    None,
-                    Some(true) /*None*/
+                    valid_content_ipfs().into(),
                 ))
             ),
             PostsError::<TestRuntime>::NoPermissionToUpdateAnyPost
@@ -501,7 +497,7 @@ fn update_post_should_fail_when_ipfs_cid_is_invalid() {
             _update_post(
                 None,
                 None,
-                Some(post_update(None, Some(invalid_content_ipfs()), None))
+                Some(post_update(None, Some(invalid_content_ipfs())))
             ),
             ContentError::InvalidIpfsCid,
         );
@@ -512,7 +508,7 @@ fn update_post_should_fail_when_ipfs_cid_is_invalid() {
 fn update_post_should_fail_when_no_right_permission_in_account_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::UpdateAnyPost]).execute_with(
         || {
-            let post_update = post_update(None, Some(updated_post_content()), Some(true));
+            let post_update = post_update(None, Some(updated_post_content()));
             assert_ok!(_create_default_post());
             // PostId 1
             assert_ok!(_delete_default_role());

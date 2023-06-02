@@ -145,9 +145,8 @@ pub(crate) fn post_content_ipfs() -> Content {
 pub(crate) fn post_update(
     space_id: Option<SpaceId>,
     content: Option<Content>,
-    hidden: Option<bool>,
 ) -> PostUpdate {
-    PostUpdate { space_id, content, hidden }
+    PostUpdate { space_id, content }
 }
 
 pub(crate) fn extension_regular_post() -> PostExtension {
@@ -180,7 +179,7 @@ pub(crate) fn _update_post(
     Posts::update_post(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
-        update.unwrap_or_else(|| post_update(None, None, None)),
+        update.unwrap_or_else(|| post_update(None, None)),
     )
 }
 

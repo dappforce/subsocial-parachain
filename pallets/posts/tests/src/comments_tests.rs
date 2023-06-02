@@ -102,7 +102,11 @@ fn create_comment_should_fail_when_trying_to_create_in_hidden_space_scope() {
 #[test]
 fn create_comment_should_fail_when_trying_create_in_hidden_post_scope() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_update_post(None, None, Some(post_update(None, None, Some(true)))));
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            POST1,
+            true,
+        ));
 
         assert_noop!(_create_default_comment(), PostsError::<Test>::CannotCreateInHiddenScope);
     });
@@ -157,8 +161,7 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             Some(should_hide_id),
             Some(post_update(
                 None,
-                None,
-                Some(true) // make comment hidden
+                another_valid_content_ipfs().into(),
             ))
         ));
 
@@ -205,7 +208,7 @@ fn update_comment_should_fail_when_ipfs_cid_is_invalid() {
             _update_comment(
                 None,
                 None,
-                Some(post_update(None, Some(invalid_content_ipfs()), None))
+                Some(post_update(None, Some(invalid_content_ipfs())))
             ),
             DispatchError::from(ContentError::InvalidIpfsCid)
         );

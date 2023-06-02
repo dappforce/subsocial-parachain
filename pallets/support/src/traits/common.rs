@@ -35,3 +35,7 @@ pub trait SpacesInterface<AccountId, SpaceId>: HideSpace<AccountId, SpaceId> {
 pub trait HideSpace<AccountId, SpaceId> {
     fn hide_space(caller: Option<AccountId>, space_id: SpaceId, hidden: bool) -> DispatchResult;
 }
+
+pub trait HidePost<AccountId, PostId> {
+    fn hide_post(caller: Option<AccountId>, post_id: PostId, hidden: bool) -> DispatchResult;
+}

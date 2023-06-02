@@ -103,10 +103,10 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
 fn create_post_reaction_should_fail_when_trying_to_react_on_hidden_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Hide the post
-        assert_ok!(_update_post(
-            None,
-            None,
-            Some(post_update(None, None, Some(true)))
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            POST1,
+            true,
         ));
 
         assert_noop!(
