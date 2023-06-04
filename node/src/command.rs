@@ -28,6 +28,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"staging" => Box::new(chain_spec::staging_testnet_config()),
 		"subsocialx" => Box::new(chain_spec::subsocialx_config()?),
 		"soonsocial" => Box::new(chain_spec::soonsocial_config()?),
+		"soonsocialm" => Box::new(chain_spec::soonsocialm_config()?),
 		"" => Box::new(chain_spec::subsocial_config()?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})

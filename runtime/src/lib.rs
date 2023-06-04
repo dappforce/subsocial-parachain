@@ -162,8 +162,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("soonsocial-parachain"),
-	impl_name: create_runtime_str!("soonsocial-parachain"),
+	spec_name: create_runtime_str!("soonsocialm-parachain"),
+	impl_name: create_runtime_str!("soonsocialm-parachain"),
 	authoring_version: 1,
 	spec_version: 2300,
 	impl_version: 0,

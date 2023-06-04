@@ -184,6 +184,10 @@ pub fn soonsocial_config() -> Result<ChainSpec, String> {
 	ChainSpec::from_json_bytes(&include_bytes!("../res/soonsocial.json")[..])
 }
 
+pub fn soonsocialm_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/soonsocialm.json")[..])
+}
+
 pub fn staging_testnet_config() -> ChainSpec {
 	ChainSpec::from_genesis(
 		"SoonSocial",
