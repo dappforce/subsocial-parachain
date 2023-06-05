@@ -165,7 +165,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocialm-parachain"),
 	impl_name: create_runtime_str!("soonsocialm-parachain"),
 	authoring_version: 1,
-	spec_version: 2300,
+	spec_version: 2301,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -757,7 +757,7 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
+		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
