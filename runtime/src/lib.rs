@@ -166,7 +166,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 20,
+	spec_version: 25,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -576,13 +576,19 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	}
 }
 
+impl pallet_free_proxy::Config for Runtime {
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type WeightInfo = pallet_free_proxy::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_proxy::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ProxyType;
-	type ProxyDepositBase = ProxyDepositBase;
-	type ProxyDepositFactor = ProxyDepositFactor;
+	type ProxyDepositBase = pallet_free_proxy::AdjustedProxyDepositBase<Runtime>;
+	type ProxyDepositFactor = pallet_free_proxy::AdjustedProxyDepositFactor<Runtime>;
 	type MaxProxies = MaxProxies;
 	type WeightInfo = ();
 	type MaxPending = MaxPending;
@@ -754,13 +760,14 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
+		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Subsocial Pallets
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
+		FreeProxy: pallet_free_proxy = 62,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -801,7 +808,8 @@ mod benches {
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
-    [pallet_posts, Posts]
+		[pallet_posts, Posts]
+		[pallet_free_proxy, FreeProxy]
 	);
 }
 

@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
+use sc_chain_spec::{ChainSpecExtension, Properties};
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
@@ -30,13 +30,15 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 }
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
 	/// The relay chain of the Parachain.
 	pub relay_chain: String,
 	/// The id of the Parachain.
 	pub para_id: u32,
+	/// Known bad block hashes.
+	pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::v2::Block>,
 }
 
 impl Extensions {
@@ -106,6 +108,7 @@ pub fn development_config() -> ChainSpec {
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
@@ -156,6 +159,7 @@ pub fn local_testnet_config(relay_chain: String) -> ChainSpec {
 		Extensions {
 			relay_chain,
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
@@ -168,8 +172,12 @@ pub fn kusama_local_testnet_config() -> ChainSpec {
 	local_testnet_config("kusama-local".into())
 }
 
+pub fn subsocialx_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-kusama.json")[..])
+}
+
 pub fn subsocial_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-polkadot.json")[..])
 }
 
 pub fn staging_testnet_config() -> ChainSpec {
@@ -237,8 +245,9 @@ pub fn staging_testnet_config() -> ChainSpec {
 		None,
 		Some(subsocial_properties()),
 		Extensions {
-			relay_chain: "kusama".into(),
+			relay_chain: "polkadot".into(),
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
