@@ -206,12 +206,13 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
-            beneficiary: Option<<T::Lookup as StaticLookup>::Source>,
+            beneficiary_opt: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let owner = ensure_signed(origin)?;
-            let recipient = beneficiary.map_or(owner, |b| T::Lookup::lookup(b)?);
+            let recipient = beneficiary_opt
+                .map_or(Ok(owner), |beneficiary| T::Lookup::lookup(beneficiary) )?;
 
             Self::do_register_domain(recipient, full_domain, expires_in, IsForced::No)
         }
