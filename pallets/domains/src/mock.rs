@@ -2,6 +2,7 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
+use frame_support::dispatch::DispatchResultWithPostInfo;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -160,15 +161,15 @@ pub(crate) fn default_domain_lc() -> DomainName<Test> {
     Domains::lower_domain_then_bound(&default_domain())
 }
 
-pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResultWithPostInfo {
     _force_register_domain(Some(origin), None, None, None)
 }
 
-pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResultWithPostInfo {
     _force_register_domain(None, None, None, Some(expires_in))
 }
 
-pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResultWithPostInfo {
     _force_register_domain(None, None, Some(domain_name), None)
 }
 
@@ -177,7 +178,7 @@ fn _force_register_domain(
     owner: Option<AccountId>,
     domain: Option<DomainName<Test>>,
     expires_in: Option<BlockNumber>,
-) -> DispatchResult {
+) -> DispatchResultWithPostInfo {
     Domains::force_register_domain(
         origin.unwrap_or_else(RuntimeOrigin::root),
         owner.unwrap_or(DOMAIN_OWNER),

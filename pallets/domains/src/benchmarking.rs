@@ -7,7 +7,7 @@ use crate::Pallet as Pallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure, assert_ok,
-	dispatch::{DispatchError, DispatchErrorWithPostInfo},
+	dispatch::DispatchErrorWithPostInfo,
 	traits::{Currency, Get},
 };
 use frame_system::RawOrigin;
@@ -78,7 +78,7 @@ fn mock_domain<T: Config>() -> DomainName<T> {
 	}).unwrap()
 }
 
-fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, DispatchError> {
+fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, DispatchErrorWithPostInfo> {
 	add_default_tld::<T>().map_err(|e| e.error)?;
 	let domain = mock_domain::<T>();
 	let expires_in = T::RegistrationPeriodLimit::get();
@@ -143,10 +143,9 @@ benchmarks! {
 				domain: full_domain.clone(),
 				key: key.clone(),
 				value: Some(value.clone()),
-				deposit: 0u32.into(),
 			}.into(),
         );
-        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
+        let found_value = RecordsByDomain::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
         assert_eq!(found_value, Some(value.clone()));
         ensure!(found_value == Some(value), "Value isn't correct");
     }
@@ -167,10 +166,9 @@ benchmarks! {
 				domain: full_domain.clone(),
 				key: key.clone(),
 				value: Some(value.clone()),
-				deposit: 0u32.into(),
 			}.into(),
         );
-        let found_value = DomainRecords::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
+        let found_value = RecordsByDomain::<T>::get(full_domain, key).map(|val_with_deposit| val_with_deposit.record_value);
         assert_eq!(found_value, Some(value.clone()));
         ensure!(found_value == Some(value), "Value isn't correct");
     }

@@ -358,7 +358,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TransactionByteFee: Balance = MILLIUNIT / 10;
+	pub const CommonPerByteFee: Balance = MILLIUNIT / 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -366,7 +366,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
-	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+	type LengthToFee = ConstantMultiplier<Balance, CommonPerByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
@@ -635,7 +635,7 @@ impl pallet_domains::Config for Runtime {
 	type MaxRecordKeyLength = ConstU32<256>;
 	type MaxRecordValueLength = ConstU32<4096>;
 	type BaseDomainDeposit = BaseDomainDeposit;
-	type RecordByteDeposit = TransactionByteFee;
+	type RecordByteDeposit = CommonPerByteFee;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 

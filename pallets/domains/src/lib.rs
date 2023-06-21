@@ -24,7 +24,7 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchClass, pallet_prelude::*, traits::ReservableCurrency};
     use frame_system::{pallet_prelude::*, Pallet as System};
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
-    use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
+    use sp_std::{convert::TryInto, vec::Vec};
 
     use types::*;
 
@@ -98,8 +98,8 @@ pub mod pallet {
 
     /// Records associated per domain.
     #[pallet::storage]
-    #[pallet::getter(fn domain_record)]
-    pub(super) type DomainRecords<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn record_by_domain)]
+    pub(super) type RecordsByDomain<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         DomainName<T>,
@@ -161,7 +161,6 @@ pub mod pallet {
             domain: DomainName<T>,
             key: DomainRecordKey<T>,
             value: Option<DomainRecordValue<T>>,
-            deposit: BalanceOf<T>,
         },
     }
 
@@ -226,11 +225,13 @@ pub mod pallet {
             recipient: <T::Lookup as StaticLookup>::Source,
             full_domain: DomainName<T>,
             expires_in: T::BlockNumber,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             let recipient = T::Lookup::lookup(recipient)?;
 
-            Self::do_register_domain(recipient, full_domain, expires_in, IsForced::Yes)
+            Self::do_register_domain(recipient, full_domain, expires_in, IsForced::Yes)?;
+
+            Ok(Pays::No.into())
         }
 
         /// Change the record associated with a domain name.
@@ -252,9 +253,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            Self::do_set_record(domain, key, value_opt, Some(sender))?;
-
-            Ok(())
+            Self::do_set_record(domain, key, value_opt, Some(sender))
         }
 
         #[pallet::call_index(3)]
@@ -399,10 +398,9 @@ pub mod pallet {
                 Self::ensure_allowed_to_update_domain(&meta, &should_be_owner)?;
             }
 
-            let current_record = DomainRecords::<T>::get(domain_lc.clone(), key.clone());
-
-            let (old_depositor, old_deposit) =
-                current_record.map_or((owner.clone(), 0u32.into()), |r| (r.depositor, r.deposit));
+            let current_record = RecordsByDomain::<T>::get(domain_lc.clone(), key.clone());
+            let (old_depositor, old_deposit) = current_record
+                .map_or((owner.clone(), 0u32.into()), |r| (r.depositor, r.deposit));
 
             let new_deposit = should_reserve_deposit
                 .then(|| Self::calc_record_deposit(key.clone(), value_opt.clone()))
@@ -410,7 +408,7 @@ pub mod pallet {
 
             Self::try_reserve_deposit(&old_depositor, old_deposit, &owner, new_deposit)?;
 
-            DomainRecords::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
+            RecordsByDomain::<T>::mutate_exists(domain_lc.clone(), key.clone(), |current_opt| {
                 *current_opt = value_opt.clone().map(|value| RecordValueWithDepositInfo::<T> {
                     record_value: value,
                     depositor: owner.clone(),
@@ -423,8 +421,8 @@ pub mod pallet {
                 domain: domain_lc,
                 key,
                 value: value_opt,
-                deposit: new_deposit,
             });
+
             Ok(())
         }
 
@@ -535,7 +533,7 @@ pub mod pallet {
 
         /// Try to get domain meta by it's custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
-            Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
+            Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -576,12 +574,11 @@ pub mod pallet {
             };
 
             if !balance_to_reserve.is_zero() {
-                <T as Config>::Currency::reserve(new_depositor, balance_to_reserve)?;
+                T::Currency::reserve(new_depositor, balance_to_reserve)?;
             }
 
             if !balance_to_unreserve.is_zero() {
-                let err_amount =
-                    <T as Config>::Currency::unreserve(old_depositor, balance_to_unreserve);
+                let err_amount = T::Currency::unreserve(old_depositor, balance_to_unreserve);
                 debug_assert!(err_amount.is_zero());
             }
 
