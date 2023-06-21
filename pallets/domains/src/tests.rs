@@ -112,6 +112,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
         assert_noop!(
             Domains::register_domain(
                 RuntimeOrigin::signed(DOMAIN_OWNER),
+                None,
                 domain_from(b"second-domain".to_vec()),
                 ExtBuilder::default().reservation_period_limit,
             ),
@@ -164,6 +165,7 @@ fn register_domain_should_fail_when_domain_reserved() {
         assert_noop!(
             Domains::register_domain(
                 RuntimeOrigin::signed(DOMAIN_OWNER),
+                None,
                 domain,
                 ExtBuilder::default().reservation_period_limit,
             ),

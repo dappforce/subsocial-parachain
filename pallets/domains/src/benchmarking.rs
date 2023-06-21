@@ -101,7 +101,7 @@ benchmarks! {
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(who.clone()), domain.clone(), expires_in)
+	}: _(RawOrigin::Signed(who.clone()), None, domain.clone(), expires_in)
 	verify {
 		assert_last_event::<T>(
 			Event::DomainRegistered { who, domain }.into()

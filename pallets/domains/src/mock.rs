@@ -198,6 +198,7 @@ fn _register_domain(
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
+        None,
         domain.unwrap_or_else(default_domain),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
     )
