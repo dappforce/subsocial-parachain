@@ -64,6 +64,7 @@ pub mod pallet {
 
         /// The maximum length of the domain's outer value.
         #[pallet::constant]
+        #[deprecated]
         type MaxOuterValueLength: Get<u32>;
 
         /// The maximum length of the domain's record key.

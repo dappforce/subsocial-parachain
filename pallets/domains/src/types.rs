@@ -80,6 +80,7 @@ pub struct DomainMeta<T: Config> {
 
     /// The amount was held as a deposit for storing this structure.
     pub(super) domain_deposit: BalanceOf<T>,
+    #[deprecated]
     /// The amount was held as a deposit for storing outer value.
     pub(super) outer_value_deposit: BalanceOf<T>,
 }
