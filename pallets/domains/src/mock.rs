@@ -228,12 +228,14 @@ pub(crate) fn _register_default_domain() -> DispatchResult {
 
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
+    // beneficiary: Option<AccountId>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
+        None,
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),

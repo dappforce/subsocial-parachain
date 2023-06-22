@@ -28,7 +28,7 @@ fn register_domain_should_work() {
 
             assert_ok!(_register_default_domain());
 
-            assert_eq!(Domains::domains_by_owner(&owner), vec![expected_domain_lc.clone()]);
+            assert_eq!(Domains::domains_by_owner(owner), vec![expected_domain_lc.clone()]);
 
             let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
             assert_eq!(domain_meta, DomainMeta {
@@ -39,7 +39,7 @@ fn register_domain_should_work() {
                 content: valid_content_ipfs(),
                 inner_value: None,
                 outer_value: None,
-                domain_deposit: LOCAL_DOMAIN_DEPOSIT,
+                domain_deposit: (DOMAIN_OWNER, LOCAL_DOMAIN_DEPOSIT).into(),
                 outer_value_deposit: Zero::zero()
             });
 
@@ -109,6 +109,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
             assert_noop!(
                 Domains::register_domain(
                     RuntimeOrigin::signed(DOMAIN_OWNER),
+                    None,
                     domain_from(b"second-domain".to_vec()),
                     valid_content_ipfs(),
                     ExtBuilder::default().reservation_period_limit,
@@ -165,6 +166,7 @@ fn register_domain_should_fail_when_domain_reserved() {
         assert_noop!(
             Domains::register_domain(
                 RuntimeOrigin::signed(DOMAIN_OWNER),
+                None,
                 domain,
                 valid_content_ipfs(),
                 ExtBuilder::default().reservation_period_limit,
@@ -191,7 +193,7 @@ fn set_inner_value_should_work() {
         assert_eq!(expected_value, result_value);
 
         assert_eq!(
-            DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &expected_value.unwrap()),
+            DomainByInnerValue::<Test>::get(DOMAIN_OWNER, expected_value.unwrap()),
             Some(default_domain_lc()),
         );
 
@@ -212,10 +214,10 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .build()
         .execute_with(|| {
             assert_ok!(Domains::register_domain(
-                origin_a(), domain_one.clone(), valid_content_ipfs(), 1
+                origin_a(), None, domain_one.clone(), valid_content_ipfs(), 1
             ));
             assert_ok!(Domains::register_domain(
-                origin_b(), domain_two.clone(), valid_content_ipfs(), 1
+                origin_b(), None, domain_two.clone(), valid_content_ipfs(), 1
             ));
 
             assert_ok!(Domains::set_inner_value(
@@ -261,7 +263,7 @@ fn set_inner_value_should_work_when_value_changes() {
             Some(new_value.clone()),
         ));
 
-        assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &initial_value), None);
+        assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, initial_value), None);
         assert_eq!(DomainByInnerValue::<Test>::get(DOMAIN_OWNER, &new_value), Some(default_domain_lc()));
 
         assert_eq!(Some(new_value), get_inner_value(&domain_lc));
