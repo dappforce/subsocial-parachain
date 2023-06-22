@@ -575,7 +575,8 @@ pub mod pallet {
         ) -> DispatchResult {
             let DomainMeta { owner, expires_at, .. } = domain_meta;
 
-            ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
+            // FIXME: this is hotfix, handle expired domains correctly!
+            // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
             ensure!(sender == owner, Error::<T>::NotDomainOwner);
             Ok(())
         }
