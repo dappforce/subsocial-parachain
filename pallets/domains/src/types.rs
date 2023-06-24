@@ -15,8 +15,9 @@ pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
+/// A domain deposit information wrapped into Option to use in this pallet.
 pub(crate) type DomainDepositOf<T> =
-    DomainDeposit<<T as frame_system::Config>::AccountId, BalanceOf<T>>;
+    Option<DomainDeposit<<T as frame_system::Config>::AccountId, BalanceOf<T>>>;
 
 /// Domains inner value variants
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -27,11 +28,12 @@ pub enum InnerValue<AccountId> {
 }
 
 #[derive(Clone, PartialEq)]
-pub(super) enum CallerAccount<AccountId> {
-    ForceOrigin,
-    Account(AccountId),
+pub(super) enum Registrant<AccountId> {
+    Root,
+    RegularAccount(AccountId),
 }
 
+/// A domain deposit info.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct DomainDeposit<AccountId, Balance> {
     pub(super) depositor: AccountId,

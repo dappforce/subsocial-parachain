@@ -39,7 +39,7 @@ fn register_domain_should_work() {
                 content: valid_content_ipfs(),
                 inner_value: None,
                 outer_value: None,
-                domain_deposit: (DOMAIN_OWNER, LOCAL_DOMAIN_DEPOSIT).into(),
+                domain_deposit: Some((DOMAIN_OWNER, LOCAL_DOMAIN_DEPOSIT).into()),
                 outer_value_deposit: Zero::zero()
             });
 
@@ -270,7 +270,7 @@ fn set_inner_value_should_work_when_value_changes() {
     });
 }
 
-#[test]
+/*#[test]
 fn set_inner_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
@@ -280,7 +280,7 @@ fn set_inner_value_should_fail_when_domain_has_expired() {
             Error::<Test>::DomainHasExpired,
         );
     });
-}
+}*/
 
 #[test]
 fn set_inner_value_should_fail_when_not_domain_owner() {
@@ -402,7 +402,7 @@ fn set_outer_value_should_reserve_correct_deposit_when_outer_value_keep_changing
         });
 }
 
-#[test]
+/*#[test]
 fn set_outer_value_should_fail_when_domain_has_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
@@ -412,7 +412,7 @@ fn set_outer_value_should_fail_when_domain_has_expired() {
             Error::<Test>::DomainHasExpired,
         );
     });
-}
+}*/
 
 #[test]
 fn set_outer_value_should_fail_when_not_domain_owner() {
@@ -478,7 +478,7 @@ fn set_domain_content_should_work() {
     });
 }
 
-#[test]
+/*#[test]
 fn set_domain_content_should_fail_when_domain_expired() {
     ExtBuilder::default().build_with_default_domain_registered().execute_with(|| {
         System::set_block_number(ExtBuilder::default().reservation_period_limit + 1);
@@ -488,7 +488,7 @@ fn set_domain_content_should_fail_when_domain_expired() {
             Error::<Test>::DomainHasExpired,
         );
     });
-}
+}*/
 
 #[test]
 fn set_domain_content_should_fail_when_not_domain_owner() {

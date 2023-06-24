@@ -197,7 +197,7 @@ pub mod pallet {
             let owner = beneficiary
                 .map_or(Ok(caller.clone()), T::Lookup::lookup)?;
 
-            Self::do_register_domain(CallerAccount::Account(caller), owner, full_domain, content, expires_in)
+            Self::do_register_domain(Registrant::RegularAccount(caller), owner, full_domain, content, expires_in)
         }
 
         /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
@@ -217,7 +217,7 @@ pub mod pallet {
             ensure_root(origin)?;
             let owner = T::Lookup::lookup(target)?;
 
-            Self::do_register_domain(CallerAccount::ForceOrigin, owner, full_domain, content, expires_in)
+            Self::do_register_domain(Registrant::Root, owner, full_domain, content, expires_in)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
@@ -366,7 +366,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         fn do_register_domain(
-            caller: CallerAccount<T::AccountId>,
+            caller: Registrant<T::AccountId>,
             owner: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
@@ -399,7 +399,7 @@ pub mod pallet {
 
             let domains_per_account = Self::domains_by_owner(&owner).len();
 
-            if caller != CallerAccount::ForceOrigin {
+            if caller != Registrant::Root {
                 ensure!(
                     domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
                     Error::<T>::TooManyDomainsPerAccount,
@@ -418,12 +418,14 @@ pub mod pallet {
             );
 
             let deposit_info: DomainDepositOf<T> = match caller {
-                CallerAccount::Account(acc) => (acc, T::BaseDomainDeposit::get()),
-                CallerAccount::ForceOrigin => (owner.clone(), Zero::zero()),
-            }.into();
+                Registrant::RegularAccount(acc) => Some((acc, T::BaseDomainDeposit::get()).into()),
+                Registrant::Root => None,
+            };
 
             // TODO: unreserve the balance for expired or sold domains
-            <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
+            deposit_info.clone().map_or(Ok(()), |info| {
+                <T as Config>::Currency::reserve(&info.depositor, info.deposit)
+            })?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
@@ -577,7 +579,7 @@ pub mod pallet {
             domain_meta: &DomainMeta<T>,
             sender: &T::AccountId,
         ) -> DispatchResult {
-            let DomainMeta { owner, expires_at, .. } = domain_meta;
+            let DomainMeta { owner, .. } = domain_meta;
 
             // FIXME: this is hotfix, handle expired domains correctly!
             // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
