@@ -1,0 +1,20 @@
+name: Copyright Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  copyright-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Copyright Comment Check
+        uses: tusharojha/copyright-check@master
+        with: 
+          path: './**/*.rs'
+          exclude: './runtime'
+          copyrightPath: 'copyright.txt'
