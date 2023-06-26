@@ -387,9 +387,12 @@ pub mod pallet {
             let subdomain = domain_parts.first().unwrap();
             let tld = domain_parts.last().unwrap();
 
-            // FIXME: this is hot fix, change asap
+            // FIXME: this is hot fix, change whenever possible
             // ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
-            ensure!(tld.as_slice() == b"sub", Error::<T>::TldNotSupported);
+            ensure!(
+                tld.as_slice() == b"sub" || tld.as_slice() == b"polka",
+                Error::<T>::TldNotSupported,
+            );
 
             let domains_per_account = Self::domains_by_owner(&owner).len();
 
@@ -572,7 +575,8 @@ pub mod pallet {
         ) -> DispatchResult {
             let DomainMeta { owner, expires_at, .. } = domain_meta;
 
-            ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
+            // FIXME: this is hotfix, handle expired domains correctly!
+            // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
             ensure!(sender == owner, Error::<T>::NotDomainOwner);
             Ok(())
         }
