@@ -118,24 +118,6 @@ benchmarks! {
 		);
 	}
 
-	force_register_domain {
-		add_default_tld::<T>()?;
-
-		let who = account_with_balance::<T>();
-		let owner_lookup = lookup_source_from_account::<T>(&who);
-
-		let domain = mock_domain::<T>();
-
-		let expires_in = T::RegistrationPeriodLimit::get();
-		let price = BalanceOf::<T>::max_value();
-
-	}: _(RawOrigin::Root, owner_lookup, domain.clone(), valid_content_ipfs(), expires_in)
-	verify {
-		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain }.into()
-		);
-	}
-
 	set_inner_value {
 		let who = account_with_balance::<T>();
 		let owner_origin = RawOrigin::Signed(who.clone());

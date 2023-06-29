@@ -200,28 +200,8 @@ pub mod pallet {
             Self::do_register_domain(Registrant::RegularAccount(caller), owner, full_domain, content, expires_in)
         }
 
-        /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
-        /// and set the domain to expire in [expires_in] number of blocks.
-        #[pallet::call_index(1)]
-        #[pallet::weight((
-            <T as Config>::WeightInfo::force_register_domain(),
-            DispatchClass::Operational,
-        ))]
-        pub fn force_register_domain(
-            origin: OriginFor<T>,
-            target: <T::Lookup as StaticLookup>::Source,
-            full_domain: DomainName<T>,
-            content: Content,
-            expires_in: T::BlockNumber,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-            let owner = T::Lookup::lookup(target)?;
-
-            Self::do_register_domain(Registrant::Root, owner, full_domain, content, expires_in)
-        }
-
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
-        #[pallet::call_index(2)]
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
@@ -236,7 +216,7 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
-        #[pallet::call_index(3)]
+        #[pallet::call_index(2)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_inner_value(),
             DispatchClass::Operational,
@@ -254,7 +234,7 @@ pub mod pallet {
         }
 
         /// Sets the domain outer_value to be a custom string.
-        #[pallet::call_index(4)]
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         pub fn set_outer_value(
             origin: OriginFor<T>,
@@ -295,7 +275,7 @@ pub mod pallet {
         }
 
         /// Sets the domain content to be an outside link.
-        #[pallet::call_index(5)]
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         pub fn set_domain_content(
             origin: OriginFor<T>,
@@ -320,7 +300,7 @@ pub mod pallet {
         }
 
         /// Mark set of domains as not reservable by users.
-        #[pallet::call_index(6)]
+        #[pallet::call_index(5)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -342,7 +322,7 @@ pub mod pallet {
         }
 
         /// Add support for a set of top-level domains.
-        #[pallet::call_index(7)]
+        #[pallet::call_index(6)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
