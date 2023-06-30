@@ -539,15 +539,28 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				}
 				false
 			},
-			ProxyType::SocialActions => matches!(
-				c,
-				RuntimeCall::Posts(..)
-					| RuntimeCall::Reactions(..)
-					| RuntimeCall::AccountFollows(..)
-					| RuntimeCall::SpaceFollows(..)
-					| RuntimeCall::Spaces(..)
-					| RuntimeCall::Profiles(..)
-			),
+			ProxyType::SocialActions => {
+				match c {
+					RuntimeCall::Utility(pallet_utility::Call::batch { calls }) |
+					RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
+						for call in calls {
+							if !ProxyType::SocialActions.filter(call) {
+								return false;
+							}
+						}
+						return true;
+					},
+					_ => matches!(
+						c,
+						RuntimeCall::Posts(..)
+							| RuntimeCall::Reactions(..)
+							| RuntimeCall::AccountFollows(..)
+							| RuntimeCall::SpaceFollows(..)
+							| RuntimeCall::Spaces(..)
+							| RuntimeCall::Profiles(..)
+					)
+				}
+			}
 			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it.
 			ProxyType::Management => matches!(
 				c,
