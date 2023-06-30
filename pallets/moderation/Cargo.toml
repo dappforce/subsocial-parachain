@@ -1,0 +1,59 @@
+[package]
+name = 'pallet-moderation'
+version = "0.1.8"
+authors = ["DappForce <dappforce@pm.me>"]
+edition = "2018"
+license = "GPL-3.0-only"
+homepage = "https://subsocial.network"
+repository = "https://github.com/dappforce/subsocial-parachain"
+description = 'Subsocial pallet for content moderation'
+keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
+categories = ["cryptography::cryptocurrencies"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
+
+subsocial-support = { path = "../support", default-features = false }
+pallet-permissions = { default-features = false, path = '../permissions' }
+pallet-posts = { default-features = false, path = '../posts' }
+pallet-roles = { default-features = false, path = '../roles' }
+pallet-space-follows = { default-features = false, path = '../space-follows' }
+pallet-spaces = { default-features = false, path = '../spaces' }
+
+frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+
+[dev-dependencies]
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+
+[features]
+default = ["std"]
+runtime-benchmarks = ["frame-benchmarking"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "pallet-balances/std",
+    "frame-support/std",
+    "frame-system/std",
+    "frame-benchmarking/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "subsocial-support/std",
+    "pallet-permissions/std",
+    "pallet-posts/std",
+    "pallet-roles/std",
+    "pallet-space-follows/std",
+    "pallet-spaces/std",
+
+]
+try-runtime = ["frame-support/try-runtime"]

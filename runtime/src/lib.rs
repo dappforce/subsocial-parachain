@@ -725,6 +725,15 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const DefaultAutoblockThreshold: u16 = 20;
+}
+
+impl pallet_moderation::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type DefaultAutoblockThreshold = DefaultAutoblockThreshold;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -766,6 +775,7 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
+		Moderation: pallet_moderation = 63,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
