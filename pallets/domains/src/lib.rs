@@ -188,16 +188,16 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
-            beneficiary: Option<<T::Lookup as StaticLookup>::Source>,
+            recipient: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
-            let owner = beneficiary
+            let owner = recipient
                 .map_or(Ok(caller.clone()), T::Lookup::lookup)?;
 
-            Self::do_register_domain(Registrant::RegularAccount(caller), owner, full_domain, content, expires_in)
+            Self::do_register_domain(caller, owner, full_domain, content, expires_in)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
@@ -346,8 +346,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         fn do_register_domain(
-            caller: Registrant<T::AccountId>,
-            owner: T::AccountId,
+            caller: T::AccountId,
+            recipient: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
@@ -377,15 +377,13 @@ pub mod pallet {
                 Error::<T>::TldNotSupported,
             );
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
+            let domains_per_account = Self::domains_by_owner(&recipient).len();
 
-            if caller != Registrant::Root {
-                ensure!(
-                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                    Error::<T>::TooManyDomainsPerAccount,
-                );
-                Self::ensure_word_is_not_reserved(subdomain)?;
-            }
+            ensure!(
+                domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+            Self::ensure_word_is_not_reserved(subdomain)?;
 
             ensure!(
                 Self::registered_domain(&domain_lc).is_none(),
@@ -397,34 +395,30 @@ pub mod pallet {
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
-            let deposit_info: DomainDepositOf<T> = match caller {
-                Registrant::RegularAccount(acc) => Some((acc, T::BaseDomainDeposit::get()).into()),
-                Registrant::Root => None,
-            };
+            let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
+                (caller, T::BaseDomainDeposit::get()).into();
 
             // TODO: unreserve the balance for expired or sold domains
-            deposit_info.clone().map_or(Ok(()), |info| {
-                <T as Config>::Currency::reserve(&info.depositor, info.deposit)
-            })?;
+            <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
                 expires_at,
-                owner.clone(),
+                recipient.clone(),
                 content,
-                deposit_info,
+                Some(deposit_info),
             );
 
             // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
             DomainsByOwner::<T>::mutate(
-                &owner, |domains| {
+                &recipient, |domains| {
                     domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
+            Self::deposit_event(Event::DomainRegistered { who: recipient, domain: full_domain });
             Ok(())
         }
 

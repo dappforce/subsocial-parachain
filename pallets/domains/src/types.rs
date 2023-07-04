@@ -27,12 +27,6 @@ pub enum InnerValue<AccountId> {
     Post(PostId),
 }
 
-#[derive(Clone, PartialEq)]
-pub(super) enum Registrant<AccountId> {
-    Root,
-    RegularAccount(AccountId),
-}
-
 /// A domain deposit info.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct DomainDeposit<AccountId, Balance> {
