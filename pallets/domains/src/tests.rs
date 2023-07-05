@@ -1,4 +1,4 @@
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
 
@@ -74,7 +74,7 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
             let domain_two = domain_from(b"domain-two".to_vec());
 
             assert_ok!(_force_register_domain_with_name(domain_one));
-            assert_noop!(
+            assert_err!(
                 _force_register_domain_with_name(domain_two),
                 Error::<Test>::TooManyDomainsPerAccount,
             );
@@ -123,7 +123,7 @@ fn register_domain_should_fail_when_promo_domains_limit_reached() {
 fn force_register_domain_should_fail_with_bad_origin() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            _force_register_domain_with_origin(RuntimeOrigin::signed(DOMAIN_OWNER)),
+            _force_register_domain_with_origin(RuntimeOrigin::none()),
             BadOrigin
         );
     });
@@ -132,7 +132,7 @@ fn force_register_domain_should_fail_with_bad_origin() {
 #[test]
 fn force_register_domain_should_fail_when_reservation_period_zero() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(
+        assert_err!(
             _force_register_domain_with_expires_in(0),
             Error::<Test>::ZeroReservationPeriod,
         );
@@ -145,7 +145,7 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
         .reservation_period_limit(1000)
         .build()
         .execute_with(|| {
-            assert_noop!(
+            assert_err!(
                 _force_register_domain_with_expires_in(1001),
                 Error::<Test>::TooBigRegistrationPeriod,
             );

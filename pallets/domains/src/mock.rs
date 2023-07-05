@@ -124,6 +124,7 @@ impl pallet_domains::Config for Test {
     type WeightInfo = ();
 }
 
+pub(crate) const DOMAIN_REGISTRAR: u64 = 0;
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
 
@@ -195,47 +196,31 @@ pub(crate) fn default_outer_value(length: Option<usize>) -> OuterValue<Test> {
 }
 
 pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> DispatchResult {
-    _force_register_domain(Some(origin), None, None, None, None)
+    _register_domain(Some(origin), None, None, None, None)
 }
 
 pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
-    _force_register_domain(None, None, None, None, Some(expires_in))
+    _register_domain(domain_registrar_origin(), None, None, None, Some(expires_in))
 }
 
 pub(crate) fn _force_register_domain_with_name(domain_name: DomainName<Test>) -> DispatchResult {
-    _force_register_domain(None, None, Some(domain_name), None, None)
-}
-
-fn _force_register_domain(
-    origin: Option<RuntimeOrigin>,
-    owner: Option<AccountId>,
-    domain: Option<DomainName<Test>>,
-    content: Option<Content>,
-    expires_in: Option<BlockNumber>,
-) -> DispatchResult {
-    Domains::force_register_domain(
-        origin.unwrap_or_else(RuntimeOrigin::root),
-        owner.unwrap_or(DOMAIN_OWNER),
-        domain.unwrap_or_else(default_domain),
-        content.unwrap_or_else(valid_content_ipfs),
-        expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
-    )
+    _register_domain(domain_registrar_origin(), None, Some(domain_name), None, None)
 }
 
 pub(crate) fn _register_default_domain() -> DispatchResult {
-    _register_domain(None, None, None, None)
+    _register_domain(None, None, None, None, None)
 }
 
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
-    // beneficiary: Option<AccountId>,
+    recipient: Option<Option<AccountId>>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
     expires_in: Option<BlockNumber>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
-        None,
+        recipient.unwrap_or_default(),
         domain.unwrap_or_else(default_domain),
         content.unwrap_or_else(valid_content_ipfs),
         expires_in.unwrap_or(ExtBuilder::default().reservation_period_limit),
@@ -316,7 +301,12 @@ pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId
     account
 }
 
-pub(crate) fn account(id: AccountId) -> AccountId {
+pub(crate) fn domain_registrar_origin() -> Option<RuntimeOrigin> {
+    let _ = account_with_balance(DOMAIN_REGISTRAR, BalanceOf::<Test>::max_value());
+    Some(RuntimeOrigin::signed(DOMAIN_REGISTRAR))
+}
+
+pub(crate) const fn account(id: AccountId) -> AccountId {
     id
 }
 
