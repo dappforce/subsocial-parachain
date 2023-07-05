@@ -3,6 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod migration;
 
 #[cfg(test)]
 mod mock;
@@ -19,6 +20,9 @@ pub use crate::weights::WeightInfo;
 pub mod types;
 
 pub use subsocial_support::{SpaceId, PostId, Content};
+
+/// The log target of this pallet.
+pub const LOG_TARGET: &str = "runtime::domains";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -84,9 +88,13 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
