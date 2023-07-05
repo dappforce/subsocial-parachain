@@ -84,10 +84,14 @@ fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, Dispatch
 	add_default_tld::<T>().map_err(|e| e.error)?;
 	let domain = mock_domain::<T>();
 	let expires_in = T::RegistrationPeriodLimit::get();
-	let owner_lookup = lookup_source_from_account::<T>(owner);
+	let owner_lookup = lookup_source_from_account::<T>(&owner);
 
-	Pallet::<T>::force_register_domain(
-		RawOrigin::Root.into(), owner_lookup, domain.clone(), valid_content_ipfs(), expires_in,
+	Pallet::<T>::register_domain(
+		RawOrigin::Signed(owner.clone()).into(),
+		Some(owner_lookup),
+		domain.clone(),
+		valid_content_ipfs(),
+		expires_in,
 	)?;
 
 	Ok(domain)
