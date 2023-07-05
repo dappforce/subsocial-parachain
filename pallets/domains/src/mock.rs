@@ -301,8 +301,7 @@ pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId
     account
 }
 
-pub(crate) fn domain_registrar_origin() -> Option<RuntimeOrigin> {
-    let _ = account_with_balance(DOMAIN_REGISTRAR, BalanceOf::<Test>::max_value());
+fn domain_registrar_origin() -> Option<RuntimeOrigin> {
     Some(RuntimeOrigin::signed(DOMAIN_REGISTRAR))
 }
 
