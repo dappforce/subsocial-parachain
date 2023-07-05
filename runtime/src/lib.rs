@@ -530,15 +530,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::DomainRegistrar => {
-				if let RuntimeCall::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
-					return matches!(
-						&**call,
-						RuntimeCall::Domains(pallet_domains::Call::force_register_domain { .. })
-					)
-				}
-				false
-			},
+			ProxyType::DomainRegistrar => false,
 			ProxyType::SocialActions => matches!(
 				c,
 				RuntimeCall::Posts(..)
