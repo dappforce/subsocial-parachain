@@ -211,6 +211,13 @@ pub(crate) fn _register_default_domain() -> DispatchResult {
     _register_domain(None, None, None, None, None)
 }
 
+pub(crate) fn _register_domain_with_recipient(
+    caller: AccountId,
+    recipient: AccountId,
+) -> DispatchResult {
+    _register_domain(Some(RuntimeOrigin::signed(caller)), Some(Some(recipient)), None, None, None)
+}
+
 fn _register_domain(
     origin: Option<RuntimeOrigin>,
     recipient: Option<Option<AccountId>>,

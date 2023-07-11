@@ -17,7 +17,7 @@ pub(crate) type BalanceOf<T> =
 
 /// A domain deposit information wrapped into Option to use in this pallet.
 pub(crate) type DomainDepositOf<T> =
-    Option<DomainDeposit<<T as frame_system::Config>::AccountId, BalanceOf<T>>>;
+    DomainDeposit<<T as frame_system::Config>::AccountId, BalanceOf<T>>;
 
 /// Domains inner value variants
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
@@ -66,13 +66,14 @@ pub struct DomainMeta<T: Config> {
 
 impl<T: Config> DomainMeta<T> {
     pub fn new(
-        expires_at: T::BlockNumber,
+        caller: T::AccountId,
         owner: T::AccountId,
+        expires_at: T::BlockNumber,
         content: Content,
         domain_deposit: DomainDepositOf<T>,
     ) -> Self {
         Self {
-            created: new_who_and_when::<T>(owner.clone()),
+            created: new_who_and_when::<T>(caller),
             updated: None,
             expires_at,
             owner,

@@ -39,11 +39,53 @@ fn register_domain_should_work() {
                 content: valid_content_ipfs(),
                 inner_value: None,
                 outer_value: None,
-                domain_deposit: Some((DOMAIN_OWNER, LOCAL_DOMAIN_DEPOSIT).into()),
+                domain_deposit: (DOMAIN_OWNER, LOCAL_DOMAIN_DEPOSIT).into(),
                 outer_value_deposit: Zero::zero()
             });
 
             assert_eq!(get_reserved_balance(&owner), LOCAL_DOMAIN_DEPOSIT);
+
+            System::assert_last_event(Event::<Test>::DomainRegistered {
+                who: owner,
+                domain: expected_domain,
+            }.into());
+        });
+}
+
+#[test]
+fn register_domain_should_work_with_alt_recipient() {
+    const LOCAL_DOMAIN_DEPOSIT: Balance = 10;
+
+    ExtBuilder::default()
+        .base_domain_deposit(LOCAL_DOMAIN_DEPOSIT)
+        .build()
+        .execute_with(|| {
+            let caller = account_with_balance(DOMAIN_REGISTRAR, BalanceOf::<Test>::max_value());
+            let owner = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+
+            let expected_domain = default_domain();
+            let expected_domain_lc = default_domain_lc();
+
+            assert!(get_reserved_balance(&owner).is_zero());
+
+            assert_ok!(_register_domain_with_recipient(caller, owner));
+
+            assert_eq!(Domains::domains_by_owner(owner), vec![expected_domain_lc.clone()]);
+
+            let domain_meta = Domains::registered_domain(&expected_domain_lc).unwrap();
+            assert_eq!(domain_meta, DomainMeta {
+                created: new_who_and_when::<Test>(DOMAIN_REGISTRAR),
+                updated: None,
+                expires_at: ExtBuilder::default().reservation_period_limit + 1,
+                owner: DOMAIN_OWNER,
+                content: valid_content_ipfs(),
+                inner_value: None,
+                outer_value: None,
+                domain_deposit: (DOMAIN_REGISTRAR, LOCAL_DOMAIN_DEPOSIT).into(),
+                outer_value_deposit: Zero::zero()
+            });
+
+            assert_eq!(get_reserved_balance(&caller), LOCAL_DOMAIN_DEPOSIT);
 
             System::assert_last_event(Event::<Test>::DomainRegistered {
                 who: owner,

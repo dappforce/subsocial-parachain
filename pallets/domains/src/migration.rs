@@ -1,5 +1,6 @@
 use frame_support::{log, traits::OnRuntimeUpgrade};
 use sp_runtime::{Saturating, traits::Zero};
+#[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
 use super::*;
@@ -30,9 +31,9 @@ pub mod v1 {
     impl<T: Config> OldDomainMeta<T> {
         fn migrate_to_v1(self) -> DomainMeta<T> {
             let new_deposit = if self.domain_deposit.is_zero() {
-                None
+                (self.owner.clone(), Zero::zero()).into()
             } else {
-                Some((self.owner.clone(), self.domain_deposit).into())
+                (self.owner.clone(), self.domain_deposit).into()
             };
 
             DomainMeta {

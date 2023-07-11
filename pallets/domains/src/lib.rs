@@ -404,17 +404,18 @@ pub mod pallet {
             );
 
             let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
-                (caller, T::BaseDomainDeposit::get()).into();
+                (caller.clone(), T::BaseDomainDeposit::get()).into();
 
             // TODO: unreserve the balance for expired or sold domains
             <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
-                expires_at,
+                caller,
                 recipient.clone(),
+                expires_at,
                 content,
-                Some(deposit_info),
+                deposit_info,
             );
 
             // TODO: withdraw balance when it will be possible to purchase domains.
