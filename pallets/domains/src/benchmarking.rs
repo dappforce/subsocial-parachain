@@ -4,7 +4,7 @@ use super::*;
 use types::*;
 
 use crate::Pallet as Pallet;
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure, assert_ok,
 	dispatch::{DispatchError, DispatchErrorWithPostInfo},
@@ -109,16 +109,19 @@ benchmarks! {
 	register_domain {
 		add_default_tld::<T>()?;
 
-		let who = account_with_balance::<T>();
+		let caller = account_with_balance::<T>();
+		let recipient_acc = account::<T::AccountId>("recipient", 0, 0);
+		let recipient = lookup_source_from_account::<T>(&recipient_acc);
+
 		let domain = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Signed(who.clone()), None, domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Signed(caller.clone()), Some(recipient), domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
 		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain }.into()
+			Event::DomainRegistered { who: caller, recipient: recipient_acc, domain }.into()
 		);
 	}
 
