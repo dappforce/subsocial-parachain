@@ -94,6 +94,8 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
+pub(super) const DEFAULT_DOMAIN_DEPOSIT: Balance = 10;
+
 parameter_types! {
     pub static MinDomainLength: u32 = 0;
     pub const MaxDomainLength: u32 = 63;
@@ -105,7 +107,7 @@ parameter_types! {
     pub static ReservationPeriodLimit: BlockNumber = 0;
     pub const MaxOuterValueLength: u16 = 256;
 
-    pub static BaseDomainDeposit: Balance = 0;
+    pub static BaseDomainDeposit: Balance = DEFAULT_DOMAIN_DEPOSIT;
     pub static OuterValueByteDeposit: Balance = 0;
 }
 
@@ -211,14 +213,7 @@ pub(crate) fn _register_default_domain() -> DispatchResult {
     _register_domain(None, None, None, None, None)
 }
 
-pub(crate) fn _register_domain_with_recipient(
-    caller: AccountId,
-    recipient: AccountId,
-) -> DispatchResult {
-    _register_domain(Some(RuntimeOrigin::signed(caller)), Some(Some(recipient)), None, None, None)
-}
-
-fn _register_domain(
+pub(crate) fn _register_domain(
     origin: Option<RuntimeOrigin>,
     recipient: Option<Option<AccountId>>,
     domain: Option<DomainName<Test>>,
