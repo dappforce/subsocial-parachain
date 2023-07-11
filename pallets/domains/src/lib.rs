@@ -196,16 +196,16 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
-            recipient: Option<<T::Lookup as StaticLookup>::Source>,
+            alt_recipient: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
-            let owner = recipient
+            let recipient = alt_recipient
                 .map_or(Ok(caller.clone()), T::Lookup::lookup)?;
 
-            Self::do_register_domain(caller, owner, full_domain, content, expires_in)
+            Self::do_register_domain(caller, recipient, full_domain, content, expires_in)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
