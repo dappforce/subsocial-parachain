@@ -141,7 +141,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// The domain name was successfully registered.
-        DomainRegistered { who: T::AccountId, domain: DomainName<T> },
+        DomainRegistered { who: T::AccountId, recipient: T::AccountId, domain: DomainName<T> },
         /// The domain meta was successfully updated.
         DomainMetaUpdated { who: T::AccountId, domain: DomainName<T> },
         /// New words have been reserved.
@@ -411,7 +411,7 @@ pub mod pallet {
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
-                caller,
+                caller.clone(),
                 recipient.clone(),
                 expires_at,
                 content,
@@ -427,7 +427,7 @@ pub mod pallet {
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered { who: recipient, domain: full_domain });
+            Self::deposit_event(Event::DomainRegistered { who: caller, recipient, domain: full_domain });
             Ok(())
         }
 
