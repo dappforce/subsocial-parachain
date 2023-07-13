@@ -13,7 +13,7 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -38,6 +38,8 @@ use frame_system::{
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
+
+use pallet_domains::types::DomainLength;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -602,8 +604,6 @@ parameter_types! {
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
-    // TODO This value should be removed later, once it will be possible to purchase domains.
-	pub const MaxPromoDomainsPerAccount: u32 = 10;
 
 	// TODO: replace with a calculation
 	// 	(([MAXIMUM_BLOCK_WEIGHT] * 0.75) / ("function_weight")) * 0.33
@@ -613,6 +613,16 @@ parameter_types! {
 
     pub const BaseDomainDeposit: Balance = 10 * UNIT;
     pub const OuterValueByteDeposit: Balance = 10 * MILLIUNIT;
+
+	pub InitialPaymentBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+		.unwrap_or(PalletId(*b"py/domns").into_account_truncating());
+
+	// FIXME: test values
+	pub InitialPrices: Vec<(DomainLength, Balance)> = vec![
+		(6, 25 * UNIT),
+		(8, 12500 * MILLIUNIT),
+		(12, 6250 * MILLIUNIT),
+	];
 }
 
 impl pallet_domains::Config for Runtime {
@@ -621,12 +631,13 @@ impl pallet_domains::Config for Runtime {
 	type MinDomainLength = MinDomainLength;
 	type MaxDomainLength = MaxDomainLength;
 	type MaxDomainsPerAccount = MaxDomainsPerAccount;
-	type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
 	type DomainsInsertLimit = DomainsInsertLimit;
 	type RegistrationPeriodLimit = RegistrationPeriodLimit;
 	type MaxOuterValueLength = MaxOuterValueLength;
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
+	type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+	type InitialPrices = InitialPrices;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 

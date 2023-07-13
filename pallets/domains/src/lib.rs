@@ -60,10 +60,6 @@ pub mod pallet {
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
 
-        /// Maximum number of promotional domains that can be registered per account.
-        #[pallet::constant]
-        type MaxPromoDomainsPerAccount: Get<u32>;
-
         /// The maximum number of domains that can be inserted into a storage at once.
         #[pallet::constant]
         type DomainsInsertLimit: Get<u32>;
@@ -472,12 +468,6 @@ pub mod pallet {
                 Error::<T>::TldNotSupported,
             );
 
-            let domains_per_account = Self::domains_by_owner(&recipient).len();
-
-            ensure!(
-                domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
-            );
             Self::ensure_word_is_not_reserved(subdomain)?;
 
             ensure!(
@@ -485,6 +475,7 @@ pub mod pallet {
                 Error::<T>::DomainAlreadyOwned,
             );
 
+            let domains_per_account = Self::domains_by_owner(&recipient).len();
             ensure!(
                 domains_per_account < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
