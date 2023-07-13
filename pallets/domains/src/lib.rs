@@ -405,14 +405,18 @@ pub mod pallet {
         }
 
         #[pallet::call_index(7)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight((
+            T::DbWeight::get().writes(1) + Weight::from_ref_time(100_000),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
         pub fn set_payment_beneficiary(
             origin: OriginFor<T>,
             payment_beneficiary: T::AccountId,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             PaymentBeneficiary::<T>::set(payment_beneficiary);
-            Ok(())
+            Ok(Pays::No.into())
         }
 
         #[pallet::call_index(8)]
