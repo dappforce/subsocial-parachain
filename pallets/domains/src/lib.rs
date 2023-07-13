@@ -200,11 +200,12 @@ pub mod pallet {
     pub enum Error<T> {
         /// The content stored in a domain metadata was not changed.
         DomainContentNotChanged,
-        /// Cannot register more than `MaxDomainsPerAccount` domains.
+        /// Cannot register more than [`Config::MaxDomainsPerAccount`] domains.
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
+        /// This domain label length must be withing the limits defined with
+        /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
         DomainIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
