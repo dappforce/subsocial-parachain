@@ -15,6 +15,10 @@ pub(crate) type BoundedDomainsVec<T> = BoundedVec<DomainName<T>, <T as Config>::
 pub(crate) type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::pallet::Config>::AccountId>>::Balance;
 
+/// A domain deposit information wrapped into Option to use in this pallet.
+pub(crate) type DomainDepositOf<T> =
+    DomainDeposit<<T as frame_system::Config>::AccountId, BalanceOf<T>>;
+
 /// Domains inner value variants
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum InnerValue<AccountId> {
@@ -23,9 +27,11 @@ pub enum InnerValue<AccountId> {
     Post(PostId),
 }
 
-pub(super) enum IsForced {
-    Yes,
-    No,
+/// A domain deposit info.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub struct DomainDeposit<AccountId, Balance> {
+    pub(super) depositor: AccountId,
+    pub(super) deposit: Balance,
 }
 
 /// A domain metadata.
@@ -53,20 +59,21 @@ pub struct DomainMeta<T: Config> {
     pub(super) outer_value: Option<OuterValue<T>>,
 
     /// The amount was held as a deposit for storing this structure.
-    pub(super) domain_deposit: BalanceOf<T>,
+    pub(super) domain_deposit: DomainDepositOf<T>,
     /// The amount was held as a deposit for storing outer value.
     pub(super) outer_value_deposit: BalanceOf<T>,
 }
 
 impl<T: Config> DomainMeta<T> {
     pub fn new(
-        expires_at: T::BlockNumber,
+        caller: T::AccountId,
         owner: T::AccountId,
+        expires_at: T::BlockNumber,
         content: Content,
-        domain_deposit: BalanceOf<T>,
+        domain_deposit: DomainDepositOf<T>,
     ) -> Self {
         Self {
-            created: new_who_and_when::<T>(owner.clone()),
+            created: new_who_and_when::<T>(caller),
             updated: None,
             expires_at,
             owner,
@@ -76,5 +83,11 @@ impl<T: Config> DomainMeta<T> {
             domain_deposit,
             outer_value_deposit: Zero::zero(),
         }
+    }
+}
+
+impl<AccountId, Balance> From<(AccountId, Balance)> for DomainDeposit<AccountId, Balance> {
+    fn from((depositor, deposit): (AccountId, Balance)) -> Self {
+        Self { depositor, deposit }
     }
 }

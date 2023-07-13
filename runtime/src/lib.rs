@@ -110,6 +110,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	pallet_domains::migration::v1::MigrateToV1<Runtime>,
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -169,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 26,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 4,
+	transaction_version: 5,
 	state_version: 0,
 };
 
@@ -530,15 +531,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::DomainRegistrar => {
-				if let RuntimeCall::Sudo(pallet_sudo::Call::sudo { call, .. }) = c {
-					return matches!(
-						&**call,
-						RuntimeCall::Domains(pallet_domains::Call::force_register_domain { .. })
-					)
-				}
-				false
-			},
+			ProxyType::DomainRegistrar => false,
 			ProxyType::SocialActions => matches!(
 				c,
 				RuntimeCall::Posts(..)

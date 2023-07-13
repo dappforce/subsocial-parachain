@@ -3,6 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod migration;
 
 #[cfg(test)]
 mod mock;
@@ -19,6 +20,9 @@ pub use crate::weights::WeightInfo;
 pub mod types;
 
 pub use subsocial_support::{SpaceId, PostId, Content};
+
+/// The log target of this pallet.
+pub const LOG_TARGET: &str = "runtime::domains";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -84,9 +88,13 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
@@ -133,7 +141,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// The domain name was successfully registered.
-        DomainRegistered { who: T::AccountId, domain: DomainName<T> },
+        DomainRegistered { who: T::AccountId, recipient: T::AccountId, domain: DomainName<T> },
         /// The domain meta was successfully updated.
         DomainMetaUpdated { who: T::AccountId, domain: DomainName<T> },
         /// New words have been reserved.
@@ -188,37 +196,20 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
+            alt_recipient: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
-            let owner = ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
+            let recipient = alt_recipient
+                .map_or(Ok(caller.clone()), T::Lookup::lookup)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::No)
-        }
-
-        /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
-        /// and set the domain to expire in [expires_in] number of blocks.
-        #[pallet::call_index(1)]
-        #[pallet::weight((
-            <T as Config>::WeightInfo::force_register_domain(),
-            DispatchClass::Operational,
-        ))]
-        pub fn force_register_domain(
-            origin: OriginFor<T>,
-            target: <T::Lookup as StaticLookup>::Source,
-            full_domain: DomainName<T>,
-            content: Content,
-            expires_in: T::BlockNumber,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-            let owner = T::Lookup::lookup(target)?;
-
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::Yes)
+            Self::do_register_domain(caller, recipient, full_domain, content, expires_in)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
-        #[pallet::call_index(2)]
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
@@ -233,7 +224,7 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
-        #[pallet::call_index(3)]
+        #[pallet::call_index(2)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_inner_value(),
             DispatchClass::Operational,
@@ -251,7 +242,7 @@ pub mod pallet {
         }
 
         /// Sets the domain outer_value to be a custom string.
-        #[pallet::call_index(4)]
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         pub fn set_outer_value(
             origin: OriginFor<T>,
@@ -292,7 +283,7 @@ pub mod pallet {
         }
 
         /// Sets the domain content to be an outside link.
-        #[pallet::call_index(5)]
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         pub fn set_domain_content(
             origin: OriginFor<T>,
@@ -317,7 +308,7 @@ pub mod pallet {
         }
 
         /// Mark set of domains as not reservable by users.
-        #[pallet::call_index(6)]
+        #[pallet::call_index(5)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -339,7 +330,7 @@ pub mod pallet {
         }
 
         /// Add support for a set of top-level domains.
-        #[pallet::call_index(7)]
+        #[pallet::call_index(6)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -363,11 +354,11 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         fn do_register_domain(
-            owner: T::AccountId,
+            caller: T::AccountId,
+            recipient: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
-            is_forced: IsForced,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
@@ -394,15 +385,13 @@ pub mod pallet {
                 Error::<T>::TldNotSupported,
             );
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
+            let domains_per_account = Self::domains_by_owner(&recipient).len();
 
-            if let IsForced::No = is_forced {
-                ensure!(
-                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                    Error::<T>::TooManyDomainsPerAccount,
-                );
-                Self::ensure_word_is_not_reserved(subdomain)?;
-            }
+            ensure!(
+                domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+            Self::ensure_word_is_not_reserved(subdomain)?;
 
             ensure!(
                 Self::registered_domain(&domain_lc).is_none(),
@@ -414,31 +403,31 @@ pub mod pallet {
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
-            let mut deposit = Zero::zero();
-            if let IsForced::No = is_forced {
-                // TODO: unreserve the balance for expired or sold domains
-                deposit = T::BaseDomainDeposit::get();
-                <T as Config>::Currency::reserve(&owner, deposit)?;
-            }
+            let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
+                (caller.clone(), T::BaseDomainDeposit::get()).into();
+
+            // TODO: unreserve the balance for expired or sold domains
+            <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
+                caller.clone(),
+                recipient.clone(),
                 expires_at,
-                owner.clone(),
                 content,
-                deposit,
+                deposit_info,
             );
 
             // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
             DomainsByOwner::<T>::mutate(
-                &owner, |domains| {
+                &recipient, |domains| {
                     domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
+            Self::deposit_event(Event::DomainRegistered { who: caller, recipient, domain: full_domain });
             Ok(())
         }
 
@@ -565,7 +554,7 @@ pub mod pallet {
 
         /// Try to get domain meta by it's custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
-            Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
+            Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -573,7 +562,7 @@ pub mod pallet {
             domain_meta: &DomainMeta<T>,
             sender: &T::AccountId,
         ) -> DispatchResult {
-            let DomainMeta { owner, expires_at, .. } = domain_meta;
+            let DomainMeta { owner, .. } = domain_meta;
 
             // FIXME: this is hotfix, handle expired domains correctly!
             // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
