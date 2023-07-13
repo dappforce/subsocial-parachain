@@ -31,7 +31,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, dispatch::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, WithdrawReasons, ExistenceRequirement::KeepAlive}, dispatch::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
@@ -236,6 +236,10 @@ pub mod pallet {
         TldNotSupported,
         /// The domain price cannot be calculated.
         CannotCalculatePrice,
+        /// There are not enough funds to reserve domain deposit.
+        InsufficientBalanceToReserveDeposit,
+        /// There are not enough funds to pay for domain and put a deposit for it.
+        InsufficientBalanceToRegisterDomain,
     }
 
     #[pallet::call]
@@ -489,8 +493,19 @@ pub mod pallet {
             let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
                 (caller.clone(), T::BaseDomainDeposit::get()).into();
 
+            let price = Self::calculate_price(&subdomain);
+
+            Self::ensure_can_pay_for_domain(&caller, price, deposit_info.deposit)?;
+
             // TODO: unreserve the balance for expired or sold domains
             <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
+
+            <T as Config>::Currency::transfer(
+                &caller,
+                &Self::payment_beneficiary(),
+                price,
+                KeepAlive,
+            )?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
@@ -500,8 +515,6 @@ pub mod pallet {
                 content,
                 deposit_info,
             );
-
-            // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
             DomainsByOwner::<T>::mutate(
@@ -696,10 +709,19 @@ pub mod pallet {
             price
         }
 
-        fn ensure_can_pay_for_domain(owner: &T::AccountId, price: BalanceOf<T>) -> DispatchResult {
-            let balance = <T as Config>::Currency::free_balance(owner);
-            <T as Config>::Currency::ensure_can_withdraw(
-                &owner, price, WithdrawReasons::TRANSFER, balance.saturating_sub(price)
+        fn ensure_can_pay_for_domain(
+            owner: &T::AccountId,
+            price: BalanceOf<T>,
+            deposit: BalanceOf<T>,
+        ) -> DispatchResult {
+            let owner_balance = T::Currency::free_balance(owner);
+            let total_price = price.saturating_add(deposit);
+
+            ensure!(owner_balance >= total_price, Error::<T>::InsufficientBalanceToRegisterDomain);
+            ensure!(T::Currency::can_reserve(&owner, deposit), Error::<T>::InsufficientBalanceToReserveDeposit);
+
+            T::Currency::ensure_can_withdraw(
+                &owner, price, WithdrawReasons::TRANSFER, owner_balance.saturating_sub(total_price)
             )
         }
 
