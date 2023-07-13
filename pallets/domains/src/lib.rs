@@ -50,11 +50,11 @@ pub mod pallet {
 
         /// Domain's minimum length.
         #[pallet::constant]
-        type MinDomainLength: Get<u32>;
+        type MinDomainLength: Get<DomainLength>;
 
         /// Domain's maximum length.
         #[pallet::constant]
-        type MaxDomainLength: Get<u32>;
+        type MaxDomainLength: Get<DomainLength>;
 
         /// Maximum number of domains that can be registered per account.
         #[pallet::constant]
@@ -83,6 +83,16 @@ pub mod pallet {
         /// The amount held on deposit per byte of the domain's outer value.
         #[pallet::constant]
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
+
+        /// Account that receives funds spent for domain purchase.
+        /// Used only once, when the pallet is initialized.
+        #[pallet::constant]
+        type InitialPaymentBeneficiary: Get<Self::AccountId>;
+
+        /// A set of prices according to a domain length.
+        /// Used only once, when the pallet is initialized.
+        #[pallet::constant]
+        type InitialPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -137,6 +147,46 @@ pub mod pallet {
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn prices_config)]
+    pub(super) type PricesConfig<T: Config> =
+        StorageValue<_, PricesConfigVec<T>, ValueQuery>;
+
+    #[pallet::type_value]
+    pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
+        T::InitialPaymentBeneficiary::get()
+    }
+
+    /// A list of accounts that receive payment for the domain registration.
+    #[pallet::storage]
+    #[pallet::getter(fn payment_beneficiary)]
+    pub(super) type PaymentBeneficiary<T: Config> =
+        StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
+
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
+        pub payment_beneficiary: T::AccountId,
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self {
+                initial_prices: T::InitialPrices::get(),
+                payment_beneficiary: T::InitialPaymentBeneficiary::get(),
+            }
+        }
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        fn build(&self) {
+            Pallet::<T>::init_pallet(&self.initial_prices);
+            PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
+        }
+    }
+
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -184,6 +234,8 @@ pub mod pallet {
         TldNotSpecified,
         /// Top-level domain is not supported.
         TldNotSupported,
+        /// The domain price cannot be calculated.
+        CannotCalculatePrice,
     }
 
     #[pallet::call]
@@ -349,6 +401,37 @@ pub mod pallet {
 
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
+        }
+
+        #[pallet::call_index(7)]
+        #[pallet::weight(10_000)]
+        pub fn set_payment_beneficiary(
+            origin: OriginFor<T>,
+            payment_beneficiary: T::AccountId,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            PaymentBeneficiary::<T>::set(payment_beneficiary);
+            Ok(())
+        }
+
+        #[pallet::call_index(8)]
+        #[pallet::weight((
+            T::DbWeight::get().writes(1) +
+                Weight::from_ref_time(100_000 * new_prices_config.len() as u64 * 2),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn set_price_config(
+            origin: OriginFor<T>,
+            mut new_prices_config: PricesConfigVec<T>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            new_prices_config.sort_by_key(|(length, _)| *length);
+            new_prices_config.dedup_by_key(|(length, _)| *length);
+
+            PricesConfig::<T>::set(new_prices_config);
+            Ok(Pays::No.into())
         }
     }
 
@@ -601,6 +684,34 @@ pub mod pallet {
 
             ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())
+        }
+
+        pub(super) fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
+            let price_config = Self::prices_config();
+            let subdomain_len = subdomain.len() as u32;
+
+            let partition_point = price_config.partition_point(|(l, _)| l <= &subdomain_len);
+            let (_, price) = price_config[partition_point.saturating_sub(1)];
+
+            price
+        }
+
+        fn ensure_can_pay_for_domain(owner: &T::AccountId, price: BalanceOf<T>) -> DispatchResult {
+            let balance = <T as Config>::Currency::free_balance(owner);
+            <T as Config>::Currency::ensure_can_withdraw(
+                &owner, price, WithdrawReasons::TRANSFER, balance.saturating_sub(price)
+            )
+        }
+
+        pub fn init_pallet(default_prices: &[(DomainLength, BalanceOf<T>)]) {
+            PricesConfig::<T>::mutate(|prices| {
+                default_prices.iter().for_each(|(length, price)| {
+                    match prices.binary_search_by_key(length, |(l, _)| *l) {
+                        Ok(_) => (),
+                        Err(index) => prices.insert(index, (*length, *price)),
+                    }
+                });
+            });
         }
     }
 }
