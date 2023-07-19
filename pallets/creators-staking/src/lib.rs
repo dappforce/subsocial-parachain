@@ -37,6 +37,10 @@ pub mod pallet {
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
+        /// Number of blocks per era.
+        #[pallet::constant]
+        type BlockPerEra: Get<BlockNumberFor<Self>>;
+
         /// The staking balance.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
             + ReservableCurrency<Self::AccountId>;
@@ -102,6 +106,17 @@ pub mod pallet {
     #[pallet::getter(fn current_era)]
     pub type CurrentEra<T> = StorageValue<_, EraIndex, ValueQuery>;
 
+    /// Stores the block number of when the next era starts
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    #[pallet::getter(fn next_era_starting_block)]
+    pub type NextEraStartingBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+
+    /// Accumulator for block rewards during an era. It is reset at every new era
+    #[pallet::storage]
+    #[pallet::getter(fn block_reward_accumulator)]
+    pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
+
     #[pallet::storage]
     #[pallet::getter(fn registered_creator)]
     pub(crate) type RegisteredCreators<T: Config> =
@@ -160,6 +175,7 @@ pub mod pallet {
         CreatorRegistered { who: T::AccountId, space_id: SpaceId },
         CreatorUnregistered { who: T::AccountId, space_id: SpaceId },
         CreatorUnregisteredWithSlash { who: T::AccountId, space_id: SpaceId, amount: BalanceOf<T> },
+        NewDappStakingEra { number: EraIndex },
     }
 
     #[pallet::error]
@@ -187,17 +203,38 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             // As long as pallet is disabled, we shouldn't allow any storage modifications.
             // This means we might prolong an era but it's acceptable.
             // Runtime upgrade should be timed so we ensure that we complete it before
             // a new era is triggered. This code is just a safety net to ensure nothing is broken
             // if we fail to do that.
             if PalletDisabled::<T>::get() {
-                return T::DbWeight::get().reads(1)
+                return T::DbWeight::get().reads(1);
             }
 
-            return Zero::zero()
+            let previous_era = Self::current_era();
+            let next_era_starting_block = Self::next_era_starting_block();
+
+            // Value is compared to 1 since genesis block is ignored
+            if now >= next_era_starting_block || previous_era.is_zero() {
+                let blocks_per_era = T::BlockPerEra::get();
+                let next_era = previous_era + 1;
+                CurrentEra::<T>::put(next_era);
+
+                NextEraStartingBlock::<T>::put(now + blocks_per_era);
+
+                // TODO: Replace BlockRewardAccumulator with AnnualInflation
+                let reward = BlockRewardAccumulator::<T>::take();
+                Self::reward_balance_snapshot(previous_era, reward);
+                let consumed_weight = Self::rotate_staking_info(previous_era);
+
+                Self::deposit_event(Event::<T>::NewDappStakingEra { number: next_era });
+
+                consumed_weight + T::DbWeight::get().reads_writes(5, 3)
+            } else {
+                T::DbWeight::get().reads(4)
+            }
         }
     }
 
@@ -873,6 +910,63 @@ pub mod pallet {
 
         pub(crate) fn account_id() -> T::AccountId {
             T::PalletId::get().into_account_truncating()
+        }
+
+        /// The block rewards are accumulated on the pallets's account during an era.
+        /// This function takes a snapshot of the pallet's balance accrued during current era
+        /// and stores it for future distribution
+        ///
+        /// This is called just at the beginning of an era.
+        fn reward_balance_snapshot(era: EraIndex, rewards: RewardInfo<BalanceOf<T>>) {
+            // Get the reward and stake information for previous era
+            let mut era_info = Self::general_era_info(era).unwrap_or_default();
+
+            // Prepare info for the next era
+            GeneralEraInfo::<T>::insert(
+                era + 1,
+                EraInfo {
+                    rewards: Default::default(),
+                    staked: era_info.staked,
+                    locked: era_info.locked,
+                },
+            );
+
+            // Set the reward for the previous era.
+            era_info.rewards = rewards;
+
+            GeneralEraInfo::<T>::insert(era, era_info);
+        }
+
+        /// Used to copy all `CreatorStakeInfo` from the ending era over to the next era.
+        /// This is the most primitive solution since it scales with number of dApps.
+        /// It is possible to provide a hybrid solution which allows laziness but also prevents
+        /// a situation where we don't have access to the required data.
+        fn rotate_staking_info(current_era: EraIndex) -> Weight {
+            let next_era = current_era + 1;
+
+            let mut consumed_weight = Weight::zero();
+
+            for (space_id, creator_info) in RegisteredCreators::<T>::iter() {
+                // Ignore dapp if it was unregistered
+                consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().reads(1));
+                if let CreatorState::Unregistered(_) = creator_info.state {
+                    continue;
+                }
+
+                // Copy data from era `X` to era `X + 1`
+                if let Some(mut staking_info) = Self::creator_stake_info(space_id, current_era)
+                {
+                    staking_info.creator_reward_claimed = false;
+                    CreatorEraStake::<T>::insert(space_id, next_era, staking_info);
+
+                    consumed_weight =
+                        consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+                } else {
+                    consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().reads(1));
+                }
+            }
+
+            consumed_weight
         }
     }
 }
