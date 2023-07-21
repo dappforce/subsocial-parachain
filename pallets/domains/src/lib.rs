@@ -85,7 +85,7 @@ pub mod pallet {
         #[pallet::constant]
         type InitialPaymentBeneficiary: Get<Self::AccountId>;
 
-        /// A set of prices according to a domain length.
+        /// A set of prices based on the length of a domain.
         /// Used only once, when the pallet is initialized.
         #[pallet::constant]
         type InitialPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
@@ -153,7 +153,7 @@ pub mod pallet {
         T::InitialPaymentBeneficiary::get()
     }
 
-    /// A list of accounts that receive payment for the domain registration.
+    /// An account that receives payment for domain registration.
     #[pallet::storage]
     #[pallet::getter(fn payment_beneficiary)]
     pub(super) type PaymentBeneficiary<T: Config> =
@@ -233,9 +233,9 @@ pub mod pallet {
         TldNotSupported,
         /// The domain price cannot be calculated.
         CannotCalculatePrice,
-        /// There are not enough funds to reserve domain deposit.
+        /// There are not enough funds to reserve the domain deposit.
         InsufficientBalanceToReserveDeposit,
-        /// There are not enough funds to pay for domain and put a deposit for it.
+        /// There are insufficient funds to pay for the domain and reserve the deposit on it.
         InsufficientBalanceToRegisterDomain,
     }
 
@@ -699,8 +699,8 @@ pub mod pallet {
             let price_config = Self::prices_config();
             let subdomain_len = subdomain.len() as u32;
 
-            let partition_point = price_config.partition_point(|(l, _)| l <= &subdomain_len);
-            let (_, price) = price_config[partition_point.saturating_sub(1)];
+            let price_index = price_config.partition_point(|(l, _)| l <= &subdomain_len).saturating_sub(1);
+            let (_, price) = price_config[price_index];
 
             price
         }

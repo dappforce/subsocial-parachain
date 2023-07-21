@@ -615,7 +615,7 @@ parameter_types! {
     pub const OuterValueByteDeposit: Balance = 10 * MILLIUNIT;
 
 	pub InitialPaymentBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
-		.unwrap_or(PalletId(*b"py/domns").into_account_truncating());
+		.unwrap_or(PalletId(*b"df/dmnbe").into_account_truncating());
 
 	// FIXME: test values
 	pub InitialPrices: Vec<(DomainLength, Balance)> = vec![
