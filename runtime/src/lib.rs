@@ -600,7 +600,7 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinDomainLength: u32 = 6;
+    pub const MinDomainLength: u32 = 4;
     pub const MaxDomainLength: u32 = 63;
 
     pub const MaxDomainsPerAccount: u32 = 100;
@@ -617,11 +617,11 @@ parameter_types! {
 	pub InitialPaymentBeneficiary: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(PalletId(*b"df/dmnbe").into_account_truncating());
 
-	// FIXME: test values
-	pub InitialPrices: Vec<(DomainLength, Balance)> = vec![
-		(6, 25 * UNIT),
-		(8, 12500 * MILLIUNIT),
-		(12, 6250 * MILLIUNIT),
+	pub InitialPricesConfig: PricesConfigVec<Runtime> = vec![
+		(4, 10_000 * UNIT),
+		(5, 2_000 * UNIT),
+		(6, 400 * UNIT),
+		(7, 100 * UNIT),
 	];
 }
 
@@ -637,7 +637,7 @@ impl pallet_domains::Config for Runtime {
 	type BaseDomainDeposit = BaseDomainDeposit;
 	type OuterValueByteDeposit = OuterValueByteDeposit;
 	type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
-	type InitialPrices = InitialPrices;
+	type InitialPricesConfig = InitialPricesConfig;
 	type WeightInfo = pallet_domains::weights::SubstrateWeight<Runtime>;
 }
 

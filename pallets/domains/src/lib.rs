@@ -88,7 +88,7 @@ pub mod pallet {
         /// A set of prices based on the length of a domain.
         /// Used only once, when the pallet is initialized.
         #[pallet::constant]
-        type InitialPrices: Get<Vec<(DomainLength, BalanceOf<Self>)>>;
+        type InitialPricesConfig: Get<PricesConfigVec<Self>>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -161,7 +161,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub initial_prices: Vec<(DomainLength, BalanceOf<T>)>,
+        pub initial_prices_config: PricesConfigVec<T>,
         pub payment_beneficiary: T::AccountId,
     }
 
@@ -169,7 +169,7 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                initial_prices: T::InitialPrices::get(),
+                initial_prices_config: T::InitialPricesConfig::get(),
                 payment_beneficiary: T::InitialPaymentBeneficiary::get(),
             }
         }
@@ -178,7 +178,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            Pallet::<T>::init_pallet(&self.initial_prices);
+            Pallet::<T>::do_set_prices(self.initial_prices_config.clone());
             PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
         }
     }
@@ -204,7 +204,7 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be within the limits defined with
+        /// This domain name length must be within the limits defined by
         /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
         DomainIsTooShort,
         /// This domain has expired.
@@ -426,16 +426,14 @@ pub mod pallet {
             DispatchClass::Operational,
             Pays::Yes,
         ))]
-        pub fn set_price_config(
+        pub fn set_prices_config(
             origin: OriginFor<T>,
-            mut new_prices_config: PricesConfigVec<T>,
+            new_prices_config: PricesConfigVec<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            new_prices_config.sort_by_key(|(length, _)| *length);
-            new_prices_config.dedup_by_key(|(length, _)| *length);
+            Self::do_set_prices(new_prices_config);
 
-            PricesConfig::<T>::set(new_prices_config);
             Ok(Pays::No.into())
         }
     }
@@ -480,9 +478,9 @@ pub mod pallet {
                 Error::<T>::DomainAlreadyOwned,
             );
 
-            let domains_per_account = Self::domains_by_owner(&recipient).len();
+            let recipient_domains_count = Self::domains_by_owner(&recipient).len();
             ensure!(
-                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
+                recipient_domains_count < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
@@ -553,6 +551,13 @@ pub mod pallet {
 
             Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain: domain_lc });
             Ok(())
+        }
+
+        pub fn do_set_prices(mut new_prices_config: PricesConfigVec<T>) {
+            new_prices_config.sort_by_key(|(length, _)| *length);
+            new_prices_config.dedup_by_key(|(length, _)| *length);
+
+            PricesConfig::<T>::set(new_prices_config);
         }
 
         fn ensure_ascii_alphanumeric(domain: &[u8]) -> DispatchResult {
@@ -696,11 +701,11 @@ pub mod pallet {
         }
 
         pub(super) fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
-            let price_config = Self::prices_config();
+            let prices_config = Self::prices_config();
             let subdomain_len = subdomain.len() as u32;
 
-            let price_index = price_config.partition_point(|(l, _)| l <= &subdomain_len).saturating_sub(1);
-            let (_, price) = price_config[price_index];
+            let price_index = prices_config.partition_point(|(l, _)| l <= &subdomain_len).saturating_sub(1);
+            let (_, price) = prices_config[price_index];
 
             price
         }
@@ -719,17 +724,6 @@ pub mod pallet {
             T::Currency::ensure_can_withdraw(
                 &owner, price, WithdrawReasons::TRANSFER, owner_balance.saturating_sub(total_price)
             )
-        }
-
-        pub fn init_pallet(default_prices: &[(DomainLength, BalanceOf<T>)]) {
-            PricesConfig::<T>::mutate(|prices| {
-                default_prices.iter().for_each(|(length, price)| {
-                    match prices.binary_search_by_key(length, |(l, _)| *l) {
-                        Ok(_) => (),
-                        Err(index) => prices.insert(index, (*length, *price)),
-                    }
-                });
-            });
         }
     }
 }

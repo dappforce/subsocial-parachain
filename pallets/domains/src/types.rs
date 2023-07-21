@@ -10,7 +10,7 @@ use super::*;
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>::AccountId>;
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
-pub(crate) type PricesConfigVec<T> = Vec<(DomainLength, BalanceOf<T>)>;
+pub type PricesConfigVec<T> = Vec<(DomainLength, BalanceOf<T>)>;
 
 pub type DomainLength = u32;
 
