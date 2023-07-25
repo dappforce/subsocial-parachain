@@ -91,6 +91,9 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", de
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", default-features = false,  branch = "polkadot-v0.9.37" }
 parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false,  branch = "polkadot-v0.9.37" }
 
+# Custom Runtime API
+pallet-domains-rpc-runtime-api = { path = "../pallets/domains/rpc/runtime-api", default-features = false }
+
 [features]
 default = [
 	"std",
@@ -155,6 +158,8 @@ std = [
 	"pallet-space-ownership/std",
 	"pallet-spaces/std",
 	"pallet-free-proxy/std",
+	#---------------
+	"pallet-domains-rpc-runtime-api/std",
 ]
 
 runtime-benchmarks = [
