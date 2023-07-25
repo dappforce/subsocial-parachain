@@ -39,7 +39,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
-use pallet_domains::types::DomainLength;
+use pallet_domains::types::PricesConfigVec;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
