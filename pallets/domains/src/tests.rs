@@ -20,9 +20,20 @@ fn test_register_domain(caller: AccountId, recipient_opt: Option<AccountId>) {
 
     assert!(get_reserved_balance(&recipient).is_zero());
 
+    let old_caller_balance = Balances::free_balance(&caller);
+
     assert_ok!(_register_domain(
         Some(RuntimeOrigin::signed(caller)), Some(recipient_opt), None, None, None
     ));
+
+    // Check that the correct amount of tokens were withdrawn from caller balance.
+    let balance_diff = old_caller_balance - Balances::free_balance(&caller) - DEFAULT_DOMAIN_DEPOSIT;
+    let subdomain = Domains::split_domain_by_dot(&expected_domain_lc).first().unwrap().clone();
+    assert_eq!(balance_diff, Domains::calculate_price(&subdomain));
+
+    // Check that the correct amount of tokens were deposited to payment beneficiary balance.
+    let payment_beneficiary = Domains::payment_beneficiary();
+    assert_eq!(Balances::free_balance(&payment_beneficiary), balance_diff);
 
     assert_eq!(Domains::domains_by_owner(recipient), vec![expected_domain_lc.clone()]);
 
@@ -573,6 +584,41 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
     });
 }
 
+#[test]
+fn set_payment_beneficiary_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        let old_beneficiary = Domains::payment_beneficiary();
+        let new_beneficiary = DUMMY_ACCOUNT;
+
+        assert!(old_beneficiary != new_beneficiary);
+
+        assert_ok!(Domains::set_payment_beneficiary(
+            RuntimeOrigin::root(),
+            new_beneficiary,
+        ));
+
+        assert_eq!(Domains::payment_beneficiary(), new_beneficiary);
+    });
+}
+
+#[test]
+fn set_prices_config_should_work() {
+    let old_prices = vec![(1, 80), (2, 40), (3, 20)];
+
+    ExtBuilder::default()
+        .initial_prices(old_prices.clone())
+        .build()
+        .execute_with(|| {
+            let new_prices = vec![(1, 100), (2, 50), (3, 25)];
+
+            assert_eq!(Domains::prices_config(), old_prices);
+
+            assert_ok!(Domains::set_prices_config(RuntimeOrigin::root(), new_prices.clone()));
+
+            assert_eq!(Domains::prices_config(), new_prices);
+    });
+}
+
 // `reserve_domains` tests
 
 #[test]
@@ -667,5 +713,22 @@ fn ensure_valid_domain_should_work() {
                 Domains::ensure_valid_domain(&split_domain_from(b"a--b.sub")),
                 Error::<Test>::DomainContainsInvalidChar,
             );
+        });
+}
+
+// Test domain price calculation function
+
+#[test]
+fn calculate_price_should_work() {
+    ExtBuilder::default()
+        .initial_prices(vec![(4, 100), (5, 20), (6, 4), (7, 1)])
+        .build()
+        .execute_with(|| {
+            assert_eq!(Domains::calculate_price(b"sub".as_slice()), 100);
+            assert_eq!(Domains::calculate_price(&b"subd".as_slice()), 100);
+            assert_eq!(Domains::calculate_price(&b"subdo".as_slice()), 20);
+            assert_eq!(Domains::calculate_price(&b"subdom".as_slice()), 4);
+            assert_eq!(Domains::calculate_price(&b"subdoma".as_slice()), 1);
+            assert_eq!(Domains::calculate_price(&b"subdomain".as_slice()), 1);
         });
 }
