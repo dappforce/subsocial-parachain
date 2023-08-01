@@ -27,13 +27,14 @@ fn test_register_domain(caller: AccountId, recipient_opt: Option<AccountId>) {
     ));
 
     // Check that the correct amount of tokens were withdrawn from caller balance.
-    let balance_diff = old_caller_balance - Balances::free_balance(&caller) - DEFAULT_DOMAIN_DEPOSIT;
+
+    let price_paid = old_caller_balance - Balances::free_balance(&caller) - DEFAULT_DOMAIN_DEPOSIT;
     let subdomain = Domains::split_domain_by_dot(&expected_domain_lc).first().unwrap().clone();
-    assert_eq!(balance_diff, Domains::calculate_price(&subdomain));
+    assert_eq!(price_paid, Domains::calculate_price(&subdomain));
 
     // Check that the correct amount of tokens were deposited to payment beneficiary balance.
     let payment_beneficiary = Domains::payment_beneficiary();
-    assert_eq!(Balances::free_balance(&payment_beneficiary), balance_diff);
+    assert_eq!(Balances::free_balance(&payment_beneficiary), price_paid);
 
     assert_eq!(Domains::domains_by_owner(recipient), vec![expected_domain_lc.clone()]);
 
