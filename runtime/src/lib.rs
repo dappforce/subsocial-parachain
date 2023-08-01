@@ -940,7 +940,7 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
-		fn calculate_price(subdomain: Vec<u8>) -> Balance {
+		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
 			Domains::calculate_price(&subdomain)
 		}
 	}
