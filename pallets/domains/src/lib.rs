@@ -700,7 +700,7 @@ pub mod pallet {
             Ok(())
         }
 
-        pub(super) fn calculate_price(subdomain: &DomainName<T>) -> BalanceOf<T> {
+        pub fn calculate_price(subdomain: &[u8]) -> BalanceOf<T> {
             let prices_config = Self::prices_config();
             let subdomain_len = subdomain.len() as u32;
 

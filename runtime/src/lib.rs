@@ -939,6 +939,12 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
+		fn calculate_price(subdomain: Vec<u8>) -> Balance {
+			Domains::calculate_price(&subdomain)
+		}
+	}
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {

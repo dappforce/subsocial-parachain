@@ -5471,6 +5471,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-domains-rpc"
+version = "0.1.8"
+dependencies = [
+ "jsonrpsee",
+ "pallet-domains-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-domains-rpc-runtime-api"
+version = "0.1.8"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-election-provider-multi-phase"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
@@ -11222,6 +11246,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-domains-rpc",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -11291,6 +11316,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-domains",
+ "pallet-domains-rpc-runtime-api",
  "pallet-energy",
  "pallet-free-proxy",
  "pallet-permissions",
