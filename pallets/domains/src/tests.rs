@@ -30,7 +30,7 @@ fn test_register_domain(caller: AccountId, recipient_opt: Option<AccountId>) {
 
     let price_paid = old_caller_balance - Balances::free_balance(&caller) - DEFAULT_DOMAIN_DEPOSIT;
     let subdomain = Domains::split_domain_by_dot(&expected_domain_lc).first().unwrap().clone();
-    assert_eq!(price_paid, Domains::calculate_price(&subdomain));
+    assert_eq!(price_paid, Domains::calculate_price(&subdomain).unwrap());
 
     // Check that the correct amount of tokens were deposited to payment beneficiary balance.
     let payment_beneficiary = Domains::payment_beneficiary();
@@ -263,11 +263,11 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .execute_with(|| {
             let subdomain_one =
                 crate::Pallet::<Test>::split_domain_by_dot(&domain_one).first().cloned().unwrap();
-            let first_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_one);
+            let first_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_one).unwrap();
 
             let subdomain_two =
                 crate::Pallet::<Test>::split_domain_by_dot(&domain_two).first().cloned().unwrap();
-            let second_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_two);
+            let second_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_two).unwrap();
 
             // +1 here is to avoid KeepAlive error
             let _ = account_with_balance(ACCOUNT_A, first_domain_price + 1);
@@ -722,14 +722,15 @@ fn ensure_valid_domain_should_work() {
 #[test]
 fn calculate_price_should_work() {
     ExtBuilder::default()
-        .initial_prices(vec![(4, 100), (5, 20), (6, 4), (7, 1)])
+        // The lengths and prices of domains are deliberately unordered to test the sorting function
+        .initial_prices(vec![(7, 1), (6, 4), (5, 20), (4, 100)])
         .build()
         .execute_with(|| {
-            assert_eq!(Domains::calculate_price(b"sub".as_slice()), 100);
-            assert_eq!(Domains::calculate_price(&b"subd".as_slice()), 100);
-            assert_eq!(Domains::calculate_price(&b"subdo".as_slice()), 20);
-            assert_eq!(Domains::calculate_price(&b"subdom".as_slice()), 4);
-            assert_eq!(Domains::calculate_price(&b"subdoma".as_slice()), 1);
-            assert_eq!(Domains::calculate_price(&b"subdomain".as_slice()), 1);
+            assert_eq!(Domains::calculate_price(b"sub".as_slice()), None);
+            assert_eq!(Domains::calculate_price(&b"subd".as_slice()), Some(100));
+            assert_eq!(Domains::calculate_price(&b"subdo".as_slice()), Some(20));
+            assert_eq!(Domains::calculate_price(&b"subdom".as_slice()), Some(4));
+            assert_eq!(Domains::calculate_price(&b"subdoma".as_slice()), Some(1));
+            assert_eq!(Domains::calculate_price(&b"subdomain".as_slice()), Some(1));
         });
 }

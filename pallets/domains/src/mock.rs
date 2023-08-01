@@ -425,7 +425,7 @@ impl ExtBuilder {
                 .cloned()
                 .unwrap();
 
-            let domain_price = pallet_domains::Pallet::<Test>::calculate_price(&subdomain);
+            let domain_price = pallet_domains::Pallet::<Test>::calculate_price(&subdomain).unwrap();
 
             let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit + domain_price);
             assert_ok!(_register_default_domain());
