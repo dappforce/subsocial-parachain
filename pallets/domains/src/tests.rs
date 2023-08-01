@@ -1,4 +1,5 @@
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::LockableCurrency};
+use frame_support::traits::WithdrawReasons;
 use sp_runtime::{DispatchError::BadOrigin, traits::Zero};
 use sp_std::convert::TryInto;
 
@@ -105,37 +106,36 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
 #[test]
 fn register_domain_should_fail_when_balance_is_insufficient() {
     ExtBuilder::default()
-        .base_domain_deposit(10)
+        .base_domain_deposit(2)
+        .initial_prices(vec![(1, 3)])
         .build()
         .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, 9);
+            let _ = account_with_balance(DOMAIN_OWNER, 2);
 
             assert_noop!(
                 _register_default_domain(),
-                pallet_balances::Error::<Test>::InsufficientBalance,
+                Error::<Test>::InsufficientBalanceToRegisterDomain,
             );
         });
 }
 
 #[test]
-fn register_domain_should_fail_when_promo_domains_limit_reached() {
+fn register_domain_should_fail_when_insufficient_balance_to_reserve_balance() {
     ExtBuilder::default()
-        .max_promo_domains_per_account(1)
+        .base_domain_deposit(1)
+        .initial_prices(vec![(1, 1)])
         .build()
         .execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
+            let caller = account_with_balance(DOMAIN_OWNER, 2);
 
-            assert_ok!(_register_default_domain());
+            // Just a barrier to prevent the test from failing due to the InsufficientBalance after reserving token
+            Balances::set_lock(
+                *b"1       ", &caller, 2, WithdrawReasons::TRANSFER,
+            );
 
             assert_noop!(
-                Domains::register_domain(
-                    RuntimeOrigin::signed(DOMAIN_OWNER),
-                    None,
-                    domain_from(b"second-domain".to_vec()),
-                    valid_content_ipfs(),
-                    ExtBuilder::default().reservation_period_limit,
-                ),
-                Error::<Test>::TooManyDomainsPerAccount,
+                _register_default_domain(),
+                Error::<Test>::InsufficientBalanceToReserveDeposit,
             );
         });
 }
@@ -146,6 +146,21 @@ fn force_register_domain_should_fail_with_bad_origin() {
         assert_noop!(
             _force_register_domain_with_origin(RuntimeOrigin::none()),
             BadOrigin
+        );
+    });
+}
+
+#[test]
+fn register_domain_should_fail_with_tld_not_supported() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            _force_register_domain_with_name(
+                domain_from_with_tld(
+                    b"domain".to_vec(),
+                    b"unsupported-tld".to_vec(),
+                )
+            ),
+            Error::<Test>::TldNotSupported,
         );
     });
 }
@@ -234,6 +249,18 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .base_domain_deposit(0)
         .build()
         .execute_with(|| {
+            let subdomain_one =
+                crate::Pallet::<Test>::split_domain_by_dot(&domain_one).first().cloned().unwrap();
+            let first_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_one);
+
+            let subdomain_two =
+                crate::Pallet::<Test>::split_domain_by_dot(&domain_two).first().cloned().unwrap();
+            let second_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_two);
+
+            // +1 here is to avoid KeepAlive error
+            let _ = account_with_balance(ACCOUNT_A, first_domain_price + 1);
+            let _ = account_with_balance(ACCOUNT_B, second_domain_price + 1);
+
             assert_ok!(Domains::register_domain(
                 origin_a(), None, domain_one.clone(), valid_content_ipfs(), 1
             ));
@@ -256,6 +283,10 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
                 DomainByInnerValue::<Test>::get(ACCOUNT_B, inner_value_space_id()),
                 Some(domain_two.clone()),
             );
+
+            // Checking that free balance left is that one extra token
+            assert_eq!(Balances::free_balance(ACCOUNT_A), 1);
+            assert_eq!(Balances::free_balance(ACCOUNT_B), 1);
 
             System::assert_has_event(Event::<Test>::DomainMetaUpdated {
                 who: ACCOUNT_A,

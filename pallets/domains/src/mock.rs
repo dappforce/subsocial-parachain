@@ -1,6 +1,6 @@
 use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
-    traits::{Currency, Everything},
+    traits::{Currency, Everything, GenesisBuild},
 };
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -101,7 +101,6 @@ parameter_types! {
     pub const MaxDomainLength: u32 = 63;
 
     pub static MaxDomainsPerAccount: u32 = 0;
-    pub static MaxPromoDomainsPerAccount: u32 = 0;
 
     pub const DomainsInsertLimit: u32 = 2860;
     pub static ReservationPeriodLimit: BlockNumber = 0;
@@ -109,6 +108,9 @@ parameter_types! {
 
     pub static BaseDomainDeposit: Balance = DEFAULT_DOMAIN_DEPOSIT;
     pub static OuterValueByteDeposit: Balance = 0;
+
+    pub static InitialPricesConfig: PricesConfigVec<Test> = Vec::new();
+    pub const InitialPaymentBeneficiary: AccountId = PAYMENT_BENEFICIARY;
 }
 
 impl pallet_domains::Config for Test {
@@ -117,18 +119,20 @@ impl pallet_domains::Config for Test {
     type MinDomainLength = MinDomainLength;
     type MaxDomainLength = MaxDomainLength;
     type MaxDomainsPerAccount = MaxDomainsPerAccount;
-    type MaxPromoDomainsPerAccount = MaxPromoDomainsPerAccount;
     type DomainsInsertLimit = DomainsInsertLimit;
     type RegistrationPeriodLimit = ReservationPeriodLimit;
     type MaxOuterValueLength = MaxOuterValueLength;
     type BaseDomainDeposit = BaseDomainDeposit;
     type OuterValueByteDeposit = OuterValueByteDeposit;
+    type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+    type InitialPricesConfig = InitialPricesConfig;
     type WeightInfo = ();
 }
 
 pub(crate) const DOMAIN_REGISTRAR: u64 = 0;
 pub(crate) const DOMAIN_OWNER: u64 = 1;
 pub(crate) const DUMMY_ACCOUNT: u64 = 2;
+pub(crate) const PAYMENT_BENEFICIARY: u64 = 3;
 
 pub(crate) const ACCOUNT_A: u64 = 10;
 pub(crate) const ACCOUNT_B: u64 = 20;
@@ -159,6 +163,12 @@ pub(crate) fn default_domain() -> DomainName<Test> {
 pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
     string.push(b'.');
     string.append(&mut default_tld().to_vec());
+    Domains::bound_domain(string)
+}
+
+pub(crate) fn domain_from_with_tld(mut string: Vec<u8>, mut tld: Vec<u8>) -> DomainName<Test> {
+    string.push(b'.');
+    string.append(&mut tld);
     Domains::bound_domain(string)
 }
 
@@ -297,18 +307,17 @@ fn _set_domain_content(
     )
 }
 
-pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
-    let account = account(id);
-    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(&account, balance);
+pub(crate) fn make_free_balance_be(account: &AccountId, balance: Balance) {
+    let _ = <Test as pallet_domains::Config>::Currency::make_free_balance_be(account, balance);
+}
+
+pub(crate) fn account_with_balance(account: AccountId, balance: Balance) -> AccountId {
+    make_free_balance_be(&account, balance);
     account
 }
 
 fn domain_registrar_origin() -> Option<RuntimeOrigin> {
     Some(RuntimeOrigin::signed(DOMAIN_REGISTRAR))
-}
-
-pub(crate) const fn account(id: AccountId) -> AccountId {
-    id
 }
 
 pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
@@ -319,10 +328,10 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
-    pub(crate) max_promo_domains_per_account: u32,
     pub(crate) reservation_period_limit: BlockNumber,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
+    pub(crate) initial_prices_config: PricesConfigVec<Test>,
 }
 
 impl Default for ExtBuilder {
@@ -330,10 +339,14 @@ impl Default for ExtBuilder {
         ExtBuilder {
             min_domain_length: 3,
             max_domains_per_account: 10,
-            max_promo_domains_per_account: 10,
             reservation_period_limit: 1000,
             base_domain_deposit: 10,
             outer_value_byte_deposit: 1,
+            initial_prices_config: vec![
+                (4, 100),
+                (5, 50),
+                (6, 25),
+            ],
         }
     }
 }
@@ -346,11 +359,6 @@ impl ExtBuilder {
 
     pub(crate) fn max_domains_per_account(mut self, max_domains_per_account: u32) -> Self {
         self.max_domains_per_account = max_domains_per_account;
-        self
-    }
-
-    pub(crate) fn max_promo_domains_per_account(mut self, max_promo_domains_per_account: u32) -> Self {
-        self.max_promo_domains_per_account = max_promo_domains_per_account;
         self
     }
 
@@ -369,13 +377,18 @@ impl ExtBuilder {
         self
     }
 
+    pub(crate) fn initial_prices(mut self, initial_prices: PricesConfigVec<Test>) -> Self {
+        self.initial_prices_config = initial_prices;
+        self
+    }
+
     fn set_configs(&self) {
         MIN_DOMAIN_LENGTH.with(|x| *x.borrow_mut() = self.min_domain_length);
         MAX_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_domains_per_account);
-        MAX_PROMO_DOMAINS_PER_ACCOUNT.with(|x| *x.borrow_mut() = self.max_promo_domains_per_account);
         BASE_DOMAIN_DEPOSIT.with(|x| *x.borrow_mut() = self.base_domain_deposit);
         OUTER_VALUE_BYTE_DEPOSIT.with(|x| *x.borrow_mut() = self.outer_value_byte_deposit);
         RESERVATION_PERIOD_LIMIT.with(|x| *x.borrow_mut() = self.reservation_period_limit);
+        INITIAL_PRICES_CONFIG.with(|x| *x.borrow_mut() = self.initial_prices_config.clone());
     }
 
     pub(crate) fn build(self) -> TestExternalities {
@@ -384,6 +397,11 @@ impl ExtBuilder {
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
+
+        let _ = pallet_domains::GenesisConfig::<Test> {
+            initial_prices_config: self.initial_prices_config,
+            payment_beneficiary: PAYMENT_BENEFICIARY,
+        }.assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
@@ -402,7 +420,14 @@ impl ExtBuilder {
     pub(crate) fn build_with_default_domain_registered(self) -> TestExternalities {
         let mut ext = self.clone().build();
         ext.execute_with(|| {
-            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit);
+            let subdomain = pallet_domains::Pallet::<Test>::split_domain_by_dot(&default_domain_lc())
+                .first()
+                .cloned()
+                .unwrap();
+
+            let domain_price = pallet_domains::Pallet::<Test>::calculate_price(&subdomain);
+
+            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit + domain_price);
             assert_ok!(_register_default_domain());
         });
         ext
