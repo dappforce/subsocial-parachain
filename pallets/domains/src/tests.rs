@@ -103,8 +103,8 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
             let _ = account_with_balance(DOMAIN_REGISTRAR, BalanceOf::<Test>::max_value());
             let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
 
-            let domain_one = domain_from(b"domain-one".to_vec());
-            let domain_two = domain_from(b"domain-two".to_vec());
+            let domain_one = bound_domain_with_default_tld(b"domain-one".to_vec());
+            let domain_two = bound_domain_with_default_tld(b"domain-two".to_vec());
 
             assert_ok!(_force_register_domain_with_name(domain_one));
             assert_noop!(
@@ -166,7 +166,7 @@ fn register_domain_should_fail_with_tld_not_supported() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             _force_register_domain_with_name(
-                domain_from_with_tld(
+                bound_domain_with_custom_tld(
                     b"domain".to_vec(),
                     b"unsupported-tld".to_vec(),
                 )
@@ -203,7 +203,7 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
 fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
         let word = Domains::bound_domain(b"splitword".to_vec());
-        let domain = domain_from(b"split-wo-rd".to_vec());
+        let domain = bound_domain_with_default_tld(b"split-wo-rd".to_vec());
 
         assert_ok!(Domains::reserve_words(
             RuntimeOrigin::root(),
@@ -253,8 +253,8 @@ fn set_inner_value_should_work() {
 
 #[test]
 fn set_inner_value_should_work_when_same_for_different_domains() {
-    let domain_one = domain_from(b"domain-one".to_vec());
-    let domain_two = domain_from(b"domain-two".to_vec());
+    let domain_one = bound_domain_with_default_tld(b"domain-one".to_vec());
+    let domain_two = bound_domain_with_default_tld(b"domain-two".to_vec());
 
     ExtBuilder::default()
         .base_domain_deposit(0)
@@ -644,7 +644,7 @@ fn reserve_words_should_work() {
 fn reserve_words_should_fail_when_word_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
             let domains_list = vec![
-                domain_from(b"domain--one".to_vec())
+                bound_domain_with_default_tld(b"domain--one".to_vec())
             ].try_into().expect("qed; domains vector exceeds the limit");
 
             assert_noop!(
@@ -675,7 +675,7 @@ fn support_tlds_should_work() {
 fn support_tlds_should_fail_when_tld_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
         let tlds_list = vec![
-            domain_from(b"domain--one".to_vec())
+            bound_domain_with_default_tld(b"domain--one".to_vec())
         ].try_into().expect("qed; domains vector exceeds the limit");
 
         assert_noop!(

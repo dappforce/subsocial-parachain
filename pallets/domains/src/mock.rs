@@ -160,16 +160,16 @@ pub(crate) fn default_domain() -> DomainName<Test> {
     Domains::bound_domain(domain_vec)
 }
 
-pub(crate) fn domain_from(mut string: Vec<u8>) -> DomainName<Test> {
-    string.push(b'.');
-    string.append(&mut default_tld().to_vec());
-    Domains::bound_domain(string)
+pub(crate) fn bound_domain_with_default_tld(mut subdomain: Vec<u8>) -> DomainName<Test> {
+    subdomain.push(b'.');
+    subdomain.append(&mut default_tld().to_vec());
+    Domains::bound_domain(subdomain)
 }
 
-pub(crate) fn domain_from_with_tld(mut string: Vec<u8>, mut tld: Vec<u8>) -> DomainName<Test> {
-    string.push(b'.');
-    string.append(&mut tld);
-    Domains::bound_domain(string)
+pub(crate) fn bound_domain_with_custom_tld(mut subdomain: Vec<u8>, mut tld: Vec<u8>) -> DomainName<Test> {
+    subdomain.push(b'.');
+    subdomain.append(&mut tld);
+    Domains::bound_domain(subdomain)
 }
 
 pub(crate) fn split_domain_from(string: &[u8]) -> Vec<DomainName<Test>> {
