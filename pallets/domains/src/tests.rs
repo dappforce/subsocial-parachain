@@ -20,9 +20,21 @@ fn test_register_domain(caller: AccountId, recipient_opt: Option<AccountId>) {
 
     assert!(get_reserved_balance(&recipient).is_zero());
 
+    let old_caller_balance = Balances::free_balance(&caller);
+
     assert_ok!(_register_domain(
         Some(RuntimeOrigin::signed(caller)), Some(recipient_opt), None, None, None
     ));
+
+    // Check that the correct amount of tokens were withdrawn from caller balance.
+
+    let price_paid = old_caller_balance - Balances::free_balance(&caller) - DEFAULT_DOMAIN_DEPOSIT;
+    let subdomain = Domains::split_domain_by_dot(&expected_domain_lc).first().unwrap().clone();
+    assert_eq!(price_paid, Domains::calculate_price(&subdomain).unwrap());
+
+    // Check that the correct amount of tokens were deposited to payment beneficiary balance.
+    let payment_beneficiary = Domains::payment_beneficiary();
+    assert_eq!(Balances::free_balance(&payment_beneficiary), price_paid);
 
     assert_eq!(Domains::domains_by_owner(recipient), vec![expected_domain_lc.clone()]);
 
@@ -92,8 +104,8 @@ fn register_domain_should_fail_when_too_many_domains_registered() {
             let _ = account_with_balance(DOMAIN_REGISTRAR, BalanceOf::<Test>::max_value());
             let _ = account_with_balance(DOMAIN_OWNER, BalanceOf::<Test>::max_value());
 
-            let domain_one = domain_from(b"domain-one".to_vec());
-            let domain_two = domain_from(b"domain-two".to_vec());
+            let domain_one = bound_domain_with_default_tld(b"domain-one".to_vec());
+            let domain_two = bound_domain_with_default_tld(b"domain-two".to_vec());
 
             assert_ok!(_force_register_domain_with_name(domain_one));
             assert_noop!(
@@ -155,7 +167,7 @@ fn register_domain_should_fail_with_tld_not_supported() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             _force_register_domain_with_name(
-                domain_from_with_tld(
+                bound_domain_with_custom_tld(
                     b"domain".to_vec(),
                     b"unsupported-tld".to_vec(),
                 )
@@ -192,7 +204,7 @@ fn force_register_domain_should_fail_when_reservation_above_limit() {
 fn register_domain_should_fail_when_domain_reserved() {
     ExtBuilder::default().build().execute_with(|| {
         let word = Domains::bound_domain(b"splitword".to_vec());
-        let domain = domain_from(b"split-wo-rd".to_vec());
+        let domain = bound_domain_with_default_tld(b"split-wo-rd".to_vec());
 
         assert_ok!(Domains::reserve_words(
             RuntimeOrigin::root(),
@@ -242,8 +254,8 @@ fn set_inner_value_should_work() {
 
 #[test]
 fn set_inner_value_should_work_when_same_for_different_domains() {
-    let domain_one = domain_from(b"domain-one".to_vec());
-    let domain_two = domain_from(b"domain-two".to_vec());
+    let domain_one = bound_domain_with_default_tld(b"domain-one".to_vec());
+    let domain_two = bound_domain_with_default_tld(b"domain-two".to_vec());
 
     ExtBuilder::default()
         .base_domain_deposit(0)
@@ -251,11 +263,11 @@ fn set_inner_value_should_work_when_same_for_different_domains() {
         .execute_with(|| {
             let subdomain_one =
                 crate::Pallet::<Test>::split_domain_by_dot(&domain_one).first().cloned().unwrap();
-            let first_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_one);
+            let first_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_one).unwrap();
 
             let subdomain_two =
                 crate::Pallet::<Test>::split_domain_by_dot(&domain_two).first().cloned().unwrap();
-            let second_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_two);
+            let second_domain_price = crate::Pallet::<Test>::calculate_price(&subdomain_two).unwrap();
 
             // +1 here is to avoid KeepAlive error
             let _ = account_with_balance(ACCOUNT_A, first_domain_price + 1);
@@ -573,6 +585,41 @@ fn set_domain_content_should_fail_when_content_is_invalid() {
     });
 }
 
+#[test]
+fn set_payment_beneficiary_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        let old_beneficiary = Domains::payment_beneficiary();
+        let new_beneficiary = DUMMY_ACCOUNT;
+
+        assert!(old_beneficiary != new_beneficiary);
+
+        assert_ok!(Domains::set_payment_beneficiary(
+            RuntimeOrigin::root(),
+            new_beneficiary,
+        ));
+
+        assert_eq!(Domains::payment_beneficiary(), new_beneficiary);
+    });
+}
+
+#[test]
+fn set_prices_config_should_work() {
+    let old_prices = vec![(1, 80), (2, 40), (3, 20)];
+
+    ExtBuilder::default()
+        .initial_prices(old_prices.clone())
+        .build()
+        .execute_with(|| {
+            let new_prices = vec![(1, 100), (2, 50), (3, 25)];
+
+            assert_eq!(Domains::prices_config(), old_prices);
+
+            assert_ok!(Domains::set_prices_config(RuntimeOrigin::root(), new_prices.clone()));
+
+            assert_eq!(Domains::prices_config(), new_prices);
+    });
+}
+
 // `reserve_domains` tests
 
 #[test]
@@ -598,7 +645,7 @@ fn reserve_words_should_work() {
 fn reserve_words_should_fail_when_word_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
             let domains_list = vec![
-                domain_from(b"domain--one".to_vec())
+                bound_domain_with_default_tld(b"domain--one".to_vec())
             ].try_into().expect("qed; domains vector exceeds the limit");
 
             assert_noop!(
@@ -629,7 +676,7 @@ fn support_tlds_should_work() {
 fn support_tlds_should_fail_when_tld_is_invalid() {
     ExtBuilder::default().build().execute_with(|| {
         let tlds_list = vec![
-            domain_from(b"domain--one".to_vec())
+            bound_domain_with_default_tld(b"domain--one".to_vec())
         ].try_into().expect("qed; domains vector exceeds the limit");
 
         assert_noop!(
@@ -667,5 +714,23 @@ fn ensure_valid_domain_should_work() {
                 Domains::ensure_valid_domain(&split_domain_from(b"a--b.sub")),
                 Error::<Test>::DomainContainsInvalidChar,
             );
+        });
+}
+
+// Test domain price calculation function
+
+#[test]
+fn calculate_price_should_work() {
+    ExtBuilder::default()
+        // The lengths and prices of domains are deliberately unordered to test the sorting function
+        .initial_prices(vec![(7, 1), (6, 4), (5, 20), (4, 100)])
+        .build()
+        .execute_with(|| {
+            assert_eq!(Domains::calculate_price(b"sub".as_slice()), None);
+            assert_eq!(Domains::calculate_price(&b"subd".as_slice()), Some(100));
+            assert_eq!(Domains::calculate_price(&b"subdo".as_slice()), Some(20));
+            assert_eq!(Domains::calculate_price(&b"subdom".as_slice()), Some(4));
+            assert_eq!(Domains::calculate_price(&b"subdoma".as_slice()), Some(1));
+            assert_eq!(Domains::calculate_price(&b"subdomain".as_slice()), Some(1));
         });
 }

@@ -21,7 +21,7 @@ pub use pallet_domains_rpc_runtime_api::DomainsApi as DomainsRuntimeApi;
 #[rpc(client, server)]
 pub trait DomainsApi<BlockHash, ResponseType> {
     #[method(name = "domains_calculatePrice")]
-    fn calculate_price(&self, subdomain: Vec<u8>, at: Option<BlockHash>) -> RpcResult<ResponseType>;
+    fn calculate_price(&self, subdomain: Vec<u8>, at: Option<BlockHash>) -> RpcResult<Option<ResponseType>>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -67,7 +67,7 @@ DomainsApiServer<
         &self,
         subdomain: Vec<u8>,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Balance> {
+    ) -> RpcResult<Option<Balance>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 

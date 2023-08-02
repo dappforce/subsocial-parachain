@@ -10,6 +10,6 @@ sp_api::decl_runtime_apis! {
 	pub trait DomainsApi<Balance> where
 		Balance: Codec + MaybeDisplay,
 	{
-		fn calculate_price(subdomain: Vec<u8>) -> Balance;
+		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance>;
 	}
 }

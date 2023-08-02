@@ -487,7 +487,7 @@ pub mod pallet {
             let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
                 (caller.clone(), T::BaseDomainDeposit::get()).into();
 
-            let price = Self::calculate_price(&subdomain);
+            let price = Self::calculate_price(&subdomain).ok_or(Error::<T>::DomainIsTooShort)?;
 
             Self::ensure_can_pay_for_domain(&caller, price, deposit_info.deposit)?;
 
@@ -700,14 +700,18 @@ pub mod pallet {
             Ok(())
         }
 
-        pub fn calculate_price(subdomain: &[u8]) -> BalanceOf<T> {
+        pub fn calculate_price(subdomain: &[u8]) -> Option<BalanceOf<T>> {
             let prices_config = Self::prices_config();
             let subdomain_len = subdomain.len() as u32;
+
+            if subdomain_len < prices_config[0].0 {
+                return None;
+            }
 
             let price_index = prices_config.partition_point(|(l, _)| l <= &subdomain_len).saturating_sub(1);
             let (_, price) = prices_config[price_index];
 
-            price
+            Some(price)
         }
 
         fn ensure_can_pay_for_domain(

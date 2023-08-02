@@ -10,6 +10,15 @@ use super::*;
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
 pub(crate) type InnerValueOf<T> = InnerValue<<T as frame_system::pallet::Config>::AccountId>;
 pub(crate) type OuterValue<T> = BoundedVec<u8, <T as Config>::MaxOuterValueLength>;
+
+/// This type represents a vector of prices for domain names.
+/// Each element is a tuple (domain_length, price).
+/// The vector must be sorted by domain length in ascending order to function correctly.
+/// Usually, the shorter the domain length, the more expensive it is.
+/// A correct example:
+///  - [(2, 300), (3, 200), (4, 100)]
+///
+/// Meaning: A domain with 2 characters costs 300, a domain with 3 characters costs 200, and a domain with 4 characters costs 100.
 pub type PricesConfigVec<T> = Vec<(DomainLength, BalanceOf<T>)>;
 
 pub type DomainLength = u32;
