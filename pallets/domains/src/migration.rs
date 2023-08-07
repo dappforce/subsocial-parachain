@@ -70,6 +70,10 @@ pub mod v1 {
                     Some(old_value.migrate_to_v1())
                 });
 
+                // Initialize the PricesConfig storage
+                // because the GenesisBuild doesn't run on a runtime upgrade
+                Pallet::<T>::do_set_prices(T::InitialPricesConfig::get());
+
                 current_version.put::<Pallet<T>>();
 
                 log::info!(
@@ -107,6 +111,17 @@ pub mod v1 {
 				prev_count == post_count,
 				"the records count before and after the migration should be the same"
 			);
+
+            // These are needed as the storages appeared in v1
+            ensure!(
+                PaymentBeneficiary::<T>::get() == T::InitialPaymentBeneficiary::get(),
+                "wrong payment beneficiary"
+            );
+
+            ensure!(
+                PricesConfig::<T>::get() == T::InitialPricesConfig::get(),
+                "wrong prices config"
+            );
 
             ensure!(Pallet::<T>::on_chain_storage_version() == 1, "wrong storage version");
 

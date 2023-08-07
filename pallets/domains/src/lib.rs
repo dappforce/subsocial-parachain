@@ -161,25 +161,20 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub initial_prices_config: PricesConfigVec<T>,
-        pub payment_beneficiary: T::AccountId,
+        _phantom: PhantomData<T>,
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
-            Self {
-                initial_prices_config: T::InitialPricesConfig::get(),
-                payment_beneficiary: T::InitialPaymentBeneficiary::get(),
-            }
+            Self { _phantom: Default::default() }
         }
     }
 
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            Pallet::<T>::do_set_prices(self.initial_prices_config.clone());
-            PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
+            Pallet::<T>::do_set_prices(T::InitialPricesConfig::get());
         }
     }
 
