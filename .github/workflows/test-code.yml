@@ -5,6 +5,10 @@ on:
   push:
     branches: [ "main", "feature/*" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-code:
     # runs-on: ubuntu-20.04
