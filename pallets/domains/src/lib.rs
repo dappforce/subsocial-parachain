@@ -145,10 +145,10 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub(super) fn DefaultPricesConfig<T: Config>() -> PricesConfigVec<T> {
-        let mut new_prices_config = T::InitialPricesConfig::get();
-        Pallet::<T>::dedup_and_sort_prices(&mut new_prices_config);
+        let mut prices_config = T::InitialPricesConfig::get();
+        Pallet::<T>::dedup_and_sort_prices(&mut prices_config);
 
-        new_prices_config
+        prices_config
     }
 
     #[pallet::storage]
