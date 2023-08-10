@@ -143,10 +143,18 @@ pub mod pallet {
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    #[pallet::type_value]
+    pub(super) fn DefaultPricesConfig<T: Config>() -> PricesConfigVec<T> {
+        let mut prices_config = T::InitialPricesConfig::get();
+        Pallet::<T>::sort_and_dedup_prices(&mut prices_config);
+
+        prices_config
+    }
+
     #[pallet::storage]
     #[pallet::getter(fn prices_config)]
     pub(super) type PricesConfig<T: Config> =
-        StorageValue<_, PricesConfigVec<T>, ValueQuery>;
+        StorageValue<_, PricesConfigVec<T>, ValueQuery, DefaultPricesConfig<T>>;
 
     #[pallet::type_value]
     pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
@@ -158,30 +166,6 @@ pub mod pallet {
     #[pallet::getter(fn payment_beneficiary)]
     pub(super) type PaymentBeneficiary<T: Config> =
         StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
-
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {
-        pub initial_prices_config: PricesConfigVec<T>,
-        pub payment_beneficiary: T::AccountId,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                initial_prices_config: T::InitialPricesConfig::get(),
-                payment_beneficiary: T::InitialPaymentBeneficiary::get(),
-            }
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {
-            Pallet::<T>::do_set_prices(self.initial_prices_config.clone());
-            PaymentBeneficiary::<T>::set(self.payment_beneficiary.clone());
-        }
-    }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -428,11 +412,12 @@ pub mod pallet {
         ))]
         pub fn set_prices_config(
             origin: OriginFor<T>,
-            new_prices_config: PricesConfigVec<T>,
+            mut new_prices_config: PricesConfigVec<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::do_set_prices(new_prices_config);
+            Self::sort_and_dedup_prices(&mut new_prices_config);
+            PricesConfig::<T>::set(new_prices_config);
 
             Ok(Pays::No.into())
         }
@@ -553,11 +538,9 @@ pub mod pallet {
             Ok(())
         }
 
-        pub fn do_set_prices(mut new_prices_config: PricesConfigVec<T>) {
-            new_prices_config.sort_by_key(|(length, _)| *length);
-            new_prices_config.dedup_by_key(|(length, _)| *length);
-
-            PricesConfig::<T>::set(new_prices_config);
+        pub fn sort_and_dedup_prices(prices_config: &mut PricesConfigVec<T>) {
+            prices_config.sort_by_key(|(length, _)| *length);
+            prices_config.dedup_by_key(|(length, _)| *length);
         }
 
         fn ensure_ascii_alphanumeric(domain: &[u8]) -> DispatchResult {

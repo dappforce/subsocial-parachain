@@ -15,7 +15,7 @@ pub mod v1 {
     use super::*;
 
     // Old domain metadata
-    #[derive(Decode)]
+    #[derive(Encode, Decode)]
     pub struct OldDomainMeta<T: Config> {
         pub(super) created: WhoAndWhenOf<T>,
         pub(super) updated: Option<WhoAndWhenOf<T>>,
@@ -90,6 +90,10 @@ pub mod v1 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+            #[frame_support::storage_alias]
+            type RegisteredDomains<T: Config> =
+                StorageMap<Pallet<T>, Blake2_128Concat, DomainName<T>, OldDomainMeta<T>>;
+
             let current_version = Pallet::<T>::current_storage_version();
             let onchain_version = Pallet::<T>::on_chain_storage_version();
             ensure!(onchain_version == 0 && current_version == 1, "migration from version 0 to 1.");
@@ -107,6 +111,17 @@ pub mod v1 {
 				prev_count == post_count,
 				"the records count before and after the migration should be the same"
 			);
+
+            // These are needed as the storages appeared in v1
+            ensure!(
+                PaymentBeneficiary::<T>::get() == T::InitialPaymentBeneficiary::get(),
+                "wrong payment beneficiary"
+            );
+
+            ensure!(
+                PricesConfig::<T>::get() == T::InitialPricesConfig::get(),
+                "wrong prices config"
+            );
 
             ensure!(Pallet::<T>::on_chain_storage_version() == 1, "wrong storage version");
 
