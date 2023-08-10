@@ -1,6 +1,6 @@
 use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
-    traits::{Currency, Everything, GenesisBuild},
+    traits::{Currency, Everything},
 };
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -397,8 +397,6 @@ impl ExtBuilder {
         let storage = &mut frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
-
-        let _ = pallet_domains::GenesisConfig::<Test>::default().assimilate_storage(storage);
 
         let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {

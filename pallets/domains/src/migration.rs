@@ -70,10 +70,6 @@ pub mod v1 {
                     Some(old_value.migrate_to_v1())
                 });
 
-                // Initialize the PricesConfig storage
-                // because the GenesisBuild doesn't run on a runtime upgrade
-                Pallet::<T>::do_set_prices(T::InitialPricesConfig::get());
-
                 current_version.put::<Pallet<T>>();
 
                 log::info!(
