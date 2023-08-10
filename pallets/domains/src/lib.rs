@@ -146,7 +146,7 @@ pub mod pallet {
     #[pallet::type_value]
     pub(super) fn DefaultPricesConfig<T: Config>() -> PricesConfigVec<T> {
         let mut prices_config = T::InitialPricesConfig::get();
-        Pallet::<T>::dedup_and_sort_prices(&mut prices_config);
+        Pallet::<T>::sort_and_dedup_prices(&mut prices_config);
 
         prices_config
     }
@@ -416,7 +416,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::dedup_and_sort_prices(&mut new_prices_config);
+            Self::sort_and_dedup_prices(&mut new_prices_config);
             PricesConfig::<T>::set(new_prices_config);
 
             Ok(Pays::No.into())
@@ -538,7 +538,7 @@ pub mod pallet {
             Ok(())
         }
 
-        pub fn dedup_and_sort_prices(prices_config: &mut PricesConfigVec<T>) {
+        pub fn sort_and_dedup_prices(prices_config: &mut PricesConfigVec<T>) {
             prices_config.sort_by_key(|(length, _)| *length);
             prices_config.dedup_by_key(|(length, _)| *length);
         }
