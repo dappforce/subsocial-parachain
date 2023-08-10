@@ -1,8 +1,8 @@
 [package]
 name = "pallet-domains"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["DappForce <dappforce@pm.me>"]
-edition = "2018"
+edition = "2021"
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
