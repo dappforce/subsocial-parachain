@@ -31,7 +31,13 @@ pub type EraIndex = u32;
 // won't go over the following constant.
 const MAX_ASSUMED_VEC_LEN: u32 = 10;
 
-pub(super) enum UnregisterOrigin<AccountId> {
+// TODO: there are few more options to chose from:
+//     - UnregistrationSource: This emphasizes where the unregistration is coming from.
+//     - UnregisteringParty: This focuses on who is performing the unregistration.
+//     - UnregistrationActor: This could signify the entity taking action in the unregistration process.
+//     - UnregistrationInitiator: This implies the entity that started or initiated the unregistration.
+/// This enum is used to determine who is calling the `unregister_creator` function.
+pub(super) enum UnregistrationAuthority<AccountId> {
     Creator(AccountId),
     Root,
 }
