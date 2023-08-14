@@ -324,7 +324,7 @@ pub mod pallet {
                 Self::creator_stake_info(space_id, current_era).unwrap_or_default();
             let mut staker_info = Self::staker_info(&staker, space_id);
 
-            Self::stake_on_creator(
+            Self::stake_to_creator(
                 &mut staker_info,
                 &mut staking_info,
                 value_to_stake,
@@ -772,7 +772,7 @@ pub mod pallet {
         ///
         /// If stake operation was successful, given structs are properly modified.
         /// If not, an error is returned and structs are left in an undefined state.
-        fn stake_on_creator(
+        fn stake_to_creator(
             staker_info: &mut StakerInfo<BalanceOf<T>>,
             staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
             value: BalanceOf<T>,
