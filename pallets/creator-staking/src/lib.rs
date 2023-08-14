@@ -83,7 +83,7 @@ pub mod pallet {
         /// Current era is always counted as full era (regardless how much blocks are remaining).
         /// When set to `0`, it's equal to having no unbonding period.
         #[pallet::constant]
-        type UnbondingPeriod: Get<u32>;
+        type UnbondingPeriodInEras: Get<u32>;
 
         /// Max number of unlocking chunks per account Id <-> creator Id pairing.
         /// If value is zero, unlocking becomes impossible.
@@ -164,8 +164,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        Staked { who: T::AccountId, creator: SpaceId, amount: BalanceOf<T> },
-        Unstaked { who: T::AccountId, creator: SpaceId, amount: BalanceOf<T> },
+        Staked { who: T::AccountId, creator: SpaceId, era: EraIndex, amount: BalanceOf<T> },
+        Unstaked { who: T::AccountId, creator: SpaceId, era: EraIndex, amount: BalanceOf<T> },
         RewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
         WithdrawnFromClaimed { who: T::AccountId, amount: BalanceOf<T> },
         WithdrawnFromUnregistered { who: T::AccountId, amount: BalanceOf<T> },
@@ -176,14 +176,15 @@ pub mod pallet {
         CreatorUnregistered { who: T::AccountId, space_id: SpaceId },
         CreatorUnregisteredWithSlash { who: T::AccountId, space_id: SpaceId, amount: BalanceOf<T> },
         NewDappStakingEra { number: EraIndex },
+        MaintenanceModeSet { status: bool },
     }
 
     #[pallet::error]
     pub enum Error<T> {
         /// Pallet is disabled.
-        Disabled,
+        PalletIsDisabled,
         AlreadyUsedCreatorSpace,
-        NotOperatedCreator,
+        NotRegisteredCreator,
         NotACreator,
         CannotStakeZero,
         CannotUnstakeZero,
@@ -199,6 +200,7 @@ pub mod pallet {
         EraOutOfBounds,
         UnknownEraReward,
         AlreadyClaimedInThisEra,
+        MaintenanceModeNotChanged,
     }
 
     #[pallet::hooks]
@@ -272,7 +274,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            Self::do_unregister_creator(space_id, UnregisterOrigin::Creator(who.clone()))?;
+            Self::do_unregister_creator(space_id, UnregistrationAuthority::Creator(who.clone()))?;
 
             Self::deposit_event(Event::<T>::CreatorUnregistered { who, space_id });
 
@@ -287,9 +289,9 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::do_unregister_creator(space_id, UnregisterOrigin::Root)?;
+            Self::do_unregister_creator(space_id, UnregistrationAuthority::Root)?;
             let creator_info =
-                Self::registered_creator(space_id).ok_or(Error::<T>::NotOperatedCreator)?;
+                Self::registered_creator(space_id).ok_or(Error::<T>::NotRegisteredCreator)?;
 
             Self::deposit_event(Event::<T>::CreatorUnregisteredWithSlash {
                 who: creator_info.stakeholder,
@@ -311,7 +313,7 @@ pub mod pallet {
             let staker = ensure_signed(origin)?;
 
             // Check that creator is ready for staking.
-            ensure!(Self::is_active(space_id), Error::<T>::NotOperatedCreator,);
+            ensure!(Self::is_creator_active(space_id), Error::<T>::NotRegisteredCreator,);
 
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = Self::ledger(&staker);
@@ -348,6 +350,7 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::Staked {
                 who: staker,
                 creator: space_id,
+                era: current_era,
                 amount: value_to_stake,
             });
             Ok(().into())
@@ -382,7 +385,7 @@ pub mod pallet {
             let staker = ensure_signed(origin)?;
 
             ensure!(amount > Zero::zero(), Error::<T>::CannotUnstakeZero);
-            ensure!(Self::is_active(space_id), Error::<T>::NotOperatedCreator,);
+            ensure!(Self::is_creator_active(space_id), Error::<T>::NotRegisteredCreator,);
 
             let current_era = Self::current_era();
             let mut staker_info = Self::staker_info(&staker, space_id);
@@ -396,7 +399,7 @@ pub mod pallet {
             let mut ledger = Self::ledger(&staker);
             ledger.unbonding_info.add(UnlockingChunk {
                 amount: value_to_unstake,
-                unlock_era: current_era + T::UnbondingPeriod::get(),
+                unlock_era: current_era + T::UnbondingPeriodInEras::get(),
             });
             // This should be done AFTER insertion since it's possible for chunks to merge
             ensure!(
@@ -418,6 +421,7 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::Unstaked {
                 who: staker,
                 creator: space_id,
+                era: current_era,
                 amount: value_to_unstake,
             });
 
@@ -468,7 +472,7 @@ pub mod pallet {
 
             // Creator must exist and it has to be unregistered
             let creator_info =
-                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotOperatedCreator)?;
+                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotRegisteredCreator)?;
 
             let unregistered_era = if let CreatorState::Unregistered(x) = creator_info.state {
                 x
@@ -525,10 +529,10 @@ pub mod pallet {
             ensure!(staked > Zero::zero(), Error::<T>::NotStakedCreator);
 
             let creator_info =
-                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotOperatedCreator)?;
+                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotRegisteredCreator)?;
 
             if let CreatorState::Unregistered(unregister_era) = creator_info.state {
-                ensure!(era < unregister_era, Error::<T>::NotOperatedCreator);
+                ensure!(era < unregister_era, Error::<T>::NotRegisteredCreator);
             }
 
             let current_era = Self::current_era();
@@ -538,10 +542,10 @@ pub mod pallet {
             let reward_and_stake =
                 Self::general_era_info(era).ok_or(Error::<T>::UnknownEraReward)?;
 
-            let (_, stakers_joint_reward) =
-                Self::creator_stakers_split(&staking_info, &reward_and_stake);
+            let (_, stakers_combined_reward_share) =
+                Self::distributed_rewards_between_creator_and_stakers(&staking_info, &reward_and_stake);
             let staker_reward =
-                Perbill::from_rational(staked, staking_info.total) * stakers_joint_reward;
+                Perbill::from_rational(staked, staking_info.total) * stakers_combined_reward_share;
 
             let mut ledger = Self::ledger(&staker);
 
@@ -564,7 +568,7 @@ pub mod pallet {
                 );
             }
 
-            // Withdraw reward funds from the creators staking pot
+            // Withdraw reward funds from rewards holding account
             let reward_imbalance = T::Currency::withdraw(
                 &Self::account_id(),
                 staker_reward,
@@ -593,6 +597,7 @@ pub mod pallet {
                 Self::deposit_event(Event::<T>::Staked {
                     who: staker.clone(),
                     creator: space_id,
+                    era: current_era,
                     amount: staker_reward,
                 });
             }
@@ -622,7 +627,7 @@ pub mod pallet {
             let _ = ensure_signed(origin)?;
 
             let creator_info =
-                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotOperatedCreator)?;
+                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotRegisteredCreator)?;
 
             let mut creator_stake_info =
                 Self::creator_stake_info(space_id, era).unwrap_or_default();
@@ -652,6 +657,25 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(9)]
+        #[pallet::weight(Weight::from_ref_time(10_000))]
+        pub fn set_maintenance_mode(
+            origin: OriginFor<T>,
+            enable_maintenance: bool,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            let is_disabled = PalletDisabled::<T>::get();
+
+            ensure!(
+                is_disabled ^ enable_maintenance,
+                Error::<T>::MaintenanceModeNotChanged
+            );
+            PalletDisabled::<T>::put(enable_maintenance);
+
+            Self::deposit_event(Event::<T>::MaintenanceModeSet { status: enable_maintenance });
+            Ok(().into())
+        }
+
         // #[weight = 10_000]
         // fn set_annual_inflation(origin, inflation: Perbill) {
         //     ensure_root(origin)?;
@@ -670,7 +694,7 @@ pub mod pallet {
         ) -> Result<BalanceOf<T>, Error<T>> {
             let current_era = Self::current_era();
             if let CreatorState::Unregistered(unregister_era) = creator_info.state {
-                ensure!(era < unregister_era, Error::<T>::NotOperatedCreator);
+                ensure!(era < unregister_era, Error::<T>::NotRegisteredCreator);
             }
             ensure!(era < current_era, Error::<T>::EraOutOfBounds);
 
@@ -683,11 +707,11 @@ pub mod pallet {
                 Error::<T>::NotStakedCreator,
             );
 
-            let reward_and_stake =
+            let rewards_and_stakes =
                 Self::general_era_info(era).ok_or(Error::<T>::UnknownEraReward)?;
 
             // Calculate the creator reward for this era.
-            let (creator_reward, _) = Self::creator_stakers_split(&creator_stake_info, &reward_and_stake);
+            let (creator_reward, _) = Self::distributed_rewards_between_creator_and_stakers(&creator_stake_info, &rewards_and_stakes);
 
             Ok(creator_reward)
         }
@@ -695,7 +719,7 @@ pub mod pallet {
         /// `Err` if pallet disabled for maintenance, `Ok` otherwise
         pub fn ensure_pallet_enabled() -> Result<(), Error<T>> {
             if PalletDisabled::<T>::get() {
-                Err(Error::<T>::Disabled)
+                Err(Error::<T>::PalletIsDisabled)
             } else {
                 Ok(())
             }
@@ -715,7 +739,7 @@ pub mod pallet {
         }
 
         /// `true` if creator is active, `false` if it has been unregistered
-        fn is_active(space_id: SpaceId) -> bool {
+        fn is_creator_active(space_id: SpaceId) -> bool {
             RegisteredCreators::<T>::get(space_id)
                 .map_or(false, |info| info.state == CreatorState::Registered)
         }
@@ -733,18 +757,18 @@ pub mod pallet {
 
         pub(super) fn do_unregister_creator(
             space_id: SpaceId,
-            unregister_origin: UnregisterOrigin<T::AccountId>,
+            unregister_origin: UnregistrationAuthority<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let mut creator_info =
-                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotOperatedCreator)?;
+                RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::NotRegisteredCreator)?;
 
-            ensure!(creator_info.state == CreatorState::Registered, Error::<T>::NotOperatedCreator);
+            ensure!(creator_info.state == CreatorState::Registered, Error::<T>::NotRegisteredCreator);
             let stakeholder = creator_info.stakeholder.clone();
 
             // TODO: make flexible register deposit
-            if let UnregisterOrigin::Root = unregister_origin {
+            if let UnregistrationAuthority::Root = unregister_origin {
                 T::Currency::slash_reserved(&stakeholder, T::RegistrationDeposit::get());
-            } else if let UnregisterOrigin::Creator(who) = unregister_origin {
+            } else if let UnregistrationAuthority::Creator(who) = unregister_origin {
                 ensure!(who == stakeholder, Error::<T>::NotACreator);
                 T::Currency::unreserve(&stakeholder, T::RegistrationDeposit::get());
             }
@@ -886,20 +910,20 @@ pub mod pallet {
             }
         }
 
-        /// Calculate reward split between a creator and its stakers.
+        /// Calculate the reward distribution between a creator and all their staking participants.
         ///
-        /// Returns (creator reward, joint stakers reward)
-        pub(crate) fn creator_stakers_split(
+        /// Returns (creator's reward, stakers' combined reward)
+        pub(crate) fn distributed_rewards_between_creator_and_stakers(
             creator_info: &CreatorStakeInfo<BalanceOf<T>>,
             era_info: &EraInfo<BalanceOf<T>>,
         ) -> (BalanceOf<T>, BalanceOf<T>) {
-            let creator_stake_portion =
+            let creator_proportional_stake =
                 Perbill::from_rational(creator_info.total, era_info.staked);
 
-            let creator_reward_part = creator_stake_portion * era_info.rewards.creators;
-            let stakers_joint_reward = creator_stake_portion * era_info.rewards.stakers;
+            let creator_reward_share = creator_proportional_stake * era_info.rewards.creators;
+            let stakers_combined_reward_share = creator_proportional_stake * era_info.rewards.stakers;
 
-            (creator_reward_part, stakers_joint_reward)
+            (creator_reward_share, stakers_combined_reward_share)
         }
 
         pub(crate) fn account_id() -> T::AccountId {
