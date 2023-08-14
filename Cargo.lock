@@ -5435,7 +5435,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-creators-staking"
+name = "pallet-creator-staking"
 version = "0.1.8"
 dependencies = [
  "frame-benchmarking",
@@ -5452,7 +5452,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-staking",
  "sp-std",
  "subsocial-support",
 ]
