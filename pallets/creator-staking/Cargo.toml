@@ -1,5 +1,5 @@
 [package]
-name = "pallet-creators-staking"
+name = "pallet-creator-staking"
 version = "0.1.8"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
@@ -25,7 +25,6 @@ sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "pol
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
-sp-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 
 frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
@@ -52,7 +51,6 @@ std = [
     "pallet-balances/std",
     "pallet-session/std",
     "pallet-timestamp/std",
-    "sp-staking/std",
     "frame-benchmarking?/std",
     "subsocial-support/std",
 ]
