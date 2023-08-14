@@ -426,11 +426,7 @@ pub mod pallet {
 
         #[pallet::call_index(5)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
-        pub fn withdraw_unstaked(
-            origin: OriginFor<T>,
-            // #[pallet::compact]
-            // amount: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
+        pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
 
@@ -466,8 +462,6 @@ pub mod pallet {
         pub fn withdraw_from_unregistered(
             origin: OriginFor<T>,
             space_id: SpaceId,
-            // #[pallet::compact]
-            // amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
