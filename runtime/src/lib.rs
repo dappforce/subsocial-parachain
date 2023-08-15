@@ -729,7 +729,7 @@ impl pallet_energy::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BlockPerEra: BlockNumber = 6 * HOURS;
+	pub const BlockPerEra: BlockNumber = 15 * MINUTES;
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
@@ -746,7 +746,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type MinimumStakingAmount = MinimumStakingAmount;
 	type MinimumRemainingAmount = MinimumRemainingAmount;
 	type MaxNumberOfStakersPerCreator = ConstU32<100>;
-	type MaxEraStakeValues = ConstU32<5>;
+	type MaxEraStakeValues = ConstU32<10>;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
 }
