@@ -728,6 +728,29 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const BlockPerEra: BlockNumber = 6 * HOURS;
+	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
+	pub const RegistrationDeposit: Balance = 1000 * UNIT;
+	pub const MinimumStakingAmount: Balance = 100 * UNIT;
+	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
+}
+
+impl pallet_creator_staking::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = CreatorStakingPalletId;
+	type BlockPerEra = BlockPerEra;
+	type Currency = Balances;
+	type SpacesInterface = Spaces;
+	type RegistrationDeposit = RegistrationDeposit;
+	type MinimumStakingAmount = MinimumStakingAmount;
+	type MinimumRemainingAmount = MinimumRemainingAmount;
+	type MaxNumberOfStakersPerCreator = ConstU32<100>;
+	type MaxEraStakeValues = ConstU32<5>;
+	type UnbondingPeriodInEras = ConstU32<2>;
+	type MaxUnlockingChunks = ConstU32<32>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -769,6 +792,7 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
+		CreatorStaking: pallet_creator_staking = 63,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
