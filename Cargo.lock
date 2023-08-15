@@ -11337,6 +11337,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-creator-staking",
  "pallet-domains",
  "pallet-domains-rpc-runtime-api",
  "pallet-energy",
