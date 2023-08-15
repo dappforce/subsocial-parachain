@@ -25,6 +25,7 @@ smallvec = "1.10.0"
 
 # Local
 pallet-account-follows = { path = "../pallets/account-follows", default-features = false }
+pallet-creator-staking = { path = "../pallets/creator-staking", default-features = false }
 pallet-domains = { path = "../pallets/domains", default-features = false }
 pallet-energy = { path = "../pallets/energy", default-features = false }
 pallet-permissions = { path = '../pallets/permissions', default-features = false }
@@ -144,6 +145,7 @@ std = [
 	"pallet-utility/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-account-follows/std",
+	"pallet-creator-staking/std",
 	"pallet-domains/std",
 	"pallet-energy/std",
 	"pallet-permissions/std",

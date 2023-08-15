@@ -11312,6 +11312,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-creator-staking",
  "pallet-domains",
  "pallet-energy",
  "pallet-free-proxy",
