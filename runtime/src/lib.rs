@@ -168,7 +168,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 2701,
+	spec_version: 2703,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 5,
@@ -729,15 +729,15 @@ impl pallet_energy::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BlockPerEra: BlockNumber = 6 * HOURS;
-	pub const MaxErasToReward: u32 = 90 * DAYS / BlockPerEra::get();
+	pub const BlockPerEra: BlockNumber = 15 * MINUTES;
+	pub const MaxErasToReward: u32 = 1 * HOURS / BlockPerEra::get();
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(10);
+	pub CurrentAnnualInflation: Perbill = Perbill::from_rational(1u32, 200);
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -753,7 +753,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type MinimumStakingAmount = MinimumStakingAmount;
 	type MinimumRemainingAmount = MinimumRemainingAmount;
 	type MaxNumberOfStakersPerCreator = ConstU32<100>;
-	type MaxEraStakeValues = ConstU32<5>;
+	type MaxEraStakeValues = ConstU32<10>;
 	type MaxErasToReward = MaxErasToReward;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
