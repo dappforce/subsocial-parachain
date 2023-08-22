@@ -1,0 +1,13 @@
+---
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    reviewers:
+      - "F3Joule"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "dependabot"
+    pull-request-branch-name:
+      separator: "/"
