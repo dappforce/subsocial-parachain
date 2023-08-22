@@ -1,4 +1,5 @@
 use super::types::*;
+use sp_runtime::traits::CheckedAdd;
 
 impl<AccountId> CreatorInfo<AccountId> {
     /// Create new `CreatorInfo` struct instance with the given developer and state `Registered`
@@ -241,5 +242,32 @@ impl<Balance> UnbondingInfo<Balance>
         ) = self.unlocking_chunks.iter().partition(|chunk| chunk.unlock_era <= era);
 
         (Self { unlocking_chunks: matching_chunks }, Self { unlocking_chunks: other_chunks })
+    }
+}
+
+impl Default for RewardDistributionConfig {
+    /// `default` values based on configuration at the time of writing this code.
+    /// Should be overriden by desired params.
+    fn default() -> Self {
+        RewardDistributionConfig {
+            stakers_percent: Perbill::from_percent(50),
+            creators_percent: Perbill::from_percent(50),
+        }
+    }
+}
+
+impl RewardDistributionConfig {
+    /// `true` if sum of all percentages is `one whole`, `false` otherwise.
+    pub fn is_consistent(&self) -> bool {
+        let variables = vec![
+            &self.stakers_percent,
+            &self.creators_percent,
+        ];
+        let accumulator = variables
+            .iter()
+            .try_fold(Perbill::zero(), |acc, &percent| acc.checked_add(percent))
+            .unwrap_or_default();
+
+        Perbill::one() == accumulator
     }
 }

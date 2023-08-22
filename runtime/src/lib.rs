@@ -13,7 +13,7 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -327,7 +327,7 @@ impl frame_system::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = (Aura, CreatorStaking);
 	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 	type WeightInfo = ();
 }
@@ -727,10 +727,17 @@ impl pallet_energy::Config for Runtime {
 
 parameter_types! {
 	pub const BlockPerEra: BlockNumber = 6 * HOURS;
+	pub const MaxErasToReward: u32 = 90 * DAYS / BlockPerEra::get();
+
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
+
+	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(10);
+	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
+	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
 }
 
 impl pallet_creator_staking::Config for Runtime {
@@ -744,8 +751,12 @@ impl pallet_creator_staking::Config for Runtime {
 	type MinimumRemainingAmount = MinimumRemainingAmount;
 	type MaxNumberOfStakersPerCreator = ConstU32<100>;
 	type MaxEraStakeValues = ConstU32<5>;
+	type MaxErasToReward = MaxErasToReward;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
+	type CurrentAnnualInflation = CurrentAnnualInflation;
+	type BlocksPerYear = BlocksPerYear;
+	type TreasuryAccount = TreasuryAccount;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
