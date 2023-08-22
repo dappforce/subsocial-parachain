@@ -4,6 +4,7 @@ pub use pallet::*;
 
 pub mod types;
 pub mod functions;
+pub mod inflation;
 // #[cfg(test)]
 // mod mock;
 
@@ -80,6 +81,9 @@ pub mod pallet {
         #[pallet::constant]
         type MaxEraStakeValues: Get<u32>;
 
+        #[pallet::constant]
+        type MaxErasToReward: Get<u32>;
+
         /// Number of eras that need to pass until unstaked value can be withdrawn.
         /// Current era is always counted as full era (regardless how much blocks are remaining).
         /// When set to `0`, it's equal to having no unbonding period.
@@ -90,6 +94,15 @@ pub mod pallet {
         /// If value is zero, unlocking becomes impossible.
         #[pallet::constant]
         type MaxUnlockingChunks: Get<u32>;
+
+        #[pallet::constant]
+        type CurrentAnnualInflation: Get<Perbill>;
+
+        #[pallet::constant]
+        type BlocksPerYear: Get<Self::BlockNumber>;
+
+        #[pallet::constant]
+        type TreasuryAccount: Get<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -107,16 +120,22 @@ pub mod pallet {
     #[pallet::getter(fn current_era)]
     pub type CurrentEra<T> = StorageValue<_, EraIndex, ValueQuery>;
 
+    #[pallet::type_value]
+    pub fn ForceEraOnEmpty() -> Forcing {
+        Forcing::NotForcing
+    }
+
+    /// Mode of era forcing.
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    #[pallet::getter(fn force_era)]
+    pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery, ForceEraOnEmpty>;
+
     /// Stores the block number of when the next era starts
     #[pallet::storage]
     #[pallet::whitelist_storage]
     #[pallet::getter(fn next_era_starting_block)]
     pub type NextEraStartingBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
-
-    /// Accumulator for block rewards during an era. It is reset at every new era
-    #[pallet::storage]
-    #[pallet::getter(fn block_reward_accumulator)]
-    pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn registered_creator)]
@@ -160,8 +179,22 @@ pub mod pallet {
     pub type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
 
-    // Pallets use events to inform users when important changes are made.
-    // https://docs.substrate.io/v3/runtime/events-and-errors
+    /// Accumulator for block rewards during an era. It is reset at every new era
+    #[pallet::storage]
+    #[pallet::getter(fn block_reward_accumulator)]
+    pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
+
+    #[pallet::type_value]
+    pub fn RewardConfigOnEmpty() -> RewardDistributionConfig {
+        RewardDistributionConfig::default()
+    }
+
+    /// An active list of configuration parameters used to calculate reward distribution portions.
+    #[pallet::storage]
+    #[pallet::getter(fn reward_config)]
+    pub type ActiveRewardDistributionConfig<T> =
+        StorageValue<_, RewardDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -201,6 +234,7 @@ pub mod pallet {
         UnknownEraReward,
         AlreadyClaimedInThisEra,
         MaintenanceModeNotChanged,
+        RewardDistributionConfigInconsistent,
     }
 
     #[pallet::hooks]
@@ -215,21 +249,25 @@ pub mod pallet {
                 return T::DbWeight::get().reads(1);
             }
 
+            let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let previous_era = Self::current_era();
             let next_era_starting_block = Self::next_era_starting_block();
 
             // Value is compared to 1 since genesis block is ignored
-            if now >= next_era_starting_block || previous_era.is_zero() {
+            if now >= next_era_starting_block || force_new_era || previous_era.is_zero() {
                 let blocks_per_era = T::BlockPerEra::get();
                 let next_era = previous_era + 1;
                 CurrentEra::<T>::put(next_era);
 
                 NextEraStartingBlock::<T>::put(now + blocks_per_era);
 
-                // TODO: Replace BlockRewardAccumulator with AnnualInflation
                 let reward = BlockRewardAccumulator::<T>::take();
                 Self::reward_balance_snapshot(previous_era, reward);
                 let consumed_weight = Self::rotate_staking_info(previous_era);
+
+                if force_new_era {
+                    ForceEra::<T>::put(Forcing::NotForcing);
+                }
 
                 Self::deposit_event(Event::<T>::NewCreatorStakingEra { number: next_era });
 
@@ -602,6 +640,7 @@ pub mod pallet {
                 });
             }
 
+            // TODO: mint tokens to balance before locking in case `should_restake_reward` is true
             T::Currency::resolve_creating(&staker, reward_imbalance);
             Self::update_staker_info(&staker, space_id, staker_info);
 
@@ -674,6 +713,30 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::MaintenanceModeSet { status: enable_maintenance });
             Ok(().into())
+        }
+
+        #[pallet::call_index(10)]
+        #[pallet::weight(Weight::from_ref_time(10_000))]
+        pub fn force_new_era(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            ensure_root(origin)?;
+            ForceEra::<T>::put(Forcing::ForceNew);
+            Ok(())
+        }
+
+        #[pallet::call_index(11)]
+        #[pallet::weight(Weight::from_ref_time(10_000))]
+        pub fn set_reward_distribution_config(
+            origin: OriginFor<T>,
+            new_config: RewardDistributionConfig,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            ensure_root(origin)?;
+
+            ensure!(new_config.is_consistent(), Error::<T>::RewardDistributionConfigInconsistent);
+            ActiveRewardDistributionConfig::<T>::put(new_config);
+
+            Ok(())
         }
 
         // #[weight = 10_000]
