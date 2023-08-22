@@ -2,7 +2,7 @@ use codec::{Decode, Encode, HasCompact, MaxEncodedLen};
 use frame_support::traits::Currency;
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
-use sp_runtime::{traits::Zero, RuntimeDebug};
+use sp_runtime::{Perbill, traits::Zero, RuntimeDebug};
 use sp_std::{ops::Add, prelude::*};
 
 use super::*;
@@ -174,4 +174,29 @@ pub struct EraInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total locked amount in an era
     #[codec(compact)]
     pub locked: Balance,
+}
+
+/// Mode of era-forcing.
+#[derive(Copy, Clone, PartialEq, Eq, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub enum Forcing {
+    /// Not forcing anything - just let whatever happen.
+    #[default]
+    NotForcing,
+    /// Force a new era, then reset to `NotForcing` as soon as it is done.
+    /// Note that this will force to trigger an election until a new era is triggered, if the
+    /// election failed, the next session end will trigger a new election again, until success.
+    ForceNew,
+}
+
+/// A list of configuration parameters used to calculate reward distribution portions.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct RewardDistributionConfig {
+    /// Base percentage of reward that goes to stakers
+    #[codec(compact)]
+    pub stakers_percent: Perbill,
+    /// Percentage of rewards that goes to dApps
+    #[codec(compact)]
+    pub creators_percent: Perbill,
 }
