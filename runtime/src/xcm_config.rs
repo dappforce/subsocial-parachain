@@ -204,7 +204,9 @@ impl pallet_xcm::Config for Runtime {
     // Needs to be `Everything` for local testing.
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmTeleportFilter = Nothing;
-    type XcmReserveTransferFilter = Everything;
+    type XcmReserveTransferFilter = Nothing;
+    // ^ Disable reserve transfer on the XCM pallet.
+    // TODO: enable `XcmReserveTransferFilter` when we are ready to.
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
