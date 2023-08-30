@@ -1,6 +1,7 @@
 use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
 use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
+use sp_std::vec::Vec;
 use subsocial_support::SpaceId;
 
 impl<T: Config> Pallet<T> {
@@ -305,5 +306,78 @@ impl<T: Config> Pallet<T> {
         }
 
         consumed_weight
+    }
+
+    fn calculate_reward_for_staker_in_era(
+        creator_stake_info: &CreatorStakeInfo<BalanceOf<T>>,
+        staked: BalanceOf<T>,
+        era: EraIndex,
+    ) -> BalanceOf<T> {
+        if let Some(reward_and_stake) = Self::general_era_info(era) {
+            let (_, stakers_combined_reward_share) =
+                Self::distributed_rewards_between_creator_and_stakers(creator_stake_info, &reward_and_stake);
+            Perbill::from_rational(staked, creator_stake_info.total) * stakers_combined_reward_share
+        } else {
+            Zero::zero()
+        }
+    }
+
+    pub fn estimated_staker_rewards_by_creators(
+        staker: T::AccountId,
+        mut target_creators: Vec<SpaceId>,
+    ) -> Vec<(SpaceId, BalanceOf<T>)> {
+        let mut estimated_rewards: Vec<(SpaceId, BalanceOf<T>)> = Vec::new();
+        target_creators.dedup();
+
+        let current_era = Self::current_era();
+
+        for creator_id in target_creators {
+            let mut staker_info_for_creator = Self::staker_info(&staker, creator_id);
+
+            let mut unregistered_era = current_era;
+            if let Some(creator_info) = Self::registered_creator(creator_id) {
+                if let CreatorState::Unregistered(era) = creator_info.state {
+                    unregistered_era = era;
+                }
+            }
+
+            if staker_info_for_creator.stakes.is_empty() {
+                estimated_rewards.push((creator_id, Zero::zero()));
+                continue;
+            }
+
+            let mut total_staker_rewards_for_eras: BalanceOf<T> = Zero::zero();
+            loop {
+                let (era, staked) = staker_info_for_creator.claim();
+                if era >= unregistered_era || era == 0 {
+                    break;
+                }
+                let creator_stake_info = Self::creator_stake_info(creator_id, era).unwrap_or_default();
+
+                total_staker_rewards_for_eras = total_staker_rewards_for_eras.saturating_add(
+                    Self::calculate_reward_for_staker_in_era(&creator_stake_info, staked, era)
+                );
+            }
+
+            estimated_rewards.push((creator_id, total_staker_rewards_for_eras));
+        }
+
+        estimated_rewards
+    }
+
+    pub fn withdrawable_amounts_from_inactive_creators(
+        staker: T::AccountId,
+    ) -> Vec<(SpaceId, BalanceOf<T>)> {
+        let mut withdrawable_amounts_by_creator = Vec::new();
+
+        for (creator_id, staker_info) in GeneralStakerInfo::<T>::iter_prefix(&staker) {
+            if !Self::is_creator_active(creator_id) {
+                if let Some(most_recent_stake) = staker_info.stakes.last() {
+                    withdrawable_amounts_by_creator.push((creator_id, most_recent_stake.staked));
+                }
+            }
+        }
+
+        withdrawable_amounts_by_creator
     }
 }

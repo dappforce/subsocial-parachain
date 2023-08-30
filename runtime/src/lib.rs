@@ -40,6 +40,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber}
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use pallet_domains::types::PricesConfigVec;
+use subsocial_support::SpaceId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -971,6 +972,23 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+		for Runtime
+	{
+		fn estimated_staker_rewards_by_creators(
+			staker: AccountId,
+			creators: Vec<SpaceId>,
+		) -> Vec<(SpaceId, Balance)> {
+			CreatorStaking::estimated_staker_rewards_by_creators(staker, creators)
+		}
+
+		fn withdrawable_amounts_from_inactive_creators(
+			staker: AccountId,
+		) -> Vec<(SpaceId, Balance)> {
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(staker)
 		}
 	}
 
