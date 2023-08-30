@@ -3481,7 +3481,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5188,7 +5188,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-follows"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5436,7 +5436,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking"
-version = "0.1.8"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5459,7 +5459,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking-rpc"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "jsonrpsee",
  "pallet-creator-staking-rpc-runtime-api",
@@ -5475,7 +5475,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking-rpc-runtime-api"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -5504,7 +5504,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5522,7 +5522,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains-rpc"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "jsonrpsee",
  "pallet-domains-rpc-runtime-api",
@@ -5536,7 +5536,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains-rpc-runtime-api"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -5600,7 +5600,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-energy"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5636,7 +5636,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-free-proxy"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5883,7 +5883,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-permissions"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5897,7 +5897,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-post-follows"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5912,7 +5912,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-posts"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5931,7 +5931,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-posts-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5972,7 +5972,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-profiles"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6038,7 +6038,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-reactions"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6057,7 +6057,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-reactions-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6115,7 +6115,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-roles"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6204,7 +6204,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-follows"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6218,7 +6218,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-follows-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6241,7 +6241,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-ownership"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6255,7 +6255,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-ownership-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6279,7 +6279,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-spaces"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6296,7 +6296,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-spaces-tests"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -11280,7 +11280,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-collator"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -11341,7 +11341,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-parachain-runtime"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -11416,7 +11416,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-support"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "frame-support",
  "frame-system",
