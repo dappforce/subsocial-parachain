@@ -5457,6 +5457,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-creator-staking-rpc"
+version = "0.1.9"
+dependencies = [
+ "jsonrpsee",
+ "pallet-creator-staking-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-creator-staking-rpc-runtime-api"
+version = "0.1.9"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
@@ -11268,6 +11295,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-creator-staking-rpc",
  "pallet-domains-rpc",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
@@ -11338,6 +11366,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-creator-staking",
+ "pallet-creator-staking-rpc-runtime-api",
  "pallet-domains",
  "pallet-domains-rpc-runtime-api",
  "pallet-energy",
@@ -11377,6 +11406,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "subsocial-support",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",

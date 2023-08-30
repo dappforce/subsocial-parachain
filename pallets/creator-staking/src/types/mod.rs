@@ -89,7 +89,7 @@ pub struct AccountLedger<Balance: AtLeast32BitUnsigned + Default + Copy + MaxEnc
 pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
     /// Staked amount in era
     #[codec(compact)]
-    staked: Balance,
+    pub(super) staked: Balance,
     /// Staked era
     #[codec(compact)]
     era: EraIndex,
@@ -126,7 +126,7 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 #[derive(Encode, Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct StakerInfo<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
     // Size of this list would be limited by a configurable constant
-    stakes: Vec<EraStake<Balance>>,
+    pub(super) stakes: Vec<EraStake<Balance>>,
 }
 
 /// Represents an balance amount undergoing the unbonding process.
