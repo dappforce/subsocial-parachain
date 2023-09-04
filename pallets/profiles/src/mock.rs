@@ -13,7 +13,7 @@ use sp_runtime::{
 };
 use sp_std::sync::{Mutex, MutexGuard};
 use subsocial_support::{
-    traits::{SpacePermissionsProvider, SpacesInterface},
+    traits::{SpacePermissionsProvider, SpacesInterface, HideSpace},
     Content, SpaceId,
 };
 
@@ -84,6 +84,10 @@ mock! {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
 
         fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError>;
+    }
+
+    impl HideSpace<AccountId, SpaceId> for Spaces {
+        fn hide_space(caller: Option<AccountId>, space_id: SpaceId, hidden: bool) -> DispatchResult;
     }
 }
 

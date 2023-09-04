@@ -117,7 +117,6 @@ benchmarks! {
         let new_content = Content::IPFS(b"Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu".to_vec());
 
         let update = PostUpdate {
-            hidden: Some(true),
             content: Some(new_content.clone()),
             space_id: None,
         };

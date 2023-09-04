@@ -2,6 +2,7 @@ use frame_support::{assert_noop, assert_ok};
 
 use pallet_posts::Error as PostsError;
 use pallet_reactions::Error as ReactionsError;
+use subsocial_support::mock_functions::valid_content_ipfs;
 
 use crate::{mock::*, tests_utils::*};
 
@@ -74,7 +75,11 @@ fn create_post_reaction_should_fail_when_post_not_found() {
 fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Hide the space
-        assert_ok!(_update_space(None, None, Some(space_update(None, Some(true)))));
+        assert_ok!(Spaces::hide_space(
+            RuntimeOrigin::signed(ACCOUNT1),
+            SPACE1,
+            true,
+        ));
 
         assert_noop!(
             _create_default_post_reaction(),
@@ -87,7 +92,12 @@ fn create_post_reaction_should_fail_when_trying_to_react_in_hidden_space() {
 fn create_post_reaction_should_fail_when_trying_to_react_on_hidden_post() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Hide the post
-        assert_ok!(_update_post(None, None, Some(post_update(None, None, Some(true)))));
+        assert_ok!(_update_post(None, None, Some(post_update(None, valid_content_ipfs().into()))));
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            POST1,
+            true,
+        ));
 
         assert_noop!(
             _create_default_post_reaction(),

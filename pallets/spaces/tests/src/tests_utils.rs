@@ -235,11 +235,11 @@ pub(crate) fn updated_space_content() -> Content {
 }
 
 pub(crate) fn update_for_space_content(new_content: Content) -> SpaceUpdate {
-    space_update(Some(new_content), None)
+    space_update(Some(new_content))
 }
 
-pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
-    SpaceUpdate { content, hidden, permissions: None }
+pub(crate) fn space_update(content: Option<Content>) -> SpaceUpdate {
+    SpaceUpdate { content, permissions: None }
 }
 
 pub(crate) fn _create_default_space() -> DispatchResult {
@@ -270,7 +270,7 @@ pub(crate) fn _update_space(
     Spaces::update_space(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
-        update.unwrap_or_else(|| space_update(None, None)),
+        update.unwrap_or_else(|| space_update(None)),
     )
 }
 

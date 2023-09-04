@@ -43,7 +43,7 @@ pub mod pallet {
     };
     use subsocial_support::{
         ensure_content_is_valid, remove_from_bounded_vec,
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface},
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface, HideSpace},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
     use types::*;
@@ -84,6 +84,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         SpaceCreated { account: T::AccountId, space_id: SpaceId },
         SpaceUpdated { account: T::AccountId, space_id: SpaceId },
+        SpaceHiddenUpdated { space_id: SpaceId, hidden: bool },
     }
 
     #[pallet::error]
@@ -171,7 +172,7 @@ pub mod pallet {
             let owner = ensure_signed(origin)?;
 
             let has_updates =
-                update.content.is_some() || update.hidden.is_some() || update.permissions.is_some();
+                update.content.is_some() || update.permissions.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForSpace);
 
@@ -202,13 +203,6 @@ pub mod pallet {
 
                     space.content = content;
                     space.edited = true;
-                    is_update_applied = true;
-                }
-            }
-
-            if let Some(hidden) = update.hidden {
-                if hidden != space.hidden {
-                    space.hidden = hidden;
                     is_update_applied = true;
                 }
             }
@@ -307,6 +301,19 @@ pub mod pallet {
             NextSpaceId::<T>::put(space_id);
             Ok(Pays::No.into())
         }
+
+        #[pallet::call_index(4)]
+        // TODO fix weight
+        #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
+        pub fn hide_space(
+            origin: OriginFor<T>,
+            space_id: SpaceId,
+            hidden: bool,
+        ) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            Self::do_hide_space(Some(caller), space_id, hidden)
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -349,6 +356,37 @@ pub mod pallet {
 
             Self::deposit_event(Event::SpaceCreated { account: owner.clone(), space_id });
             Ok(space_id)
+        }
+
+        fn do_hide_space(
+            caller: Option<T::AccountId>,
+            space_id: SpaceId,
+            hidden: bool,
+        ) -> DispatchResult {
+            let mut space = Self::require_space(space_id)?;
+
+            if let Some(caller) = caller {
+                ensure!(
+                    T::IsAccountBlocked::is_allowed_account(caller.clone(), space.id),
+                    ModerationError::AccountIsBlocked,
+                );
+
+                Self::ensure_account_has_space_permission(
+                    caller.clone(),
+                    &space,
+                    SpacePermission::UpdateSpace,
+                    Error::<T>::NoPermissionToUpdateSpace.into(),
+                )?;
+            }
+
+            if hidden != space.hidden {
+                space.hidden = hidden;
+
+                SpaceById::<T>::insert(space_id, space);
+                Self::deposit_event(Event::SpaceHiddenUpdated { hidden, space_id });
+            }
+
+            Ok(())
         }
 
         /// Check that there is a `Space` with such `space_id` in the storage
@@ -430,5 +468,12 @@ pub mod pallet {
         fn create_space(owner: &T::AccountId, content: Content) -> Result<SpaceId, DispatchError> {
             Self::do_create_space(owner, content, None)
         }
+    }
+
+    impl<T: Config> HideSpace<T::AccountId, SpaceId> for Pallet<T> {
+        fn hide_space(caller: Option<T::AccountId>, space_id: SpaceId, hidden: bool) -> DispatchResult {
+            Self::do_hide_space(caller, space_id, hidden)
+        }
+
     }
 }

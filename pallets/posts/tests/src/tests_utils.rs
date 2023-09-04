@@ -257,8 +257,8 @@ pub(crate) fn another_space_content_ipfs() -> Content {
     Content::IPFS(b"bafyrelt3cif35x4ribisxgq7unhpun525l54eib3mgbou4xln42qqcgj6q".to_vec())
 }
 
-pub(crate) fn space_update(content: Option<Content>, hidden: Option<bool>) -> SpaceUpdate {
-    SpaceUpdate { content, hidden, permissions: None }
+pub(crate) fn space_update(content: Option<Content>) -> SpaceUpdate {
+    SpaceUpdate { content, permissions: None }
 }
 
 pub(crate) fn _create_default_space() -> DispatchResult {
@@ -289,7 +289,7 @@ pub(crate) fn _update_space(
     Spaces::update_space(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
-        update.unwrap_or_else(|| space_update(None, None)),
+        update.unwrap_or_else(|| space_update(None)),
     )
 }
 
@@ -306,9 +306,8 @@ pub(crate) fn updated_post_content() -> Content {
 pub(crate) fn post_update(
     space_id: Option<SpaceId>,
     content: Option<Content>,
-    hidden: Option<bool>,
 ) -> PostUpdate {
-    PostUpdate { space_id, content, hidden }
+    PostUpdate { space_id, content }
 }
 
 pub(crate) fn comment_content_ipfs() -> Content {
@@ -357,7 +356,7 @@ pub(crate) fn _update_post(
     Posts::update_post(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
-        update.unwrap_or_else(|| post_update(None, None, None)),
+        update.unwrap_or_else(|| post_update(None, None)),
     )
 }
 
@@ -408,7 +407,7 @@ pub(crate) fn _update_comment(
     _update_post(
         origin,
         Some(post_id.unwrap_or(POST2)),
-        Some(update.unwrap_or_else(|| post_update(None, Some(reply_content_ipfs()), None))),
+        Some(update.unwrap_or_else(|| post_update(None, Some(reply_content_ipfs())))),
     )
 }
 

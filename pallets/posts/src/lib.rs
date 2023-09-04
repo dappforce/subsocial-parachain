@@ -128,6 +128,10 @@ pub mod pallet {
             from_space: Option<SpaceId>,
             to_space: Option<SpaceId>,
         },
+        PostHiddenChanged {
+            post_id: PostId,
+            hidden: bool,
+        }
     }
 
     #[pallet::error]
@@ -275,7 +279,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let editor = ensure_signed(origin)?;
 
-            let has_updates = update.content.is_some() || update.hidden.is_some();
+            let has_updates = update.content.is_some();
 
             ensure!(has_updates, Error::<T>::NoUpdatesForPost);
 
@@ -305,13 +309,6 @@ pub mod pallet {
 
                     post.content = content;
                     post.edited = true;
-                    is_update_applied = true;
-                }
-            }
-
-            if let Some(hidden) = update.hidden {
-                if hidden != post.hidden {
-                    post.hidden = hidden;
                     is_update_applied = true;
                 }
             }
@@ -480,6 +477,19 @@ pub mod pallet {
             ensure_root(origin)?;
             NextPostId::<T>::put(post_id);
             Ok(Pays::No.into())
+        }
+
+        #[pallet::call_index(6)]
+        // TODO: fix weight
+        #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
+        pub fn hide_post(
+            origin: OriginFor<T>,
+            post_id: PostId,
+            hidden: bool,
+        ) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            Self::do_hide_post(Some(caller), post_id, hidden)
         }
     }
 }

@@ -43,7 +43,6 @@ pub struct PostUpdate {
     pub space_id: Option<SpaceId>,
 
     pub content: Option<Content>,
-    pub hidden: Option<bool>,
 }
 
 /// Post extension provides specific information necessary for different kinds

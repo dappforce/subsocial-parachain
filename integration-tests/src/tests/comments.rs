@@ -96,10 +96,10 @@ fn create_comment_should_fail_when_ipfs_cid_is_invalid() {
 #[test]
 fn create_comment_should_fail_when_trying_to_create_in_hidden_space_scope() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_update_space(
-            None,
-            None,
-            Some(space_update(None, Some(true)))
+        assert_ok!(Spaces::hide_space(
+            RuntimeOrigin::signed(ACCOUNT1),
+            SPACE1,
+            true,
         ));
 
         assert_noop!(
@@ -115,7 +115,13 @@ fn create_comment_should_fail_when_trying_create_in_hidden_post_scope() {
         assert_ok!(_update_post(
             None,
             None,
-            Some(post_update(None, None, Some(true)))
+            Some(post_update(None, another_space_content_ipfs().into()))
+        ));
+
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            POST1,
+            true,
         ));
 
         assert_noop!(
@@ -175,9 +181,14 @@ fn update_comment_hidden_should_work_when_comment_has_parents() {
             Some(should_hide_id),
             Some(post_update(
                 None,
-                None,
-                Some(true) // make comment hidden
+                another_space_content_ipfs().into(),
             ))
+        ));
+
+        assert_ok!(Posts::hide_post(
+            RuntimeOrigin::signed(ACCOUNT1),
+            POST1,
+            true,
         ));
 
         // We should check that counters weren't increased for all ancestor comments
@@ -223,7 +234,7 @@ fn update_comment_should_fail_when_ipfs_cid_is_invalid() {
             _update_comment(
                 None,
                 None,
-                Some(post_update(None, Some(invalid_content_ipfs()), None))
+                Some(post_update(None, Some(invalid_content_ipfs())))
             ),
             ContentError::InvalidIpfsCid,
         );
