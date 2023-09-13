@@ -990,6 +990,12 @@ impl_runtime_apis! {
 		) -> Vec<(SpaceId, Balance)> {
 			CreatorStaking::withdrawable_amounts_from_inactive_creators(staker)
 		}
+
+		fn available_claims_by_staker(
+			staker: AccountId,
+		) -> Vec<(SpaceId, u32)> {
+			CreatorStaking::available_claims_by_staker(staker)
+		}
 	}
 
 	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {

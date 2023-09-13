@@ -20,5 +20,7 @@ sp_api::decl_runtime_apis! {
 		fn withdrawable_amounts_from_inactive_creators(
 			staker: AccountId
 		) -> Vec<(SpaceId, Balance)>;
+
+		fn available_claims_by_staker(staker: AccountId) -> Vec<(SpaceId, u32)>;
 	}
 }

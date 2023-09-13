@@ -36,6 +36,13 @@ pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
         staker: AccountId,
         at: Option<BlockHash>,
     ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
+
+    #[method(name = "posts_availableClaimsByStaker")]
+    fn available_claims_by_staker(
+        &self,
+        staker: AccountId,
+        at: Option<BlockHash>,
+    ) -> RpcResult<Vec<(SpaceId, u32)>>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -106,6 +113,21 @@ CreatorStakingApiServer<
         let res = api
             .withdrawable_amounts_from_inactive_creators(&at, staker)
             .map_err(|e| map_err(e, "Unable to get withdrawable amounts from inactive creators."))?;
+
+        Ok(res)
+    }
+
+    fn available_claims_by_staker(
+        &self,
+        staker: AccountId,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<Vec<(SpaceId, u32)>> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .available_claims_by_staker(&at, staker)
+            .map_err(|e| map_err(e, "Unable to get claims number by staker."))?;
 
         Ok(res)
     }

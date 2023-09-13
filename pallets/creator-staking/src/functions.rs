@@ -1,7 +1,7 @@
 use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
 use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 use subsocial_support::SpaceId;
 
 impl<T: Config> Pallet<T> {
@@ -379,5 +379,35 @@ impl<T: Config> Pallet<T> {
         }
 
         withdrawable_amounts_by_creator
+    }
+
+    pub fn available_claims_by_staker(
+        staker: T::AccountId,
+    ) -> Vec<(SpaceId, u32)> {
+        let mut available_claims_by_creator = BTreeMap::new();
+
+        let current_era = Self::current_era();
+
+        for (creator, mut stakes_info) in GeneralStakerInfo::<T>::iter_prefix(&staker) {
+            let mut unregistered_era = current_era;
+            if let Some(creator_info) = Self::registered_creator(creator) {
+                if let CreatorState::Unregistered(era) = creator_info.state {
+                    unregistered_era = era;
+                }
+            } else {
+                continue;
+            }
+
+            loop {
+                let (era, _) = stakes_info.claim();
+                if era >= unregistered_era || era == 0 {
+                    break;
+                }
+
+                available_claims_by_creator.entry(creator).and_modify(|e| *e += 1).or_insert(1);
+            }
+        }
+
+        available_claims_by_creator.into_iter().collect()
     }
 }
