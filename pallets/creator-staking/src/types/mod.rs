@@ -196,7 +196,7 @@ pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to stakers
     #[codec(compact)]
     pub stakers_percent: Perbill,
-    /// Percentage of rewards that goes to dApps
+    /// Percentage of rewards that goes to creators
     #[codec(compact)]
     pub creators_percent: Perbill,
 }

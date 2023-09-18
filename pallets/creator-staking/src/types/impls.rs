@@ -152,7 +152,7 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
                 self.stakes.remove(0);
             }
 
-            // Removes unstaked values if they're no longer valid for comprehension
+            // Delete information about unstaking, as the user has claimed all their rewards in the previous eras.
             if !self.stakes.is_empty() && self.stakes[0].staked.is_zero() {
                 self.stakes.remove(0);
             }

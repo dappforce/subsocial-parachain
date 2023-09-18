@@ -52,8 +52,8 @@ pub mod pallet {
         #[pallet::constant]
         type RegistrationDeposit: Get<BalanceOf<Self>>;
 
-        /// Minimum amount user must have staked on creator.
-        /// User can stake less if they already have the minimum staking amount staked on that
+        /// Minimum amount can be staked to the creator.
+        /// User can stake less if they already have the minimum staking amount staked to that
         /// particular creator.
         #[pallet::constant]
         type MinimumStakingAmount: Get<BalanceOf<Self>>;
@@ -72,7 +72,7 @@ pub mod pallet {
         /// Max number of unique `EraStake` values that can exist for a `(staker, creator)`
         /// pairing. When stakers claims rewards, they will either keep the number of
         /// `EraStake` values the same or they will reduce them by one. Stakers cannot add
-        /// an additional `EraStake` value by calling `bond&stake` or `unbond&unstake` if they've
+        /// an additional `EraStake` value by calling `bond() & stake()` or `unbond() & unstake()` if they've
         /// reached the max number of values.
         ///
         /// This ensures that history doesn't grow indefinitely - if there are too many chunks,
@@ -90,7 +90,7 @@ pub mod pallet {
         #[pallet::constant]
         type UnbondingPeriodInEras: Get<u32>;
 
-        /// Max number of unlocking chunks per account Id <-> creator Id pairing.
+        /// Max number of unlocking chunks per `(staker, creator)` pairing.
         /// If value is zero, unlocking becomes impossible.
         #[pallet::constant]
         type MaxUnlockingChunks: Get<u32>;
@@ -98,6 +98,7 @@ pub mod pallet {
         #[pallet::constant]
         type CurrentAnnualInflation: Get<Perbill>;
 
+        /// Represents the estimated number of blocks that are generated within the span of one year.
         #[pallet::constant]
         type BlocksPerYear: Get<Self::BlockNumber>;
 
@@ -301,7 +302,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::CreatorRegistered { who: space_owner, space_id });
 
-            Ok(().into())
+            Ok(Pays::No.into())
         }
 
         #[pallet::call_index(1)]
@@ -553,6 +554,8 @@ pub mod pallet {
             Ok(().into())
         }
 
+        // Claim rewards for the staker on the oldest unclaimed era where they has a stake 
+        // and optionally restake the rewards to the same creator.
         // Not sure here whether to calculate total rewards for all creators
         //  or to withdraw per-creator rewards (preferably)
         #[pallet::call_index(7)]
@@ -587,6 +590,7 @@ pub mod pallet {
 
             let mut ledger = Self::ledger(&staker);
 
+            // Can restake only if the backer has a stake on the active creator:
             let should_restake_reward = Self::should_restake_reward(
                 restake,
                 creator_info.state,
@@ -721,7 +725,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
-            Ok(())
+            Ok(Pays::No.into())
         }
 
         #[pallet::call_index(11)]
