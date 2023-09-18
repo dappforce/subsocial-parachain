@@ -399,7 +399,7 @@ impl<T: Config> Pallet<T> {
         for (creator, mut stakes_info) in GeneralStakerInfo::<T>::iter_prefix(&staker) {
             let mut unregistered_era = current_era;
             if let Some(creator_info) = Self::registered_creator(creator) {
-                if let CreatorState::Unregistered(era) = creator_info.state {
+                if let CreatorStatus::Inactive(era) = creator_info.status {
                     unregistered_era = era;
                 }
             } else {
