@@ -732,7 +732,7 @@ impl pallet_energy::Config for Runtime {
 
 parameter_types! {
 	pub const BlockPerEra: BlockNumber = 6 * HOURS;
-	pub const MaxErasToReward: u32 = 90 * DAYS / BlockPerEra::get();
+	pub const StakeExpirationInEras: u32 = 90 * DAYS / BlockPerEra::get();
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
@@ -751,12 +751,13 @@ impl pallet_creator_staking::Config for Runtime {
 	type BlockPerEra = BlockPerEra;
 	type Currency = Balances;
 	type SpacesInterface = Spaces;
+	type SpacePermissionsProvider = Spaces;
 	type CreatorRegistrationDeposit = RegistrationDeposit;
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
 	type MaxNumberOfStakersPerCreator = ConstU32<100>;
 	type MaxEraStakeItems = ConstU32<5>;
-	type StakeExpirationInEras = MaxErasToReward;
+	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
 	type AnnualInflation = CurrentAnnualInflation;

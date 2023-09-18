@@ -66,6 +66,37 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
         self.stakes.len() as u32
     }
 
+    fn change_stake<F>(
+        &mut self,
+        current_era: EraIndex,
+        value: Balance,
+        mutation_fn: F,
+    ) -> Result<(), &str>
+        where
+            F: FnOnce(Balance, Balance) -> Balance,
+    {
+        if let Some(era_stake) = self.stakes.last_mut() {
+            if era_stake.era > current_era {
+                return Err("CannotStakeInPastEra")
+            }
+
+            let new_stake_value = mutation_fn(era_stake.staked, value);
+            let new_era_stake = EraStake::new(new_stake_value, current_era);
+
+            if current_era == era_stake.era {
+                *era_stake = new_era_stake;
+            } else {
+                self.stakes.try_push(new_era_stake)
+                    .expect("qed; too many stakes in StakesInfo");
+            }
+        } else {
+            self.stakes.try_push(EraStake::new(value, current_era))
+                .expect("qed; too many stakes in StakesInfo");
+        }
+
+        Ok(())
+    }
+
     /// Stakes some value in the specified era.
     ///
     /// User should ensure that given era is either equal or greater than the
@@ -79,25 +110,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
     /// * `stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
     pub(crate) fn increase_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
-        if let Some(era_stake) = self.stakes.last_mut() {
-            if era_stake.era > current_era {
-                return Err("CannotStakeInPastEra")
-            }
-
-            let new_stake_value = era_stake.staked.saturating_add(value);
-
-            if current_era == era_stake.era {
-                *era_stake = EraStake::new(new_stake_value, current_era)
-            } else {
-                self.stakes.try_push(EraStake::new(new_stake_value, current_era))
-                    .expect("qed; too many stakes in StakesInfo");
-            }
-        } else {
-            self.stakes.try_push(EraStake::new(value, current_era))
-                .expect("qed; too many stakes in StakesInfo");
-        }
-
-        Ok(())
+        self.change_stake(current_era, value, |x, y| x.saturating_add(y))
     }
 
     /// Unstakes some value in the specified era.
@@ -119,26 +132,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     ///
     /// Note that if no unclaimed eras remain, vector will be cleared.
     pub(crate) fn unstake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
-        if let Some(era_stake) = self.stakes.last_mut() {
-            if era_stake.era > current_era {
-                return Err("Unexpected era")
-            }
-
-            let new_stake_value = era_stake.staked.saturating_sub(value);
-            if current_era == era_stake.era {
-                *era_stake = EraStake::new(new_stake_value, current_era)
-            } else {
-                self.stakes.try_push(EraStake::new(new_stake_value, current_era))
-                    .expect("qed; too many stakes in StakesInfo");
-            }
-
-            // Removes unstaked values if they're no longer valid for comprehension
-            if !self.stakes.is_empty() && self.stakes[0].staked.is_zero() {
-                self.stakes.remove(0);
-            }
-        }
-
-        Ok(())
+        self.change_stake(current_era, value, |x, y| x.saturating_sub(y))
     }
 
     /// `Claims` the oldest era available for claiming.

@@ -2,41 +2,9 @@ use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
 use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-use subsocial_support::{SpaceId, traits::SpacesInterface};
+use subsocial_support::{SpaceId, traits::SpacePermissionsProvider};
 
 impl<T: Config> Pallet<T> {
-    /// Calculate the creator reward for the specified era.
-    /// If successfull, returns reward amount.
-    /// In case reward cannot be claimed or was already claimed, an error is raised.
-    pub(super) fn calculate_creator_reward(
-        creator_stake_info: &CreatorStakeInfo<BalanceOf<T>>,
-        creator_info: &CreatorInfo<T::AccountId>,
-        era: EraIndex,
-    ) -> Result<BalanceOf<T>, Error<T>> {
-        let current_era = Self::current_era();
-        if let CreatorStatus::Inactive(unregister_era) = creator_info.status {
-            ensure!(era < unregister_era, Error::<T>::InactiveCreator);
-        }
-        ensure!(era < current_era, Error::<T>::EraOutOfBounds);
-
-        ensure!(
-                !creator_stake_info.rewards_claimed,
-                Error::<T>::AlreadyClaimedInThisEra,
-            );
-        ensure!(
-                creator_stake_info.total > Zero::zero(),
-                Error::<T>::NotStakedCreator,
-            );
-
-        let rewards_and_stakes =
-            Self::general_era_info(era).ok_or(Error::<T>::EraNotFound)?;
-
-        // Calculate the creator reward for this era.
-        let (creator_reward, _) = Self::distributed_rewards_between_creator_and_stakers(creator_stake_info, &rewards_and_stakes);
-
-        Ok(creator_reward)
-    }
-
     /// `Err` if pallet disabled for maintenance, `Ok` otherwise
     pub fn ensure_pallet_enabled() -> Result<(), Error<T>> {
         if PalletDisabled::<T>::get() {
@@ -61,27 +29,25 @@ impl<T: Config> Pallet<T> {
 
     /// `true` if creator is active, `false` if it has been unregistered
     pub(super) fn is_creator_active(space_id: SpaceId) -> bool {
-        RegisteredCreators::<T>::get(space_id)
+        Self::require_creator(space_id)
             .map_or(false, |info| info.status == CreatorStatus::Active)
     }
 
-    /// `true` if all the conditions for restaking the reward have been met, `false` otherwise
-    pub(crate) fn should_restake_reward(
-        restake: bool,
-        creator_state: CreatorStatus,
-        current_stake: BalanceOf<T>,
-    ) -> bool {
-        restake
-            && creator_state == CreatorStatus::Active
-            && current_stake > Zero::zero()
+    pub(super) fn ensure_creator_active_in_era(
+        creator_info: &CreatorInfo<T::AccountId>,
+        era: EraIndex,
+    ) -> DispatchResult {
+        if let CreatorStatus::Inactive(unregister_era) = creator_info.status {
+            ensure!(era < unregister_era, Error::<T>::InactiveCreator);
+        }
+        Ok(())
     }
 
     pub(super) fn do_unregister_creator(
         space_id: SpaceId,
         unregister_origin: UnregistrationAuthority<T::AccountId>,
     ) -> DispatchResultWithPostInfo {
-        let mut creator_info =
-            RegisteredCreators::<T>::get(space_id).ok_or(Error::<T>::CreatorNotFound)?;
+        let mut creator_info = Self::require_creator(space_id)?;
 
         ensure!(creator_info.status == CreatorStatus::Active, Error::<T>::InactiveCreator);
         let stakeholder = creator_info.stakeholder.clone();
@@ -90,9 +56,7 @@ impl<T: Config> Pallet<T> {
         if let UnregistrationAuthority::Root = unregister_origin {
             T::Currency::slash_reserved(&stakeholder, T::CreatorRegistrationDeposit::get());
         } else if let UnregistrationAuthority::Creator(who) = unregister_origin {
-            let space_owner = T::SpacesInterface::get_space_owner(space_id)?;
-            // FIXME: this error should be NotASpaceOwner
-            ensure!(who == space_owner, Error::<T>::NotACreator);
+            T::SpacePermissionsProvider::ensure_space_owner(space_id, &who)?;
             T::Currency::unreserve(&stakeholder, T::CreatorRegistrationDeposit::get());
         }
 
@@ -124,9 +88,10 @@ impl<T: Config> Pallet<T> {
         staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
         current_era: EraIndex,
-    ) -> Result<(), Error<T>> {
+    ) -> Result<(), DispatchError> {
         let current_stake = staker_info.current_stake();
 
+        // FIXME: this check is not needed if we ensure that staker_info is always empty
         ensure!(
             !current_stake.is_zero() ||
                 staking_info.stakers_count < T::MaxNumberOfStakersPerCreator::get(),
@@ -138,12 +103,10 @@ impl<T: Config> Pallet<T> {
 
         staker_info
             .increase_stake(current_era, desired_amount)
-            .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
-        ensure!(
-            // One extra item should remain for vector manipulation in a claim call.
-            staker_info.len() < T::MaxEraStakeItems::get(),
-            Error::<T>::TooManyEraStakeValues
-        );
+            .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
+
+        Self::ensure_max_era_stake_items_not_exceeded(staker_info)?;
+
         ensure!(
             staker_info.current_stake() >= T::MinimumStake::get(),
             Error::<T>::InsufficientStakingAmount,
@@ -180,7 +143,7 @@ impl<T: Config> Pallet<T> {
         stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
         current_era: EraIndex,
-    ) -> Result<BalanceOf<T>, Error<T>> {
+    ) -> Result<BalanceOf<T>, DispatchError> {
         let staked_value = staker_info.current_stake();
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
@@ -194,19 +157,17 @@ impl<T: Config> Pallet<T> {
         } else {
             desired_amount
         };
-        stake_info.total = stake_info.total.saturating_sub(amount_to_unstake);
 
         // Sanity check
         ensure!(amount_to_unstake > Zero::zero(), Error::<T>::CannotUnstakeZero);
 
+        stake_info.total = stake_info.total.saturating_sub(amount_to_unstake);
+
         staker_info
             .unstake(current_era, amount_to_unstake)
-            .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
-        ensure!(
-                // One extra item should remain for vector manipulation in a claim call.
-                staker_info.len() < T::MaxEraStakeItems::get(),
-                Error::<T>::TooManyEraStakeValues
-            );
+            .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
+
+        Self::ensure_max_era_stake_items_not_exceeded(staker_info)?;
 
         Ok(amount_to_unstake)
     }
@@ -316,6 +277,80 @@ impl<T: Config> Pallet<T> {
         consumed_weight
     }
 
+    pub(super) fn require_creator(creator_id: SpaceId) -> Result<CreatorInfo<T::AccountId>, DispatchError> {
+        RegisteredCreators::<T>::get(creator_id).ok_or(Error::<T>::CreatorNotFound.into())
+    }
+
+    pub(super) fn ensure_max_era_stake_items_not_exceeded(
+        staker_info: &StakesInfoOf<T>,
+    ) -> DispatchResult {
+        ensure!(
+            staker_info.len() < T::MaxEraStakeItems::get(),
+            Error::<T>::TooManyEraStakeValues,
+        );
+        Ok(())
+    }
+    
+    pub(super) fn ensure_should_restake_reward(
+        restake: bool, 
+        creator_status: CreatorStatus,
+        staker_info: &mut StakesInfoOf<T>,
+        current_era: EraIndex,
+        staker_reward: BalanceOf<T>,
+    ) -> Result<bool, DispatchError> {
+        // Can restake only if the backer has a stake on the active creator 
+        // and all the other conditions are met:
+        let should_restake_reward = restake
+            && creator_status == CreatorStatus::Active
+            && staker_info.current_stake() > Zero::zero();
+
+        return if should_restake_reward {
+            staker_info
+                .increase_stake(current_era, staker_reward)
+                .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
+
+            // Restaking will, in the worst case, remove one, and add one record,
+            // so it's fine if the vector is full
+            Self::ensure_max_era_stake_items_not_exceeded(&staker_info)?;
+            
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+    
+    pub(super) fn do_restake_reward(
+        staker: &T::AccountId,
+        staker_reward: BalanceOf<T>,
+        creator: SpaceId,
+        current_era: EraIndex,
+    ) {
+        let mut ledger = Self::ledger(&staker);
+        ledger.locked = ledger.locked.saturating_add(staker_reward);
+        Self::update_ledger(&staker, ledger);
+
+        // Update storage
+        GeneralEraInfo::<T>::mutate(current_era, |value| {
+            if let Some(x) = value {
+                x.staked = x.staked.saturating_add(staker_reward);
+                x.locked = x.locked.saturating_add(staker_reward);
+            }
+        });
+
+        CreatorEraStake::<T>::mutate(creator, current_era, |staking_info| {
+            if let Some(x) = staking_info {
+                x.total = x.total.saturating_add(staker_reward);
+            }
+        });
+
+        Self::deposit_event(Event::<T>::Staked {
+            who: staker.clone(),
+            creator,
+            era: current_era,
+            amount: staker_reward,
+        });
+    }
+
     fn calculate_reward_for_staker_in_era(
         creator_stake_info: &CreatorStakeInfo<BalanceOf<T>>,
         staked: BalanceOf<T>,
@@ -327,6 +362,19 @@ impl<T: Config> Pallet<T> {
             Perbill::from_rational(staked, creator_stake_info.total) * combined_stakers_reward_share
         } else {
             Zero::zero()
+        }
+    }
+
+    // For internal use only.
+    fn get_unregistered_era_index(creator_id: SpaceId) -> Result<EraIndex, DispatchError> {
+        return if let Some(creator_info) = Self::registered_creator(creator_id) {
+            if let CreatorStatus::Inactive(era) = creator_info.status {
+                Ok(era)
+            } else {
+                Err(DispatchError::Other("CreatorIsActive"))
+            }
+        } else {
+            Err(Error::<T>::CreatorNotFound.into())
         }
     }
 
@@ -342,12 +390,8 @@ impl<T: Config> Pallet<T> {
         for creator_id in target_creators {
             let mut staker_info_for_creator = Self::staker_info(&staker, creator_id);
 
-            let mut unregistered_era = current_era;
-            if let Some(creator_info) = Self::registered_creator(creator_id) {
-                if let CreatorStatus::Inactive(era) = creator_info.status {
-                    unregistered_era = era;
-                }
-            }
+            let unregistered_era =
+                Self::get_unregistered_era_index(creator_id).unwrap_or(current_era);
 
             if staker_info_for_creator.stakes.is_empty() {
                 estimated_rewards.push((creator_id, Zero::zero()));
@@ -397,14 +441,11 @@ impl<T: Config> Pallet<T> {
         let current_era = Self::current_era();
 
         for (creator, mut stakes_info) in GeneralStakerInfo::<T>::iter_prefix(&staker) {
-            let mut unregistered_era = current_era;
-            if let Some(creator_info) = Self::registered_creator(creator) {
-                if let CreatorStatus::Inactive(era) = creator_info.status {
-                    unregistered_era = era;
-                }
-            } else {
-                continue;
-            }
+            let unregistered_era = match Self::get_unregistered_era_index(creator) {
+                Ok(era) => era,
+                Err(error) if error.eq(&Error::<T>::CreatorNotFound.into()) => continue,
+                _ => current_era,
+            };
 
             loop {
                 let (era, _) = stakes_info.claim();

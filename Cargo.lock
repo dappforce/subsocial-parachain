@@ -5443,6 +5443,7 @@ dependencies = [
  "frame-system",
  "num-traits",
  "pallet-balances",
+ "pallet-permissions",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
