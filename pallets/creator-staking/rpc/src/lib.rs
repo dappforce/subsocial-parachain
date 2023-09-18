@@ -1,4 +1,4 @@
-//! RPC interface for the domains pallet.
+//! RPC interface for the creator-staking pallet.
 
 use std::{convert::TryInto, fmt::Display, sync::Arc};
 
@@ -37,7 +37,7 @@ pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
         at: Option<BlockHash>,
     ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
 
-    #[method(name = "posts_availableClaimsByStaker")]
+    #[method(name = "creatorStaking_availableClaimsByStaker")]
     fn available_claims_by_staker(
         &self,
         staker: AccountId,
@@ -53,7 +53,7 @@ pub struct CreatorStaking<C, P> {
 }
 
 impl<C, P> CreatorStaking<C, P> {
-    /// Creates a new instance of the Domains Rpc helper.
+    /// Creates a new instance of the CreatorStaking Rpc helper.
     pub fn new(client: Arc<C>) -> Self {
         Self { client, _marker: Default::default() }
     }
