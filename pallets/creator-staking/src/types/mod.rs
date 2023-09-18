@@ -1,9 +1,9 @@
 use codec::{Decode, Encode, HasCompact, MaxEncodedLen};
-use frame_support::traits::Currency;
+use frame_support::{pallet_prelude::BoundedVec, traits::{Currency, Get}};
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{Perbill, traits::Zero, RuntimeDebug};
-use sp_std::{ops::Add, prelude::*};
+use sp_std::{fmt::Debug, ops::Add, prelude::*};
 
 use super::*;
 
@@ -15,39 +15,26 @@ pub(crate) type BalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-// This represents the max assumed vector length that any storage item should have.
-// In particular, this relates to `UnbondingInfo` and `StakerInfo`.
-// In structs which are bound in size, `MaxEncodedLen` can just be derived but that's not the case
-// for standard `vec`. To fix this 100% correctly, we'd need to do one of the following:
-//
-// - Use `BoundedVec` instead of `Vec` and do storage migration
-// - Introduce a new type `S: Get<u32>` into the aforementioned structs and use it to inject max
-//   allowed size, thus allowing us to correctly calculate max encoded len
-//
-// The issue with first approach is that it requires storage migration which we want to avoid
-// unless it's really necessary. The issue with second approach is that it makes code much more
-// difficult to work with since all of it will be ridden with injections of the `S` type.
-const MAX_ASSUMED_VEC_LEN: u32 = 10;
+/// Convenience type for `StakerLedger` usage.
+pub(crate) type StakerLedgerOf<T> = StakerLedger<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
 
-// TODO: there are few more options to chose from:
-//     - UnregistrationSource: This emphasizes where the unregistration is coming from.
-//     - UnregisteringParty: This focuses on who is performing the unregistration.
-//     - UnregistrationActor: This could signify the entity taking action in the unregistration process.
-//     - UnregistrationInitiator: This implies the entity that started or initiated the unregistration.
+/// Convenience type fo `StakesInfo` usage.
+pub(crate) type StakesInfoOf<T> = StakesInfo<BalanceOf<T>, <T as Config>::MaxEraStakeItems>;
+
 /// This enum is used to determine who is calling the `unregister_creator` function.
 pub(super) enum UnregistrationAuthority<AccountId> {
-    Creator(AccountId),
     Root,
+    Creator(AccountId),
 }
 
-/// Creator State descriptor
+/// `CreatorStatus` is an enumeration that represents the current status of a creator in the system.
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub(super) enum CreatorState {
+pub(super) enum CreatorStatus {
     /// Creator is registered and active.
-    Registered,
+    Active,
     /// Creator has been unregistered and is inactive.
     /// Claim for past eras and unbonding is still possible but no additional staking can be done.
-    Unregistered(EraIndex),
+    Inactive(EraIndex),
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -55,7 +42,7 @@ pub struct CreatorInfo<AccountId> {
     /// Space owner account
     pub(super) stakeholder: AccountId,
     /// Current Creator State
-    pub(super) state: CreatorState,
+    pub(super) status: CreatorStatus,
 }
 
 /// Used to split total EraPayout among creators.
@@ -68,19 +55,23 @@ pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
     pub total: Balance,
     /// Total number of active stakers
     #[codec(compact)]
-    pub(super) number_of_stakers: u32,
+    pub(super) stakers_count: u32,
     /// Indicates whether rewards were claimed for this era or not
-    pub(super) creator_reward_claimed: bool,
+    pub(super) rewards_claimed: bool,
 }
 
 /// Contains information about account's locked & unbonding balances.
-#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct AccountLedger<Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen> {
+#[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(MaxUnlockingChunks))]
+pub struct StakerLedger<
+    Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
+    MaxUnlockingChunks: Get<u32>,
+> {
     /// Total balance locked.
     #[codec(compact)]
     pub locked: Balance,
     /// Information about unbonding chunks.
-    pub(super) unbonding_info: UnbondingInfo<Balance>,
+    pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnlockingChunks>,
 }
 
 /// Used to represent how much was staked in a particular era.
@@ -123,10 +114,13 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 ///
 /// **NOTE:** It is important to understand that staker **DID NOT** claim any rewards during this
 /// period.
-#[derive(Encode, Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct StakerInfo<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
-    // Size of this list would be limited by a configurable constant
-    pub(super) stakes: Vec<EraStake<Balance>>,
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(MaxEraStakeValues))]
+pub struct StakesInfo<
+    Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
+    MaxEraStakeValues: Get<u32>,
+> {
+    pub(super) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeValues>,
 }
 
 /// Represents an balance amount undergoing the unbonding process.
@@ -146,10 +140,14 @@ pub struct UnlockingChunk<Balance: MaxEncodedLen> {
 /// Contains unlocking chunks.
 /// This is a convenience struct that provides various utility methods to help with unbonding
 /// handling.
-#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct UnbondingInfo<Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen> {
+#[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(MaxUnlockingChunks))]
+pub struct UnbondingInfo<
+    Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen,
+    MaxUnlockingChunks: Get<u32>,
+> {
     // Vector of unlocking chunks. Sorted in ascending order in respect to unlock_era.
-    unlocking_chunks: Vec<UnlockingChunk<Balance>>,
+    unlocking_chunks: BoundedVec<UnlockingChunk<Balance>, MaxUnlockingChunks>,
 }
 
 /// A record of rewards allocated for stakers and creators
@@ -192,11 +190,14 @@ pub enum Forcing {
 /// A list of configuration parameters used to calculate reward distribution portions.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct RewardDistributionConfig {
+pub struct RewardsDistributionConfig {
     /// Base percentage of reward that goes to stakers
     #[codec(compact)]
     pub stakers_percent: Perbill,
     /// Percentage of rewards that goes to creators
     #[codec(compact)]
     pub creators_percent: Perbill,
+    /// Percentage of rewards that goes to the treasury
+    #[codec(compact)]
+    pub treasury_percent: Perbill,
 }

@@ -4,11 +4,28 @@ use sp_runtime::traits::CheckedAdd;
 impl<AccountId> CreatorInfo<AccountId> {
     /// Create new `CreatorInfo` struct instance with the given developer and state `Registered`
     pub(crate) fn new(stakeholder: AccountId) -> Self {
-        Self { stakeholder, state: CreatorState::Registered }
+        Self { stakeholder, status: CreatorStatus::Active }
     }
 }
 
-impl<Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen> AccountLedger<Balance> {
+impl<Balance, MaxUnlockingChunks> Default for StakerLedger<Balance, MaxUnlockingChunks>
+    where
+        Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
+        MaxUnlockingChunks: Get<u32>,
+{
+    fn default() -> Self {
+        Self {
+            locked: Balance::default(),
+            unbonding_info: UnbondingInfo::default(),
+        }
+    }
+}
+
+impl<Balance, MaxUnlockingChunks> StakerLedger<Balance, MaxUnlockingChunks>
+    where
+        Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
+        MaxUnlockingChunks: Get<u32>,
+{
     /// `true` if ledger is empty (no locked funds, no unbonding chunks), `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.locked.is_zero() && self.unbonding_info.is_empty()
@@ -22,17 +39,23 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> EraStake<Balance> {
     }
 }
 
-impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> MaxEncodedLen for StakerInfo<Balance> {
-    // This is just an assumption, will be calculated properly in the future. See the comment for
-    // `MAX_ASSUMED_VEC_LEN`.
-    fn max_encoded_len() -> usize {
-        codec::Compact(MAX_ASSUMED_VEC_LEN).encoded_size().saturating_add(
-            (MAX_ASSUMED_VEC_LEN as usize).saturating_mul(EraStake::<Balance>::max_encoded_len()),
-        )
+impl<Balance, MaxEraStakeValues> Default for StakesInfo<Balance, MaxEraStakeValues>
+    where
+        Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
+        MaxEraStakeValues: Get<u32>,
+{
+    fn default() -> Self {
+        Self {
+            stakes: BoundedVec::<EraStake<Balance>, MaxEraStakeValues>::default(),
+        }
     }
 }
 
-impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
+impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
+    where
+        Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen + Debug,
+        MaxEraStakeValues: Get<u32>,
+{
     /// `true` if no active stakes and unclaimed eras exist, `false` otherwise
     pub(crate) fn is_empty(&self) -> bool {
         self.stakes.is_empty()
@@ -55,10 +78,10 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
     /// `stakes: [<5, 1000>, <7, 1300>]`
     /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
     /// * `stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
-    pub(crate) fn stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
+    pub(crate) fn increase_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
         if let Some(era_stake) = self.stakes.last_mut() {
             if era_stake.era > current_era {
-                return Err("Unexpected era")
+                return Err("CannotStakeInPastEra")
             }
 
             let new_stake_value = era_stake.staked.saturating_add(value);
@@ -66,10 +89,12 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
             if current_era == era_stake.era {
                 *era_stake = EraStake::new(new_stake_value, current_era)
             } else {
-                self.stakes.push(EraStake::new(new_stake_value, current_era))
+                self.stakes.try_push(EraStake::new(new_stake_value, current_era))
+                    .expect("qed; too many stakes in StakesInfo");
             }
         } else {
-            self.stakes.push(EraStake::new(value, current_era));
+            self.stakes.try_push(EraStake::new(value, current_era))
+                .expect("qed; too many stakes in StakesInfo");
         }
 
         Ok(())
@@ -103,7 +128,8 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
             if current_era == era_stake.era {
                 *era_stake = EraStake::new(new_stake_value, current_era)
             } else {
-                self.stakes.push(EraStake::new(new_stake_value, current_era))
+                self.stakes.try_push(EraStake::new(new_stake_value, current_era))
+                    .expect("qed; too many stakes in StakesInfo");
             }
 
             // Removes unstaked values if they're no longer valid for comprehension
@@ -141,23 +167,26 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
     ///
     /// Repeated calls would continue to modify vector following the same rule as in *4.*
     pub(crate) fn claim(&mut self) -> (EraIndex, Balance) {
-        if let Some(era_stake) = self.stakes.first() {
-            let era_stake = *era_stake;
+        if let Some(oldest_era_stake) = self.stakes.first() {
+            let oldest_era_stake = *oldest_era_stake;
+            let has_no_stake_updates_for_the_next_era =
+                oldest_era_stake.era + 2 <= self.stakes[1].era;
 
-            if self.stakes.len() == 1 || self.stakes[1].era > era_stake.era + 1 {
+            if self.stakes.len() == 1 || has_no_stake_updates_for_the_next_era {
+                // If there is a record from the next era and its stake has been changed:
                 self.stakes[0] =
-                    EraStake { staked: era_stake.staked, era: era_stake.era.saturating_add(1) }
+                    EraStake { staked: oldest_era_stake.staked, era: oldest_era_stake.era.saturating_add(1) }
             } else {
                 // in case: self.stakes[1].era == era_stake.era + 1
                 self.stakes.remove(0);
             }
 
-            // Delete information about unstaking, as the user has claimed all their rewards in the previous eras.
-            if !self.stakes.is_empty() && self.stakes[0].staked.is_zero() {
+            // Removes unstaked values if they're no longer valid for comprehension
+            if self.stakes[0].staked.is_zero() {
                 self.stakes.remove(0);
             }
 
-            (era_stake.era, era_stake.staked)
+            (oldest_era_stake.era, oldest_era_stake.staked)
         } else {
             (0, Zero::zero())
         }
@@ -166,7 +195,7 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> StakerInfo<Balance> {
     /// Latest staked value.
     /// E.g. if staker is fully unstaked, this will return `Zero`.
     /// Otherwise returns a non-zero balance.
-    pub fn latest_staked_value(&self) -> Balance {
+    pub fn current_stake(&self) -> Balance {
         self.stakes.last().map_or(Zero::zero(), |x| x.staked)
     }
 }
@@ -181,22 +210,20 @@ impl<Balance> UnlockingChunk<Balance>
     }
 }
 
-impl<Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen> MaxEncodedLen
-for UnbondingInfo<Balance>
+impl<Balance, MaxUnlockingChunks> Default for UnbondingInfo<Balance, MaxUnlockingChunks>
+    where
+        Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
+        MaxUnlockingChunks: Get<u32>,
 {
-    // This is just an assumption, will be calculated properly in the future. See the comment for
-    // `MAX_ASSUMED_VEC_LEN`.
-    fn max_encoded_len() -> usize {
-        codec::Compact(MAX_ASSUMED_VEC_LEN).encoded_size().saturating_add(
-            (MAX_ASSUMED_VEC_LEN as usize)
-                .saturating_mul(UnlockingChunk::<Balance>::max_encoded_len()),
-        )
+    fn default() -> Self {
+        Self { unlocking_chunks: BoundedVec::<UnlockingChunk<Balance>, MaxUnlockingChunks>::default() }
     }
 }
 
-impl<Balance> UnbondingInfo<Balance>
+impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
     where
-        Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen,
+        Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
+        MaxUnlockingChunks: Get<u32>,
 {
     /// Returns total number of unlocking chunks.
     pub(crate) fn len(&self) -> u32 {
@@ -225,7 +252,8 @@ impl<Balance> UnbondingInfo<Balance>
             Ok(pos) => self.unlocking_chunks[pos].add_amount(chunk.amount),
             // Otherwise insert where it should go. Note that this will in almost all cases return
             // the last index.
-            Err(pos) => self.unlocking_chunks.insert(pos, chunk),
+            Err(pos) => self.unlocking_chunks.try_insert(pos, chunk)
+                .expect("qed; too many chunks in UnbondingInfo"),
         }
     }
 
@@ -241,27 +269,32 @@ impl<Balance> UnbondingInfo<Balance>
             Vec<UnlockingChunk<Balance>>,
         ) = self.unlocking_chunks.iter().partition(|chunk| chunk.unlock_era <= era);
 
+        let matching_chunks = matching_chunks.try_into().unwrap();
+        let other_chunks = other_chunks.try_into().unwrap();
+
         (Self { unlocking_chunks: matching_chunks }, Self { unlocking_chunks: other_chunks })
     }
 }
 
-impl Default for RewardDistributionConfig {
+impl Default for RewardsDistributionConfig {
     /// `default` values based on configuration at the time of writing this code.
-    /// Should be overriden by desired params.
+    /// Should be overridden by desired params.
     fn default() -> Self {
-        RewardDistributionConfig {
-            stakers_percent: Perbill::from_percent(50),
-            creators_percent: Perbill::from_percent(50),
+        RewardsDistributionConfig {
+            stakers_percent: Perbill::from_percent(45),
+            creators_percent: Perbill::from_percent(45),
+            treasury_percent: Perbill::from_percent(10),
         }
     }
 }
 
-impl RewardDistributionConfig {
+impl RewardsDistributionConfig {
     /// `true` if sum of all percentages is `one whole`, `false` otherwise.
     pub fn is_consistent(&self) -> bool {
         let variables = vec![
             &self.stakers_percent,
             &self.creators_percent,
+            &self.treasury_percent,
         ];
         let accumulator = variables
             .iter()

@@ -751,15 +751,15 @@ impl pallet_creator_staking::Config for Runtime {
 	type BlockPerEra = BlockPerEra;
 	type Currency = Balances;
 	type SpacesInterface = Spaces;
-	type RegistrationDeposit = RegistrationDeposit;
-	type MinimumStakingAmount = MinimumStakingAmount;
-	type MinimumRemainingAmount = MinimumRemainingAmount;
+	type CreatorRegistrationDeposit = RegistrationDeposit;
+	type MinimumStake = MinimumStakingAmount;
+	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
 	type MaxNumberOfStakersPerCreator = ConstU32<100>;
-	type MaxEraStakeValues = ConstU32<5>;
-	type MaxErasToReward = MaxErasToReward;
+	type MaxEraStakeItems = ConstU32<5>;
+	type StakeExpirationInEras = MaxErasToReward;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
-	type CurrentAnnualInflation = CurrentAnnualInflation;
+	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
