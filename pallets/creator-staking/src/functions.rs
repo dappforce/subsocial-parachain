@@ -265,7 +265,7 @@ impl<T: Config> Pallet<T> {
             if let Some(mut staking_info) = Self::creator_stake_info(space_id, current_era)
             {
                 staking_info.rewards_claimed = false;
-                CreatorEraStake::<T>::insert(space_id, next_era, staking_info);
+                CreatorStakeInfoByEra::<T>::insert(space_id, next_era, staking_info);
 
                 consumed_weight =
                     consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
@@ -337,7 +337,7 @@ impl<T: Config> Pallet<T> {
             }
         });
 
-        CreatorEraStake::<T>::mutate(creator, current_era, |staking_info| {
+        CreatorStakeInfoByEra::<T>::mutate(creator, current_era, |staking_info| {
             if let Some(x) = staking_info {
                 x.total = x.total.saturating_add(staker_reward);
             }

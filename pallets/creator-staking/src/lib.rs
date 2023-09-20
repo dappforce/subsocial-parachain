@@ -164,7 +164,7 @@ pub mod pallet {
     /// Staking information about creator in a particular era.
     #[pallet::storage]
     #[pallet::getter(fn creator_stake_info)]
-    pub type CreatorEraStake<T: Config> = StorageDoubleMap<
+    pub type CreatorStakeInfoByEra<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         SpaceId,
@@ -406,7 +406,7 @@ pub mod pallet {
 
             Self::update_ledger(&staker, ledger);
             Self::update_staker_info(&staker, space_id, staker_info);
-            CreatorEraStake::<T>::insert(space_id, current_era, staking_info);
+            CreatorStakeInfoByEra::<T>::insert(space_id, current_era, staking_info);
 
             Self::deposit_event(Event::<T>::Staked {
                 who: staker,
@@ -477,7 +477,7 @@ pub mod pallet {
                 }
             });
             Self::update_staker_info(&staker, space_id, staker_info);
-            CreatorEraStake::<T>::insert(space_id, current_era, stake_info);
+            CreatorStakeInfoByEra::<T>::insert(space_id, current_era, stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
                 who: staker,
@@ -693,7 +693,7 @@ pub mod pallet {
 
             // updated counter for total rewards paid to the creator
             creator_stake_info.rewards_claimed = true;
-            CreatorEraStake::<T>::insert(space_id, era, creator_stake_info);
+            CreatorStakeInfoByEra::<T>::insert(space_id, era, creator_stake_info);
 
             Ok(().into())
         }
