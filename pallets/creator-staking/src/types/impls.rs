@@ -8,7 +8,7 @@ impl<AccountId> CreatorInfo<AccountId> {
     }
 }
 
-impl<Balance, MaxUnlockingChunks> Default for StakerLedger<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnlockingChunks> Default for BackerLocks<Balance, MaxUnlockingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
         MaxUnlockingChunks: Get<u32>,
@@ -21,7 +21,7 @@ impl<Balance, MaxUnlockingChunks> Default for StakerLedger<Balance, MaxUnlocking
     }
 }
 
-impl<Balance, MaxUnlockingChunks> StakerLedger<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnlockingChunks> BackerLocks<Balance, MaxUnlockingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
         MaxUnlockingChunks: Get<u32>,

@@ -189,7 +189,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
     pub type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, StakerLedgerOf<T>, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, BackerLocksOf<T>, ValueQuery>;
 
     /// Accumulator for block rewards during an era. It is reset at every new era
     #[pallet::storage]

@@ -17,7 +17,7 @@ impl<T: Config> Pallet<T> {
     /// Returns available staking balance for the potential staker
     pub(super) fn balance_available_for_staking(
         staker: &T::AccountId,
-        ledger: &StakerLedgerOf<T>,
+        ledger: &BackerLocksOf<T>,
     ) -> BalanceOf<T> {
         // Ensure that staker has enough balance to bond & stake.
         let free_balance =
@@ -174,7 +174,7 @@ impl<T: Config> Pallet<T> {
 
     /// Update the ledger for a staker. This will also update the stash lock.
     /// This lock will lock the entire funds except paying for further transactions.
-    pub(super) fn update_ledger(staker: &T::AccountId, ledger: StakerLedgerOf<T>) {
+    pub(super) fn update_ledger(staker: &T::AccountId, ledger: BackerLocksOf<T>) {
         if ledger.is_empty() {
             Ledger::<T>::remove(staker);
             T::Currency::remove_lock(STAKING_ID, staker);

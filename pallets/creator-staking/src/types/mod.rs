@@ -16,7 +16,7 @@ pub(crate) type BalanceOf<T> =
 pub type EraIndex = u32;
 
 /// Convenience type for `StakerLedger` usage.
-pub(crate) type StakerLedgerOf<T> = StakerLedger<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
+pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
 
 /// Convenience type fo `StakesInfo` usage.
 pub(crate) type StakesInfoOf<T> = StakesInfo<BalanceOf<T>, <T as Config>::MaxEraStakeItems>;
@@ -63,7 +63,7 @@ pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
 /// Contains information about account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxUnlockingChunks))]
-pub struct StakerLedger<
+pub struct BackerLocks<
     Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
     MaxUnlockingChunks: Get<u32>,
 > {
