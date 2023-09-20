@@ -30,6 +30,8 @@ pub mod pallet {
 
     pub use crate::types::*;
 
+    /// An identifier for the locks made in this pallet.
+    /// Used for disambiguating this pallet locks so that they can be replaced or removed.
     pub(crate) const STAKING_ID: LockIdentifier = *b"crestake";
 
     #[pallet::config]
@@ -113,6 +115,11 @@ pub mod pallet {
         #[pallet::constant]
         type BlocksPerYear: Get<Self::BlockNumber>;
 
+        /// The chain's treasury account, where we deposit leftover tokens after distributing rewards,
+        /// not to make any extra tokens left on a rewards holding account.
+        ///
+        /// Furthermore, a part of inflation may be distributed into this account in accordance
+        /// with `ActiveRewardDistributionConfig`.
         #[pallet::constant]
         type TreasuryAccount: Get<Self::AccountId>;
     }

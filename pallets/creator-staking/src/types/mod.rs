@@ -169,7 +169,7 @@ pub struct EraInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total staked amount in an era
     #[codec(compact)]
     pub staked: Balance,
-    /// Total locked amount in an era
+    /// Total locked amount in an era: stake locks + unbonding locks.
     #[codec(compact)]
     pub locked: Balance,
 }

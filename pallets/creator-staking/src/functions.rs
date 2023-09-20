@@ -290,15 +290,15 @@ impl<T: Config> Pallet<T> {
         );
         Ok(())
     }
-    
+
     pub(super) fn ensure_should_restake_reward(
-        restake: bool, 
+        restake: bool,
         creator_status: CreatorStatus,
         staker_info: &mut StakesInfoOf<T>,
         current_era: EraIndex,
         staker_reward: BalanceOf<T>,
     ) -> Result<bool, DispatchError> {
-        // Can restake only if the backer has a stake on the active creator 
+        // Can restake only if the backer has a stake on the active creator
         // and all the other conditions are met:
         let should_restake_reward = restake
             && creator_status == CreatorStatus::Active
@@ -312,13 +312,13 @@ impl<T: Config> Pallet<T> {
             // Restaking will, in the worst case, remove one, and add one record,
             // so it's fine if the vector is full
             Self::ensure_max_era_stake_items_not_exceeded(&staker_info)?;
-            
+
             Ok(true)
         } else {
             Ok(false)
         }
     }
-    
+
     pub(super) fn do_restake_reward(
         staker: &T::AccountId,
         staker_reward: BalanceOf<T>,

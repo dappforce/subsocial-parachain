@@ -135,7 +135,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
         self.change_stake(current_era, value, |x, y| x.saturating_sub(y))
     }
 
-    /// `Claims` the oldest era available for claiming.
+    /// `Claims` the oldest era available for claiming (one at a time).
     /// In case valid era exists, returns `(claim era, staked amount)` tuple.
     /// If no valid era exists, returns `(0, 0)` tuple.
     ///
@@ -148,16 +148,22 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     ///
     /// 1. `claim()` will return `(5, 1000)`
     ///     Internal vector is modified to `[<6, 1000>, <7, 1300>, <8, 0>, <15, 3000>]`
+    ///     Note that stake info from the claiming era was moved to the 6th as it was not claimed,
+    ///     so we need to keep it for the next claim.
     ///
     /// 2. `claim()` will return `(6, 1000)`.
-    ///    Internal vector is modified to `[<7, 1300>, <8, 0>, <15, 3000>]`
+    ///     Internal vector is modified to `[<7, 1300>, <8, 0>, <15, 3000>]`
+    ///     Note that here we don't need to move anything since the next era has different stake
+    ///     and there is no other unclaimed eras between the claiming one and the next one.
     ///
     /// 3. `claim()` will return `(7, 1300)`.
-    ///    Internal vector is modified to `[<15, 3000>]`
-    ///    Note that `0` staked period is discarded since nothing can be claimed there.
+    ///     Internal vector is modified to `[<15, 3000>]`
+    ///     Note that `0` staked period is discarded since nothing can be claimed there.
     ///
     /// 4. `claim()` will return `(15, 3000)`.
-    ///    Internal vector is modified to `[16, 3000]`
+    ///     Internal vector is modified to `[16, 3000]`
+    ///     Note that we need to leave at least 1 record in the vector so that we can claim the
+    ///     next reward. To do so, we just increase the era by 1 and leave the stake unchanged.
     ///
     /// Repeated calls would continue to modify vector following the same rule as in *4.*
     pub(crate) fn claim(&mut self) -> (EraIndex, Balance) {
