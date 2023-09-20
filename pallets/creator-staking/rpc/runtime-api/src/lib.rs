@@ -12,15 +12,15 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec + MaybeDisplay,
 		Balance: Codec + MaybeDisplay,
 	{
-		fn estimated_staker_rewards_by_creators(
-			staker: AccountId,
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
 			creators: Vec<SpaceId>
 		) -> Vec<(SpaceId, Balance)>;
 
 		fn withdrawable_amounts_from_inactive_creators(
-			staker: AccountId
+			backer: AccountId
 		) -> Vec<(SpaceId, Balance)>;
 
-		fn available_claims_by_staker(staker: AccountId) -> Vec<(SpaceId, u32)>;
+		fn available_claims_by_backer(backer: AccountId) -> Vec<(SpaceId, u32)>;
 	}
 }

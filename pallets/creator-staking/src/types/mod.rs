@@ -5,17 +5,21 @@ use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{Perbill, traits::Zero, RuntimeDebug};
 use sp_std::{fmt::Debug, ops::Add, prelude::*};
 
+use subsocial_support::SpaceId;
+
 use super::*;
 
 pub mod impls;
 
 pub(crate) type BalanceOf<T> =
-<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-/// Convenience type for `StakerLedger` usage.
+pub type CreatorId = SpaceId;
+
+/// Convenience type for `BackerLocks` usage.
 pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
 
 /// Convenience type fo `StakesInfo` usage.
@@ -47,15 +51,15 @@ pub struct CreatorInfo<AccountId> {
 
 /// Used to split total EraPayout among creators.
 /// Each tuple (creator, era) has this structure.
-/// This will be used to reward creators developer and his stakers.
+/// This will be used to reward creators developer and his backers.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total staked amount.
     #[codec(compact)]
     pub total: Balance,
-    /// Total number of active stakers
+    /// Total number of active backers
     #[codec(compact)]
-    pub(super) stakers_count: u32,
+    pub(super) backers_count: u32,
     /// Indicates whether rewards were claimed for this era or not
     pub(super) rewards_claimed: bool,
 }
@@ -69,7 +73,7 @@ pub struct BackerLocks<
 > {
     /// Total balance locked.
     #[codec(compact)]
-    pub locked: Balance,
+    pub total_locked: Balance,
     /// Information about unbonding chunks.
     pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnlockingChunks>,
 }
@@ -88,7 +92,7 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 
 /// Used to provide a compact and bounded storage for information about stakes in unclaimed eras.
 ///
-/// In order to avoid creating a separate storage entry for each `(staker, creator, era)` triplet,
+/// In order to avoid creating a separate storage entry for each `(backer, creator, era)` triplet,
 /// this struct is used to provide a more memory efficient solution.
 ///
 /// Basic idea is to store `EraStake` structs into a vector from which a complete
@@ -96,23 +100,23 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 ///
 /// # Example
 /// For simplicity, the following example will represent `EraStake` using `<era, stake>` notation.
-/// Let us assume we have the following vector in `StakerInfo` struct.
+/// Let us assume we have the following vector in `BackerInfo` struct.
 ///
 /// `[<5, 1000>, <6, 1500>, <8, 2100>, <9, 0>, <11, 500>]`
 ///
 /// This tells us which eras are unclaimed and how much it was staked in each era.
 /// The interpretation is the following:
 /// 1. In era **5**, staked amount was **1000** (interpreted from `<5, 1000>`)
-/// 2. In era **6**, staker staked additional **500**, increasing total staked amount to **1500**
+/// 2. In era **6**, backer staked additional **500**, increasing total staked amount to **1500**
 /// 3. No entry for era **7** exists which means there were no changes from the former entry.
 ///    This means that in era **7**, staked amount was also **1500**
-/// 4. In era **8**, staker staked an additional **600**, increasing total stake to **2100**
-/// 5. In era **9**, staker unstaked everything from the creator (interpreted from `<9, 0>`)
+/// 4. In era **8**, backer staked an additional **600**, increasing total stake to **2100**
+/// 5. In era **9**, backer unstaked everything from the creator (interpreted from `<9, 0>`)
 /// 6. No changes were made in era **10** so we can interpret this same as the previous entry which
-/// means **0** staked amount. 7. In era **11**, staker staked **500** on the creator, making his
+/// means **0** staked amount. 7. In era **11**, backer staked **500** on the creator, making his
 /// stake active again after 2 eras of inactivity.
 ///
-/// **NOTE:** It is important to understand that staker **DID NOT** claim any rewards during this
+/// **NOTE:** It is important to understand that backer **DID NOT** claim any rewards during this
 /// period.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxEraStakeValues))]
@@ -150,12 +154,12 @@ pub struct UnbondingInfo<
     unlocking_chunks: BoundedVec<UnlockingChunk<Balance>, MaxUnlockingChunks>,
 }
 
-/// A record of rewards allocated for stakers and creators
+/// A record of rewards allocated for backers and creators
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct RewardInfo<Balance: HasCompact + MaxEncodedLen> {
-    /// Total amount of rewards for stakers in an era
+    /// Total amount of rewards for backers in an era
     #[codec(compact)]
-    pub stakers: Balance,
+    pub backers: Balance,
     /// Total amount of rewards for creators in an era
     #[codec(compact)]
     pub creators: Balance,
@@ -191,9 +195,9 @@ pub enum Forcing {
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct RewardsDistributionConfig {
-    /// Base percentage of reward that goes to stakers
+    /// Base percentage of reward that goes to backers
     #[codec(compact)]
-    pub stakers_percent: Perbill,
+    pub backers_percent: Perbill,
     /// Percentage of rewards that goes to creators
     #[codec(compact)]
     pub creators_percent: Perbill,

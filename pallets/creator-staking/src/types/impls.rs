@@ -15,7 +15,7 @@ impl<Balance, MaxUnlockingChunks> Default for BackerLocks<Balance, MaxUnlockingC
 {
     fn default() -> Self {
         Self {
-            locked: Balance::default(),
+            total_locked: Balance::default(),
             unbonding_info: UnbondingInfo::default(),
         }
     }
@@ -26,9 +26,9 @@ impl<Balance, MaxUnlockingChunks> BackerLocks<Balance, MaxUnlockingChunks>
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
         MaxUnlockingChunks: Get<u32>,
 {
-    /// `true` if ledger is empty (no locked funds, no unbonding chunks), `false` otherwise.
+    /// `true` if backer locks are empty (no locked funds, no unbonding chunks), `false` otherwise.
     pub fn is_empty(&self) -> bool {
-        self.locked.is_zero() && self.unbonding_info.is_empty()
+        self.total_locked.is_zero() && self.unbonding_info.is_empty()
     }
 }
 
@@ -193,7 +193,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     }
 
     /// Latest staked value.
-    /// E.g. if staker is fully unstaked, this will return `Zero`.
+    /// E.g. if backer is fully unstaked, this will return `Zero`.
     /// Otherwise returns a non-zero balance.
     pub fn current_stake(&self) -> Balance {
         self.stakes.last().map_or(Zero::zero(), |x| x.staked)
@@ -281,7 +281,7 @@ impl Default for RewardsDistributionConfig {
     /// Should be overridden by desired params.
     fn default() -> Self {
         RewardsDistributionConfig {
-            stakers_percent: Perbill::from_percent(45),
+            backers_percent: Perbill::from_percent(45),
             creators_percent: Perbill::from_percent(45),
             treasury_percent: Perbill::from_percent(10),
         }
@@ -292,7 +292,7 @@ impl RewardsDistributionConfig {
     /// `true` if sum of all percentages is `one whole`, `false` otherwise.
     pub fn is_consistent(&self) -> bool {
         let variables = vec![
-            &self.stakers_percent,
+            &self.backers_percent,
             &self.creators_percent,
             &self.treasury_percent,
         ];

@@ -755,7 +755,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type CreatorRegistrationDeposit = RegistrationDeposit;
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
-	type MaxNumberOfStakersPerCreator = ConstU32<100>;
+	type MaxNumberOfBackersPerCreator = ConstU32<100>;
 	type MaxEraStakeItems = ConstU32<5>;
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
@@ -979,23 +979,23 @@ impl_runtime_apis! {
 	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
 		for Runtime
 	{
-		fn estimated_staker_rewards_by_creators(
-			staker: AccountId,
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
 			creators: Vec<SpaceId>,
 		) -> Vec<(SpaceId, Balance)> {
-			CreatorStaking::estimated_staker_rewards_by_creators(staker, creators)
+			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
 		}
 
 		fn withdrawable_amounts_from_inactive_creators(
-			staker: AccountId,
+			backer: AccountId,
 		) -> Vec<(SpaceId, Balance)> {
-			CreatorStaking::withdrawable_amounts_from_inactive_creators(staker)
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
 		}
 
-		fn available_claims_by_staker(
-			staker: AccountId,
+		fn available_claims_by_backer(
+			backer: AccountId,
 		) -> Vec<(SpaceId, u32)> {
-			CreatorStaking::available_claims_by_staker(staker)
+			CreatorStaking::available_claims_by_backer(backer)
 		}
 	}
 
