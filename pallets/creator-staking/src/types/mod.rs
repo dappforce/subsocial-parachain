@@ -54,17 +54,17 @@ pub struct CreatorInfo<AccountId> {
 /// This will be used to reward creators developer and his backers.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
-    /// Total staked amount.
+    /// Total amount staked on a creator.
     #[codec(compact)]
     pub total: Balance,
-    /// Total number of active backers
+    /// Total number of active backers staking towards a creator.
     #[codec(compact)]
     pub(super) backers_count: u32,
     /// Indicates whether rewards were claimed for this era or not
     pub(super) rewards_claimed: bool,
 }
 
-/// Contains information about account's locked & unbonding balances.
+/// Contains information about an account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxUnlockingChunks))]
 pub struct BackerLocks<
@@ -104,7 +104,7 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 ///
 /// `[<5, 1000>, <6, 1500>, <8, 2100>, <9, 0>, <11, 500>]`
 ///
-/// This tells us which eras are unclaimed and how much it was staked in each era.
+/// This tells us which eras are unclaimed and how much was staked in each era.
 /// The interpretation is the following:
 /// 1. In era **5**, staked amount was **1000** (interpreted from `<5, 1000>`)
 /// 2. In era **6**, backer staked additional **500**, increasing total staked amount to **1500**
@@ -127,13 +127,13 @@ pub struct StakesInfo<
     pub(super) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeValues>,
 }
 
-/// Represents an balance amount undergoing the unbonding process.
+/// Represents a balance amount that is currently unbonding.
 /// Since unbonding takes time, it's important to keep track of when and how much was unbonded.
 #[derive(
 Clone, Copy, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 pub struct UnlockingChunk<Balance: MaxEncodedLen> {
-    /// Amount being unlocked
+    /// Amount being unbonded
     #[codec(compact)]
     pub(super) amount: Balance,
     /// Era in which the amount will become unlocked and can be withdrawn.
@@ -165,10 +165,10 @@ pub struct RewardInfo<Balance: HasCompact + MaxEncodedLen> {
     pub creators: Balance,
 }
 
-/// A record for total rewards and total amount staked for an era
+/// A record of total rewards and total amount staked in a particular era
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct EraInfo<Balance: HasCompact + MaxEncodedLen> {
-    /// Total amount of earned rewards for an era
+    /// Total amount of earned rewards in an era
     pub rewards: RewardInfo<Balance>,
     /// Total staked amount in an era
     #[codec(compact)]

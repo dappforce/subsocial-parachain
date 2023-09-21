@@ -25,7 +25,7 @@ impl<T: Config> Pallet<T> {
     fn distribute_rewards(block_reward: NegativeImbalanceOf<T>) {
         let distro_params = Self::reward_config();
 
-        // Pre-calculate balance which will be deposited for each beneficiary
+        // Pre-calculate the balance that will be deposited for each beneficiary
         let backers_balance = distro_params.backers_percent * block_reward.peek();
         let creators_balance = distro_params.creators_percent * block_reward.peek();
         let treasury_balance = distro_params.treasury_percent * block_reward.peek();

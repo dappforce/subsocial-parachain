@@ -67,22 +67,22 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
-    /// An utility method used to stake specified amount on an arbitrary creator.
+    /// A utility method used to stake a specified amount on an arbitrary creator.
     ///
     /// `BackerInfo` and `CreatorStakeInfo` are provided and all checks are made to ensure that
-    /// it's possible to complete staking operation.
+    /// it's possible to complete the staking operation.
     ///
     /// # Arguments
     ///
     /// * `backer_info` - info about backer's stakes on the creator up to current moment
     /// * `staking_info` - general info about creator stakes up to current moment
     /// * `value` - value which is being bonded & staked
-    /// * `current_era` - current creators-staking era
+    /// * `current_era` - the current era of the creator staking system
     ///
     /// # Returns
     ///
-    /// If stake operation was successful, given structs are properly modified.
-    /// If not, an error is returned and structs are left in an undefined state.
+    /// If the stake operation was successful, the given structs are properly modified.
+    /// If not, an error is returned and the structs are left in an undefined state.
     pub(super) fn stake_to_creator(
         backer_info: &mut StakesInfoOf<T>,
         staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
@@ -118,13 +118,13 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    /// An utility method used to unstake specified amount from an arbitrary creator.
+    /// A utility method used to unstake a specified amount from an arbitrary creator.
     ///
-    /// The amount unstaked can be different in case staked amount would fall bellow
-    /// `MinimumStakingAmount`. In that case, entire staked amount will be unstaked.
+    /// The amount unstaked can be different in case the staked amount would fall bellow
+    /// `MinimumStakingAmount`. In that case, the entire staked amount will be unstaked.
     ///
     /// `BackerInfo` and `CreatorStakeInfo` are provided and all checks are made to ensure that
-    /// it's possible to complete unstake operation.
+    /// it's possible to complete the unstake operation.
     ///
     /// # Arguments
     ///
@@ -135,8 +135,8 @@ impl<T: Config> Pallet<T> {
     ///
     /// # Returns
     ///
-    /// If unstake operation was successful, given structs are properly modified and total
-    /// unstaked value is returned. If not, an error is returned and structs are left in
+    /// If the unstake operation was successful, the given structs are properly modified and the total
+    /// unstaked value is returned. If not, an error is returned and the structs are left in
     /// an undefined state.
     pub(super) fn calculate_final_unstaking_amount(
         backer_info: &mut StakesInfoOf<T>,
@@ -150,7 +150,7 @@ impl<T: Config> Pallet<T> {
         // Calculate the value which will be unstaked.
         let remaining = staked_value.saturating_sub(desired_amount);
 
-        // If remaining amount is less than minimum staking amount, unstake the entire amount.
+        // If the remaining amount is less than the minimum staking amount, unstake the entire amount.
         let amount_to_unstake = if remaining < T::MinimumStake::get() {
             stake_info.backers_count = stake_info.backers_count.saturating_sub(1);
             staked_value
@@ -198,7 +198,7 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    /// Calculate the reward distribution between a creator and all their staking participants.
+    /// Calculate the reward distribution between a creator and everyone staking towards that creator.
     ///
     /// Returns (creator's reward, backers' combined reward)
     pub(crate) fn distributed_rewards_between_creator_and_backers(
@@ -215,18 +215,18 @@ impl<T: Config> Pallet<T> {
     }
 
     /// This utility function converts the specified in a `Config` PalletId into an account ID.
-    /// This account is deposited rewards before they are distributed to creators and backers.
+    /// Rewards are deposited into this account before they are distributed to creators and backers.
     pub(crate) fn rewards_pot_account() -> T::AccountId {
         T::PalletId::get().into_account_truncating()
     }
 
-    /// The block rewards are accumulated on the pallets's account during an era.
-    /// This function takes a snapshot of the pallet's balance accrued during current era
+    /// The block rewards are accumulated in this pallet's account during each era.
+    /// This function takes a snapshot of the pallet's balance accrued during the current era
     /// and stores it for future distribution.
     ///
-    /// This is called just at the beginning of an era.
+    /// This is only called at the beginning of an era.
     pub(super) fn reward_balance_snapshot(era: EraIndex, rewards: RewardInfo<BalanceOf<T>>) {
-        // Get the reward and stake information for previous era
+        // Gets the reward and stake information for the previous era
         let mut era_info = Self::general_era_info(era).unwrap_or_default();
 
         // Prepare info for the next era
@@ -246,7 +246,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Used to copy all `CreatorStakeInfo` from the ending era over to the next era.
-    /// This is the most primitive solution since it scales with number of creators.
+    /// This is the most primitive solution since it scales with the number of creators.
     /// It is possible to provide a hybrid solution which allows laziness but also prevents
     /// a situation where we don't have access to the required data.
     pub(super) fn rotate_staking_info(current_era: EraIndex) -> Weight {
@@ -255,7 +255,7 @@ impl<T: Config> Pallet<T> {
         let mut consumed_weight = Weight::zero();
 
         for (creator_id, creator_info) in RegisteredCreators::<T>::iter() {
-            // Ignore creator if it was unregistered
+            // Ignore creator if it was not registered
             consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().reads(1));
             if let CreatorStatus::Inactive(_) = creator_info.status {
                 continue;
@@ -309,7 +309,7 @@ impl<T: Config> Pallet<T> {
                 .increase_stake(current_era, backer_reward)
                 .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-            // Restaking will, in the worst case, remove one, and add one record,
+            // Restaking will, in the worst case, remove one record and add another one,
             // so it's fine if the vector is full
             Self::ensure_max_era_stake_items_not_exceeded(&backer_info)?;
 

@@ -33,7 +33,7 @@ impl<Balance, MaxUnlockingChunks> BackerLocks<Balance, MaxUnlockingChunks>
 }
 
 impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> EraStake<Balance> {
-    /// Create a new instance of `EraStake` with given values
+    /// Create a new instance of `EraStake` with the given values
     pub(crate) fn new(staked: Balance, era: EraIndex) -> Self {
         Self { staked, era }
     }
@@ -99,12 +99,12 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
 
     /// Stakes some value in the specified era.
     ///
-    /// User should ensure that given era is either equal or greater than the
+    /// User should ensure that the given era is either equal to or greater than the
     /// latest available era in the staking info.
     ///
     /// # Example
     ///
-    /// The following example demonstrates how internal vector changes when `stake` is called:
+    /// The following example demonstrates how the internal vector changes when `stake` is called:
     ///
     /// `stakes: [<5, 1000>, <7, 1300>]`
     /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
@@ -115,7 +115,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
 
     /// Unstakes some value in the specified era.
     ///
-    /// User should ensure that given era is either equal or greater than the
+    /// User should ensure that the given era is either equal to or greater than the
     /// latest available era in the staking info.
     ///
     /// # Example 1
@@ -259,7 +259,7 @@ impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
 
     /// Partitions the unlocking chunks into two groups:
     ///
-    /// First group includes all chunks which have unlock era lesser or equal to the specified era.
+    /// First group includes all chunks which have an unlock era less than or equal to the specified era.
     /// Second group includes all the rest.
     ///
     /// Order of chunks is preserved in the two new structs.
