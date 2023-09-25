@@ -31,14 +31,14 @@ pub mod pallet {
     pub use crate::types::*;
 
     /// An identifier for the locks made in this pallet.
-    /// Used for disambiguating this pallet locks so that they can be replaced or removed.
+    /// Used to determine the locks in this pallet so that they can be replaced or removed.
     pub(crate) const STAKING_ID: LockIdentifier = *b"crestake";
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_permissions::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// Creators staking pallet Id
+        /// Creator staking pallet Id
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
@@ -46,7 +46,7 @@ pub mod pallet {
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        /// The staking balance.
+        /// The currency trait.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
             + ReservableCurrency<Self::AccountId>;
 
@@ -65,7 +65,7 @@ pub mod pallet {
         #[pallet::constant]
         type CreatorRegistrationDeposit: Get<BalanceOf<Self>>;
 
-        /// Minimum amount can be staked to the creator.
+        /// The minimum amount that can be staked to the creator.
         /// User can stake less if they already have the minimum staking amount staked to that
         /// particular creator.
         #[pallet::constant]
@@ -73,7 +73,7 @@ pub mod pallet {
 
         // TODO: make it MinimumRemainingRatio
         //  (e.g. 0.1 = 10%, so that account can lock only 90% of its balance)
-        /// Minimum amount that should be left on backer account after staking.
+        /// The minimum amount a backer's balance that should be left on their account after staking.
         /// Serves as a safeguard to prevent users from locking their entire free balance.
         #[pallet::constant]
         type MinimumRemainingFreeBalance: Get<BalanceOf<Self>>;
@@ -82,9 +82,9 @@ pub mod pallet {
         #[pallet::constant]
         type MaxNumberOfBackersPerCreator: Get<u32>;
 
-        /// Max number of unique `EraStake` items that can exist for a `(backer, creator)`
-        /// pairing. When backers claims rewards, they will either keep the number of
-        /// `EraStake` values the same or they will reduce them by one. Backers cannot add
+        /// The max number of unique `EraStake` items that can exist for a `(backer, creator)`
+        /// pair. When backers claims rewards, they will either keep the number of
+        /// `EraStake` items the same or they will reduce them by one. Backers cannot add
         /// an additional `EraStake` value by calling `bond() & stake()` or `unbond() & unstake()` if they've
         /// reached the max number of values.
         ///
@@ -97,13 +97,13 @@ pub mod pallet {
         #[pallet::constant]
         type StakeExpirationInEras: Get<EraIndex>;
 
-        /// Number of eras that need to pass until unstaked value can be withdrawn.
+        /// The number of eras that need to pass until an unstaked value can be withdrawn.
         /// Current era is always counted as full era (regardless how much blocks are remaining).
         /// When set to `0`, it's equal to having no unbonding period.
         #[pallet::constant]
         type UnbondingPeriodInEras: Get<u32>;
 
-        /// Max number of unlocking chunks per `(backer, creator)` pairing.
+        /// The max number of unlocking chunks per `(backer, creator)` pair.
         /// If value is zero, unlocking becomes impossible.
         #[pallet::constant]
         type MaxUnlockingChunks: Get<u32>;
@@ -161,7 +161,7 @@ pub mod pallet {
     pub(crate) type RegisteredCreators<T: Config> =
         StorageMap<_, Twox64Concat, CreatorId, CreatorInfo<T::AccountId>>;
 
-    /// Staking information about creator in a particular era.
+    /// Staking information about a creator in a particular era.
     #[pallet::storage]
     #[pallet::getter(fn creator_stake_info)]
     pub type CreatorStakeInfoByEra<T: Config> = StorageDoubleMap<
@@ -173,7 +173,7 @@ pub mod pallet {
         CreatorStakeInfo<BalanceOf<T>>,
     >;
 
-    /// Info about backers stakes on particular creators.
+    /// Info about backers stakes on particular creator.
     #[pallet::storage]
     #[pallet::getter(fn backer_info)]
     pub type GeneralBackerInfo<T: Config> = StorageDoubleMap<
@@ -208,7 +208,7 @@ pub mod pallet {
         RewardsDistributionConfig::default()
     }
 
-    /// An active list of configuration parameters used to calculate reward distribution portions.
+    /// An active list of the configuration parameters used to calculate the reward distribution.
     #[pallet::storage]
     #[pallet::getter(fn reward_config)]
     pub type ActiveRewardDistributionConfig<T> =
@@ -373,10 +373,10 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
 
-            // Check that creator is ready for staking.
+            // Check that a creator is ready for staking.
             ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
 
-            // Get the staking backer locks or create an entry if it doesn't exist.
+            // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
             let available_balance = Self::balance_available_for_staking(&backer, &backer_locks);
             let amount_to_stake = amount.min(available_balance);
@@ -431,10 +431,10 @@ pub mod pallet {
         ///
         /// The unstaked amount will no longer be eligible for rewards but still won't be unlocked.
         /// User needs to wait for the unbonding period to finish before being able to withdraw
-        /// the funds via `withdraw_unbonded` call.
+        /// the funds via the `withdraw_unbonded` call.
         ///
-        /// In case remaining staked balance on creator is below minimum staking amount,
-        /// entire stake for that creator will be unstaked.
+        /// If the remaining balance staked on that creator is below the minimum staking amount,
+        /// the entire stake for that creator will be unstaked.
         #[pallet::call_index(4)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
         pub fn unstake(
@@ -503,7 +503,7 @@ pub mod pallet {
 
             ensure!(!withdraw_amount.is_zero(), Error::<T>::NothingToWithdraw);
 
-            // Get the staking backer locks and update it
+            // Get the staking backer locks and update them
             backer_locks.total_locked = backer_locks.total_locked.saturating_sub(withdraw_amount);
             backer_locks.unbonding_info = future_chunks;
             Self::update_backer_locks(&backer, backer_locks);
@@ -531,7 +531,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
 
-            // Creator must exist and it has to be unregistered
+            // Creator must exist and be unregistered
             let creator_info = Self::require_creator(creator_id)?;
 
             let unregistered_era = if let CreatorStatus::Inactive(x) = creator_info.status {
@@ -575,7 +575,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // Claim rewards for the backer on the oldest unclaimed era where they has a stake
+        // Claim rewards for the backer on the oldest unclaimed era where they have a stake
         // and optionally restake the rewards to the same creator.
         // Not sure here whether to calculate total rewards for all creators
         //  or to withdraw per-creator rewards (preferably)
@@ -610,7 +610,7 @@ pub mod pallet {
                 restake, creator_info.status, &mut backer_info, current_era, backer_reward
             )?;
 
-            // Withdraw reward funds from rewards holding account
+            // Withdraw reward funds from the rewards holding account
             let reward_imbalance = T::Currency::withdraw(
                 &Self::rewards_pot_account(),
                 backer_reward,
@@ -676,7 +676,7 @@ pub mod pallet {
                 &rewards_and_stakes,
             );
 
-            // Withdraw reward funds from the creators staking
+            // Withdraw the reward funds from the creator staking pot account
             let reward_imbalance = T::Currency::withdraw(
                 &Self::rewards_pot_account(),
                 creator_reward,

@@ -2,7 +2,7 @@ use super::types::*;
 use sp_runtime::traits::CheckedAdd;
 
 impl<AccountId> CreatorInfo<AccountId> {
-    /// Create new `CreatorInfo` struct instance with the given developer and state `Registered`
+    /// Create a new `CreatorInfo` struct instance with the given collator and the status `Active`
     pub(crate) fn new(stakeholder: AccountId) -> Self {
         Self { stakeholder, status: CreatorStatus::Active }
     }

@@ -52,7 +52,7 @@ impl<T: Config> Pallet<T> {
         ensure!(creator_info.status == CreatorStatus::Active, Error::<T>::InactiveCreator);
         let stakeholder = creator_info.stakeholder.clone();
 
-        // TODO: make flexible register deposit
+        // TODO: make the registration deposit flexible
         if let UnregistrationAuthority::Root = unregister_origin {
             T::Currency::slash_reserved(&stakeholder, T::CreatorRegistrationDeposit::get());
         } else if let UnregistrationAuthority::Creator(who) = unregister_origin {
@@ -69,13 +69,13 @@ impl<T: Config> Pallet<T> {
 
     /// A utility method used to stake a specified amount on an arbitrary creator.
     ///
-    /// `BackerInfo` and `CreatorStakeInfo` are provided and all checks are made to ensure that
+    /// `StakesInfoOf` and `CreatorStakeInfo` are provided and all checks are made to ensure that
     /// it's possible to complete the staking operation.
     ///
     /// # Arguments
     ///
     /// * `backer_info` - info about backer's stakes on the creator up to current moment
-    /// * `staking_info` - general info about creator stakes up to current moment
+    /// * `staking_info` - general info about a particular creator's stake up to the current moment
     /// * `value` - value which is being bonded & staked
     /// * `current_era` - the current era of the creator staking system
     ///
@@ -112,7 +112,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::InsufficientStakingAmount,
         );
 
-        // Increment total backer's deposit for creator.
+        // Increment the backer's total deposit for a particular creator.
         staking_info.total = staking_info.total.saturating_add(desired_amount);
 
         Ok(())
@@ -121,9 +121,9 @@ impl<T: Config> Pallet<T> {
     /// A utility method used to unstake a specified amount from an arbitrary creator.
     ///
     /// The amount unstaked can be different in case the staked amount would fall bellow
-    /// `MinimumStakingAmount`. In that case, the entire staked amount will be unstaked.
+    /// `MinimumStake`. In that case, the entire staked amount will be unstaked.
     ///
-    /// `BackerInfo` and `CreatorStakeInfo` are provided and all checks are made to ensure that
+    /// `StakesInfoOf` and `CreatorStakeInfo` are provided and all checks are made to ensure that
     /// it's possible to complete the unstake operation.
     ///
     /// # Arguments
@@ -131,7 +131,7 @@ impl<T: Config> Pallet<T> {
     /// * `backer_info` - info about backer's stakes on the creator up to current moment
     /// * `staking_info` - general info about creator stakes up to current moment
     /// * `value` - value which should be unstaked
-    /// * `current_era` - current creators-staking era
+    /// * `current_era` - current creator-staking era
     ///
     /// # Returns
     ///
@@ -214,7 +214,7 @@ impl<T: Config> Pallet<T> {
         (creator_reward_share, combined_backers_reward_share)
     }
 
-    /// This utility function converts the specified in a `Config` PalletId into an account ID.
+    /// This utility function converts the PalletId specified in `Config` into an account ID.
     /// Rewards are deposited into this account before they are distributed to creators and backers.
     pub(crate) fn rewards_pot_account() -> T::AccountId {
         T::PalletId::get().into_account_truncating()
@@ -245,9 +245,10 @@ impl<T: Config> Pallet<T> {
         GeneralEraInfo::<T>::insert(era, era_info);
     }
 
-    /// Used to copy all `CreatorStakeInfo` from the ending era over to the next era.
+    /// Used to copy all `CreatorStakeInfo` from the previous era over to the next era.
+    ///
     /// This is the most primitive solution since it scales with the number of creators.
-    /// It is possible to provide a hybrid solution which allows laziness but also prevents
+    /// It is possible to provide a hybrid solution which allows laziness, but might also lead to
     /// a situation where we don't have access to the required data.
     pub(super) fn rotate_staking_info(current_era: EraIndex) -> Weight {
         let next_era = current_era + 1;
@@ -298,7 +299,7 @@ impl<T: Config> Pallet<T> {
         current_era: EraIndex,
         backer_reward: BalanceOf<T>,
     ) -> Result<bool, DispatchError> {
-        // Can restake only if the backer has a stake on the active creator
+        // Can restake only if the backer is already staking on the active creator
         // and all the other conditions are met:
         let should_restake_reward = restake
             && creator_status == CreatorStatus::Active

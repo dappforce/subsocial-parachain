@@ -51,7 +51,7 @@ pub struct CreatorInfo<AccountId> {
 
 /// Used to split total EraPayout among creators.
 /// Each tuple (creator, era) has this structure.
-/// This will be used to reward creators developer and his backers.
+/// This will be used to reward creators and their backers.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total amount staked on a creator.
@@ -78,7 +78,7 @@ pub struct BackerLocks<
     pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnlockingChunks>,
 }
 
-/// Used to represent how much was staked in a particular era.
+/// Used to represent how many total tokens were staked on the chain in a particular era.
 /// E.g. `{staked: 1000, era: 5}` means that in era `5`, staked amount was 1000.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
@@ -100,7 +100,7 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 ///
 /// # Example
 /// For simplicity, the following example will represent `EraStake` using `<era, stake>` notation.
-/// Let us assume we have the following vector in `BackerInfo` struct.
+/// Let us assume we have the following vector in `StakesInfoOf` struct.
 ///
 /// `[<5, 1000>, <6, 1500>, <8, 2100>, <9, 0>, <11, 500>]`
 ///
