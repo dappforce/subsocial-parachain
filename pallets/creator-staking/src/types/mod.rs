@@ -186,8 +186,6 @@ pub enum Forcing {
     #[default]
     NotForcing,
     /// Force a new era, then reset to `NotForcing` as soon as it is done.
-    /// Note that this will force to trigger an election until a new era is triggered, if the
-    /// election failed, the next session end will trigger a new election again, until success.
     ForceNew,
 }
 
