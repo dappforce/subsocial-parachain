@@ -169,10 +169,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 2704,
+	spec_version: 2706,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 5,
+	transaction_version: 7,
 	state_version: 0,
 };
 
@@ -730,15 +730,15 @@ impl pallet_energy::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BlockPerEra: BlockNumber = 6 * HOURS;
-	pub const StakeExpirationInEras: u32 = 90 * DAYS / BlockPerEra::get();
+	pub const BlockPerEra: BlockNumber = 14 * MINUTES;
+	pub const StakeExpirationInEras: u32 = 1 * HOURS / BlockPerEra::get();
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(10);
+	pub AnnualInflation: Perbill = Perbill::from_rational(1u32, 200);
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -755,11 +755,11 @@ impl pallet_creator_staking::Config for Runtime {
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
 	type MaxNumberOfBackersPerCreator = ConstU32<100>;
-	type MaxEraStakeItems = ConstU32<5>;
+	type MaxEraStakeItems = ConstU32<10>;
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
 	type MaxUnlockingChunks = ConstU32<32>;
-	type AnnualInflation = CurrentAnnualInflation;
+	type AnnualInflation = AnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
