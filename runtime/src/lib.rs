@@ -39,6 +39,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber}
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use pallet_domains::types::PricesConfigVec;
+use subsocial_support::SpaceId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -329,7 +330,7 @@ impl frame_system::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = (Aura, CreatorStaking);
 	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 	type WeightInfo = ();
 }
@@ -728,6 +729,41 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const BlockPerEra: BlockNumber = 6 * HOURS;
+	pub const StakeExpirationInEras: u32 = 90 * DAYS / BlockPerEra::get();
+
+	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
+	pub const RegistrationDeposit: Balance = 1000 * UNIT;
+	pub const MinimumStakingAmount: Balance = 100 * UNIT;
+	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
+
+	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(10);
+	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
+	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
+}
+
+impl pallet_creator_staking::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = CreatorStakingPalletId;
+	type BlockPerEra = BlockPerEra;
+	type Currency = Balances;
+	type SpacesInterface = Spaces;
+	type SpacePermissionsProvider = Spaces;
+	type CreatorRegistrationDeposit = RegistrationDeposit;
+	type MinimumStake = MinimumStakingAmount;
+	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
+	type MaxNumberOfBackersPerCreator = ConstU32<100>;
+	type MaxEraStakeItems = ConstU32<5>;
+	type StakeExpirationInEras = StakeExpirationInEras;
+	type UnbondingPeriodInEras = ConstU32<2>;
+	type MaxUnlockingChunks = ConstU32<32>;
+	type AnnualInflation = CurrentAnnualInflation;
+	type BlocksPerYear = BlocksPerYear;
+	type TreasuryAccount = TreasuryAccount;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -769,6 +805,7 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
+		CreatorStaking: pallet_creator_staking = 63,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -935,6 +972,29 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+		for Runtime
+	{
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
+			creators: Vec<SpaceId>,
+		) -> Vec<(SpaceId, Balance)> {
+			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
+		}
+
+		fn withdrawable_amounts_from_inactive_creators(
+			backer: AccountId,
+		) -> Vec<(SpaceId, Balance)> {
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
+		}
+
+		fn available_claims_by_backer(
+			backer: AccountId,
+		) -> Vec<(SpaceId, u32)> {
+			CreatorStaking::available_claims_by_backer(backer)
 		}
 	}
 
