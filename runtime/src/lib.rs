@@ -112,7 +112,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	// pallet_domains::migration::v1::MigrateToV1<Runtime>,
+	pallet_creator_staking::migration::v1::MigrateToV1<Runtime>,
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -169,10 +169,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 2704,
+	spec_version: 2705,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 5,
+	transaction_version: 6,
 	state_version: 0,
 };
 
@@ -330,7 +330,8 @@ impl frame_system::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = (Aura, CreatorStaking);
+	// type OnTimestampSet = (Aura, CreatorStaking);
+	type OnTimestampSet = Aura;
 	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 	type WeightInfo = ();
 }
@@ -804,7 +805,7 @@ construct_runtime!(
 		Domains: pallet_domains = 60,
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
-		CreatorStaking: pallet_creator_staking = 63,
+		CreatorStaking: pallet_creator_staking::{Pallet, Storage, Event<T>} = 63,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -974,7 +975,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+	/*impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
 		for Runtime
 	{
 		fn estimated_staker_rewards_by_creators(
@@ -989,7 +990,7 @@ impl_runtime_apis! {
 		) -> Vec<(SpaceId, Balance)> {
 			CreatorStaking::withdrawable_amounts_from_inactive_creators(staker)
 		}
-	}
+	}*/
 
 	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
 		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
