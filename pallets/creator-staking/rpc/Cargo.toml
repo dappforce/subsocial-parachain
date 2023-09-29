@@ -16,11 +16,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+
 pallet-creator-staking-rpc-runtime-api = { path = "./runtime-api" }
-subsocial-support = { path = "../../support" }
+pallet-creator-staking = { path = ".." }
+
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }

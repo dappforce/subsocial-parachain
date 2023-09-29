@@ -1,7 +1,7 @@
 use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
-use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_runtime::{traits::{AccountIdConversion, One, Zero}, Perbill, Saturating};
+use sp_std::vec::Vec;
 use subsocial_support::traits::SpacePermissionsProvider;
 
 impl<T: Config> Pallet<T> {
@@ -434,30 +434,54 @@ impl<T: Config> Pallet<T> {
         withdrawable_amounts_by_creator
     }
 
-    pub fn available_claims_by_backer(
-        backer: T::AccountId,
-    ) -> Vec<(CreatorId, u32)> {
-        let mut available_claims_by_creator = BTreeMap::new();
+    pub fn available_claims_by_backer(backer: T::AccountId) -> Vec<(CreatorId, u32)> {
+        let mut available_claims_by_creator = Vec::new();
 
         let current_era = Self::current_era();
 
-        for (creator, mut stakes_info) in GeneralBackerInfo::<T>::iter_prefix(&backer) {
+        for (creator, stakes_info) in GeneralBackerInfo::<T>::iter_prefix(&backer) {
+            if stakes_info.stakes.is_empty() {
+                continue;
+            }
+
             let unregistered_era = match Self::get_unregistered_era_index(creator) {
                 Ok(era) => era,
                 Err(error) if error.eq(&Error::<T>::CreatorNotFound.into()) => continue,
                 _ => current_era,
             };
+            let era_to_stop_rewarding = current_era.min(unregistered_era);
 
-            loop {
-                let (era, _) = stakes_info.claim();
-                if era >= unregistered_era || era == 0 {
+            let mut prev_era_stake: EraStake<BalanceOf<T>> = EraStake::new(One::one(), 0);
+            let mut available_claims_count = 0u32;
+
+            let stakes_len = stakes_info.stakes.len();
+            for (i, EraStake { era, staked }) in stakes_info.stakes.iter().enumerate() {
+                let is_last_stake = i == stakes_len - 1;
+
+                let add_available_claims = |claims_count: &mut u32, era_diff: EraIndex| {
+                    *claims_count = claims_count.saturating_add(era_diff);
+                };
+
+                if stakes_len == 1 && !staked.is_zero() {
+                    add_available_claims(&mut available_claims_count, era_to_stop_rewarding.saturating_sub(*era));
                     break;
                 }
 
-                available_claims_by_creator.entry(creator).and_modify(|e| *e += 1).or_insert(1);
+                if i != 0 && *era <= era_to_stop_rewarding && !prev_era_stake.staked.is_zero() {
+                    add_available_claims(&mut available_claims_count, era.saturating_sub(prev_era_stake.era));
+                }
+
+                if is_last_stake && !staked.is_zero() {
+                    add_available_claims(&mut available_claims_count, era_to_stop_rewarding.saturating_sub(*era));
+                    break;
+                }
+
+                prev_era_stake = EraStake::new(*staked, *era);
             }
+
+            available_claims_by_creator.push((creator, available_claims_count));
         }
 
-        available_claims_by_creator.into_iter().collect()
+        available_claims_by_creator
     }
 }

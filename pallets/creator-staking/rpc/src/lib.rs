@@ -1,6 +1,6 @@
 //! RPC interface for the creator-staking pallet.
 
-use std::{convert::TryInto, fmt::Display, sync::Arc};
+use std::{convert::TryInto, fmt::Display, sync::Arc, vec::Vec};
 
 use codec::Codec;
 use jsonrpsee::{
@@ -15,9 +15,8 @@ use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, MaybeDisplay},
 };
-use sp_std::vec::Vec;
 
-use subsocial_support::SpaceId;
+use pallet_creator_staking::CreatorId;
 pub use pallet_creator_staking_rpc_runtime_api::CreatorStakingApi as CreatorStakingRuntimeApi;
 
 #[rpc(client, server)]
@@ -26,23 +25,23 @@ pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
     fn estimated_backer_rewards_by_creators(
         &self,
         backer: AccountId,
-        creators: Vec<SpaceId>,
+        creators: Vec<CreatorId>,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
+    ) -> RpcResult<Vec<(CreatorId, GenericResponseType)>>;
 
     #[method(name = "creatorStaking_withdrawableAmountsFromInactiveCreators")]
     fn withdrawable_amounts_from_inactive_creators(
         &self,
         backer: AccountId,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
+    ) -> RpcResult<Vec<(CreatorId, GenericResponseType)>>;
 
     #[method(name = "creatorStaking_availableClaimsByBacker")]
     fn available_claims_by_backer(
         &self,
         backer: AccountId,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, u32)>>;
+    ) -> RpcResult<Vec<(CreatorId, u32)>>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -89,9 +88,9 @@ CreatorStakingApiServer<
     fn estimated_backer_rewards_by_creators(
         &self,
         backer: AccountId,
-        creators: Vec<SpaceId>,
+        creators: Vec<CreatorId>,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, Balance)>> {
+    ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
@@ -106,7 +105,7 @@ CreatorStakingApiServer<
         &self,
         backer: AccountId,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, Balance)>> {
+    ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
@@ -121,7 +120,7 @@ CreatorStakingApiServer<
         &self,
         backer: AccountId,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, u32)>> {
+    ) -> RpcResult<Vec<(CreatorId, u32)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 

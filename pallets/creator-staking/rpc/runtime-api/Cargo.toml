@@ -18,7 +18,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 sp-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
-subsocial-support = { path = '../../../support', default-features = false }
+pallet-creator-staking = { path = '../..', default-features = false }
 
 [features]
 default = ["std"]
@@ -27,5 +27,5 @@ std = [
     "sp-api/std",
     "sp-runtime/std",
     "sp-std/std",
-    "subsocial-support/std",
+    "pallet-creator-staking/std",
 ]
