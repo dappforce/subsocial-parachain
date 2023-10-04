@@ -169,10 +169,8 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     pub(crate) fn claim(&mut self) -> (EraIndex, Balance) {
         if let Some(oldest_era_stake) = self.stakes.first() {
             let oldest_era_stake = *oldest_era_stake;
-            let has_no_stake_updates_for_the_next_era =
-                oldest_era_stake.era + 2 <= self.stakes[1].era;
 
-            if self.stakes.len() == 1 || has_no_stake_updates_for_the_next_era {
+            if self.stakes.len() == 1 || oldest_era_stake.era + 2 <= self.stakes[1].era {
                 // If there is a record from the next era and its stake has been changed:
                 self.stakes[0] =
                     EraStake { staked: oldest_era_stake.staked, era: oldest_era_stake.era.saturating_add(1) }
