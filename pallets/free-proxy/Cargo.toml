@@ -1,6 +1,6 @@
 [package]
 name = "pallet-free-proxy"
-version = "0.1.11"
+version = "0.1.12"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
