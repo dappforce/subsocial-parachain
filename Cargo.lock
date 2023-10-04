@@ -5462,6 +5462,7 @@ name = "pallet-creator-staking-rpc"
 version = "0.1.9"
 dependencies = [
  "jsonrpsee",
+ "pallet-creator-staking",
  "pallet-creator-staking-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -5469,19 +5470,17 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
- "sp-std",
- "subsocial-support",
 ]
 
 [[package]]
 name = "pallet-creator-staking-rpc-runtime-api"
 version = "0.1.9"
 dependencies = [
+ "pallet-creator-staking",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
  "sp-std",
- "subsocial-support",
 ]
 
 [[package]]
