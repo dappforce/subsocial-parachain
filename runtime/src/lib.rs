@@ -39,7 +39,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
-use pallet_creator_staking::CreatorId;
+use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
 
 #[cfg(any(feature = "std", test))]
@@ -996,6 +996,18 @@ impl_runtime_apis! {
 			backer: AccountId,
 		) -> Vec<(CreatorId, u32)> {
 			CreatorStaking::available_claims_by_backer(backer)
+		}
+
+		fn estimated_creator_rewards(
+			creator: CreatorId,
+		) -> Balance {
+			CreatorStaking::estimated_creator_rewards(creator)
+		}
+
+		fn available_claims_by_creator(
+			creator: CreatorId,
+		) -> Vec<EraIndex> {
+			CreatorStaking::available_claims_by_creator(creator)
 		}
 	}
 
