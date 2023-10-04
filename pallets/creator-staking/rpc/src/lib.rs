@@ -16,7 +16,7 @@ use sp_runtime::{
     traits::{Block as BlockT, MaybeDisplay},
 };
 
-use pallet_creator_staking::CreatorId;
+use pallet_creator_staking::{CreatorId, EraIndex};
 pub use pallet_creator_staking_rpc_runtime_api::CreatorStakingApi as CreatorStakingRuntimeApi;
 
 #[rpc(client, server)]
@@ -42,6 +42,20 @@ pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
         backer: AccountId,
         at: Option<BlockHash>,
     ) -> RpcResult<Vec<(CreatorId, u32)>>;
+
+    #[method(name = "creatorStaking_estimatedCreatorRewards")]
+    fn estimated_creator_rewards(
+        &self,
+        creator: CreatorId,
+        at: Option<BlockHash>,
+    ) -> RpcResult<GenericResponseType>;
+
+    #[method(name = "creatorStaking_availableClaimsByCreator")]
+    fn available_claims_by_creator(
+        &self,
+        creator: CreatorId,
+        at: Option<BlockHash>,
+    ) -> RpcResult<Vec<EraIndex>>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -126,6 +140,36 @@ CreatorStakingApiServer<
 
         let res = api
             .available_claims_by_backer(&at, backer)
+            .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
+
+        Ok(res)
+    }
+
+    fn estimated_creator_rewards(
+        &self,
+        creator: CreatorId,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<Balance> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .estimated_creator_rewards(&at, creator)
+            .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
+
+        Ok(res)
+    }
+
+    fn available_claims_by_creator(
+        &self,
+        creator: CreatorId,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<Vec<EraIndex>> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .available_claims_by_creator(&at, creator)
             .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
 
         Ok(res)

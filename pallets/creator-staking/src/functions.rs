@@ -484,4 +484,35 @@ impl<T: Config> Pallet<T> {
 
         available_claims_by_creator
     }
+
+    pub fn estimated_creator_rewards(creator_id: CreatorId) -> BalanceOf<T> {
+        let mut estimated_rewards: BalanceOf<T> = Zero::zero();
+
+        for (era, stake_info) in CreatorStakeInfoByEra::<T>::iter_prefix(creator_id) {
+            if !stake_info.rewards_claimed {
+                if let Some(era_info) = Self::general_era_info(era) {
+                    let (creator_reward_share, _) =
+                        Self::distributed_rewards_between_creator_and_backers(&stake_info, &era_info);
+                    estimated_rewards = estimated_rewards
+                        .saturating_add(creator_reward_share);
+                }
+            }
+        }
+
+        estimated_rewards
+    }
+
+    pub fn available_claims_by_creator(creator_id: CreatorId) -> Vec<EraIndex> {
+        let mut available_claims: Vec<EraIndex> = Vec::new();
+
+        let current_era = Self::current_era();
+        for (era, stake_info) in CreatorStakeInfoByEra::<T>::iter_prefix(creator_id) {
+            if !stake_info.rewards_claimed && era < current_era {
+                available_claims.push(era);
+            }
+        }
+
+        available_claims.sort();
+        available_claims
+    }
 }
