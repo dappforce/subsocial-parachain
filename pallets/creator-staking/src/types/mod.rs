@@ -132,7 +132,7 @@ pub struct StakesInfo<
 #[derive(
 Clone, Copy, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
-pub struct UnlockingChunk<Balance: MaxEncodedLen> {
+pub struct UnbondingChunk<Balance: MaxEncodedLen> {
     /// Amount being unbonded
     #[codec(compact)]
     pub(super) amount: Balance,
@@ -151,7 +151,7 @@ pub struct UnbondingInfo<
     MaxUnlockingChunks: Get<u32>,
 > {
     // Vector of unlocking chunks. Sorted in ascending order in respect to unlock_era.
-    unlocking_chunks: BoundedVec<UnlockingChunk<Balance>, MaxUnlockingChunks>,
+    unlocking_chunks: BoundedVec<UnbondingChunk<Balance>, MaxUnlockingChunks>,
 }
 
 /// A record of rewards allocated for backers and creators

@@ -200,7 +200,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     }
 }
 
-impl<Balance> UnlockingChunk<Balance>
+impl<Balance> UnbondingChunk<Balance>
     where
         Balance: Add<Output = Balance> + Copy + MaxEncodedLen,
 {
@@ -216,7 +216,7 @@ impl<Balance, MaxUnlockingChunks> Default for UnbondingInfo<Balance, MaxUnlockin
         MaxUnlockingChunks: Get<u32>,
 {
     fn default() -> Self {
-        Self { unlocking_chunks: BoundedVec::<UnlockingChunk<Balance>, MaxUnlockingChunks>::default() }
+        Self { unlocking_chunks: BoundedVec::<UnbondingChunk<Balance>, MaxUnlockingChunks>::default() }
     }
 }
 
@@ -245,7 +245,7 @@ impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
     }
 
     /// Adds a new unlocking chunk to the vector, preserving the unlock_era based ordering.
-    pub(crate) fn add(&mut self, chunk: UnlockingChunk<Balance>) {
+    pub(crate) fn add(&mut self, chunk: UnbondingChunk<Balance>) {
         // It is possible that the unbonding period changes so we need to account for that
         match self.unlocking_chunks.binary_search_by(|x| x.unlock_era.cmp(&chunk.unlock_era)) {
             // Merge with existing chunk if unlock_eras match
@@ -265,8 +265,8 @@ impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
     /// Order of chunks is preserved in the two new structs.
     pub(crate) fn partition(self, era: EraIndex) -> (Self, Self) {
         let (matching_chunks, other_chunks): (
-            Vec<UnlockingChunk<Balance>>,
-            Vec<UnlockingChunk<Balance>>,
+            Vec<UnbondingChunk<Balance>>,
+            Vec<UnbondingChunk<Balance>>,
         ) = self.unlocking_chunks.iter().partition(|chunk| chunk.unlock_era <= era);
 
         let matching_chunks = matching_chunks.try_into().unwrap();

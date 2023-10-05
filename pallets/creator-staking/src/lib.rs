@@ -458,7 +458,7 @@ pub mod pallet {
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
-            backer_locks.unbonding_info.add(UnlockingChunk {
+            backer_locks.unbonding_info.add(UnbondingChunk {
                 amount: amount_to_unstake,
                 unlock_era: current_era + T::UnbondingPeriodInEras::get(),
             });
