@@ -164,7 +164,7 @@ impl<T: Config> Pallet<T> {
         stake_info.total = stake_info.total.saturating_sub(amount_to_unstake);
 
         backer_info
-            .unstake(current_era, amount_to_unstake)
+            .decrease_stake(current_era, amount_to_unstake)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
         Self::ensure_max_era_stake_items_not_exceeded(backer_info)?;

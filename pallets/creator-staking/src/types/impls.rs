@@ -121,17 +121,17 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     /// # Example 1
     ///
     /// `stakes: [<5, 1000>, <7, 1300>]`
-    /// * `unstake(7, 100)` will result in `[<5, 1000>, <7, 1200>]`
-    /// * `unstake(9, 400)` will result in `[<5, 1000>, <7, 1200>, <9, 800>]`
-    /// * `unstake(10, 800)` will result in `[<5, 1000>, <7, 1200>, <9, 800>, <10, 0>]`
+    /// * `decrease_stake(7, 100)` will result in `[<5, 1000>, <7, 1200>]`
+    /// * `decrease_stake(9, 400)` will result in `[<5, 1000>, <7, 1200>, <9, 800>]`
+    /// * `decrease_stake(10, 800)` will result in `[<5, 1000>, <7, 1200>, <9, 800>, <10, 0>]`
     ///
     /// # Example 2
     ///
     /// `stakes: [<5, 1000>]`
-    /// * `unstake(5, 1000)` will result in `[]`
+    /// * `decrease_stake(5, 1000)` will result in `[]`
     ///
     /// Note that if no unclaimed eras remain, vector will be cleared.
-    pub(crate) fn unstake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
+    pub(crate) fn decrease_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
         self.change_stake(current_era, value, |x, y| x.saturating_sub(y))
     }
 
