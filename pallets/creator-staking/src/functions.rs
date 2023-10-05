@@ -189,12 +189,12 @@ impl<T: Config> Pallet<T> {
     pub(super) fn update_backer_info(
         backer: &T::AccountId,
         creator_id: CreatorId,
-        backer_info: StakesInfoOf<T>,
+        backer_stakes: StakesInfoOf<T>,
     ) {
-        if backer_info.is_empty() {
+        if backer_stakes.is_empty() {
             GeneralBackerInfo::<T>::remove(backer, creator_id)
         } else {
-            GeneralBackerInfo::<T>::insert(backer, creator_id, backer_info)
+            GeneralBackerInfo::<T>::insert(backer, creator_id, backer_stakes)
         }
     }
 
