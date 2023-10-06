@@ -119,12 +119,12 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 /// **NOTE:** It is important to understand that backer **DID NOT** claim any rewards during this
 /// period.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxEraStakeValues))]
+#[scale_info(skip_type_params(MaxEraStakeItems))]
 pub struct StakesInfo<
     Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
-    MaxEraStakeValues: Get<u32>,
+    MaxEraStakeItems: Get<u32>,
 > {
-    pub(super) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeValues>,
+    pub(super) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeItems>,
 }
 
 /// Represents a balance amount that is currently unbonding.

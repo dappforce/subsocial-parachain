@@ -36,13 +36,18 @@ impl<T: Config> Pallet<T> {
         let (fixed_treasury_imbalance, treasury_imbalance) = remainder.split(treasury_balance);
 
         // Payout beneficiaries
+        Self::add_to_reward_pool(backers_imbalance, creators_imbalance);
+
+        T::Currency::resolve_creating(&T::TreasuryAccount::get(), fixed_treasury_imbalance.merge(treasury_imbalance));
+    }
+
+    pub fn add_to_reward_pool(backers: NegativeImbalanceOf<T>, creators: NegativeImbalanceOf<T>) {
         BlockRewardAccumulator::<T>::mutate(|accumulated_reward| {
-            accumulated_reward.creators = accumulated_reward.creators.saturating_add(creators_imbalance.peek());
+            accumulated_reward.creators = accumulated_reward.creators.saturating_add(creators.peek());
             accumulated_reward.backers =
-                accumulated_reward.backers.saturating_add(backers_imbalance.peek());
+                accumulated_reward.backers.saturating_add(backers.peek());
         });
 
-        T::Currency::resolve_creating(&Self::rewards_pot_account(), creators_imbalance.merge(backers_imbalance));
-        T::Currency::resolve_creating(&T::TreasuryAccount::get(), fixed_treasury_imbalance.merge(treasury_imbalance));
+        T::Currency::resolve_creating(&Self::rewards_pot_account(), creators.merge(backers));
     }
 }

@@ -5,11 +5,8 @@ pub use pallet::*;
 pub mod types;
 pub mod functions;
 pub mod inflation;
-// #[cfg(test)]
-// mod mock;
-
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -461,12 +458,7 @@ pub mod pallet {
             backer_locks.unbonding_info.add(UnbondingChunk {
                 amount: amount_to_unstake,
                 unlock_era: current_era + T::UnbondingPeriodInEras::get(),
-            });
-            // This should be done AFTER insertion since it's possible for chunks to merge
-            ensure!(
-                backer_locks.unbonding_info.len() <= T::MaxUnbondingChunks::get(),
-                Error::<T>::TooManyUnbondingChunks
-            );
+            }).map_err(|_| Error::<T>::TooManyUnbondingChunks)?;
 
             Self::update_backer_locks(&backer, backer_locks);
 

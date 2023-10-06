@@ -20,8 +20,8 @@ impl<T: Config> Pallet<T> {
         backer_locks: &BackerLocksOf<T>,
     ) -> BalanceOf<T> {
         // Ensure that backer has enough balance to bond & stake.
-        let free_balance =
-            T::Currency::free_balance(backer).saturating_sub(T::MinimumRemainingFreeBalance::get());
+        let free_balance = T::Currency::free_balance(backer)
+            .saturating_sub(T::MinimumRemainingFreeBalance::get());
 
         // Remove already locked funds from the free balance
         free_balance.saturating_sub(backer_locks.total_locked)
@@ -312,7 +312,10 @@ impl<T: Config> Pallet<T> {
 
             // Restaking will, in the worst case, remove one record and add another one,
             // so it's fine if the vector is full
-            Self::ensure_max_era_stake_items_not_exceeded(&backer_stakes)?;
+            ensure!(
+                backer_stakes.len() <= T::MaxEraStakeItems::get(),
+                Error::<T>::TooManyEraStakeValues,
+            );
 
             Ok(true)
         } else {
@@ -376,6 +379,19 @@ impl<T: Config> Pallet<T> {
             }
         } else {
             Err(Error::<T>::CreatorNotFound.into())
+        }
+    }
+
+    /// Returns total value locked by creator-staking.
+    ///
+    /// Note that this can differ from _total staked value_ since some funds might be undergoing the unbonding period.
+    pub fn tvl() -> BalanceOf<T> {
+        let current_era = Self::current_era();
+        if let Some(era_info) = Self::general_era_info(current_era) {
+            era_info.locked
+        } else {
+            // Should never happen since era info for current era must always exist
+            Zero::zero()
         }
     }
 
