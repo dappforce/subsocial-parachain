@@ -227,6 +227,7 @@ pub mod pallet {
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
         NewCreatorStakingEra { number: EraIndex },
         MaintenanceModeSet { enabled: bool },
+        ActiveDistributionConfigurationChanged { new_config: RewardsDistributionConfig },
     }
 
     #[pallet::error]
@@ -730,7 +731,9 @@ pub mod pallet {
             ensure_root(origin)?;
 
             ensure!(new_config.is_consistent(), Error::<T>::RewardDistributionConfigInconsistent);
-            ActiveRewardDistributionConfig::<T>::put(new_config);
+            ActiveRewardDistributionConfig::<T>::put(new_config.clone());
+
+            Self::deposit_event(Event::<T>::ActiveDistributionConfigurationChanged { new_config });
 
             Ok(())
         }
