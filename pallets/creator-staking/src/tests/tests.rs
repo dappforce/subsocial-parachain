@@ -1,10 +1,10 @@
 use crate::{pallet::Error, pallet::Event, *};
 use super::*;
-use frame_support::{assert_noop, assert_ok, traits::{Currency, OnInitialize}, weights::Weight};
+use frame_support::{assert_noop, assert_ok, traits::{Currency, OnInitialize, OnTimestampSet}, weights::Weight};
 use mock::{Balances, *};
 use sp_runtime::{
     traits::{BadOrigin, Zero},
-    Perbill,
+    Perbill, RuntimeDebug,
 };
 
 use testing_utils::*;
@@ -1750,4 +1750,328 @@ pub fn tvl_util_test() {
         advance_to_era(5);
         assert_eq!(CreatorStaking::tvl(), stake_value * iterations);
     })
+}
+
+// Inflation tests
+// ---------------
+
+#[test]
+fn default_reward_distribution_config_is_consitent() {
+    let reward_config = RewardsDistributionConfig::default();
+    assert!(reward_config.is_consistent());
+}
+
+#[test]
+fn reward_distribution_config_is_consistent() {
+    // 1
+    let reward_config = RewardsDistributionConfig {
+        backers_percent: Zero::zero(),
+        creators_percent: Zero::zero(),
+        treasury_percent: Perbill::from_percent(100),
+    };
+    assert!(reward_config.is_consistent());
+
+    // 2
+    let reward_config = RewardsDistributionConfig {
+        backers_percent: Zero::zero(),
+        creators_percent: Perbill::from_percent(100),
+        treasury_percent: Zero::zero(),
+    };
+    assert!(reward_config.is_consistent());
+
+    // 3
+    // 100%
+    let reward_config = RewardsDistributionConfig {
+        backers_percent: Perbill::from_percent(34),
+        creators_percent: Perbill::from_percent(51),
+        treasury_percent: Perbill::from_percent(15),
+    };
+    assert!(reward_config.is_consistent());
+}
+
+#[test]
+fn reward_distribution_config_not_consistent() {
+    // 1
+    let reward_config = RewardsDistributionConfig {
+        treasury_percent: Perbill::from_percent(100),
+        ..Default::default()
+    };
+    assert!(!reward_config.is_consistent());
+
+    // 2
+    // 99%
+    let reward_config = RewardsDistributionConfig {
+        backers_percent: Perbill::from_percent(34),
+        creators_percent: Perbill::from_percent(51),
+        // Here should be 15, then it'll be equal to 100%
+        treasury_percent: Perbill::from_percent(14),
+    };
+    assert!(!reward_config.is_consistent());
+
+    // 3
+    // 101%
+    let reward_config = RewardsDistributionConfig {
+        backers_percent: Perbill::from_percent(34),
+        creators_percent: Perbill::from_percent(51),
+        // Here should be 15, then it'll be equal to 100%
+        treasury_percent: Perbill::from_percent(16),
+    };
+    assert!(!reward_config.is_consistent());
+}
+
+#[test]
+pub fn set_configuration_fails() {
+    ExternalityBuilder::build().execute_with(|| {
+        // 1
+        assert_noop!(
+            CreatorStaking::set_reward_distribution_config(RuntimeOrigin::signed(1), Default::default()),
+            BadOrigin
+        );
+
+        // 2
+        let reward_config = RewardsDistributionConfig {
+            treasury_percent: Perbill::from_percent(100),
+            ..Default::default()
+        };
+        assert!(!reward_config.is_consistent());
+        assert_noop!(
+            CreatorStaking::set_reward_distribution_config(RuntimeOrigin::root(), reward_config),
+            Error::<TestRuntime>::RewardDistributionConfigInconsistent,
+        );
+    })
+}
+
+#[test]
+pub fn set_configuration_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // custom config so it differs from the default one
+        let new_config = RewardsDistributionConfig {
+            backers_percent: Perbill::from_percent(15),
+            creators_percent: Perbill::from_percent(35),
+            treasury_percent: Perbill::from_percent(50),
+        };
+        assert!(new_config.is_consistent());
+
+        assert_ok!(CreatorStaking::set_reward_distribution_config(
+            RuntimeOrigin::root(),
+            new_config.clone()
+        ));
+        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(
+            Event::ActiveDistributionConfigurationChanged { new_config: new_config.clone() },
+        ));
+
+        assert_eq!(
+            ActiveRewardDistributionConfig::<TestRuntime>::get(),
+            new_config
+        );
+    })
+}
+
+#[test]
+pub fn inflation_and_total_issuance_as_expected() {
+    ExternalityBuilder::build().execute_with(|| {
+        let init_issuance = <TestRuntime as Config>::Currency::total_issuance();
+
+        for block in 0..10 {
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                block * BLOCK_REWARD + init_issuance
+            );
+            CreatorStaking::on_timestamp_set(0);
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                (block + 1) * BLOCK_REWARD + init_issuance
+            );
+        }
+    })
+}
+
+#[test]
+pub fn reward_distribution_as_expected() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Ensure that initially, all beneficiaries have no free balance
+        let init_balance_snapshot = FreeBalanceSnapshot::new();
+        assert!(init_balance_snapshot.is_zero());
+
+        // Prepare a custom config (easily discernible percentages for visual verification)
+        let reward_config = RewardsDistributionConfig {
+            backers_percent: Perbill::from_percent(15),
+            creators_percent: Perbill::from_percent(35),
+            treasury_percent: Perbill::from_percent(50),
+        };
+        assert!(reward_config.is_consistent());
+        assert_ok!(CreatorStaking::set_reward_distribution_config(
+            RuntimeOrigin::root(),
+            reward_config.clone()
+        ));
+
+        // Initial adjustment of TVL
+        adjust_tvl_percentage(Perbill::from_percent(30));
+
+        // Issue rewards a couple of times and verify distribution is as expected
+        for _block in 1..=100 {
+            let init_balance_state = FreeBalanceSnapshot::new();
+            let rewards = Rewards::calculate(&reward_config);
+
+            CreatorStaking::on_timestamp_set(0);
+
+            let final_balance_state = FreeBalanceSnapshot::new();
+            init_balance_state.assert_distribution(&final_balance_state, &rewards);
+        }
+    })
+}
+
+#[test]
+pub fn reward_distribution_no_adjustable_part() {
+    ExternalityBuilder::build().execute_with(|| {
+        let reward_config = RewardsDistributionConfig {
+            backers_percent: Perbill::from_percent(15),
+            creators_percent: Perbill::from_percent(35),
+            treasury_percent: Perbill::from_percent(50),
+        };
+        assert!(reward_config.is_consistent());
+        assert_ok!(CreatorStaking::set_reward_distribution_config(
+            RuntimeOrigin::root(),
+            reward_config.clone()
+        ));
+
+        // no adjustable part so we don't expect rewards to change with TVL percentage
+        let const_rewards = Rewards::calculate(&reward_config);
+
+        for _block in 1..=100 {
+            let init_balance_state = FreeBalanceSnapshot::new();
+            let rewards = Rewards::calculate(&reward_config);
+
+            assert_eq!(rewards, const_rewards);
+
+            CreatorStaking::on_timestamp_set(0);
+
+            let final_balance_state = FreeBalanceSnapshot::new();
+            init_balance_state.assert_distribution(&final_balance_state, &rewards);
+        }
+    })
+}
+
+#[test]
+pub fn reward_distribution_all_zero_except_one() {
+    ExternalityBuilder::build().execute_with(|| {
+        let reward_config = RewardsDistributionConfig {
+            backers_percent: Perbill::from_percent(15),
+            creators_percent: Perbill::from_percent(35),
+            treasury_percent: Perbill::from_percent(50),
+        };
+        assert!(reward_config.is_consistent());
+        assert_ok!(CreatorStaking::set_reward_distribution_config(
+            RuntimeOrigin::root(),
+            reward_config.clone()
+        ));
+
+        for _block in 1..=10 {
+            let init_balance_state = FreeBalanceSnapshot::new();
+            let rewards = Rewards::calculate(&reward_config);
+
+            CreatorStaking::on_timestamp_set(0);
+
+            let final_balance_state = FreeBalanceSnapshot::new();
+            init_balance_state.assert_distribution(&final_balance_state, &rewards);
+        }
+    })
+}
+
+/// Represents free balance snapshot at a specific point in time
+#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
+struct FreeBalanceSnapshot {
+    treasury: Balance,
+    backers: Balance,
+    creators: Balance,
+}
+
+impl FreeBalanceSnapshot {
+    /// Creates a new free balance snapshot using current balance state.
+    ///
+    /// Future balance changes won't be reflected in this instance.
+    fn new() -> Self {
+        Self {
+            treasury: <TestRuntime as Config>::Currency::free_balance(
+                TREASURY_ACCOUNT,
+            ),
+            backers: <TestRuntime as Config>::Currency::free_balance(
+                CreatorStaking::rewards_pot_account(),
+            ),
+            creators: <TestRuntime as Config>::Currency::free_balance(
+                CreatorStaking::rewards_pot_account(),
+            ),
+        }
+    }
+
+    /// `true` if all free balances equal `Zero`, `false` otherwise
+    fn is_zero(&self) -> bool {
+        self.treasury.is_zero()
+            && self.backers.is_zero()
+            && self.creators.is_zero()
+    }
+
+    /// Asserts that post reward state is as expected.
+    ///
+    /// Increase in balances, based on `rewards` values, is verified.
+    ///
+    fn assert_distribution(&self, post_reward_state: &Self, rewards: &Rewards) {
+        assert_eq!(
+            self.treasury + rewards.treasury_reward,
+            post_reward_state.treasury
+        );
+        assert_eq!(
+            self.backers + rewards.backer_reward,
+            post_reward_state.backers
+        );
+        assert_eq!(self.creators + rewards.creators_reward, post_reward_state.creators);
+    }
+}
+
+/// Represents reward distribution balances for a single distribution.
+#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
+struct Rewards {
+    treasury_reward: Balance,
+    backer_reward: Balance,
+    creators_reward: Balance,
+}
+
+impl Rewards {
+    /// Pre-calculates the reward distribution, using the provided `RewardsDistributionConfig`.
+    /// Method assumes that total issuance will be increased by `BLOCK_REWARD`.
+    fn calculate(reward_config: &RewardsDistributionConfig) -> Self {
+        // Calculate `tvl-independent` portions
+        let treasury_reward = reward_config.treasury_percent * BLOCK_REWARD;
+        let backer_reward = reward_config.backers_percent * BLOCK_REWARD;
+        let creators_reward = reward_config.creators_percent * BLOCK_REWARD;
+
+        Self {
+            treasury_reward,
+            backer_reward,
+            creators_reward,
+        }
+    }
+}
+
+/// Adjusts total_issuance  in order to try-and-match the requested TVL percentage
+fn adjust_tvl_percentage(desired_tvl_percentage: Perbill) {
+    // Calculate the required total issuance
+    let tvl = CreatorStaking::tvl();
+    let required_total_issuance = desired_tvl_percentage.saturating_reciprocal_mul(tvl);
+
+    // Calculate how much more we need to issue in order to get the desired TVL percentage
+    let init_total_issuance = <TestRuntime as Config>::Currency::total_issuance();
+    let to_issue = required_total_issuance.saturating_sub(init_total_issuance);
+
+    let dummy_acc = 1;
+    <TestRuntime as Config>::Currency::resolve_creating(
+        &dummy_acc,
+        <TestRuntime as Config>::Currency::issue(to_issue),
+    );
+
+    // Sanity check
+    assert_eq!(
+        <TestRuntime as Config>::Currency::total_issuance(),
+        required_total_issuance
+    );
 }

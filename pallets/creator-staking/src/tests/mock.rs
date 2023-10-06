@@ -43,6 +43,9 @@ pub(crate) const BACKER_BLOCK_REWARD: Balance = 531911;
 pub(crate) const CREATOR_BLOCK_REWARD: Balance = 773333;
 pub(crate) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
 pub(crate) const TREASURY_ACCOUNT: BlockNumber = 42;
+// A fairly high block reward so we can detect slight changes in reward distribution
+// due to TVL changes.
+pub(crate) const BLOCK_REWARD: Balance = 1_000_000;
 
 construct_runtime!(
     pub struct TestRuntime
