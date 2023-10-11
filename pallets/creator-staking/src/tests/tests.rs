@@ -1945,8 +1945,7 @@ pub fn reward_distribution_as_expected() {
 ///
 /// Contains balances for all reward beneficiaries:
 /// - treasury
-/// - backers
-/// - creators
+/// - backers&creators (rewards pot account)
 #[derive(PartialEq, Eq, Clone, RuntimeDebug)]
 pub(super) struct FreeBalanceSnapshot {
     treasury: Balance,
