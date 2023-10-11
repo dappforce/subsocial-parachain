@@ -527,7 +527,7 @@ pub mod pallet {
             // Creator must exist and be unregistered
             let creator_info = Self::require_creator(creator_id)?;
 
-            let unregister_era = if let CreatorStatus::Inactive(x) = creator_info.status {
+            let unregistration_era = if let CreatorStatus::Inactive(x) = creator_info.status {
                 x
             } else {
                 return Err(Error::<T>::CreatorIsActive.into());
@@ -541,7 +541,7 @@ pub mod pallet {
             // Don't allow withdrawal until all rewards have been claimed.
             let (claimable_era, _) = backer_stakes.claim();
             ensure!(
-                claimable_era >= unregister_era || claimable_era.is_zero(),
+                claimable_era >= unregistration_era || claimable_era.is_zero(),
                 Error::<T>::UnclaimedRewardsRemaining
             );
 

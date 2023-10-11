@@ -37,8 +37,8 @@ impl<T: Config> Pallet<T> {
         creator_info: &CreatorInfo<T::AccountId>,
         era: EraIndex,
     ) -> DispatchResult {
-        if let CreatorStatus::Inactive(unregister_era) = creator_info.status {
-            ensure!(era < unregister_era, Error::<T>::InactiveCreator);
+        if let CreatorStatus::Inactive(unregistration_era) = creator_info.status {
+            ensure!(era < unregistration_era, Error::<T>::InactiveCreator);
         }
         Ok(())
     }
@@ -370,7 +370,7 @@ impl<T: Config> Pallet<T> {
     }
 
     // For internal use only.
-    fn get_unregister_era_index(creator_id: CreatorId) -> Result<EraIndex, DispatchError> {
+    fn get_unregistration_era_index(creator_id: CreatorId) -> Result<EraIndex, DispatchError> {
         return if let Some(creator_info) = Self::registered_creator(creator_id) {
             if let CreatorStatus::Inactive(era) = creator_info.status {
                 Ok(era)
@@ -407,8 +407,8 @@ impl<T: Config> Pallet<T> {
         for creator_id in target_creators {
             let mut backer_info_for_creator = Self::backer_stakes(&backer, creator_id);
 
-            let unregister_era =
-                Self::get_unregister_era_index(creator_id).unwrap_or(current_era);
+            let unregistration_era =
+                Self::get_unregistration_era_index(creator_id).unwrap_or(current_era);
 
             if backer_info_for_creator.stakes.is_empty() {
                 estimated_rewards.push((creator_id, Zero::zero()));
@@ -418,7 +418,7 @@ impl<T: Config> Pallet<T> {
             let mut total_backer_rewards_for_eras: BalanceOf<T> = Zero::zero();
             loop {
                 let (era, staked) = backer_info_for_creator.claim();
-                if era >= unregister_era || era == 0 {
+                if era >= unregistration_era || era == 0 {
                     break;
                 }
                 let creator_stake_info = Self::creator_stake_info(creator_id, era).unwrap_or_default();
@@ -458,7 +458,7 @@ impl<T: Config> Pallet<T> {
         let current_era = Self::current_era();
 
         for (creator, mut stakes_info) in BackerStakesByCreator::<T>::iter_prefix(&backer) {
-            let unregister_era = match Self::get_unregister_era_index(creator) {
+            let unregistration_era = match Self::get_unregistration_era_index(creator) {
                 Ok(era) => era,
                 Err(error) if error.eq(&Error::<T>::CreatorNotFound.into()) => continue,
                 _ => current_era,
@@ -466,7 +466,7 @@ impl<T: Config> Pallet<T> {
 
             loop {
                 let (era, _) = stakes_info.claim();
-                if era >= unregister_era || era == 0 {
+                if era >= unregistration_era || era == 0 {
                     break;
                 }
 

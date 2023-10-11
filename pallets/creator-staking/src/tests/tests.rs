@@ -1440,8 +1440,8 @@ fn claim_after_unregister_is_ok() {
         // Again, few eras pass then creator is unregistered
         advance_to_era(CreatorStaking::current_era() + 3);
         assert_unregister(stakeholder, creator_id);
-        let unregister_era = CreatorStaking::current_era();
-        let number_of_staking_eras = number_of_staking_eras + unregister_era - restake_era;
+        let unregistration_era = CreatorStaking::current_era();
+        let number_of_staking_eras = number_of_staking_eras + unregistration_era - restake_era;
         advance_to_era(CreatorStaking::current_era() + 2);
 
         // Ensure that backer can claim all the eras that he had an active stake
@@ -1454,7 +1454,7 @@ fn claim_after_unregister_is_ok() {
         );
 
         // Ensure the same for creator reward
-        for era in start_era..unregister_era {
+        for era in start_era..unregistration_era {
             if era >= full_unstake_era && era < restake_era {
                 assert_noop!(
                     CreatorStaking::claim_creator_reward(

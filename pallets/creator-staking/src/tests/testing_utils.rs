@@ -136,7 +136,7 @@ pub(crate) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
     assert_eq!(final_state.creator_info.stakeholder, stakeholder);
 }
 
-/// Perform `withdraw_from_inactive` with all the accompanied checks including before/after storage comparison.
+/// Perform `withdraw_from_inactive_creator` with all the accompanied checks including before/after storage comparison.
 pub(crate) fn assert_withdraw_from_inactive_creator(
     backer: AccountId,
     creator_id: SpaceId,
@@ -415,8 +415,8 @@ pub(crate) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     assert!(claim_era > 0); // Sanity check - if this fails, method is being used incorrectly
 
     // Cannot claim rewards post unregister era, this indicates a bug!
-    if let CreatorStatus::Inactive(unregister_era) = init_state_claim_era.creator_info.status {
-        assert!(unregister_era > claim_era);
+    if let CreatorStatus::Inactive(unregistration_era) = init_state_claim_era.creator_info.status {
+        assert!(unregistration_era > claim_era);
     }
 
     let calculated_reward = CreatorStaking::calculate_reward_for_backer_in_era(
@@ -560,8 +560,8 @@ pub(crate) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     assert!(!init_state.creator_stakes_info.rewards_claimed);
 
     // Cannot claim rewards post unregister era
-    if let CreatorStatus::Inactive(unregister_era) = init_state.creator_info.status {
-        assert!(unregister_era > claim_era);
+    if let CreatorStatus::Inactive(unregistration_era) = init_state.creator_info.status {
+        assert!(unregistration_era > claim_era);
     }
 
     // Calculate creator portion of the reward
