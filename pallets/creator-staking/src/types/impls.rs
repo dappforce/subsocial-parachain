@@ -297,11 +297,11 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
     }
 }
 
-impl Default for RewardsDistributionConfig {
+impl Default for RewardDistributionConfig {
     /// `default` values based on configuration at the time of writing this code.
     /// Should be overridden by desired params.
     fn default() -> Self {
-        RewardsDistributionConfig {
+        RewardDistributionConfig {
             backers_percent: Perbill::from_percent(45),
             creators_percent: Perbill::from_percent(45),
             treasury_percent: Perbill::from_percent(10),
@@ -309,9 +309,9 @@ impl Default for RewardsDistributionConfig {
     }
 }
 
-impl RewardsDistributionConfig {
+impl RewardDistributionConfig {
     /// `true` if sum of all percentages is `one whole`, `false` otherwise.
-    pub fn is_consistent(&self) -> bool {
+    pub fn is_sum_equal_to_one(&self) -> bool {
         let variables = vec![
             &self.backers_percent,
             &self.creators_percent,

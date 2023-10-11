@@ -201,15 +201,15 @@ pub mod pallet {
     pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
 
     #[pallet::type_value]
-    pub fn RewardConfigOnEmpty() -> RewardsDistributionConfig {
-        RewardsDistributionConfig::default()
+    pub fn RewardConfigOnEmpty() -> RewardDistributionConfig {
+        RewardDistributionConfig::default()
     }
 
     /// An active list of the configuration parameters used to calculate the reward distribution.
     #[pallet::storage]
     #[pallet::getter(fn reward_config)]
     pub type ActiveRewardDistributionConfig<T> =
-        StorageValue<_, RewardsDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
+        StorageValue<_, RewardDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -227,7 +227,7 @@ pub mod pallet {
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
         NewCreatorStakingEra { number: EraIndex },
         MaintenanceModeSet { enabled: bool },
-        ActiveDistributionConfigurationChanged { new_config: RewardsDistributionConfig },
+        ActiveDistributionConfigurationChanged { new_config: RewardDistributionConfig },
     }
 
     #[pallet::error]
@@ -725,12 +725,12 @@ pub mod pallet {
         #[pallet::weight(Weight::from_ref_time(10_000))]
         pub fn set_reward_distribution_config(
             origin: OriginFor<T>,
-            new_config: RewardsDistributionConfig,
+            new_config: RewardDistributionConfig,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
 
-            ensure!(new_config.is_consistent(), Error::<T>::RewardDistributionConfigInconsistent);
+            ensure!(new_config.is_sum_equal_to_one(), Error::<T>::RewardDistributionConfigInconsistent);
             ActiveRewardDistributionConfig::<T>::put(new_config.clone());
 
             Self::deposit_event(Event::<T>::ActiveDistributionConfigurationChanged { new_config });

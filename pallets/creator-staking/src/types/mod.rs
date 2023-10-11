@@ -192,7 +192,7 @@ pub enum Forcing {
 /// A list of configuration parameters used to calculate reward distribution portions.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct RewardsDistributionConfig {
+pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to backers
     #[codec(compact)]
     pub backers_percent: Perbill,

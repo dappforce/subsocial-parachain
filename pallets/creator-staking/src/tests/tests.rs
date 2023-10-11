@@ -1756,67 +1756,60 @@ pub fn tvl_util_test() {
 // ---------------
 
 #[test]
-fn default_reward_distribution_config_is_consitent() {
-    let reward_config = RewardsDistributionConfig::default();
-    assert!(reward_config.is_consistent());
+fn default_reward_distribution_config_is_equal_to_one() {
+    let reward_config = RewardDistributionConfig::default();
+    assert!(reward_config.is_sum_equal_to_one());
 }
 
 #[test]
-fn reward_distribution_config_is_consistent() {
+fn reward_distribution_config_is_equal_to_one() {
     // 1
-    let reward_config = RewardsDistributionConfig {
+    let reward_config = RewardDistributionConfig {
         backers_percent: Zero::zero(),
         creators_percent: Zero::zero(),
         treasury_percent: Perbill::from_percent(100),
     };
-    assert!(reward_config.is_consistent());
+    assert!(reward_config.is_sum_equal_to_one());
 
     // 2
-    let reward_config = RewardsDistributionConfig {
+    let reward_config = RewardDistributionConfig {
         backers_percent: Zero::zero(),
         creators_percent: Perbill::from_percent(100),
         treasury_percent: Zero::zero(),
     };
-    assert!(reward_config.is_consistent());
+    assert!(reward_config.is_sum_equal_to_one());
 
     // 3
     // 100%
-    let reward_config = RewardsDistributionConfig {
+    let reward_config = RewardDistributionConfig {
         backers_percent: Perbill::from_percent(34),
         creators_percent: Perbill::from_percent(51),
         treasury_percent: Perbill::from_percent(15),
     };
-    assert!(reward_config.is_consistent());
+    assert!(reward_config.is_sum_equal_to_one());
 }
 
 #[test]
-fn reward_distribution_config_not_consistent() {
+fn reward_distribution_config_not_equal_to_one() {
     // 1
-    let reward_config = RewardsDistributionConfig {
-        treasury_percent: Perbill::from_percent(100),
-        ..Default::default()
-    };
-    assert!(!reward_config.is_consistent());
-
-    // 2
     // 99%
-    let reward_config = RewardsDistributionConfig {
+    let reward_config = RewardDistributionConfig {
         backers_percent: Perbill::from_percent(34),
         creators_percent: Perbill::from_percent(51),
         // Here should be 15, then it'll be equal to 100%
         treasury_percent: Perbill::from_percent(14),
     };
-    assert!(!reward_config.is_consistent());
+    assert!(!reward_config.is_sum_equal_to_one());
 
-    // 3
+    // 2
     // 101%
-    let reward_config = RewardsDistributionConfig {
+    let reward_config = RewardDistributionConfig {
         backers_percent: Perbill::from_percent(34),
         creators_percent: Perbill::from_percent(51),
         // Here should be 15, then it'll be equal to 100%
         treasury_percent: Perbill::from_percent(16),
     };
-    assert!(!reward_config.is_consistent());
+    assert!(!reward_config.is_sum_equal_to_one());
 }
 
 #[test]
@@ -1829,11 +1822,11 @@ pub fn set_configuration_fails() {
         );
 
         // 2
-        let reward_config = RewardsDistributionConfig {
+        let reward_config = RewardDistributionConfig {
             treasury_percent: Perbill::from_percent(100),
             ..Default::default()
         };
-        assert!(!reward_config.is_consistent());
+        assert!(!reward_config.is_sum_equal_to_one());
         assert_noop!(
             CreatorStaking::set_reward_distribution_config(RuntimeOrigin::root(), reward_config),
             Error::<TestRuntime>::RewardDistributionConfigInconsistent,
@@ -1845,12 +1838,12 @@ pub fn set_configuration_fails() {
 pub fn set_configuration_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // custom config so it differs from the default one
-        let new_config = RewardsDistributionConfig {
+        let new_config = RewardDistributionConfig {
             backers_percent: Perbill::from_percent(15),
             creators_percent: Perbill::from_percent(35),
             treasury_percent: Perbill::from_percent(50),
         };
-        assert!(new_config.is_consistent());
+        assert!(new_config.is_sum_equal_to_one());
 
         assert_ok!(CreatorStaking::set_reward_distribution_config(
             RuntimeOrigin::root(),
@@ -1894,12 +1887,12 @@ pub fn reward_distribution_as_expected() {
         assert!(init_balance_snapshot.is_zero());
 
         // Prepare a custom config (easily discernible percentages for visual verification)
-        let reward_config = RewardsDistributionConfig {
+        let reward_config = RewardDistributionConfig {
             backers_percent: Perbill::from_percent(15),
             creators_percent: Perbill::from_percent(35),
             treasury_percent: Perbill::from_percent(50),
         };
-        assert!(reward_config.is_consistent());
+        assert!(reward_config.is_sum_equal_to_one());
         assert_ok!(CreatorStaking::set_reward_distribution_config(
             RuntimeOrigin::root(),
             reward_config.clone()
