@@ -227,7 +227,7 @@ pub mod pallet {
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
         NewCreatorStakingEra { number: EraIndex },
         MaintenanceModeSet { enabled: bool },
-        ActiveDistributionConfigurationChanged { new_config: RewardDistributionConfig },
+        RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
     }
 
     #[pallet::error]
@@ -246,13 +246,13 @@ pub mod pallet {
         NotStakedCreator,
         TooManyUnbondingChunks,
         NothingToWithdraw,
-        NotUnregisteredCreator,
+        CreatorIsActive,
         UnclaimedRewardsRemaining,
         CannotClaimInFutureEra,
         EraNotFound,
         AlreadyClaimedInThisEra,
         MaintenanceModeNotChanged,
-        RewardDistributionConfigInconsistent,
+        InvalidSumOfRewardDistributionConfig,
         StakeHasExpired,
     }
 
@@ -517,7 +517,7 @@ pub mod pallet {
 
         #[pallet::call_index(6)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
-        pub fn withdraw_from_unregistered(
+        pub fn withdraw_from_inactive_creator(
             origin: OriginFor<T>,
             creator_id: CreatorId,
         ) -> DispatchResultWithPostInfo {
@@ -527,10 +527,10 @@ pub mod pallet {
             // Creator must exist and be unregistered
             let creator_info = Self::require_creator(creator_id)?;
 
-            let unregistered_era = if let CreatorStatus::Inactive(x) = creator_info.status {
+            let unregister_era = if let CreatorStatus::Inactive(x) = creator_info.status {
                 x
             } else {
-                return Err(Error::<T>::NotUnregisteredCreator.into());
+                return Err(Error::<T>::CreatorIsActive.into());
             };
 
             // There should be some leftover staked amount
@@ -541,7 +541,7 @@ pub mod pallet {
             // Don't allow withdrawal until all rewards have been claimed.
             let (claimable_era, _) = backer_stakes.claim();
             ensure!(
-                claimable_era >= unregistered_era || claimable_era.is_zero(),
+                claimable_era >= unregister_era || claimable_era.is_zero(),
                 Error::<T>::UnclaimedRewardsRemaining
             );
 
@@ -730,10 +730,10 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
 
-            ensure!(new_config.is_sum_equal_to_one(), Error::<T>::RewardDistributionConfigInconsistent);
+            ensure!(new_config.is_sum_equal_to_one(), Error::<T>::InvalidSumOfRewardDistributionConfig);
             ActiveRewardDistributionConfig::<T>::put(new_config.clone());
 
-            Self::deposit_event(Event::<T>::ActiveDistributionConfigurationChanged { new_config });
+            Self::deposit_event(Event::<T>::RewardDistributionConfigChanged { new_config });
 
             Ok(())
         }

@@ -17,7 +17,7 @@ impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-    fn calc_per_block_rewards(total_issuance: BalanceOf<T>) -> BalanceOf<T> {
+    pub(crate) fn calc_per_block_rewards(total_issuance: BalanceOf<T>) -> BalanceOf<T> {
         T::AnnualInflation::get() * total_issuance
             / T::BlocksPerYear::get().saturated_into::<u32>().unique_saturated_into()
     }

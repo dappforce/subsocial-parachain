@@ -26,26 +26,20 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
+pub(crate) const REGISTER_DEPOSIT: Balance = 10;
 pub(crate) const MAX_NUMBER_OF_BACKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
 pub(crate) const MAX_UNLOCKING_CHUNKS: u32 = 5;
-pub(crate) const UNBONDING_PERIOD: EraIndex = 3;
-pub(crate) const MAX_ERA_STAKE_VALUES: u32 = 8;
+pub(crate) const UNBONDING_PERIOD_IN_ERAS: EraIndex = 3;
+pub(crate) const MAX_ERA_STAKE_ITEMS: u32 = 8;
 
 // Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
-
-pub(crate) const REGISTER_DEPOSIT: Balance = 10;
-
-pub(crate) const BACKER_BLOCK_REWARD: Balance = 531911;
-pub(crate) const CREATOR_BLOCK_REWARD: Balance = 773333;
 pub(crate) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
+
 pub(crate) const TREASURY_ACCOUNT: BlockNumber = 42;
-// A fairly high block reward so we can detect slight changes in reward distribution
-// due to TVL changes.
-pub(crate) const BLOCK_REWARD: Balance = 1_000_000;
 
 construct_runtime!(
     pub struct TestRuntime
@@ -126,6 +120,7 @@ use pallet_permissions::default_permissions::DefaultSpacePermissions;
 use pallet_permissions::SpacePermissionsInfoOf;
 use subsocial_support::{Content, SpaceId};
 use subsocial_support::traits::{SpacePermissionsProvider, SpacesInterface};
+use crate::tests::tests::Rewards;
 
 impl pallet_permissions::Config for TestRuntime {
     type DefaultSpacePermissions = DefaultSpacePermissions;
@@ -140,8 +135,8 @@ parameter_types! {
     pub const MinimumRemainingFreeBalance: Balance = MINIMUM_REMAINING_AMOUNT;
     #[derive(PartialEq)]
     pub const MaxUnlockingChunks: u32 = MAX_UNLOCKING_CHUNKS;
-    pub const UnbondingPeriodInEras: EraIndex = UNBONDING_PERIOD;
-    pub const MaxEraStakeItems: u32 = MAX_ERA_STAKE_VALUES;
+    pub const UnbondingPeriodInEras: EraIndex = UNBONDING_PERIOD_IN_ERAS;
+    pub const MaxEraStakeItems: u32 = MAX_ERA_STAKE_ITEMS;
     pub const AnnualInflation: Perbill = Perbill::from_percent(10);
     pub const BlocksPerYear: BlockNumber = BLOCKS_PER_YEAR;
     pub const TreasuryAccount: AccountId = TREASURY_ACCOUNT;
@@ -269,17 +264,14 @@ pub fn initialize_first_block() {
     run_to_block(2);
 }
 
-/// Returns total block rewards that goes to creator-staking.
-/// Contains both `creators` reward and `backers` reward.
-pub fn joint_block_reward() -> Balance {
-    BACKER_BLOCK_REWARD + CREATOR_BLOCK_REWARD
-}
-
 /// Payout block rewards to backers & creators
 fn payout_block_rewards() {
+    let Rewards { backers_reward, creators_reward, .. } =
+        Rewards::calculate(&CreatorStaking::reward_config());
+
     CreatorStaking::add_to_reward_pool(
-        Balances::issue(BACKER_BLOCK_REWARD.into()),
-        Balances::issue(CREATOR_BLOCK_REWARD.into()),
+        Balances::issue(backers_reward),
+        Balances::issue(creators_reward),
     );
 }
 

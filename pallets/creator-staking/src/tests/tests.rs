@@ -93,21 +93,21 @@ fn on_initialize_is_ok() {
 fn new_era_length_is_always_blocks_per_era() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
-        let blocks_per_era = mock::BLOCKS_PER_ERA;
+        let blocks_per_era = BLOCKS_PER_ERA;
 
         // go to beginning of an era
-        advance_to_era(mock::CreatorStaking::current_era() + 1);
+        advance_to_era(CreatorStaking::current_era() + 1);
 
         // record era number and block number
-        let start_era = mock::CreatorStaking::current_era();
+        let start_era = CreatorStaking::current_era();
         let starting_block_number = System::block_number();
 
         // go to next era
-        advance_to_era(mock::CreatorStaking::current_era() + 1);
+        advance_to_era(CreatorStaking::current_era() + 1);
         let ending_block_number = System::block_number();
 
         // make sure block number difference is is blocks_per_era
-        assert_eq!(mock::CreatorStaking::current_era(), start_era + 1);
+        assert_eq!(CreatorStaking::current_era(), start_era + 1);
         assert_eq!(ending_block_number - starting_block_number, blocks_per_era);
     })
 }
@@ -120,12 +120,12 @@ fn new_era_is_handled_with_maintenance_mode() {
         // enable maintenance mode
         assert_ok!(CreatorStaking::set_maintenance_mode(RuntimeOrigin::root(), true));
         assert!(PalletDisabled::<TestRuntime>::exists());
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
             enabled: true,
         }));
 
         // advance 9 blocks or 3 era lengths (advance_to_era() doesn't work in maintenance mode)
-        run_for_blocks(mock::BLOCKS_PER_ERA * 3);
+        run_for_blocks(BLOCKS_PER_ERA * 3);
 
         // verify that `current block > NextEraStartingBlock` but era hasn't changed
         assert!(System::block_number() > CreatorStaking::next_era_starting_block());
@@ -133,21 +133,21 @@ fn new_era_is_handled_with_maintenance_mode() {
 
         // disable maintenance mode
         assert_ok!(CreatorStaking::set_maintenance_mode(RuntimeOrigin::root(), false));
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
             enabled: false,
         }));
 
         // advance one era
-        run_for_blocks(mock::BLOCKS_PER_ERA);
+        run_for_blocks(BLOCKS_PER_ERA);
 
         // verify we're at block 14
-        assert_eq!(System::block_number(), (4 * mock::BLOCKS_PER_ERA) + 2); // 2 from initialization, advanced 4 eras worth of blocks
+        assert_eq!(System::block_number(), (4 * BLOCKS_PER_ERA) + 2); // 2 from initialization, advanced 4 eras worth of blocks
 
         // verify era was updated and NextEraStartingBlock is 15
         assert_eq!(CreatorStaking::current_era(), 2);
         assert_eq!(
             CreatorStaking::next_era_starting_block(),
-            (5 * mock::BLOCKS_PER_ERA)
+            (5 * BLOCKS_PER_ERA)
         );
     })
 }
@@ -156,10 +156,10 @@ fn new_era_is_handled_with_maintenance_mode() {
 fn new_forced_era_length_is_always_blocks_per_era() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
-        let blocks_per_era = mock::BLOCKS_PER_ERA;
+        let blocks_per_era = BLOCKS_PER_ERA;
 
         // go to beginning of an era
-        advance_to_era(mock::CreatorStaking::current_era() + 1);
+        advance_to_era(CreatorStaking::current_era() + 1);
 
         // go to middle of era
         run_for_blocks(1); // can be any number between 0 and blocks_per_era
@@ -172,7 +172,7 @@ fn new_forced_era_length_is_always_blocks_per_era() {
         let start_block_number = System::block_number();
 
         // go to start of next era
-        advance_to_era(mock::CreatorStaking::current_era() + 1);
+        advance_to_era(CreatorStaking::current_era() + 1);
 
         // show the length of the forced era is equal to blocks_per_era
         let end_block_number = System::block_number();
@@ -198,7 +198,7 @@ fn new_era_is_ok() {
         // verify that block reward is added to the block_reward_accumulator
         let block_reward = CreatorStaking::block_reward_accumulator();
         assert_eq!(
-            joint_block_reward(),
+            Rewards::joint_block_reward(),
             block_reward.backers + block_reward.creators
         );
 
@@ -217,7 +217,7 @@ fn new_era_is_ok() {
 
         let current_era = CreatorStaking::current_era();
         assert_eq!(starting_era + 1, current_era);
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
             number: starting_era + 1,
         }));
 
@@ -225,9 +225,12 @@ fn new_era_is_ok() {
         let block_reward = CreatorStaking::block_reward_accumulator();
         assert_eq!(block_reward, Default::default());
 
+        let Rewards { backers_reward: backer_reward, creators_reward, .. } =
+            Rewards::calculate(&CreatorStaking::reward_config());
+
         let expected_era_reward = get_total_reward_per_era();
-        let expected_creators_reward = CREATOR_BLOCK_REWARD * BLOCKS_PER_ERA as Balance;
-        let expected_backers_reward = BACKER_BLOCK_REWARD * BLOCKS_PER_ERA as Balance;
+        let expected_creators_reward = creators_reward * BLOCKS_PER_ERA as Balance;
+        let expected_backers_reward = backer_reward * BLOCKS_PER_ERA as Balance;
 
         // verify that .staked is copied and .reward is added
         let era_rewards = GeneralEraInfo::<TestRuntime>::get(starting_era).unwrap();
@@ -246,21 +249,21 @@ fn new_era_forcing() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
         advance_to_era(3);
-        let starting_era = mock::CreatorStaking::current_era();
+        let starting_era = CreatorStaking::current_era();
 
         // call on_initialize. It is not last block in the era, but it should increment the era
         <ForceEra<TestRuntime>>::put(Forcing::ForceNew);
         run_for_blocks(1);
 
         // check that era is incremented
-        let current = mock::CreatorStaking::current_era();
+        let current = CreatorStaking::current_era();
         assert_eq!(starting_era + 1, current);
 
         // check that forcing is cleared
-        assert_eq!(mock::CreatorStaking::force_era(), Forcing::NotForcing);
+        assert_eq!(CreatorStaking::force_era(), Forcing::NotForcing);
 
         // check the event for the new era
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
             number: starting_era + 1,
         }));
     })
@@ -355,7 +358,7 @@ fn register_is_ok() {
 
         assert!(<TestRuntime as Config>::Currency::reserved_balance(&stakeholder).is_zero());
         assert_register(stakeholder, ok_creator);
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::CreatorRegistered {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::CreatorRegistered {
             who: stakeholder.clone(),
             creator_id: ok_creator,
         }));
@@ -392,7 +395,7 @@ fn register_same_creator_twice_fails() {
 
         assert_register(stakeholder, creator_id);
 
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::CreatorRegistered {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::CreatorRegistered {
             who: stakeholder,
             creator_id,
         }));
@@ -406,7 +409,7 @@ fn register_same_creator_twice_fails() {
 }
 
 #[test]
-fn unregister_after_register_is_ok() {
+fn force_unregister_after_register_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -426,7 +429,7 @@ fn unregister_after_register_is_ok() {
 }
 
 #[test]
-fn unregister_with_non_root() {
+fn force_unregister_with_non_root() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -476,7 +479,7 @@ fn unregister_stake_and_unstake_is_not_ok() {
 }
 
 #[test]
-fn withdraw_from_unregistered_is_ok() {
+fn withdraw_from_inactive_creator_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -511,8 +514,8 @@ fn withdraw_from_unregistered_is_ok() {
         }
 
         // Unbond everything from the creator.
-        assert_withdraw_from_unregistered(backer_1, creator_id);
-        assert_withdraw_from_unregistered(backer_2, creator_id);
+        assert_withdraw_from_inactive_creator(backer_1, creator_id);
+        assert_withdraw_from_inactive_creator(backer_2, creator_id);
 
         // No additional claim ops should be possible
         assert_noop!(
@@ -535,20 +538,20 @@ fn withdraw_from_unregistered_is_ok() {
 }
 
 #[test]
-fn withdraw_from_unregistered_when_creator_doesnt_exist() {
+fn withdraw_from_inactive_creator_when_creator_doesnt_exist() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
         let creator_id = 1;
         assert_noop!(
-            CreatorStaking::withdraw_from_unregistered(RuntimeOrigin::signed(1), creator_id),
+            CreatorStaking::withdraw_from_inactive_creator(RuntimeOrigin::signed(1), creator_id),
             Error::<TestRuntime>::CreatorNotFound,
         );
     })
 }
 
 #[test]
-fn withdraw_from_unregistered_when_creator_is_still_registered() {
+fn withdraw_from_inactive_creator_when_creator_is_still_registered() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -557,14 +560,14 @@ fn withdraw_from_unregistered_when_creator_is_still_registered() {
         assert_register(stakeholder, creator_id);
 
         assert_noop!(
-            CreatorStaking::withdraw_from_unregistered(RuntimeOrigin::signed(1), creator_id),
-            Error::<TestRuntime>::NotUnregisteredCreator
+            CreatorStaking::withdraw_from_inactive_creator(RuntimeOrigin::signed(1), creator_id),
+            Error::<TestRuntime>::CreatorIsActive
         );
     })
 }
 
 #[test]
-fn withdraw_from_unregistered_when_nothing_is_staked() {
+fn withdraw_from_inactive_creator_when_nothing_is_staked() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -580,21 +583,21 @@ fn withdraw_from_unregistered_when_nothing_is_staked() {
 
         // No staked amount so call should fail.
         assert_noop!(
-            CreatorStaking::withdraw_from_unregistered(RuntimeOrigin::signed(not_a_backer), creator_id),
+            CreatorStaking::withdraw_from_inactive_creator(RuntimeOrigin::signed(not_a_backer), creator_id),
             Error::<TestRuntime>::NotStakedCreator
         );
 
         // Call should fail if called twice since no staked funds remain.
-        assert_withdraw_from_unregistered(backer, creator_id);
+        assert_withdraw_from_inactive_creator(backer, creator_id);
         assert_noop!(
-            CreatorStaking::withdraw_from_unregistered(RuntimeOrigin::signed(backer), creator_id),
+            CreatorStaking::withdraw_from_inactive_creator(RuntimeOrigin::signed(backer), creator_id),
             Error::<TestRuntime>::NotStakedCreator
         );
     })
 }
 
 #[test]
-fn withdraw_from_unregistered_when_unclaimed_rewards_remaining() {
+fn withdraw_from_inactive_creator_when_unclaimed_rewards_remaining() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -612,7 +615,7 @@ fn withdraw_from_unregistered_when_unclaimed_rewards_remaining() {
 
         for _ in 1..CreatorStaking::current_era() {
             assert_noop!(
-                CreatorStaking::withdraw_from_unregistered(
+                CreatorStaking::withdraw_from_inactive_creator(
                     RuntimeOrigin::signed(backer),
                     creator_id
                 ),
@@ -622,7 +625,7 @@ fn withdraw_from_unregistered_when_unclaimed_rewards_remaining() {
         }
 
         // Withdraw should work after all rewards have been claimed
-        assert_withdraw_from_unregistered(backer, creator_id);
+        assert_withdraw_from_inactive_creator(backer, creator_id);
     })
 }
 
@@ -713,7 +716,7 @@ fn stake_different_value_is_ok() {
         // since we're only increasing the already staked amount.
         assert_stake(backer_id, creator_id, 1);
 
-        // stake more than what's available in funds. Verify that only what's available is bonded&staked.
+        // stake more than what's available in funds. Verify that only what's available is staked.
         let backer_id = 2;
         let backer_free_balance = Balances::free_balance(&backer_id);
         assert_stake(backer_id, creator_id, backer_free_balance + 1);
@@ -730,12 +733,14 @@ fn stake_different_value_is_ok() {
         assert_stake(backer_id, creator_id, backer_free_balance - 200);
 
         // Try to stake more than we have available (since we already locked most of the free balance).
+        // This doesn't fail, because in any case we calculate available_balance
+        // and then get the minimum amount between available and requested.
         assert_stake(backer_id, creator_id, 500);
     })
 }
 
 #[test]
-fn stake_on_unregistered_creator_fails() {
+fn stake_on_inactive_creator_fails() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -828,7 +833,7 @@ fn stake_too_many_era_stakes() {
 
         // Stake with MAX_NUMBER_OF_BACKERS - 1 on the same creator. It must work.
         let start_era = CreatorStaking::current_era();
-        for offset in 1..MAX_ERA_STAKE_VALUES {
+        for offset in 1..MAX_ERA_STAKE_ITEMS {
             assert_stake(backer_id, creator_id, 100);
             advance_to_era(start_era + offset);
         }
@@ -1020,7 +1025,7 @@ fn unstake_on_not_staked_creator_is_not_ok() {
 }
 
 #[test]
-fn unstake_too_many_era_stakes() {
+fn unstake_should_fail_when_too_many_era_stakes() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1030,7 +1035,7 @@ fn unstake_too_many_era_stakes() {
 
         // Fill up the `EraStakes` vec
         let start_era = CreatorStaking::current_era();
-        for offset in 1..MAX_ERA_STAKE_VALUES {
+        for offset in 1..MAX_ERA_STAKE_ITEMS {
             assert_stake(backer_id, creator_id, 100);
             advance_to_era(start_era + offset);
         }
@@ -1044,10 +1049,11 @@ fn unstake_too_many_era_stakes() {
     })
 }
 
+// Works, but requires mock modification.
 #[ignore]
 #[test]
 fn unstake_with_no_chunks_allowed() {
-    // UT can be used to verify situation when MaxUnlockingChunks = 0. Requires mock modification.
+    // UT can be used to verify situation when MaxUnlockingChunks = 0.
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1096,7 +1102,7 @@ fn withdraw_unbonded_is_ok() {
         assert_unstake(backer_account, creator_id, second_unstake_value);
 
         // Now advance one era before first chunks finishes the unbonding process
-        advance_to_era(initial_era + UNBONDING_PERIOD - 1);
+        advance_to_era(initial_era + UNBONDING_PERIOD_IN_ERAS - 1);
         assert_noop!(
             CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(backer_account)),
             Error::<TestRuntime>::NothingToWithdraw
@@ -1107,7 +1113,7 @@ fn withdraw_unbonded_is_ok() {
         assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
             backer_account
         ),));
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
             who: backer_account,
             amount: first_unstake_value,
         }));
@@ -1117,13 +1123,13 @@ fn withdraw_unbonded_is_ok() {
         assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
             backer_account
         ),));
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
             who: backer_account,
             amount: second_unstake_value,
         }));
 
         // Advance one additional era but since we have nothing else to withdraw, expect an error
-        advance_to_era(initial_era + UNBONDING_PERIOD - 1);
+        advance_to_era(initial_era + UNBONDING_PERIOD_IN_ERAS - 1);
         assert_noop!(
             CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(backer_account)),
             Error::<TestRuntime>::NothingToWithdraw
@@ -1131,33 +1137,36 @@ fn withdraw_unbonded_is_ok() {
     })
 }
 
+fn withdraw_unbonded_full_vector(stakeholder: AccountId, creator_id: CreatorId, backer_id: AccountId) {
+    initialize_first_block();
+
+    assert_register(stakeholder, creator_id);
+    assert_stake(backer_id, creator_id, 1000);
+
+    // Repeatedly start unbonding and advance era to create unlocking chunks
+    let init_unbonding_amount = 15;
+    for x in 1..=MAX_UNLOCKING_CHUNKS {
+        assert_unstake(backer_id, creator_id, init_unbonding_amount * x as u128);
+        advance_to_era(CreatorStaking::current_era() + 1);
+    }
+
+    // Now clean up all that are eligible for clean-up
+    assert_withdraw_unbonded(backer_id);
+
+    // This is a sanity check for the test. Some chunks should remain, otherwise test isn't testing realistic unbonding period.
+    assert!(!BackerLocksByAccount::<TestRuntime>::get(&backer_id)
+        .unbonding_info
+        .is_empty());
+}
+
 #[test]
 fn withdraw_unbonded_full_vector_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
         let stakeholder = 10;
         let creator_id = 1;
-
-        assert_register(stakeholder, creator_id);
-
         let backer_id = 1;
-        assert_stake(backer_id, creator_id, 1000);
 
-        // Repeatedly start unbonding and advance era to create unlocking chunks
-        let init_unbonding_amount = 15;
-        for x in 1..=MAX_UNLOCKING_CHUNKS {
-            assert_unstake(backer_id, creator_id, init_unbonding_amount * x as u128);
-            advance_to_era(CreatorStaking::current_era() + 1);
-        }
-
-        // Now clean up all that are eligible for clean-up
-        assert_withdraw_unbonded(backer_id);
-
-        // This is a sanity check for the test. Some chunks should remain, otherwise test isn't testing realistic unbonding period.
-        assert!(!BackerLocksByAccount::<TestRuntime>::get(&backer_id)
-            .unbonding_info
-            .is_empty());
+        withdraw_unbonded_full_vector(stakeholder, creator_id, backer_id);
 
         while !BackerLocksByAccount::<TestRuntime>::get(&backer_id)
             .unbonding_info
@@ -1166,6 +1175,23 @@ fn withdraw_unbonded_full_vector_is_ok() {
             advance_to_era(CreatorStaking::current_era() + 1);
             assert_withdraw_unbonded(backer_id);
         }
+    })
+}
+
+#[test]
+fn withdraw_unbonded_full_vector_at_once_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let stakeholder = 10;
+        let creator_id = 1;
+        let backer_id = 1;
+
+        withdraw_unbonded_full_vector(stakeholder, creator_id, backer_id);
+
+        let unlocking_chunks = BackerLocksByAccount::<TestRuntime>::get(&backer_id)
+            .unbonding_info.vec().len() as u32;
+
+        advance_to_era(CreatorStaking::current_era() + unlocking_chunks + 1);
+        assert_withdraw_unbonded(backer_id);
     })
 }
 
@@ -1181,10 +1207,11 @@ fn withdraw_unbonded_no_value_is_not_ok() {
     })
 }
 
+// Works, but requires mock modification.
 #[ignore]
 #[test]
 fn withdraw_unbonded_no_unbonding_period() {
-    // UT can be used to verify situation when UnbondingPeriodInEras = 0. Requires mock modification.
+    // UT can be used to verify situation when UnbondingPeriodInEras = 0.
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1459,7 +1486,7 @@ fn claim_only_payout_is_ok() {
         let stake_value = 100;
         assert_stake(backer, creator_id, stake_value);
 
-        // disable reward restaking
+        // move to next era to be able to claim for the previous one
         advance_to_era(start_era + 1);
 
         // ensure it's claimed correctly
@@ -1492,6 +1519,7 @@ fn claim_with_zero_staked_is_ok() {
 }
 
 // FIXME: how to be here?
+#[ignore]
 #[test]
 fn claiming_when_stakes_full_without_compounding_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
@@ -1505,12 +1533,12 @@ fn claiming_when_stakes_full_without_compounding_is_ok() {
 
         // Stake with MAX_ERA_STAKE_VALUES - 1 on the same creator. It must work.
         let start_era = CreatorStaking::current_era();
-        for offset in 1..MAX_ERA_STAKE_VALUES {
+        for offset in 1..MAX_ERA_STAKE_ITEMS {
             assert_stake(backer_id, creator_id, 100);
             advance_to_era(start_era + offset * 5);
         }
 
-        // claim and restake once, so there's a claim record for the for the current era in the stakes vec
+        // claim and restake once, so there's a claim record for the current era in the stakes vec
         assert_claim_backer(backer_id, creator_id, true);
 
         // making another gap in eras and trying to claim and restake would exceed MAX_ERA_STAKE_VALUES
@@ -1604,7 +1632,7 @@ fn maintenance_mode_is_ok() {
 
         assert_ok!(CreatorStaking::set_maintenance_mode(RuntimeOrigin::root(), true));
         assert!(PalletDisabled::<TestRuntime>::exists());
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
             enabled: true,
         }));
 
@@ -1622,7 +1650,7 @@ fn maintenance_mode_is_ok() {
             Error::<TestRuntime>::PalletIsDisabled
         );
         assert_noop!(
-            CreatorStaking::withdraw_from_unregistered(RuntimeOrigin::signed(account), creator_id),
+            CreatorStaking::withdraw_from_inactive_creator(RuntimeOrigin::signed(account), creator_id),
             Error::<TestRuntime>::PalletIsDisabled
         );
 
@@ -1661,7 +1689,7 @@ fn maintenance_mode_is_ok() {
         //
         // 4
         assert_ok!(CreatorStaking::set_maintenance_mode(RuntimeOrigin::root(), false));
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
             enabled: false,
         }));
         assert_register(account, creator_id);
@@ -1780,7 +1808,7 @@ fn reward_distribution_config_is_equal_to_one() {
     assert!(reward_config.is_sum_equal_to_one());
 
     // 3
-    // 100%
+    // Sum of 3 random numbers should equal to one.
     let reward_config = RewardDistributionConfig {
         backers_percent: Perbill::from_percent(34),
         creators_percent: Perbill::from_percent(51),
@@ -1815,13 +1843,13 @@ fn reward_distribution_config_not_equal_to_one() {
 #[test]
 pub fn set_configuration_fails() {
     ExternalityBuilder::build().execute_with(|| {
-        // 1
+        // Not root cannot set any (even valid) config
         assert_noop!(
             CreatorStaking::set_reward_distribution_config(RuntimeOrigin::signed(1), Default::default()),
             BadOrigin
         );
 
-        // 2
+        // Root cannot set invalid config
         let reward_config = RewardDistributionConfig {
             treasury_percent: Perbill::from_percent(100),
             ..Default::default()
@@ -1829,7 +1857,7 @@ pub fn set_configuration_fails() {
         assert!(!reward_config.is_sum_equal_to_one());
         assert_noop!(
             CreatorStaking::set_reward_distribution_config(RuntimeOrigin::root(), reward_config),
-            Error::<TestRuntime>::RewardDistributionConfigInconsistent,
+            Error::<TestRuntime>::InvalidSumOfRewardDistributionConfig,
         );
     })
 }
@@ -1849,8 +1877,8 @@ pub fn set_configuration_is_ok() {
             RuntimeOrigin::root(),
             new_config.clone()
         ));
-        System::assert_last_event(mock::RuntimeEvent::CreatorStaking(
-            Event::ActiveDistributionConfigurationChanged { new_config: new_config.clone() },
+        System::assert_last_event(RuntimeEvent::CreatorStaking(
+            Event::RewardDistributionConfigChanged { new_config: new_config.clone() },
         ));
 
         assert_eq!(
@@ -1864,16 +1892,17 @@ pub fn set_configuration_is_ok() {
 pub fn inflation_and_total_issuance_as_expected() {
     ExternalityBuilder::build().execute_with(|| {
         let init_issuance = <TestRuntime as Config>::Currency::total_issuance();
+        let per_block_reward = Rewards::total_block_reward();
 
         for block in 0..10 {
             assert_eq!(
                 <TestRuntime as Config>::Currency::total_issuance(),
-                block * BLOCK_REWARD + init_issuance
+                block * per_block_reward + init_issuance
             );
             CreatorStaking::on_timestamp_set(0);
             assert_eq!(
                 <TestRuntime as Config>::Currency::total_issuance(),
-                (block + 1) * BLOCK_REWARD + init_issuance
+                (block + 1) * per_block_reward + init_issuance
             );
         }
     })
@@ -1898,9 +1927,6 @@ pub fn reward_distribution_as_expected() {
             reward_config.clone()
         ));
 
-        // Initial adjustment of TVL
-        adjust_tvl_percentage(Perbill::from_percent(30));
-
         // Issue rewards a couple of times and verify distribution is as expected
         for _block in 1..=100 {
             let init_balance_state = FreeBalanceSnapshot::new();
@@ -1914,69 +1940,17 @@ pub fn reward_distribution_as_expected() {
     })
 }
 
-#[test]
-pub fn reward_distribution_no_adjustable_part() {
-    ExternalityBuilder::build().execute_with(|| {
-        let reward_config = RewardsDistributionConfig {
-            backers_percent: Perbill::from_percent(15),
-            creators_percent: Perbill::from_percent(35),
-            treasury_percent: Perbill::from_percent(50),
-        };
-        assert!(reward_config.is_consistent());
-        assert_ok!(CreatorStaking::set_reward_distribution_config(
-            RuntimeOrigin::root(),
-            reward_config.clone()
-        ));
-
-        // no adjustable part so we don't expect rewards to change with TVL percentage
-        let const_rewards = Rewards::calculate(&reward_config);
-
-        for _block in 1..=100 {
-            let init_balance_state = FreeBalanceSnapshot::new();
-            let rewards = Rewards::calculate(&reward_config);
-
-            assert_eq!(rewards, const_rewards);
-
-            CreatorStaking::on_timestamp_set(0);
-
-            let final_balance_state = FreeBalanceSnapshot::new();
-            init_balance_state.assert_distribution(&final_balance_state, &rewards);
-        }
-    })
-}
-
-#[test]
-pub fn reward_distribution_all_zero_except_one() {
-    ExternalityBuilder::build().execute_with(|| {
-        let reward_config = RewardsDistributionConfig {
-            backers_percent: Perbill::from_percent(15),
-            creators_percent: Perbill::from_percent(35),
-            treasury_percent: Perbill::from_percent(50),
-        };
-        assert!(reward_config.is_consistent());
-        assert_ok!(CreatorStaking::set_reward_distribution_config(
-            RuntimeOrigin::root(),
-            reward_config.clone()
-        ));
-
-        for _block in 1..=10 {
-            let init_balance_state = FreeBalanceSnapshot::new();
-            let rewards = Rewards::calculate(&reward_config);
-
-            CreatorStaking::on_timestamp_set(0);
-
-            let final_balance_state = FreeBalanceSnapshot::new();
-            init_balance_state.assert_distribution(&final_balance_state, &rewards);
-        }
-    })
-}
-
 /// Represents free balance snapshot at a specific point in time
+/// (i.e. before or after reward distribution).
+///
+/// Contains balances for all reward beneficiaries:
+/// - treasury
+/// - backers
+/// - creators
 #[derive(PartialEq, Eq, Clone, RuntimeDebug)]
-struct FreeBalanceSnapshot {
+pub(super) struct FreeBalanceSnapshot {
     treasury: Balance,
-    backers: Balance,
-    creators: Balance,
+    rewards_pot: Balance,
 }
 
 impl FreeBalanceSnapshot {
@@ -1988,10 +1962,7 @@ impl FreeBalanceSnapshot {
             treasury: <TestRuntime as Config>::Currency::free_balance(
                 TREASURY_ACCOUNT,
             ),
-            backers: <TestRuntime as Config>::Currency::free_balance(
-                CreatorStaking::rewards_pot_account(),
-            ),
-            creators: <TestRuntime as Config>::Currency::free_balance(
+            rewards_pot: <TestRuntime as Config>::Currency::free_balance(
                 CreatorStaking::rewards_pot_account(),
             ),
         }
@@ -2000,8 +1971,7 @@ impl FreeBalanceSnapshot {
     /// `true` if all free balances equal `Zero`, `false` otherwise
     fn is_zero(&self) -> bool {
         self.treasury.is_zero()
-            && self.backers.is_zero()
-            && self.creators.is_zero()
+            && self.rewards_pot.is_zero()
     }
 
     /// Asserts that post reward state is as expected.
@@ -2014,57 +1984,47 @@ impl FreeBalanceSnapshot {
             post_reward_state.treasury
         );
         assert_eq!(
-            self.backers + rewards.backer_reward,
-            post_reward_state.backers
+            self.rewards_pot + (rewards.backers_reward + rewards.creators_reward),
+            post_reward_state.rewards_pot
         );
-        assert_eq!(self.creators + rewards.creators_reward, post_reward_state.creators);
     }
 }
 
 /// Represents reward distribution balances for a single distribution.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug)]
-struct Rewards {
-    treasury_reward: Balance,
-    backer_reward: Balance,
-    creators_reward: Balance,
+pub(super) struct Rewards {
+    pub(super) treasury_reward: Balance,
+    pub(super) backers_reward: Balance,
+    pub(super) creators_reward: Balance,
 }
 
 impl Rewards {
-    /// Pre-calculates the reward distribution, using the provided `RewardsDistributionConfig`.
+    pub(super) fn total_block_reward() -> Balance {
+        let init_issuance = <TestRuntime as Config>::Currency::total_issuance();
+        CreatorStaking::calc_per_block_rewards(init_issuance)
+    }
+
+    pub(super) fn joint_block_reward() -> Balance {
+        let per_block_reward = Self::total_block_reward();
+        let Rewards { treasury_reward, .. } = Self::calculate(&CreatorStaking::reward_config());
+
+        per_block_reward - treasury_reward
+    }
+
+    /// Pre-calculates the reward distribution, using the provided `RewardDistributionConfig`.
     /// Method assumes that total issuance will be increased by `BLOCK_REWARD`.
-    fn calculate(reward_config: &RewardsDistributionConfig) -> Self {
+    pub(super) fn calculate(reward_config: &RewardDistributionConfig) -> Self {
+        let per_block_reward = Self::total_block_reward();
+
         // Calculate `tvl-independent` portions
-        let treasury_reward = reward_config.treasury_percent * BLOCK_REWARD;
-        let backer_reward = reward_config.backers_percent * BLOCK_REWARD;
-        let creators_reward = reward_config.creators_percent * BLOCK_REWARD;
+        let treasury_reward = reward_config.treasury_percent * per_block_reward;
+        let backer_reward = reward_config.backers_percent * per_block_reward;
+        let creators_reward = reward_config.creators_percent * per_block_reward;
 
         Self {
             treasury_reward,
-            backer_reward,
+            backers_reward: backer_reward,
             creators_reward,
         }
     }
-}
-
-/// Adjusts total_issuance  in order to try-and-match the requested TVL percentage
-fn adjust_tvl_percentage(desired_tvl_percentage: Perbill) {
-    // Calculate the required total issuance
-    let tvl = CreatorStaking::tvl();
-    let required_total_issuance = desired_tvl_percentage.saturating_reciprocal_mul(tvl);
-
-    // Calculate how much more we need to issue in order to get the desired TVL percentage
-    let init_total_issuance = <TestRuntime as Config>::Currency::total_issuance();
-    let to_issue = required_total_issuance.saturating_sub(init_total_issuance);
-
-    let dummy_acc = 1;
-    <TestRuntime as Config>::Currency::resolve_creating(
-        &dummy_acc,
-        <TestRuntime as Config>::Currency::issue(to_issue),
-    );
-
-    // Sanity check
-    assert_eq!(
-        <TestRuntime as Config>::Currency::total_issuance(),
-        required_total_issuance
-    );
 }

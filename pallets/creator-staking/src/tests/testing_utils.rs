@@ -2,9 +2,10 @@ use crate::{pallet::Event, *};
 use super::*;
 use frame_support::assert_ok;
 use mock::{EraIndex, *};
-use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill};
+use sp_runtime::traits::{AccountIdConversion, Zero};
 use subsocial_support::SpaceId;
 use crate::CreatorInfo;
+use crate::tests::tests::Rewards;
 
 /// Helper struct used to store information relevant to era/creator/backer combination.
 pub(crate) struct MemorySnapshot {
@@ -59,7 +60,7 @@ pub(crate) fn account_id() -> AccountId {
 
 /// Used to get total creators reward for an era.
 pub(crate) fn get_total_reward_per_era() -> Balance {
-    mock::joint_block_reward() * BLOCKS_PER_ERA as Balance
+    Rewards::joint_block_reward() * BLOCKS_PER_ERA as Balance
 }
 
 /// Used to register creator for staking and assert success.
@@ -135,8 +136,8 @@ pub(crate) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
     assert_eq!(final_state.creator_info.stakeholder, stakeholder);
 }
 
-/// Perform `withdraw_from_unregistered` with all the accompanied checks including before/after storage comparison.
-pub(crate) fn assert_withdraw_from_unregistered(
+/// Perform `withdraw_from_inactive` with all the accompanied checks including before/after storage comparison.
+pub(crate) fn assert_withdraw_from_inactive_creator(
     backer: AccountId,
     creator_id: SpaceId,
 ) {
@@ -154,7 +155,7 @@ pub(crate) fn assert_withdraw_from_unregistered(
     assert!(staked_value > 0);
 
     // Op with verification
-    assert_ok!(CreatorStaking::withdraw_from_unregistered(
+    assert_ok!(CreatorStaking::withdraw_from_inactive_creator(
         RuntimeOrigin::signed(backer.clone()),
         creator_id
     ));
@@ -280,7 +281,7 @@ pub(crate) fn assert_unstake(
     };
     let remaining_staked = init_state.backer_stakes.current_stake() - expected_unbond_amount;
 
-    // Ensure op is successful and event is emitted
+    // Ensure call executed successfully and event is emitted
     assert_ok!(CreatorStaking::unstake(
         RuntimeOrigin::signed(backer),
         creator_id,
@@ -295,7 +296,7 @@ pub(crate) fn assert_unstake(
 
     // Fetch the latest unbonding info so we can compare it to initial unbonding info
     let final_state = MemorySnapshot::all(current_era, creator_id, backer);
-    let expected_unlock_era = current_era + UNBONDING_PERIOD;
+    let expected_unlock_era = current_era + UNBONDING_PERIOD_IN_ERAS;
     match init_state
         .backer_locks
         .unbonding_info
@@ -321,7 +322,7 @@ pub(crate) fn assert_unstake(
     let mut unbonding_info = UnbondingInfo { unlocking_chunks };
     let _ = unbonding_info.add(UnlockingChunk {
         amount: expected_unbond_amount,
-        unlock_era: current_era + UNBONDING_PERIOD,
+        unlock_era: current_era + UNBONDING_PERIOD_IN_ERAS,
     });
     assert_eq!(unbonding_info.vec(), final_state.backer_locks.unbonding_info.vec());
 
@@ -362,13 +363,13 @@ pub(crate) fn assert_withdraw_unbonded(backer: AccountId) {
     let current_era = CreatorStaking::current_era();
 
     let init_era_info = GeneralEraInfo::<TestRuntime>::get(current_era).unwrap();
-    let init_ledger = BackerLocksByAccount::<TestRuntime>::get(&backer);
+    let init_backer_locks = BackerLocksByAccount::<TestRuntime>::get(&backer);
 
     // Get the current unlocking chunks
-    let (valid_info, remaining_info) = init_ledger.unbonding_info.partition(current_era);
+    let (valid_info, remaining_info) = init_backer_locks.unbonding_info.partition(current_era);
     let expected_unbond_amount = valid_info.sum();
 
-    // Ensure op is successful and event is emitted
+    // Ensure call executed successfully and event is emitted
     assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
         backer
     ),));
@@ -378,22 +379,22 @@ pub(crate) fn assert_withdraw_unbonded(backer: AccountId) {
     }));
 
     // Fetch the latest unbonding info so we can compare it to expected remainder
-    let final_ledger = BackerLocksByAccount::<TestRuntime>::get(&backer);
-    assert_eq!(remaining_info.vec(), final_ledger.unbonding_info.vec());
-    if final_ledger.unbonding_info.is_empty() && final_ledger.total_locked == 0 {
+    let final_backer_locks = BackerLocksByAccount::<TestRuntime>::get(&backer);
+    assert_eq!(remaining_info.vec(), final_backer_locks.unbonding_info.vec());
+    if final_backer_locks.unbonding_info.is_empty() && final_backer_locks.total_locked == 0 {
         assert!(!BackerLocksByAccount::<TestRuntime>::contains_key(&backer));
     }
 
-    // Compare the ledger and total staked value
-    let final_rewards_and_stakes = GeneralEraInfo::<TestRuntime>::get(current_era).unwrap();
-    assert_eq!(final_rewards_and_stakes.staked, init_era_info.staked);
+    // Compare the backer locks and total staked value
+    let final_locks_and_stakes = GeneralEraInfo::<TestRuntime>::get(current_era).unwrap();
+    assert_eq!(final_locks_and_stakes.staked, init_era_info.staked);
     assert_eq!(
-        final_rewards_and_stakes.locked,
+        final_locks_and_stakes.locked,
         init_era_info.locked - expected_unbond_amount
     );
     assert_eq!(
-        final_ledger.total_locked,
-        init_ledger.total_locked - expected_unbond_amount
+        final_backer_locks.total_locked,
+        init_backer_locks.total_locked - expected_unbond_amount
     );
 }
 
@@ -408,24 +409,21 @@ pub(crate) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     let init_state_claim_era = MemorySnapshot::all(claim_era, creator_id, claimer);
     let mut init_state_current_era = MemorySnapshot::all(current_era, creator_id, claimer);
 
-    // Calculate creator portion of the reward
-    let (_, combined_backers_reward_share) = CreatorStaking::distributed_rewards_between_creator_and_backers(
-        &init_state_claim_era.creator_stakes_info,
-        &init_state_claim_era.era_info,
-    );
-
+    // Calculate backer's portion of the reward
     let stakes = init_state_claim_era.backer_stakes.stakes.clone();
     let (claim_era, staked) = StakesInfo { stakes }.claim();
     assert!(claim_era > 0); // Sanity check - if this fails, method is being used incorrectly
 
     // Cannot claim rewards post unregister era, this indicates a bug!
-    if let CreatorStatus::Inactive(unregistered_era) = init_state_claim_era.creator_info.status {
-        assert!(unregistered_era > claim_era);
+    if let CreatorStatus::Inactive(unregister_era) = init_state_claim_era.creator_info.status {
+        assert!(unregister_era > claim_era);
     }
 
-    let calculated_reward =
-        Perbill::from_rational(staked, init_state_claim_era.creator_stakes_info.total)
-            * combined_backers_reward_share;
+    let calculated_reward = CreatorStaking::calculate_reward_for_backer_in_era(
+        &init_state_claim_era.creator_stakes_info,
+        staked,
+        claim_era,
+    );
     let issuance_before_claim = <TestRuntime as Config>::Currency::total_issuance();
 
     assert_ok!(CreatorStaking::claim_backer_reward(
@@ -562,8 +560,8 @@ pub(crate) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     assert!(!init_state.creator_stakes_info.rewards_claimed);
 
     // Cannot claim rewards post unregister era
-    if let CreatorStatus::Inactive(unregistered_era) = init_state.creator_info.status {
-        assert!(unregistered_era > claim_era);
+    if let CreatorStatus::Inactive(unregister_era) = init_state.creator_info.status {
+        assert!(unregister_era > claim_era);
     }
 
     // Calculate creator portion of the reward

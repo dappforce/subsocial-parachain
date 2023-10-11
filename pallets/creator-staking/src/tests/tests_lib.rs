@@ -276,9 +276,9 @@ fn stakes_info_claim_ops_advanced() {
     assert_eq!(backer_info.len(), 2);
 
     // Stake 7th era (so after it was unstaked)
-    let fourth_era = 7;
-    let fourth_stake_value = 147;
-    assert_ok!(backer_info.increase_stake(fourth_era, fourth_stake_value));
+    let seventh_era = 7;
+    let seventh_stake_value = 147;
+    assert_ok!(backer_info.increase_stake(seventh_era, seventh_stake_value));
     assert_eq!(backer_info.len(), 3);
 
     // Claim 4th era
@@ -286,14 +286,14 @@ fn stakes_info_claim_ops_advanced() {
     assert_eq!(backer_info.len(), 1);
 
     // Claim 7th era
-    assert_eq!(backer_info.claim(), (fourth_era, fourth_stake_value));
+    assert_eq!(backer_info.claim(), (seventh_era, seventh_stake_value));
     assert_eq!(backer_info.len(), 1);
-    assert_eq!(backer_info.current_stake(), fourth_stake_value);
+    assert_eq!(backer_info.current_stake(), seventh_stake_value);
 
     // Claim future eras
     for x in 1..10 {
-        assert_eq!(backer_info.claim(), (fourth_era + x, fourth_stake_value));
+        assert_eq!(backer_info.claim(), (seventh_era + x, seventh_stake_value));
         assert_eq!(backer_info.len(), 1);
-        assert_eq!(backer_info.current_stake(), fourth_stake_value);
+        assert_eq!(backer_info.current_stake(), seventh_stake_value);
     }
 }
