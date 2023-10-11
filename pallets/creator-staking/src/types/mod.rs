@@ -56,7 +56,7 @@ pub struct CreatorInfo<AccountId> {
 pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total amount staked on a creator.
     #[codec(compact)]
-    pub total: Balance,
+    pub total_staked: Balance,
     /// Total number of active backers staking towards a creator.
     #[codec(compact)]
     pub(super) backers_count: u32,

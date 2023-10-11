@@ -604,7 +604,7 @@ pub mod pallet {
             let (_, combined_backers_reward_share) =
                 Self::distributed_rewards_between_creator_and_backers(&staking_info, &reward_and_stake);
             let backer_reward =
-                Perbill::from_rational(backer_staked, staking_info.total) * combined_backers_reward_share;
+                Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
 
             let should_restake_reward = Self::ensure_should_restake_reward(
                 restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
@@ -663,7 +663,7 @@ pub mod pallet {
             );
 
             ensure!(
-                creator_stake_info.total > Zero::zero(),
+                creator_stake_info.total_staked > Zero::zero(),
                 Error::<T>::NotStakedCreator,
             );
 

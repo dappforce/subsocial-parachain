@@ -113,7 +113,7 @@ impl<T: Config> Pallet<T> {
         );
 
         // Increment the backer's total deposit for a particular creator.
-        staking_info.total = staking_info.total.saturating_add(desired_amount);
+        staking_info.total_staked = staking_info.total_staked.saturating_add(desired_amount);
 
         Ok(())
     }
@@ -161,7 +161,7 @@ impl<T: Config> Pallet<T> {
         // Sanity check
         ensure!(amount_to_unstake > Zero::zero(), Error::<T>::CannotUnstakeZero);
 
-        stake_info.total = stake_info.total.saturating_sub(amount_to_unstake);
+        stake_info.total_staked = stake_info.total_staked.saturating_sub(amount_to_unstake);
 
         backer_stakes
             .decrease_stake(current_era, amount_to_unstake)
@@ -206,7 +206,7 @@ impl<T: Config> Pallet<T> {
         era_info: &EraInfo<BalanceOf<T>>,
     ) -> (BalanceOf<T>, BalanceOf<T>) {
         let creator_proportional_stake =
-            Perbill::from_rational(creator_info.total, era_info.staked);
+            Perbill::from_rational(creator_info.total_staked, era_info.staked);
 
         let creator_reward_share = creator_proportional_stake * era_info.rewards.creators;
         let combined_backers_reward_share = creator_proportional_stake * era_info.rewards.backers;
@@ -340,7 +340,7 @@ impl<T: Config> Pallet<T> {
 
         CreatorStakeInfoByEra::<T>::mutate(creator_id, current_era, |staking_info| {
             if let Some(x) = staking_info {
-                x.total = x.total.saturating_add(backer_reward);
+                x.total_staked = x.total_staked.saturating_add(backer_reward);
             }
         });
 
@@ -360,7 +360,7 @@ impl<T: Config> Pallet<T> {
         if let Some(reward_and_stake) = Self::general_era_info(era) {
             let (_, combined_backers_reward_share) =
                 Self::distributed_rewards_between_creator_and_backers(creator_stake_info, &reward_and_stake);
-            Perbill::from_rational(staked, creator_stake_info.total) * combined_backers_reward_share
+            Perbill::from_rational(staked, creator_stake_info.total_staked) * combined_backers_reward_share
         } else {
             Zero::zero()
         }
