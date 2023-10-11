@@ -74,7 +74,7 @@ impl<T: Config> Pallet<T> {
     ///
     /// # Arguments
     ///
-    /// * `backer_info` - info about backer's stakes on the creator up to current moment
+    /// * `backer_stakes` - info about backer's stakes on the creator up to current moment
     /// * `staking_info` - general info about a particular creator's stake up to the current moment
     /// * `value` - value which is being bonded & staked
     /// * `current_era` - the current era of the creator staking system
@@ -84,14 +84,14 @@ impl<T: Config> Pallet<T> {
     /// If the stake operation was successful, the given structs are properly modified.
     /// If not, an error is returned and the structs are left in an undefined state.
     pub(super) fn stake_to_creator(
-        backer_info: &mut StakesInfoOf<T>,
+        backer_stakes: &mut StakesInfoOf<T>,
         staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
         current_era: EraIndex,
     ) -> Result<(), DispatchError> {
-        let current_stake = backer_info.current_stake();
+        let current_stake = backer_stakes.current_stake();
 
-        // FIXME: this check is not needed if we ensure that backer_info is always empty
+        // FIXME: this check is not needed if we ensure that backer_stakes is always empty
         ensure!(
             !current_stake.is_zero() ||
                 staking_info.backers_count < T::MaxNumberOfBackersPerCreator::get(),
@@ -101,14 +101,14 @@ impl<T: Config> Pallet<T> {
             staking_info.backers_count = staking_info.backers_count.saturating_add(1);
         }
 
-        backer_info
+        backer_stakes
             .increase_stake(current_era, desired_amount)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_info)?;
+        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
 
         ensure!(
-            backer_info.current_stake() >= T::MinimumStake::get(),
+            backer_stakes.current_stake() >= T::MinimumStake::get(),
             Error::<T>::InsufficientStakingAmount,
         );
 
@@ -128,7 +128,7 @@ impl<T: Config> Pallet<T> {
     ///
     /// # Arguments
     ///
-    /// * `backer_info` - info about backer's stakes on the creator up to current moment
+    /// * `backer_stakes` - info about backer's stakes on the creator up to current moment
     /// * `staking_info` - general info about creator stakes up to current moment
     /// * `value` - value which should be unstaked
     /// * `current_era` - current creator-staking era
@@ -139,12 +139,12 @@ impl<T: Config> Pallet<T> {
     /// unstaked value is returned. If not, an error is returned and the structs are left in
     /// an undefined state.
     pub(super) fn calculate_final_unstaking_amount(
-        backer_info: &mut StakesInfoOf<T>,
+        backer_stakes: &mut StakesInfoOf<T>,
         stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
         current_era: EraIndex,
     ) -> Result<BalanceOf<T>, DispatchError> {
-        let staked_value = backer_info.current_stake();
+        let staked_value = backer_stakes.current_stake();
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
         // Calculate the value which will be unstaked.
@@ -163,11 +163,11 @@ impl<T: Config> Pallet<T> {
 
         stake_info.total = stake_info.total.saturating_sub(amount_to_unstake);
 
-        backer_info
+        backer_stakes
             .decrease_stake(current_era, amount_to_unstake)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_info)?;
+        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
 
         Ok(amount_to_unstake)
     }
@@ -185,16 +185,16 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Update the backer info for the `(backer, creator_id)` pairing.
-    /// If backer_info is empty, remove it from the DB. Otherwise, store it.
+    /// If backer_stakes is empty, remove it from the DB. Otherwise, store it.
     pub(super) fn update_backer_info(
         backer: &T::AccountId,
         creator_id: CreatorId,
         backer_stakes: StakesInfoOf<T>,
     ) {
         if backer_stakes.is_empty() {
-            GeneralBackerInfo::<T>::remove(backer, creator_id)
+            BackerStakesByCreator::<T>::remove(backer, creator_id)
         } else {
-            GeneralBackerInfo::<T>::insert(backer, creator_id, backer_stakes)
+            BackerStakesByCreator::<T>::insert(backer, creator_id, backer_stakes)
         }
     }
 
@@ -256,7 +256,7 @@ impl<T: Config> Pallet<T> {
         let mut consumed_weight = Weight::zero();
 
         for (creator_id, creator_info) in RegisteredCreators::<T>::iter() {
-            // Ignore creator if it was not registered
+            // Ignore creator if it is inactive
             consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().reads(1));
             if let CreatorStatus::Inactive(_) = creator_info.status {
                 continue;
@@ -283,10 +283,10 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(super) fn ensure_max_era_stake_items_not_exceeded(
-        backer_info: &StakesInfoOf<T>,
+        backer_stakes: &StakesInfoOf<T>,
     ) -> DispatchResult {
         ensure!(
-            backer_info.len() < T::MaxEraStakeItems::get(),
+            backer_stakes.len() < T::MaxEraStakeItems::get(),
             Error::<T>::TooManyEraStakeValues,
         );
         Ok(())
@@ -295,7 +295,7 @@ impl<T: Config> Pallet<T> {
     pub(super) fn ensure_should_restake_reward(
         restake: bool,
         creator_status: CreatorStatus,
-        backer_info: &mut StakesInfoOf<T>,
+        backer_stakes: &mut StakesInfoOf<T>,
         current_era: EraIndex,
         backer_reward: BalanceOf<T>,
     ) -> Result<bool, DispatchError> {
@@ -303,16 +303,16 @@ impl<T: Config> Pallet<T> {
         // and all the other conditions are met:
         let should_restake_reward = restake
             && creator_status == CreatorStatus::Active
-            && backer_info.current_stake() > Zero::zero();
+            && backer_stakes.current_stake() > Zero::zero();
 
         return if should_restake_reward {
-            backer_info
+            backer_stakes
                 .increase_stake(current_era, backer_reward)
                 .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
             // Restaking will, in the worst case, remove one record and add another one,
             // so it's fine if the vector is full
-            Self::ensure_max_era_stake_items_not_exceeded(&backer_info)?;
+            Self::ensure_max_era_stake_items_not_exceeded(&backer_stakes)?;
 
             Ok(true)
         } else {
@@ -389,7 +389,7 @@ impl<T: Config> Pallet<T> {
         let current_era = Self::current_era();
 
         for creator_id in target_creators {
-            let mut backer_info_for_creator = Self::backer_info(&backer, creator_id);
+            let mut backer_info_for_creator = Self::backer_stakes(&backer, creator_id);
 
             let unregistered_era =
                 Self::get_unregistered_era_index(creator_id).unwrap_or(current_era);
@@ -423,9 +423,9 @@ impl<T: Config> Pallet<T> {
     ) -> Vec<(CreatorId, BalanceOf<T>)> {
         let mut withdrawable_amounts_by_creator = Vec::new();
 
-        for (creator_id, backer_info) in GeneralBackerInfo::<T>::iter_prefix(&backer) {
+        for (creator_id, backer_stakes) in BackerStakesByCreator::<T>::iter_prefix(&backer) {
             if !Self::is_creator_active(creator_id) {
-                if let Some(most_recent_stake) = backer_info.stakes.last() {
+                if let Some(most_recent_stake) = backer_stakes.stakes.last() {
                     withdrawable_amounts_by_creator.push((creator_id, most_recent_stake.staked));
                 }
             }
@@ -441,7 +441,7 @@ impl<T: Config> Pallet<T> {
 
         let current_era = Self::current_era();
 
-        for (creator, mut stakes_info) in GeneralBackerInfo::<T>::iter_prefix(&backer) {
+        for (creator, mut stakes_info) in BackerStakesByCreator::<T>::iter_prefix(&backer) {
             let unregistered_era = match Self::get_unregistered_era_index(creator) {
                 Ok(era) => era,
                 Err(error) if error.eq(&Error::<T>::CreatorNotFound.into()) => continue,

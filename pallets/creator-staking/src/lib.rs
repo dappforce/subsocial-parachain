@@ -175,8 +175,8 @@ pub mod pallet {
 
     /// Info about backers stakes on particular creator.
     #[pallet::storage]
-    #[pallet::getter(fn backer_info)]
-    pub type GeneralBackerInfo<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn backer_stakes)]
+    pub type BackerStakesByCreator<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         T::AccountId,
@@ -383,12 +383,12 @@ pub mod pallet {
             ensure!(amount_to_stake > Zero::zero(), Error::<T>::CannotStakeZero);
 
             let current_era = Self::current_era();
-            let mut backer_info = Self::backer_info(&backer, creator_id);
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
             let mut staking_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
-                &mut backer_info,
+                &mut backer_stakes,
                 &mut staking_info,
                 amount_to_stake,
                 current_era,
@@ -405,7 +405,7 @@ pub mod pallet {
             });
 
             Self::update_backer_locks(&backer, backer_locks);
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_info(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, staking_info);
 
             Self::deposit_event(Event::<T>::Staked {
@@ -449,12 +449,12 @@ pub mod pallet {
             ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
 
             let current_era = Self::current_era();
-            let mut backer_info = Self::backer_info(&backer, creator_id);
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
             let mut stake_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_final_unstaking_amount(&mut backer_info, &mut stake_info, amount, current_era)?;
+                Self::calculate_final_unstaking_amount(&mut backer_stakes, &mut stake_info, amount, current_era)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
@@ -476,7 +476,7 @@ pub mod pallet {
                     x.staked = x.staked.saturating_sub(amount_to_unstake)
                 }
             });
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_info(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
@@ -541,12 +541,12 @@ pub mod pallet {
             };
 
             // There should be some leftover staked amount
-            let mut backer_info = Self::backer_info(&backer, creator_id);
-            let staked_value = backer_info.current_stake();
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
+            let staked_value = backer_stakes.current_stake();
             ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
             // Don't allow withdrawal until all rewards have been claimed.
-            let (claimable_era, _) = backer_info.claim();
+            let (claimable_era, _) = backer_stakes.claim();
             ensure!(
                 claimable_era >= unregistered_era || claimable_era.is_zero(),
                 Error::<T>::UnclaimedRewardsRemaining
@@ -586,8 +586,8 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             // Ensure we have something to claim
-            let mut backer_info = Self::backer_info(&backer, creator_id);
-            let (era_to_claim, backer_staked) = backer_info.claim();
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
+            let (era_to_claim, backer_staked) = backer_stakes.claim();
             ensure!(backer_staked > Zero::zero(), Error::<T>::NotStakedCreator);
 
             let creator_info = Self::require_creator(creator_id)?;
@@ -607,7 +607,7 @@ pub mod pallet {
                 Perbill::from_rational(backer_staked, staking_info.total) * combined_backers_reward_share;
 
             let should_restake_reward = Self::ensure_should_restake_reward(
-                restake, creator_info.status, &mut backer_info, current_era, backer_reward
+                restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
             )?;
 
             // Withdraw reward funds from the rewards holding account
@@ -624,7 +624,7 @@ pub mod pallet {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
             }
 
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_info(&backer, creator_id, backer_stakes);
 
             Self::deposit_event(Event::<T>::BackerRewardsClaimed {
                 who: backer,
