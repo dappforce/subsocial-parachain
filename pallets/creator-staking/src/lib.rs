@@ -403,7 +403,7 @@ pub mod pallet {
             });
 
             Self::update_backer_locks(&backer, backer_locks);
-            Self::update_backer_info(&backer, creator_id, backer_stakes);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, staking_info);
 
             Self::deposit_event(Event::<T>::Staked {
@@ -469,7 +469,7 @@ pub mod pallet {
                     x.staked = x.staked.saturating_sub(amount_to_unstake)
                 }
             });
-            Self::update_backer_info(&backer, creator_id, backer_stakes);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
@@ -550,7 +550,7 @@ pub mod pallet {
             backer_locks.total_locked = backer_locks.total_locked.saturating_sub(staked_value);
             Self::update_backer_locks(&backer, backer_locks);
 
-            Self::update_backer_info(&backer, creator_id, Default::default());
+            Self::update_backer_stakes(&backer, creator_id, Default::default());
 
             let current_era = Self::current_era();
             GeneralEraInfo::<T>::mutate(current_era, |value| {
@@ -617,7 +617,7 @@ pub mod pallet {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
             }
 
-            Self::update_backer_info(&backer, creator_id, backer_stakes);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
 
             Self::deposit_event(Event::<T>::BackerRewardsClaimed {
                 who: backer,

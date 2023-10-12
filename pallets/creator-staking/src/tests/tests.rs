@@ -270,7 +270,7 @@ fn new_era_forcing() {
 }
 
 #[test]
-fn general_backer_info_is_ok() {
+fn general_backer_stakes_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -302,16 +302,16 @@ fn general_backer_info_is_ok() {
         advance_to_era(final_era);
 
         // Check first interval
-        let mut first_backer_info = CreatorStaking::backer_info(&backer_1, &first_creator_id);
-        let mut second_backer_info = CreatorStaking::backer_info(&backer_2, &first_creator_id);
-        let mut third_backer_info = CreatorStaking::backer_info(&backer_3, &first_creator_id);
+        let mut first_backer_stakes = CreatorStaking::backer_stakes(&backer_1, &first_creator_id);
+        let mut second_backer_stakes = CreatorStaking::backer_stakes(&backer_2, &first_creator_id);
+        let mut third_backer_stakes = CreatorStaking::backer_stakes(&backer_3, &first_creator_id);
 
         for era in starting_era..mid_era {
             let creator_info = CreatorStaking::creator_stake_info(&first_creator_id, era).unwrap();
             assert_eq!(2, creator_info.backers_count);
 
-            assert_eq!((era, amount), first_backer_info.claim());
-            assert_eq!((era, amount), second_backer_info.claim());
+            assert_eq!((era, amount), first_backer_stakes.claim());
+            assert_eq!((era, amount), second_backer_stakes.claim());
 
             assert!(!CreatorStakeInfoByEra::<TestRuntime>::contains_key(
                 &second_creator_id,
@@ -325,8 +325,8 @@ fn general_backer_info_is_ok() {
                 CreatorStaking::creator_stake_info(&first_creator_id, era).unwrap();
             assert_eq!(2, first_creator_info.backers_count);
 
-            assert_eq!((era, amount), first_backer_info.claim());
-            assert_eq!((era, amount), third_backer_info.claim());
+            assert_eq!((era, amount), first_backer_stakes.claim());
+            assert_eq!((era, amount), third_backer_stakes.claim());
 
             assert_eq!(
                 CreatorStaking::creator_stake_info(&second_creator_id, era)
@@ -930,10 +930,10 @@ fn unstake_calls_in_same_era_can_exceed_max_chunks() {
         assert_register(10, creator_id);
 
         let backer = 1;
-        assert_stake(backer, creator_id, 200 * MAX_UNLOCKING_CHUNKS as Balance);
+        assert_stake(backer, creator_id, 200 * MAX_UNBONDING_CHUNKS as Balance);
 
         // Ensure that we can unbond up to a limited amount of time.
-        for _ in 0..MAX_UNLOCKING_CHUNKS * 2 {
+        for _ in 0..MAX_UNBONDING_CHUNKS * 2 {
             assert_unstake(1, creator_id, 10);
             assert_eq!(1, BackerLocksByAccount::<TestRuntime>::get(&backer).unbonding_info.len());
         }
@@ -969,7 +969,7 @@ fn unstake_on_not_operated_creator_is_not_ok() {
 }
 
 #[test]
-fn unstake_too_many_unlocking_chunks_is_not_ok() {
+fn unstake_too_many_unbonding_chunks_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -979,19 +979,19 @@ fn unstake_too_many_unlocking_chunks_is_not_ok() {
         let backer = 1;
         let unstake_amount = 10;
         let stake_amount =
-            MINIMUM_STAKING_AMOUNT * 10 + unstake_amount * MAX_UNLOCKING_CHUNKS as Balance;
+            MINIMUM_STAKING_AMOUNT * 10 + unstake_amount * MAX_UNBONDING_CHUNKS as Balance;
 
         assert_stake(backer, creator_id, stake_amount);
 
         // Ensure that we can unbond up to a limited amount of time.
-        for _ in 0..MAX_UNLOCKING_CHUNKS {
+        for _ in 0..MAX_UNBONDING_CHUNKS {
             advance_to_era(CreatorStaking::current_era() + 1);
             assert_unstake(backer, creator_id, unstake_amount);
         }
 
         // Ensure that we're at the max but can still add new chunks since it should be merged with the existing one
         assert_eq!(
-            MAX_UNLOCKING_CHUNKS,
+            MAX_UNBONDING_CHUNKS,
             CreatorStaking::backer_locks(&backer).unbonding_info.len()
         );
         assert_unstake(backer, creator_id, unstake_amount);
@@ -1004,7 +1004,7 @@ fn unstake_too_many_unlocking_chunks_is_not_ok() {
                 creator_id.clone(),
                 unstake_amount
             ),
-            Error::<TestRuntime>::TooManyUnlockingChunks,
+            Error::<TestRuntime>::TooManyUnbondingChunks,
         );
     })
 }
@@ -1053,12 +1053,12 @@ fn unstake_should_fail_when_too_many_era_stakes() {
 #[ignore]
 #[test]
 fn unstake_with_no_chunks_allowed() {
-    // UT can be used to verify situation when MaxUnlockingChunks = 0.
+    // UT can be used to verify situation when MaxUnbondingChunks = 0.
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
         // Sanity check
-        assert_eq!(<TestRuntime as Config>::MaxUnlockingChunks::get(), 0);
+        assert_eq!(<TestRuntime as Config>::MaxUnbondingChunks::get(), 0);
 
         let creator_id = 1;
         assert_register(10, creator_id);
@@ -1072,7 +1072,7 @@ fn unstake_with_no_chunks_allowed() {
                 creator_id.clone(),
                 20
             ),
-            Error::<TestRuntime>::TooManyUnlockingChunks,
+            Error::<TestRuntime>::TooManyUnbondingChunks,
         );
     })
 }
@@ -1143,9 +1143,9 @@ fn withdraw_unbonded_full_vector(stakeholder: AccountId, creator_id: CreatorId, 
     assert_register(stakeholder, creator_id);
     assert_stake(backer_id, creator_id, 1000);
 
-    // Repeatedly start unbonding and advance era to create unlocking chunks
+    // Repeatedly start unbonding and advance era to create unbonding chunks
     let init_unbonding_amount = 15;
-    for x in 1..=MAX_UNLOCKING_CHUNKS {
+    for x in 1..=MAX_UNBONDING_CHUNKS {
         assert_unstake(backer_id, creator_id, init_unbonding_amount * x as u128);
         advance_to_era(CreatorStaking::current_era() + 1);
     }
@@ -1187,10 +1187,10 @@ fn withdraw_unbonded_full_vector_at_once_is_ok() {
 
         withdraw_unbonded_full_vector(stakeholder, creator_id, backer_id);
 
-        let unlocking_chunks = BackerLocksByAccount::<TestRuntime>::get(&backer_id)
+        let unbonding_chunks = BackerLocksByAccount::<TestRuntime>::get(&backer_id)
             .unbonding_info.vec().len() as u32;
 
-        advance_to_era(CreatorStaking::current_era() + unlocking_chunks + 1);
+        advance_to_era(CreatorStaking::current_era() + unbonding_chunks + 1);
         assert_withdraw_unbonded(backer_id);
     })
 }
@@ -1726,7 +1726,7 @@ fn distributed_rewards_between_creator_and_backers_util() {
 
     // Prepare structs
     let staking_points = CreatorStakeInfo::<Balance> {
-        total: staked_on_creator,
+        total_staked: staked_on_creator,
         backers_count: 10,
         rewards_claimed: false,
     };

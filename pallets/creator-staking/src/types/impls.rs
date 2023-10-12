@@ -292,8 +292,8 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
 
     #[cfg(test)]
     /// Return clone of the internal vector. Should only be used for testing.
-    pub(crate) fn vec(&self) -> BoundedVec<UnlockingChunk<Balance>, MaxUnlockingChunks> {
-        self.unlocking_chunks.clone()
+    pub(crate) fn vec(&self) -> BoundedVec<UnbondingChunk<Balance>, MaxUnbondingChunks> {
+        self.unbonding_chunks.clone()
     }
 }
 

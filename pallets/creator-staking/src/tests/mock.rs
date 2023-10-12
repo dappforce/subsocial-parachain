@@ -134,7 +134,7 @@ parameter_types! {
     pub const CreatorStakingPalletId: PalletId = PalletId(*b"mokcrstk");
     pub const MinimumRemainingFreeBalance: Balance = MINIMUM_REMAINING_AMOUNT;
     #[derive(PartialEq)]
-    pub const MaxUnlockingChunks: u32 = MAX_UNLOCKING_CHUNKS;
+    pub const MaxUnbondingChunks: u32 = MAX_UNBONDING_CHUNKS;
     pub const UnbondingPeriodInEras: EraIndex = UNBONDING_PERIOD_IN_ERAS;
     pub const MaxEraStakeItems: u32 = MAX_ERA_STAKE_ITEMS;
     pub const AnnualInflation: Perbill = Perbill::from_percent(10);
@@ -184,7 +184,7 @@ impl pallet_creator_staking::Config for TestRuntime {
     type MaxEraStakeItems = MaxEraStakeItems;
     type StakeExpirationInEras = ConstU32<10>;
     type UnbondingPeriodInEras = UnbondingPeriodInEras;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type MaxUnbondingChunks = MaxUnbondingChunks;
     // Inflation config:
     type AnnualInflation = AnnualInflation;
     type BlocksPerYear = BlocksPerYear;

@@ -14,7 +14,7 @@ pub(super) struct MemorySnapshot {
     backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
     creator_stakes_info: CreatorStakeInfo<Balance>,
     free_balance: Balance,
-    backer_locks: BackerLocks<Balance, MaxUnlockingChunks>,
+    backer_locks: BackerLocks<Balance, MaxUnbondingChunks>,
 }
 
 impl MemorySnapshot {
@@ -27,7 +27,7 @@ impl MemorySnapshot {
         Self {
             era_info: CreatorStaking::general_era_info(era).unwrap(),
             creator_info: RegisteredCreators::<TestRuntime>::get(creator_id).unwrap(),
-            backer_stakes: GeneralBackerInfo::<TestRuntime>::get(&account, creator_id),
+            backer_stakes: BackerStakesByCreator::<TestRuntime>::get(&account, creator_id),
             creator_stakes_info: CreatorStaking::creator_stake_info(creator_id, era).unwrap_or_default(),
             backer_locks: CreatorStaking::backer_locks(&account),
             free_balance: <TestRuntime as Config>::Currency::free_balance(&account),
@@ -121,8 +121,8 @@ pub(super) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
     assert_eq!(final_state.era_info.staked, init_state.era_info.staked);
 
     assert_eq!(
-        final_state.creator_stakes_info.total,
-        init_state.creator_stakes_info.total
+        final_state.creator_stakes_info.total_staked,
+        init_state.creator_stakes_info.total_staked
     );
     assert_eq!(
         final_state.creator_stakes_info.backers_count,
@@ -188,7 +188,7 @@ pub(super) fn assert_withdraw_from_inactive_creator(
     );
 
     assert!(final_state.backer_stakes.current_stake().is_zero());
-    assert!(!GeneralBackerInfo::<TestRuntime>::contains_key(
+    assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
         &backer,
         creator_id
     ));
@@ -226,7 +226,7 @@ pub(super) fn assert_stake(
 
     // In case backer hasn't been staking this creator until now
     if init_state.backer_stakes.current_stake() == 0 {
-        assert!(GeneralBackerInfo::<TestRuntime>::contains_key(
+        assert!(BackerStakesByCreator::<TestRuntime>::contains_key(
             &backer,
             creator_id
         ));
@@ -246,8 +246,8 @@ pub(super) fn assert_stake(
         init_state.era_info.locked + staking_value
     );
     assert_eq!(
-        final_state.creator_stakes_info.total,
-        init_state.creator_stakes_info.total + staking_value
+        final_state.creator_stakes_info.total_staked,
+        init_state.creator_stakes_info.total_staked + staking_value
     );
     assert_eq!(
         final_state.backer_stakes.current_stake(),
@@ -317,10 +317,10 @@ pub(super) fn assert_unstake(
         final_state.backer_locks.unbonding_info.sum()
     );
 
-    // Push the unlocking chunk we expect to have at the end and compare two structs
-    let unlocking_chunks = init_state.backer_locks.unbonding_info.vec();
-    let mut unbonding_info = UnbondingInfo { unlocking_chunks };
-    let _ = unbonding_info.add(UnlockingChunk {
+    // Push the unbonding chunk we expect to have at the end and compare two structs
+    let unbonding_chunks = init_state.backer_locks.unbonding_info.vec();
+    let mut unbonding_info = UnbondingInfo { unbonding_chunks };
+    let _ = unbonding_info.add(UnbondingChunk {
         amount: expected_unbond_amount,
         unlock_era: current_era + UNBONDING_PERIOD_IN_ERAS,
     });
@@ -334,8 +334,8 @@ pub(super) fn assert_unstake(
 
     // Ensure that total staked amount has been decreased for creator and staking points are updated
     assert_eq!(
-        init_state.creator_stakes_info.total - expected_unbond_amount,
-        final_state.creator_stakes_info.total
+        init_state.creator_stakes_info.total_staked - expected_unbond_amount,
+        final_state.creator_stakes_info.total_staked
     );
     assert_eq!(
         init_state.backer_stakes.current_stake() - expected_unbond_amount,
@@ -365,7 +365,7 @@ pub(super) fn assert_withdraw_unbonded(backer: AccountId) {
     let init_era_info = GeneralEraInfo::<TestRuntime>::get(current_era).unwrap();
     let init_backer_locks = BackerLocksByAccount::<TestRuntime>::get(&backer);
 
-    // Get the current unlocking chunks
+    // Get the current unbonding chunks
     let (valid_info, remaining_info) = init_backer_locks.unbonding_info.partition(current_era);
     let expected_unbond_amount = valid_info.sum();
 
@@ -400,7 +400,7 @@ pub(super) fn assert_withdraw_unbonded(backer: AccountId) {
 
 /// Used to perform claim for backers with success assertion
 pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, restake: bool) {
-    let (claim_era, _) = CreatorStaking::backer_info(&claimer, creator_id).claim();
+    let (claim_era, _) = CreatorStaking::backer_stakes(&claimer, creator_id).claim();
     let current_era = CreatorStaking::current_era();
 
     //clean up possible leftover events
@@ -477,7 +477,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     let (new_era, _) = StakesInfo { stakes }.claim();
     if final_state_current_era.backer_stakes.is_empty() {
         assert!(new_era.is_zero());
-        assert!(!GeneralBackerInfo::<TestRuntime>::contains_key(
+        assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
             &claimer,
             creator_id
         ));
@@ -529,8 +529,8 @@ fn assert_restake_reward(
             final_state_current_era.era_info.locked
         );
         assert_eq!(
-            init_state_current_era.creator_stakes_info.total + reward,
-            final_state_current_era.creator_stakes_info.total
+            init_state_current_era.creator_stakes_info.total_staked + reward,
+            final_state_current_era.creator_stakes_info.total_staked
         );
     } else {
         // staked values should remain the same, and free balance increase

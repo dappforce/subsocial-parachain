@@ -405,19 +405,19 @@ impl<T: Config> Pallet<T> {
         let current_era = Self::current_era();
 
         for creator_id in target_creators {
-            let mut backer_info_for_creator = Self::backer_stakes(&backer, creator_id);
+            let mut backer_stakes_for_creator = Self::backer_stakes(&backer, creator_id);
 
             let unregistration_era =
                 Self::get_unregistration_era_index(creator_id).unwrap_or(current_era);
 
-            if backer_info_for_creator.stakes.is_empty() {
+            if backer_stakes_for_creator.stakes.is_empty() {
                 estimated_rewards.push((creator_id, Zero::zero()));
                 continue;
             }
 
             let mut total_backer_rewards_for_eras: BalanceOf<T> = Zero::zero();
             loop {
-                let (era, staked) = backer_info_for_creator.claim();
+                let (era, staked) = backer_stakes_for_creator.claim();
                 if era >= unregistration_era || era == 0 {
                     break;
                 }
