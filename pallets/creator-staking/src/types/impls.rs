@@ -39,22 +39,22 @@ impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> EraStake<Balance> {
     }
 }
 
-impl<Balance, MaxEraStakeValues> Default for StakesInfo<Balance, MaxEraStakeValues>
+impl<Balance, MaxEraStakeItems> Default for StakesInfo<Balance, MaxEraStakeItems>
     where
         Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
-        MaxEraStakeValues: Get<u32>,
+        MaxEraStakeItems: Get<u32>,
 {
     fn default() -> Self {
         Self {
-            stakes: BoundedVec::<EraStake<Balance>, MaxEraStakeValues>::default(),
+            stakes: BoundedVec::<EraStake<Balance>, MaxEraStakeItems>::default(),
         }
     }
 }
 
-impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
+impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     where
         Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen + Debug,
-        MaxEraStakeValues: Get<u32>,
+        MaxEraStakeItems: Get<u32>,
 {
     /// `true` if no active stakes and unclaimed eras exist, `false` otherwise
     pub(crate) fn is_empty(&self) -> bool {
@@ -67,15 +67,15 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     }
 
     fn change_stake<F>(
-        &mut self,
+        mut stakes: BoundedVec<EraStake<Balance>, MaxEraStakeItems>,
         current_era: EraIndex,
         value: Balance,
         mutation_fn: F,
-    ) -> Result<(), &str>
+    ) -> Result<BoundedVec<EraStake<Balance>, MaxEraStakeItems>, &'static str>
         where
             F: FnOnce(Balance, Balance) -> Balance,
     {
-        if let Some(era_stake) = self.stakes.last_mut() {
+        if let Some(era_stake) = stakes.last_mut() {
             if era_stake.era > current_era {
                 return Err("CannotStakeInPastEra")
             }
@@ -85,16 +85,13 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
 
             if current_era == era_stake.era {
                 *era_stake = new_era_stake;
-            } else {
-                self.stakes.try_push(new_era_stake)
+            } else if stakes.len() < MaxEraStakeItems::get() as usize {
+                stakes.try_push(new_era_stake)
                     .expect("qed; too many stakes in StakesInfo");
             }
-        } else {
-            self.stakes.try_push(EraStake::new(value, current_era))
-                .expect("qed; too many stakes in StakesInfo");
         }
 
-        Ok(())
+        Ok(stakes)
     }
 
     /// Stakes some value in the specified era.
@@ -110,7 +107,15 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
     /// * `stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
     pub(crate) fn increase_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
-        self.change_stake(current_era, value, |x, y| x.saturating_add(y))
+        if self.stakes.last().is_some() {
+            let new_stakes =
+                Self::change_stake(self.stakes.clone(), current_era, value, |x, y| x.saturating_add(y))?;
+
+            self.stakes = new_stakes;
+        } else if self.stakes.len() < MaxEraStakeItems::get() as usize {
+            self.stakes.try_push(EraStake::new(value, current_era)).expect("qed; too many stakes in StakesInfo");
+        }
+        Ok(())
     }
 
     /// Unstakes some value in the specified era.
@@ -132,7 +137,16 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     ///
     /// Note that if no unclaimed eras remain, vector will be cleared.
     pub(crate) fn decrease_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
-        self.change_stake(current_era, value, |x, y| x.saturating_sub(y))
+        let new_stakes =
+            Self::change_stake(self.stakes.clone(), current_era, value, |x, y| x.saturating_sub(y))?;
+
+        self.stakes = new_stakes;
+
+        if !self.stakes.is_empty() && self.stakes[0].staked.is_zero() {
+            self.stakes.remove(0);
+        }
+
+        Ok(())
     }
 
     /// `Claims` the oldest era available for claiming (one at a time).
@@ -146,7 +160,7 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     ///
     /// `stakes: [<5, 1000>, <7, 1300>, <8, 0>, <15, 3000>]`
     ///
-    /// 1. `claim()` will return `(5, 1000)`
+    /// 1. `claim()` will return `(5, 1000)`.
     ///     Internal vector is modified to `[<6, 1000>, <7, 1300>, <8, 0>, <15, 3000>]`
     ///     Note that stake info from the claiming era was moved to the 6th as it was not claimed,
     ///     so we need to keep it for the next claim.
@@ -169,10 +183,8 @@ impl<Balance, MaxEraStakeValues> StakesInfo<Balance, MaxEraStakeValues>
     pub(crate) fn claim(&mut self) -> (EraIndex, Balance) {
         if let Some(oldest_era_stake) = self.stakes.first() {
             let oldest_era_stake = *oldest_era_stake;
-            let has_no_stake_updates_for_the_next_era =
-                oldest_era_stake.era + 2 <= self.stakes[1].era;
 
-            if self.stakes.len() == 1 || has_no_stake_updates_for_the_next_era {
+            if self.stakes.len() == 1 || oldest_era_stake.era + 2 <= self.stakes[1].era {
                 // If there is a record from the next era and its stake has been changed:
                 self.stakes[0] =
                     EraStake { staked: oldest_era_stake.staked, era: oldest_era_stake.era.saturating_add(1) }
@@ -226,12 +238,13 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
         MaxUnbondingChunks: Get<u32>,
 {
     /// Returns total number of unbonding chunks.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn len(&self) -> u32 {
         self.unbonding_chunks.len() as u32
     }
 
     /// True if no unbonding chunks exist, false otherwise.
-    fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.unbonding_chunks.is_empty()
     }
 
@@ -245,16 +258,18 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
     }
 
     /// Adds a new unbonding chunk to the vector, preserving the unlock_era based ordering.
-    pub(crate) fn add(&mut self, chunk: UnbondingChunk<Balance>) {
+    pub(crate) fn add(&mut self, chunk: UnbondingChunk<Balance>) -> Result<(), &str> {
         // It is possible that the unbonding period changes so we need to account for that
         match self.unbonding_chunks.binary_search_by(|x| x.unlock_era.cmp(&chunk.unlock_era)) {
             // Merge with existing chunk if unlock_eras match
             Ok(pos) => self.unbonding_chunks[pos].add_amount(chunk.amount),
             // Otherwise insert where it should go. Note that this will in almost all cases return
             // the last index.
-            Err(pos) => self.unbonding_chunks.try_insert(pos, chunk)
-                .expect("qed; too many chunks in UnbondingInfo"),
+            Err(pos) if self.unbonding_chunks.len() < MaxUnbondingChunks::get() as usize =>
+                self.unbonding_chunks.try_insert(pos, chunk).expect("qed; too many chunks in UnbondingInfo"),
+            _ => return Err("TooManyUnbondingChunks"),
         }
+        Ok(())
     }
 
     /// Partitions the unbonding chunks into two groups:
@@ -274,13 +289,19 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
 
         (Self { unbonding_chunks: matching_chunks }, Self { unbonding_chunks: other_chunks })
     }
+
+    #[cfg(test)]
+    /// Return clone of the internal vector. Should only be used for testing.
+    pub(crate) fn vec(&self) -> BoundedVec<UnbondingChunk<Balance>, MaxUnbondingChunks> {
+        self.unbonding_chunks.clone()
+    }
 }
 
-impl Default for RewardsDistributionConfig {
+impl Default for RewardDistributionConfig {
     /// `default` values based on configuration at the time of writing this code.
     /// Should be overridden by desired params.
     fn default() -> Self {
-        RewardsDistributionConfig {
+        RewardDistributionConfig {
             backers_percent: Perbill::from_percent(45),
             creators_percent: Perbill::from_percent(45),
             treasury_percent: Perbill::from_percent(10),
@@ -288,9 +309,9 @@ impl Default for RewardsDistributionConfig {
     }
 }
 
-impl RewardsDistributionConfig {
+impl RewardDistributionConfig {
     /// `true` if sum of all percentages is `one whole`, `false` otherwise.
-    pub fn is_consistent(&self) -> bool {
+    pub fn is_sum_equal_to_one(&self) -> bool {
         let variables = vec![
             &self.backers_percent,
             &self.creators_percent,
