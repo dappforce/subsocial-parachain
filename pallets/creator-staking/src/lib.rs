@@ -103,10 +103,10 @@ pub mod pallet {
         #[pallet::constant]
         type UnbondingPeriodInEras: Get<u32>;
 
-        /// The max number of unlocking chunks per `(backer, creator)` pair.
-        /// If value is zero, unlocking becomes impossible.
+        /// The max number of unbonding chunks per `(backer, creator)` pair.
+        /// If value is zero, unbonding becomes impossible.
         #[pallet::constant]
-        type MaxUnlockingChunks: Get<u32>;
+        type MaxUnbondingChunks: Get<u32>;
 
         #[pallet::constant]
         type AnnualInflation: Get<Perbill>;
@@ -246,7 +246,7 @@ pub mod pallet {
         TooManyEraStakeValues,
         InsufficientStakingAmount,
         NotStakedCreator,
-        TooManyUnlockingChunks,
+        TooManyUnbondingChunks,
         NothingToWithdraw,
         NotUnregisteredCreator,
         UnclaimedRewardsRemaining,
@@ -464,8 +464,8 @@ pub mod pallet {
             });
             // This should be done AFTER insertion since it's possible for chunks to merge
             ensure!(
-                backer_locks.unbonding_info.len() <= T::MaxUnlockingChunks::get(),
-                Error::<T>::TooManyUnlockingChunks
+                backer_locks.unbonding_info.len() <= T::MaxUnbondingChunks::get(),
+                Error::<T>::TooManyUnbondingChunks
             );
 
             Self::update_backer_locks(&backer, backer_locks);

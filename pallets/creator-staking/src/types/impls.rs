@@ -8,10 +8,10 @@ impl<AccountId> CreatorInfo<AccountId> {
     }
 }
 
-impl<Balance, MaxUnlockingChunks> Default for BackerLocks<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnbondingChunks> Default for BackerLocks<Balance, MaxUnbondingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-        MaxUnlockingChunks: Get<u32>,
+        MaxUnbondingChunks: Get<u32>,
 {
     fn default() -> Self {
         Self {
@@ -21,10 +21,10 @@ impl<Balance, MaxUnlockingChunks> Default for BackerLocks<Balance, MaxUnlockingC
     }
 }
 
-impl<Balance, MaxUnlockingChunks> BackerLocks<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnbondingChunks> BackerLocks<Balance, MaxUnbondingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-        MaxUnlockingChunks: Get<u32>,
+        MaxUnbondingChunks: Get<u32>,
 {
     /// `true` if backer locks are empty (no locked funds, no unbonding chunks), `false` otherwise.
     pub fn is_empty(&self) -> bool {
@@ -210,54 +210,54 @@ impl<Balance> UnbondingChunk<Balance>
     }
 }
 
-impl<Balance, MaxUnlockingChunks> Default for UnbondingInfo<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnbondingChunks> Default for UnbondingInfo<Balance, MaxUnbondingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-        MaxUnlockingChunks: Get<u32>,
+        MaxUnbondingChunks: Get<u32>,
 {
     fn default() -> Self {
-        Self { unlocking_chunks: BoundedVec::<UnbondingChunk<Balance>, MaxUnlockingChunks>::default() }
+        Self { unbonding_chunks: BoundedVec::<UnbondingChunk<Balance>, MaxUnbondingChunks>::default() }
     }
 }
 
-impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
+impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
     where
         Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-        MaxUnlockingChunks: Get<u32>,
+        MaxUnbondingChunks: Get<u32>,
 {
-    /// Returns total number of unlocking chunks.
+    /// Returns total number of unbonding chunks.
     pub(crate) fn len(&self) -> u32 {
-        self.unlocking_chunks.len() as u32
+        self.unbonding_chunks.len() as u32
     }
 
-    /// True if no unlocking chunks exist, false otherwise.
+    /// True if no unbonding chunks exist, false otherwise.
     fn is_empty(&self) -> bool {
-        self.unlocking_chunks.is_empty()
+        self.unbonding_chunks.is_empty()
     }
 
-    /// Returns sum of all unlocking chunks.
+    /// Returns sum of all unbonding chunks.
     pub(crate) fn sum(&self) -> Balance {
-        self.unlocking_chunks
+        self.unbonding_chunks
             .iter()
             .map(|chunk| chunk.amount)
             .reduce(|c1, c2| c1 + c2)
             .unwrap_or_default()
     }
 
-    /// Adds a new unlocking chunk to the vector, preserving the unlock_era based ordering.
+    /// Adds a new unbonding chunk to the vector, preserving the unlock_era based ordering.
     pub(crate) fn add(&mut self, chunk: UnbondingChunk<Balance>) {
         // It is possible that the unbonding period changes so we need to account for that
-        match self.unlocking_chunks.binary_search_by(|x| x.unlock_era.cmp(&chunk.unlock_era)) {
+        match self.unbonding_chunks.binary_search_by(|x| x.unlock_era.cmp(&chunk.unlock_era)) {
             // Merge with existing chunk if unlock_eras match
-            Ok(pos) => self.unlocking_chunks[pos].add_amount(chunk.amount),
+            Ok(pos) => self.unbonding_chunks[pos].add_amount(chunk.amount),
             // Otherwise insert where it should go. Note that this will in almost all cases return
             // the last index.
-            Err(pos) => self.unlocking_chunks.try_insert(pos, chunk)
+            Err(pos) => self.unbonding_chunks.try_insert(pos, chunk)
                 .expect("qed; too many chunks in UnbondingInfo"),
         }
     }
 
-    /// Partitions the unlocking chunks into two groups:
+    /// Partitions the unbonding chunks into two groups:
     ///
     /// First group includes all chunks which have an unlock era less than or equal to the specified era.
     /// Second group includes all the rest.
@@ -267,12 +267,12 @@ impl<Balance, MaxUnlockingChunks> UnbondingInfo<Balance, MaxUnlockingChunks>
         let (matching_chunks, other_chunks): (
             Vec<UnbondingChunk<Balance>>,
             Vec<UnbondingChunk<Balance>>,
-        ) = self.unlocking_chunks.iter().partition(|chunk| chunk.unlock_era <= era);
+        ) = self.unbonding_chunks.iter().partition(|chunk| chunk.unlock_era <= era);
 
         let matching_chunks = matching_chunks.try_into().unwrap();
         let other_chunks = other_chunks.try_into().unwrap();
 
-        (Self { unlocking_chunks: matching_chunks }, Self { unlocking_chunks: other_chunks })
+        (Self { unbonding_chunks: matching_chunks }, Self { unbonding_chunks: other_chunks })
     }
 }
 

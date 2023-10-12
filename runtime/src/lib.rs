@@ -759,7 +759,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type MaxEraStakeItems = ConstU32<5>;
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
-	type MaxUnlockingChunks = ConstU32<32>;
+	type MaxUnbondingChunks = ConstU32<32>;
 	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;

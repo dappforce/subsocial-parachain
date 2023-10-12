@@ -20,7 +20,7 @@ pub type EraIndex = u32;
 pub type CreatorId = SpaceId;
 
 /// Convenience type for `BackerLocks` usage.
-pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
+pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnbondingChunks>;
 
 /// Convenience type fo `StakesInfo` usage.
 pub(crate) type StakesInfoOf<T> = StakesInfo<BalanceOf<T>, <T as Config>::MaxEraStakeItems>;
@@ -66,16 +66,16 @@ pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
 
 /// Contains information about an account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxUnlockingChunks))]
+#[scale_info(skip_type_params(MaxUnbondingChunks))]
 pub struct BackerLocks<
     Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-    MaxUnlockingChunks: Get<u32>,
+    MaxUnbondingChunks: Get<u32>,
 > {
     /// Total balance locked.
     #[codec(compact)]
     pub total_locked: Balance,
     /// Information about unbonding chunks.
-    pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnlockingChunks>,
+    pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnbondingChunks>,
 }
 
 /// Used to represent how many total tokens were staked on the chain in a particular era.
@@ -141,17 +141,17 @@ pub struct UnbondingChunk<Balance: MaxEncodedLen> {
     pub(super) unlock_era: EraIndex,
 }
 
-/// Contains unlocking chunks.
+/// Contains unbonding chunks.
 /// This is a convenience struct that provides various utility methods to help with unbonding
 /// handling.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxUnlockingChunks))]
+#[scale_info(skip_type_params(MaxUnbondingChunks))]
 pub struct UnbondingInfo<
     Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen,
-    MaxUnlockingChunks: Get<u32>,
+    MaxUnbondingChunks: Get<u32>,
 > {
-    // Vector of unlocking chunks. Sorted in ascending order in respect to unlock_era.
-    unlocking_chunks: BoundedVec<UnbondingChunk<Balance>, MaxUnlockingChunks>,
+    // Vector of unbonding chunks. Sorted in ascending order in respect to unlock_era.
+    unbonding_chunks: BoundedVec<UnbondingChunk<Balance>, MaxUnbondingChunks>,
 }
 
 /// A record of rewards allocated for backers and creators
