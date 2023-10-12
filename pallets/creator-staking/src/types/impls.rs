@@ -244,7 +244,7 @@ impl<Balance, MaxUnbondingChunks> UnbondingInfo<Balance, MaxUnbondingChunks>
     }
 
     /// True if no unbonding chunks exist, false otherwise.
-    fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.unbonding_chunks.is_empty()
     }
 

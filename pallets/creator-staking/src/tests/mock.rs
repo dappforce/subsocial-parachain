@@ -16,30 +16,30 @@ use sp_io::TestExternalities;
 use sp_runtime::{DispatchError, Perbill, testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}};
 use sp_std::sync::{Mutex, MutexGuard};
 
-pub(crate) type AccountId = u64;
-pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
-pub(crate) type EraIndex = u32;
+pub(super) type AccountId = u64;
+pub(super) type BlockNumber = u64;
+pub(super) type Balance = u128;
+pub(super) type EraIndex = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
-pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
-pub(crate) const REGISTER_DEPOSIT: Balance = 10;
-pub(crate) const MAX_NUMBER_OF_BACKERS: u32 = 4;
+pub(super) const EXISTENTIAL_DEPOSIT: Balance = 2;
+pub(super) const REGISTER_DEPOSIT: Balance = 10;
+pub(super) const MAX_NUMBER_OF_BACKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
-pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
-pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
-pub(crate) const MAX_UNLOCKING_CHUNKS: u32 = 5;
-pub(crate) const UNBONDING_PERIOD_IN_ERAS: EraIndex = 3;
-pub(crate) const MAX_ERA_STAKE_ITEMS: u32 = 8;
+pub(super) const MINIMUM_STAKING_AMOUNT: Balance = 10;
+pub(super) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
+pub(super) const MAX_UNBONDING_CHUNKS: u32 = 5;
+pub(super) const UNBONDING_PERIOD_IN_ERAS: EraIndex = 3;
+pub(super) const MAX_ERA_STAKE_ITEMS: u32 = 8;
 
 // Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
-pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
-pub(crate) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
+pub(super) const BLOCKS_PER_ERA: BlockNumber = 3;
+pub(super) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
 
-pub(crate) const TREASURY_ACCOUNT: BlockNumber = 42;
+pub(super) const TREASURY_ACCOUNT: BlockNumber = 42;
 
 construct_runtime!(
     pub struct TestRuntime

@@ -8,7 +8,7 @@ use crate::CreatorInfo;
 use crate::tests::tests::Rewards;
 
 /// Helper struct used to store information relevant to era/creator/backer combination.
-pub(crate) struct MemorySnapshot {
+pub(super) struct MemorySnapshot {
     era_info: EraInfo<Balance>,
     creator_info: CreatorInfo<AccountId>,
     backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
@@ -19,7 +19,7 @@ pub(crate) struct MemorySnapshot {
 
 impl MemorySnapshot {
     /// Prepares a new `MemorySnapshot` struct based on the given arguments.
-    pub(crate) fn all(
+    pub(super) fn all(
         era: EraIndex,
         creator_id: SpaceId,
         account: AccountId,
@@ -36,7 +36,7 @@ impl MemorySnapshot {
 
     /// Prepares a new `MemorySnapshot` struct but only with creator-related info
     /// (no info specific for individual backer).
-    pub(crate) fn creator(era: EraIndex, creator_id: SpaceId) -> Self {
+    pub(super) fn creator(era: EraIndex, creator_id: SpaceId) -> Self {
         Self {
             era_info: CreatorStaking::general_era_info(era).unwrap(),
             creator_info: RegisteredCreators::<TestRuntime>::get(creator_id).unwrap(),
@@ -49,22 +49,22 @@ impl MemorySnapshot {
 }
 
 /// Used to fetch the free balance of creator stakingr rewards pot account
-pub(crate) fn free_balance_of_rewards_pot_account() -> Balance {
+pub(super) fn free_balance_of_rewards_pot_account() -> Balance {
     <TestRuntime as Config>::Currency::free_balance(&account_id())
 }
 
 /// Used to fetch pallet account Id
-pub(crate) fn account_id() -> AccountId {
+pub(super) fn account_id() -> AccountId {
     <TestRuntime as Config>::PalletId::get().into_account_truncating()
 }
 
 /// Used to get total creators reward for an era.
-pub(crate) fn get_total_reward_per_era() -> Balance {
+pub(super) fn get_total_reward_per_era() -> Balance {
     Rewards::joint_block_reward() * BLOCKS_PER_ERA as Balance
 }
 
 /// Used to register creator for staking and assert success.
-pub(crate) fn assert_register(stakeholder: AccountId, creator_id: SpaceId) {
+pub(super) fn assert_register(stakeholder: AccountId, creator_id: SpaceId) {
     let _m = use_static_mock();
     let space_owner_ctx = MockSpaces::get_space_owner_context();
     space_owner_ctx.expect().return_const(Ok(stakeholder)).times(1);
@@ -92,7 +92,7 @@ pub(crate) fn assert_register(stakeholder: AccountId, creator_id: SpaceId) {
 }
 
 /// Perform `unregister` with all the accompanied checks including before/after storage comparison.
-pub(crate) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
+pub(super) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
     let current_era = CreatorStaking::current_era();
     let init_state = MemorySnapshot::creator(current_era, creator_id);
     let init_reserved_balance = <TestRuntime as Config>::Currency::reserved_balance(&stakeholder);
@@ -137,7 +137,7 @@ pub(crate) fn assert_unregister(stakeholder: AccountId, creator_id: SpaceId) {
 }
 
 /// Perform `withdraw_from_inactive_creator` with all the accompanied checks including before/after storage comparison.
-pub(crate) fn assert_withdraw_from_inactive_creator(
+pub(super) fn assert_withdraw_from_inactive_creator(
     backer: AccountId,
     creator_id: SpaceId,
 ) {
@@ -195,7 +195,7 @@ pub(crate) fn assert_withdraw_from_inactive_creator(
 }
 
 /// Perform `bond_and_stake` with all the accompanied checks including before/after storage comparison.
-pub(crate) fn assert_stake(
+pub(super) fn assert_stake(
     backer: AccountId,
     creator_id: SpaceId,
     value: Balance,
@@ -260,7 +260,7 @@ pub(crate) fn assert_stake(
 }
 
 /// Used to perform start_unbonding with success and storage assertions.
-pub(crate) fn assert_unstake(
+pub(super) fn assert_unstake(
     backer: AccountId,
     creator_id: SpaceId,
     value: Balance,
@@ -359,7 +359,7 @@ pub(crate) fn assert_unstake(
 }
 
 /// Used to perform start_unbonding with success and storage assertions.
-pub(crate) fn assert_withdraw_unbonded(backer: AccountId) {
+pub(super) fn assert_withdraw_unbonded(backer: AccountId) {
     let current_era = CreatorStaking::current_era();
 
     let init_era_info = GeneralEraInfo::<TestRuntime>::get(current_era).unwrap();
@@ -399,7 +399,7 @@ pub(crate) fn assert_withdraw_unbonded(backer: AccountId) {
 }
 
 /// Used to perform claim for backers with success assertion
-pub(crate) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, restake: bool) {
+pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, restake: bool) {
     let (claim_era, _) = CreatorStaking::backer_info(&claimer, creator_id).claim();
     let current_era = CreatorStaking::current_era();
 
@@ -554,7 +554,7 @@ fn assert_restake_reward(
 }
 
 /// Used to perform claim for creator reward with success assertion
-pub(crate) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
+pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     let stakeholder = CreatorStaking::registered_creator(creator_id).unwrap().stakeholder;
     let init_state = MemorySnapshot::all(claim_era, creator_id, stakeholder);
     assert!(!init_state.creator_stakes_info.rewards_claimed);
