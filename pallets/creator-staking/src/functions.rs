@@ -376,7 +376,7 @@ impl<T: Config> Pallet<T> {
             if let CreatorStatus::Inactive(era) = creator_info.status {
                 Ok(era)
             } else {
-                Err(DispatchError::Other("CreatorIsActive"))
+                Err(Error::<T>::CreatorIsActive.into())
             }
         } else {
             Err(Error::<T>::CreatorNotFound.into())
