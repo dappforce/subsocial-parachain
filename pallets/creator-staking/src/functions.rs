@@ -106,7 +106,7 @@ impl<T: Config> Pallet<T> {
             .increase_stake(current_era, amount)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
+        Self::ensure_can_add_stake_item(backer_stakes)?;
 
         ensure!(
             backer_stakes.current_stake() >= T::MinimumStake::get(),
@@ -168,7 +168,7 @@ impl<T: Config> Pallet<T> {
             .decrease_stake(current_era, amount_to_unstake)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
+        Self::ensure_can_add_stake_item(backer_stakes)?;
 
         Ok(amount_to_unstake)
     }
@@ -283,7 +283,7 @@ impl<T: Config> Pallet<T> {
         RegisteredCreators::<T>::get(creator_id).ok_or(Error::<T>::CreatorNotFound.into())
     }
 
-    pub(crate) fn ensure_max_era_stake_items_not_exceeded(
+    pub(crate) fn ensure_can_add_stake_item(
         backer_stakes: &StakesInfoOf<T>,
     ) -> DispatchResult {
         ensure!(
