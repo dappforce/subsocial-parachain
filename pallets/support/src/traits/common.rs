@@ -31,3 +31,21 @@ pub trait SpacesInterface<AccountId, SpaceId> {
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
+
+pub trait OwnershipTransferValidator<AccountId> {
+    fn ensure_can_transfer_ownership(
+        current_owner: &AccountId,
+        new_owner: &AccountId,
+        space_id: SpaceId,
+    ) -> Result<(), &'static str>;
+}
+
+impl<AccountId> OwnershipTransferValidator<AccountId> for () {
+    fn ensure_can_transfer_ownership(
+        _current_owner: &AccountId,
+        _new_owner: &AccountId,
+        _space_id: SpaceId,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
+}
