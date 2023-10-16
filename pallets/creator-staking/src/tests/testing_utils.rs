@@ -162,6 +162,7 @@ pub(super) fn assert_withdraw_from_inactive_creator(
     System::assert_last_event(mock::RuntimeEvent::CreatorStaking(
         Event::StakeWithdrawnFromInactiveCreator {
             who: backer.clone(),
+            creator_id,
             amount: staked_value,
         },
     ));

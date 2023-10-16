@@ -219,7 +219,7 @@ pub mod pallet {
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
         StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
-        StakeWithdrawnFromInactiveCreator { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawnFromInactiveCreator { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         AnnualInflationSet { value: Perbill },
         RewardsCalculated { total_rewards_amount: BalanceOf<T> },
         CreatorRegistered { who: T::AccountId, creator_id: CreatorId },
@@ -563,6 +563,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::StakeWithdrawnFromInactiveCreator {
                 who: backer,
+                creator_id,
                 amount: staked_value,
             });
 
