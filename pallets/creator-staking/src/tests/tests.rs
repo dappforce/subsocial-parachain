@@ -218,7 +218,7 @@ fn new_era_is_ok() {
         let current_era = CreatorStaking::current_era();
         assert_eq!(starting_era + 1, current_era);
         System::assert_last_event(RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
-            number: starting_era + 1,
+            era: starting_era + 1,
         }));
 
         // verify that block reward accumulator is reset to 0
@@ -264,7 +264,7 @@ fn new_era_forcing() {
 
         // check the event for the new era
         System::assert_last_event(RuntimeEvent::CreatorStaking(Event::NewCreatorStakingEra {
-            number: starting_era + 1,
+            era: starting_era + 1,
         }));
     })
 }
@@ -1113,7 +1113,7 @@ fn withdraw_unbonded_is_ok() {
         assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
             backer_account
         ),));
-        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::StakeWithdrawn {
             who: backer_account,
             amount: first_unstake_value,
         }));
@@ -1123,7 +1123,7 @@ fn withdraw_unbonded_is_ok() {
         assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
             backer_account
         ),));
-        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked {
+        System::assert_last_event(RuntimeEvent::CreatorStaking(Event::StakeWithdrawn {
             who: backer_account,
             amount: second_unstake_value,
         }));

@@ -218,14 +218,14 @@ pub mod pallet {
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnUnstaked { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnFromInactiveCreator { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawnFromInactiveCreator { who: T::AccountId, amount: BalanceOf<T> },
         AnnualInflationSet { value: Perbill },
         RewardsCalculated { total_rewards_amount: BalanceOf<T> },
         CreatorRegistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
-        NewCreatorStakingEra { number: EraIndex },
+        NewCreatorStakingEra { era: EraIndex },
         MaintenanceModeSet { enabled: bool },
         RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
     }
@@ -283,6 +283,7 @@ pub mod pallet {
                 NextEraStartingBlock::<T>::put(now + blocks_per_era);
 
                 let reward = BlockRewardAccumulator::<T>::take();
+                // 2 reads and 1 write inside the `reward_balance_snapshot` fn
                 Self::reward_balance_snapshot(previous_era, reward);
                 let consumed_weight = Self::rotate_staking_info(previous_era);
 
@@ -290,10 +291,10 @@ pub mod pallet {
                     ForceEra::<T>::put(Forcing::NotForcing);
                 }
 
-                Self::deposit_event(Event::<T>::NewCreatorStakingEra { number: next_era });
+                Self::deposit_event(Event::<T>::NewCreatorStakingEra { era: next_era });
 
                 let force_new_era_write = if force_new_era { 1 } else { 0 };
-                consumed_weight + T::DbWeight::get().reads_writes(6, 3 + force_new_era_write)
+                consumed_weight + T::DbWeight::get().reads_writes(6, 5 + force_new_era_write)
             } else {
                 T::DbWeight::get().reads(4)
             }
@@ -507,7 +508,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnUnstaked {
+            Self::deposit_event(Event::<T>::StakeWithdrawn {
                 who: backer,
                 amount: withdraw_amount,
             });
@@ -560,7 +561,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnFromInactiveCreator {
+            Self::deposit_event(Event::<T>::StakeWithdrawnFromInactiveCreator {
                 who: backer,
                 amount: staked_value,
             });

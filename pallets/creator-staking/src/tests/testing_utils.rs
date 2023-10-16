@@ -160,7 +160,7 @@ pub(super) fn assert_withdraw_from_inactive_creator(
         creator_id
     ));
     System::assert_last_event(mock::RuntimeEvent::CreatorStaking(
-        Event::WithdrawnFromInactiveCreator {
+        Event::StakeWithdrawnFromInactiveCreator {
             who: backer.clone(),
             amount: staked_value,
         },
@@ -373,7 +373,7 @@ pub(super) fn assert_withdraw_unbonded(backer: AccountId) {
     assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
         backer
     ),));
-    System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked{
+    System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::StakeWithdrawn {
         who: backer.clone(),
         amount: expected_unbond_amount,
     }));
