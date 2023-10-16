@@ -37,10 +37,11 @@ impl<T: Config> Pallet<T> {
         creator_info: &CreatorInfo<T::AccountId>,
         era: EraIndex,
     ) -> DispatchResult {
-        if let CreatorStatus::Inactive(unregistration_era) = creator_info.status {
-            ensure!(era < unregistration_era, Error::<T>::InactiveCreator);
+        match creator_info.status {
+            CreatorStatus::Active => Ok(()),
+            CreatorStatus::Inactive(unregistration_era) if era < unregistration_era => Ok(()),
+            _ => Err(Error::<T>::InactiveCreator.into()),
         }
-        Ok(())
     }
 
     pub(crate) fn do_unregister_creator(
