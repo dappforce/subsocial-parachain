@@ -367,7 +367,7 @@ pub mod pallet {
         pub fn stake(
             origin: OriginFor<T>,
             creator_id: CreatorId,
-            #[pallet::compact] amount: BalanceOf<T>,
+            #[pallet::compact] desired_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
@@ -378,7 +378,7 @@ pub mod pallet {
             // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
             let available_balance = Self::balance_available_for_staking(&backer, &backer_locks);
-            let amount_to_stake = amount.min(available_balance);
+            let amount_to_stake = desired_amount.min(available_balance);
             ensure!(amount_to_stake > Zero::zero(), Error::<T>::CannotStakeZero);
 
             let current_era = Self::current_era();

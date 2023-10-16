@@ -87,7 +87,7 @@ impl<T: Config> Pallet<T> {
     pub(crate) fn stake_to_creator(
         backer_stakes: &mut StakesInfoOf<T>,
         staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
-        desired_amount: BalanceOf<T>,
+        amount: BalanceOf<T>,
         current_era: EraIndex,
     ) -> Result<(), DispatchError> {
         let current_stake = backer_stakes.current_stake();
@@ -103,7 +103,7 @@ impl<T: Config> Pallet<T> {
         }
 
         backer_stakes
-            .increase_stake(current_era, desired_amount)
+            .increase_stake(current_era, amount)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
         Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
@@ -114,7 +114,7 @@ impl<T: Config> Pallet<T> {
         );
 
         // Increment the backer's total deposit for a particular creator.
-        staking_info.total_staked = staking_info.total_staked.saturating_add(desired_amount);
+        staking_info.total_staked = staking_info.total_staked.saturating_add(amount);
 
         Ok(())
     }
