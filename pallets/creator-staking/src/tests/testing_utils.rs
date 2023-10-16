@@ -444,7 +444,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     );
 
     // check for stake event if restaking is performed
-    if CreatorStaking::ensure_should_restake_reward(
+    if CreatorStaking::ensure_can_restake_reward(
         restake,
         init_state_current_era.creator_info.status,
         &mut init_state_current_era.backer_stakes,
@@ -508,7 +508,7 @@ fn assert_restake_reward(
     reward: Balance,
 ) {
     let mut init_backer_stakes = StakesInfo { stakes: init_state_current_era.backer_stakes.stakes.clone() };
-    if CreatorStaking::ensure_should_restake_reward(
+    if CreatorStaking::ensure_can_restake_reward(
         restake,
         init_state_current_era.clone().creator_info.status,
         &mut init_backer_stakes,

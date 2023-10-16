@@ -599,7 +599,8 @@ pub mod pallet {
             let backer_reward =
                 Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
 
-            let should_restake_reward = Self::ensure_should_restake_reward(
+            // FIXME: we mustn't modify `backer_stakes` here!
+            let can_restake_reward = Self::ensure_can_restake_reward(
                 restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
             )?;
 
@@ -613,7 +614,7 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&backer, reward_imbalance);
 
-            if should_restake_reward {
+            if can_restake_reward {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
             }
 

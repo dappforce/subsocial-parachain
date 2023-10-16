@@ -293,7 +293,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub(crate) fn ensure_should_restake_reward(
+    pub(crate) fn ensure_can_restake_reward(
         restake: bool,
         creator_status: CreatorStatus,
         backer_stakes: &mut StakesInfoOf<T>,
@@ -302,11 +302,11 @@ impl<T: Config> Pallet<T> {
     ) -> Result<bool, DispatchError> {
         // Can restake only if the backer is already staking on the active creator
         // and all the other conditions are met:
-        let should_restake_reward = restake
+        let can_restake = restake
             && creator_status == CreatorStatus::Active
             && backer_stakes.current_stake() > Zero::zero();
 
-        return if should_restake_reward {
+        return if can_restake {
             backer_stakes
                 .increase_stake(current_era, backer_reward)
                 .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
