@@ -10,18 +10,31 @@ use jsonrpsee::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-    generic::BlockId,
-    traits::Block as BlockT,
-};
+use sp_runtime::{DispatchResult, generic::BlockId, traits::Block as BlockT};
 
 pub use pallet_posts_rpc_runtime_api::PostsApi as PostsRuntimeApi;
-use subsocial_support::SpaceId;
+use subsocial_support::{Content, PostId, SpaceId};
 
 #[rpc(client, server)]
 pub trait PostsApi<AccountId, BlockHash> {
     #[method(name = "posts_checkAccountCanCreatePost")]
-    fn check_account_can_create_post(&self, account: AccountId, space_id: SpaceId, at: Option<BlockHash>) -> RpcResult<bool>;
+    fn check_account_can_create_post(
+        &self,
+        account: AccountId,
+        space_id: SpaceId,
+        content_opt: Option<Content>,
+        at: Option<BlockHash>,
+    ) -> RpcResult<DispatchResult>;
+
+    #[method(name = "posts_checkAccountCanCreateComment")]
+    fn check_account_can_create_comment(
+        &self,
+        account: AccountId,
+        root_post_id: PostId,
+        parent_id_opt: Option<PostId>,
+        content_opt: Option<Content>,
+        at: Option<BlockHash>,
+    ) -> RpcResult<DispatchResult>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -67,23 +80,42 @@ PostsApiServer<
         &self,
         account: AccountId,
         space_id: SpaceId,
+        content_opt: Option<Content>,
         at: Option<Block::Hash>,
-    ) -> RpcResult<bool> {
+    ) -> RpcResult<DispatchResult> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-        fn map_err(error: impl ToString, desc: &'static str) -> CallError {
-            CallError::Custom(ErrorObject::owned(
-                Error::RuntimeError.into(),
-                desc,
-                Some(error.to_string()),
-            ))
-        }
-
         let res = api
-            .check_account_can_create_post(&at, account, space_id)
-            .map_err(|e| map_err(e, "Unable to calculate price for domain."))?;
+            .check_account_can_create_post(&at, account, space_id, content_opt)
+            .map_err(|e| map_err(e, "Unable to validate post creation."))?;
 
         Ok(res)
     }
+
+    fn check_account_can_create_comment(
+        &self,
+        account: AccountId,
+        root_post_id: PostId,
+        parent_id_opt: Option<PostId>,
+        content_opt: Option<Content>,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<DispatchResult> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .check_account_can_create_comment(&at, account, root_post_id, parent_id_opt, content_opt)
+            .map_err(|e| map_err(e, "Unable to validate comment creation."))?;
+
+        Ok(res)
+    }
+}
+
+fn map_err(error: impl ToString, desc: &'static str) -> CallError {
+    CallError::Custom(ErrorObject::owned(
+        Error::RuntimeError.into(),
+        desc,
+        Some(error.to_string()),
+    ))
 }

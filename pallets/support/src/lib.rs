@@ -5,12 +5,13 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 // TODO Try to reuse these utility functions via crate in the future,
-// when solochain and parachain will use the same substrate version.
+//  when solochain and parachain will use the same substrate version.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use serde::{Serialize, Deserialize};
 
 use frame_support::pallet_prelude::*;
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
@@ -47,6 +48,7 @@ where
 }
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Content {
     /// No content.
     None,
