@@ -96,10 +96,7 @@ pub mod pallet {
                 ModerationError::AccountIsBlocked
             );
 
-            ensure!(
-                !T::CreatorStakingProvider::is_creator_active(space_id),
-                Error::<T>::ActiveCreatorCannotTransferOwnership,
-            );
+            Self::ensure_not_active_creator(space_id)?;
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
@@ -124,10 +121,7 @@ pub mod pallet {
 
             ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
 
-            ensure!(
-                !T::CreatorStakingProvider::is_creator_active(space_id),
-                Error::<T>::ActiveCreatorCannotTransferOwnership,
-            );
+            Self::ensure_not_active_creator(space_id)?;
 
             Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
 
@@ -176,6 +170,16 @@ pub mod pallet {
             PendingSpaceOwner::<T>::remove(space_id);
 
             Self::deposit_event(Event::SpaceOwnershipTransferRejected { account: who, space_id });
+            Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        fn ensure_not_active_creator(creator_id: SpaceId) -> DispatchResult {
+            ensure!(
+                !T::CreatorStakingProvider::is_creator_active(creator_id),
+                Error::<T>::ActiveCreatorCannotTransferOwnership,
+            );
             Ok(())
         }
     }

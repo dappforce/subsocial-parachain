@@ -42,6 +42,6 @@ impl<AccountId> CreatorStakingProvider<AccountId> for () {
     fn is_creator_active(
         _creator_id: SpaceId,
     ) -> bool {
-        true
+        false
     }
 }
