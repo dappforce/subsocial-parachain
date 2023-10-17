@@ -479,9 +479,9 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-// TODO: In future we might want to add less restrictions, e.g. allow transfer only for space owner
-/// Implementation of `OwnershipTransferValidator` for `creator-staking` pallet.
-/// This will be used in space-ownership pallet to forbid ownership transfer for spaces, which
+/// Implementation of `CreatorStakingProvider` for `creator-staking` pallet.
+///
+/// This is used in space-ownership pallet to forbid ownership transfer for spaces, which
 /// are registered as creators.
 impl<T: Config> CreatorStakingProvider<T::AccountId> for Pallet<T> {
     fn is_creator_active(
