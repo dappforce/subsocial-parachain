@@ -21,7 +21,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
-    use subsocial_support::traits::{OwnershipTransferValidator, ProfileManager};
+    use subsocial_support::traits::{CreatorStakingProvider, ProfileManager};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
@@ -29,7 +29,7 @@ pub mod pallet {
 
         type ProfileManager: ProfileManager<Self::AccountId>;
 
-        type OwnershipTransferValidator: OwnershipTransferValidator<Self::AccountId>;
+        type CreatorStakingProvider: CreatorStakingProvider<Self::AccountId>;
 
         type WeightInfo: WeightInfo;
     }
@@ -44,8 +44,8 @@ pub mod pallet {
         CannotTransferToCurrentOwner,
         /// Account is already an owner of a space.
         AlreadyASpaceOwner,
-        /// Account cannot transfer space ownership because of external reasons.
-        CannotTransferSpaceOwnership,
+        /// Cannot transfer ownership, because a space is registered as an active creator.
+        ActiveCreatorCannotTransferOwnership,
         /// There is no pending ownership transfer for a given space.
         NoPendingTransferOnSpace,
         /// Account is not allowed to accept ownership transfer.
@@ -96,11 +96,10 @@ pub mod pallet {
                 ModerationError::AccountIsBlocked
             );
 
-            T::OwnershipTransferValidator::ensure_can_transfer_ownership(
-                &who,
-                &transfer_to,
-                space_id,
-            ).map_err(|_| Error::<T>::CannotTransferSpaceOwnership)?;
+            ensure!(
+                !T::CreatorStakingProvider::is_creator_active(space_id),
+                Error::<T>::ActiveCreatorCannotTransferOwnership,
+            );
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
@@ -125,11 +124,10 @@ pub mod pallet {
 
             ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
 
-            T::OwnershipTransferValidator::ensure_can_transfer_ownership(
-                &space.owner,
-                &transfer_to,
-                space_id,
-            ).map_err(|_| Error::<T>::NotAllowedToAcceptOwnershipTransfer)?;
+            ensure!(
+                !T::CreatorStakingProvider::is_creator_active(space_id),
+                Error::<T>::ActiveCreatorCannotTransferOwnership,
+            );
 
             Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
 

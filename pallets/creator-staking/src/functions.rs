@@ -2,8 +2,7 @@ use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
 use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-use subsocial_support::SpaceId;
-use subsocial_support::traits::{OwnershipTransferValidator, SpacePermissionsProvider};
+use subsocial_support::traits::{CreatorStakingProvider, SpacePermissionsProvider};
 
 impl<T: Config> Pallet<T> {
     /// `Err` if pallet disabled for maintenance, `Ok` otherwise
@@ -484,16 +483,10 @@ impl<T: Config> Pallet<T> {
 /// Implementation of `OwnershipTransferValidator` for `creator-staking` pallet.
 /// This will be used in space-ownership pallet to forbid ownership transfer for spaces, which
 /// are registered as creators.
-impl<T: Config> OwnershipTransferValidator<T::AccountId> for Pallet<T> {
-    fn ensure_can_transfer_ownership(
-        _current_owner: &T::AccountId, 
-        _new_owner: &T::AccountId, 
-        space_id: SpaceId,
-    ) -> Result<(), &'static str> {
-        match Self::require_creator(space_id) {
-            Ok(_) if Self::is_creator_active(space_id) =>
-                Err("Cannot transfer space ownership of an active creator"),
-            _ => Ok(())
-        }
+impl<T: Config> CreatorStakingProvider<T::AccountId> for Pallet<T> {
+    fn is_creator_active(
+        creator_id: CreatorId,
+    ) -> bool {
+        Self::is_creator_active(creator_id)
     }
 }
