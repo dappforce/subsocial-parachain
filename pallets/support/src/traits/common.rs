@@ -31,3 +31,17 @@ pub trait SpacesInterface<AccountId, SpaceId> {
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
+
+pub trait CreatorStakingProvider<AccountId> {
+    fn is_creator_active(
+        creator_id: SpaceId,
+    ) -> bool;
+}
+
+impl<AccountId> CreatorStakingProvider<AccountId> for () {
+    fn is_creator_active(
+        _creator_id: SpaceId,
+    ) -> bool {
+        false
+    }
+}

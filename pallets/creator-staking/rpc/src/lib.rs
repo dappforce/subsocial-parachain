@@ -1,6 +1,6 @@
 //! RPC interface for the creator-staking pallet.
 
-use std::{convert::TryInto, fmt::Display, sync::Arc};
+use std::{convert::TryInto, fmt::Display, sync::Arc, vec::Vec};
 
 use codec::Codec;
 use jsonrpsee::{
@@ -15,34 +15,47 @@ use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, MaybeDisplay},
 };
-use sp_std::vec::Vec;
 
-use subsocial_support::SpaceId;
+use pallet_creator_staking::{CreatorId, EraIndex};
 pub use pallet_creator_staking_rpc_runtime_api::CreatorStakingApi as CreatorStakingRuntimeApi;
 
 #[rpc(client, server)]
 pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
-    #[method(name = "creatorStaking_estimatedStakerRewardsByCreator")]
-    fn estimated_staker_rewards_by_creators(
+    #[method(name = "creatorStaking_estimatedBackerRewardsByCreator")]
+    fn estimated_backer_rewards_by_creators(
         &self,
-        staker: AccountId,
-        creators: Vec<SpaceId>,
+        backer: AccountId,
+        creators: Vec<CreatorId>,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
+    ) -> RpcResult<Vec<(CreatorId, GenericResponseType)>>;
 
     #[method(name = "creatorStaking_withdrawableAmountsFromInactiveCreators")]
     fn withdrawable_amounts_from_inactive_creators(
         &self,
-        staker: AccountId,
+        backer: AccountId,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, GenericResponseType)>>;
+    ) -> RpcResult<Vec<(CreatorId, GenericResponseType)>>;
 
-    #[method(name = "creatorStaking_availableClaimsByStaker")]
-    fn available_claims_by_staker(
+    #[method(name = "creatorStaking_availableClaimsByBacker")]
+    fn available_claims_by_backer(
         &self,
-        staker: AccountId,
+        backer: AccountId,
         at: Option<BlockHash>,
-    ) -> RpcResult<Vec<(SpaceId, u32)>>;
+    ) -> RpcResult<Vec<(CreatorId, u32)>>;
+
+    #[method(name = "creatorStaking_estimatedCreatorRewards")]
+    fn estimated_creator_rewards(
+        &self,
+        creator: CreatorId,
+        at: Option<BlockHash>,
+    ) -> RpcResult<GenericResponseType>;
+
+    #[method(name = "creatorStaking_availableClaimsByCreator")]
+    fn available_claims_by_creator(
+        &self,
+        creator: CreatorId,
+        at: Option<BlockHash>,
+    ) -> RpcResult<Vec<EraIndex>>;
 }
 
 /// Provides RPC method to query a domain price.
@@ -86,17 +99,17 @@ CreatorStakingApiServer<
         AccountId: Clone + Display + Codec + Send + 'static,
         Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static,
 {
-    fn estimated_staker_rewards_by_creators(
+    fn estimated_backer_rewards_by_creators(
         &self,
-        staker: AccountId,
-        creators: Vec<SpaceId>,
+        backer: AccountId,
+        creators: Vec<CreatorId>,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, Balance)>> {
+    ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
         let res = api
-            .estimated_staker_rewards_by_creators(&at, staker, creators)
+            .estimated_backer_rewards_by_creators(&at, backer, creators)
             .map_err(|e| map_err(e, "Unable to get estimated rewards by creator."))?;
 
         Ok(res)
@@ -104,30 +117,60 @@ CreatorStakingApiServer<
 
     fn withdrawable_amounts_from_inactive_creators(
         &self,
-        staker: AccountId,
+        backer: AccountId,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, Balance)>> {
+    ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
         let res = api
-            .withdrawable_amounts_from_inactive_creators(&at, staker)
+            .withdrawable_amounts_from_inactive_creators(&at, backer)
             .map_err(|e| map_err(e, "Unable to get withdrawable amounts from inactive creators."))?;
 
         Ok(res)
     }
 
-    fn available_claims_by_staker(
+    fn available_claims_by_backer(
         &self,
-        staker: AccountId,
+        backer: AccountId,
         at: Option<Block::Hash>,
-    ) -> RpcResult<Vec<(SpaceId, u32)>> {
+    ) -> RpcResult<Vec<(CreatorId, u32)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
         let res = api
-            .available_claims_by_staker(&at, staker)
-            .map_err(|e| map_err(e, "Unable to get claims number by staker."))?;
+            .available_claims_by_backer(&at, backer)
+            .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
+
+        Ok(res)
+    }
+
+    fn estimated_creator_rewards(
+        &self,
+        creator: CreatorId,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<Balance> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .estimated_creator_rewards(&at, creator)
+            .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
+
+        Ok(res)
+    }
+
+    fn available_claims_by_creator(
+        &self,
+        creator: CreatorId,
+        at: Option<Block::Hash>,
+    ) -> RpcResult<Vec<EraIndex>> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let res = api
+            .available_claims_by_creator(&at, creator)
+            .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
 
         Ok(res)
     }
