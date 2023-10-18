@@ -33,12 +33,12 @@ impl<T: Config> Pallet<T> {
         // Prepare imbalances
         let (creators_imbalance, remainder) = block_reward.split(creators_balance);
         let (backers_imbalance, remainder) = remainder.split(backers_balance);
-        let (fixed_treasury_imbalance, treasury_imbalance) = remainder.split(treasury_balance);
+        let (treasury_imbalance, leftover_imbalance) = remainder.split(treasury_balance);
 
         // Payout beneficiaries
         Self::add_to_reward_pool(backers_imbalance, creators_imbalance);
 
-        T::Currency::resolve_creating(&T::TreasuryAccount::get(), fixed_treasury_imbalance.merge(treasury_imbalance));
+        T::Currency::resolve_creating(&T::TreasuryAccount::get(), treasury_imbalance.merge(leftover_imbalance));
     }
 
     pub fn add_to_reward_pool(backers: NegativeImbalanceOf<T>, creators: NegativeImbalanceOf<T>) {
