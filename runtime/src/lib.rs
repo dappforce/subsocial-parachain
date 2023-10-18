@@ -39,8 +39,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
+use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
-use subsocial_support::SpaceId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -707,6 +707,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type CreatorStakingProvider = CreatorStaking;
 	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
@@ -755,11 +756,11 @@ impl pallet_creator_staking::Config for Runtime {
 	type CreatorRegistrationDeposit = RegistrationDeposit;
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
-	type MaxNumberOfStakersPerCreator = ConstU32<100>;
+	type MaxNumberOfBackersPerCreator = ConstU32<100>;
 	type MaxEraStakeItems = ConstU32<5>;
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
-	type MaxUnlockingChunks = ConstU32<32>;
+	type MaxUnbondingChunks = ConstU32<32>;
 	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
@@ -979,23 +980,35 @@ impl_runtime_apis! {
 	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
 		for Runtime
 	{
-		fn estimated_staker_rewards_by_creators(
-			staker: AccountId,
-			creators: Vec<SpaceId>,
-		) -> Vec<(SpaceId, Balance)> {
-			CreatorStaking::estimated_staker_rewards_by_creators(staker, creators)
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
+			creators: Vec<CreatorId>,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
 		}
 
 		fn withdrawable_amounts_from_inactive_creators(
-			staker: AccountId,
-		) -> Vec<(SpaceId, Balance)> {
-			CreatorStaking::withdrawable_amounts_from_inactive_creators(staker)
+			backer: AccountId,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
 		}
 
-		fn available_claims_by_staker(
-			staker: AccountId,
-		) -> Vec<(SpaceId, u32)> {
-			CreatorStaking::available_claims_by_staker(staker)
+		fn available_claims_by_backer(
+			backer: AccountId,
+		) -> Vec<(CreatorId, u32)> {
+			CreatorStaking::available_claims_by_backer(backer)
+		}
+
+		fn estimated_creator_rewards(
+			creator: CreatorId,
+		) -> Balance {
+			CreatorStaking::estimated_creator_rewards(creator)
+		}
+
+		fn available_claims_by_creator(
+			creator: CreatorId,
+		) -> Vec<EraIndex> {
+			CreatorStaking::available_claims_by_creator(creator)
 		}
 	}
 
