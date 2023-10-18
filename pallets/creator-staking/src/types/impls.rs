@@ -184,8 +184,8 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
         if let Some(oldest_era_stake) = self.stakes.first() {
             let oldest_era_stake = *oldest_era_stake;
 
+            // If the next record is not the next era, we need to move the stake to the next era:
             if self.stakes.len() == 1 || oldest_era_stake.era + 2 <= self.stakes[1].era {
-                // If there is a record from the next era and its stake has been changed:
                 self.stakes[0] =
                     EraStake { staked: oldest_era_stake.staked, era: oldest_era_stake.era.saturating_add(1) }
             } else {

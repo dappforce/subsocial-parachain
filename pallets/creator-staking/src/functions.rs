@@ -452,7 +452,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn available_claims_by_backer(backer: T::AccountId) -> Vec<(CreatorId, u32)> {
-        let mut available_claims_by_creator = BTreeMap::new();
+        let mut available_backer_claims_by_creator = BTreeMap::new();
 
         let current_era = Self::current_era();
 
@@ -469,11 +469,12 @@ impl<T: Config> Pallet<T> {
                     break;
                 }
 
-                available_claims_by_creator.entry(creator).and_modify(|e| *e += 1).or_insert(1);
+                available_backer_claims_by_creator.entry(creator)
+                    .and_modify(|e| *e += 1).or_insert(1);
             }
         }
 
-        available_claims_by_creator.into_iter().collect()
+        available_backer_claims_by_creator.into_iter().collect()
     }
 
     pub fn estimated_creator_rewards(creator_id: CreatorId) -> BalanceOf<T> {
