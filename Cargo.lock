@@ -5436,7 +5436,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

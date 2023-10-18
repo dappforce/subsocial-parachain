@@ -58,7 +58,7 @@ pub trait CreatorStakingApi<BlockHash, AccountId, GenericResponseType> {
     ) -> RpcResult<Vec<EraIndex>>;
 }
 
-/// Provides RPC method to query a domain price.
+/// Provides RPC methods for creator staking pallet.
 pub struct CreatorStaking<C, P> {
     /// Shared reference to the client.
     client: Arc<C>,

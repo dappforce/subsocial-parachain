@@ -422,10 +422,14 @@ impl<T: Config> Pallet<T> {
                 if era >= unregistration_era || era == 0 {
                     break;
                 }
-                let creator_stake_info = Self::creator_stake_info(creator_id, era).unwrap_or_default();
+
+                let backer_era_reward = |creator_stake_info| {
+                    Self::calculate_reward_for_backer_in_era(&creator_stake_info, staked, era)
+                };
+                let creator_stake_info = Self::creator_stake_info(creator_id, era);
 
                 total_backer_rewards_for_eras = total_backer_rewards_for_eras.saturating_add(
-                    Self::calculate_reward_for_backer_in_era(&creator_stake_info, staked, era)
+                    creator_stake_info.map_or(Zero::zero(), backer_era_reward)
                 );
             }
 
@@ -470,7 +474,7 @@ impl<T: Config> Pallet<T> {
                 }
 
                 available_backer_claims_by_creator.entry(creator)
-                    .and_modify(|e| *e += 1).or_insert(1);
+                    .and_modify(|count| *count += 1).or_insert(1);
             }
         }
 
