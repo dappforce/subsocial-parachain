@@ -39,8 +39,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
+use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
-use subsocial_support::SpaceId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -982,21 +982,33 @@ impl_runtime_apis! {
 	{
 		fn estimated_backer_rewards_by_creators(
 			backer: AccountId,
-			creators: Vec<SpaceId>,
-		) -> Vec<(SpaceId, Balance)> {
+			creators: Vec<CreatorId>,
+		) -> Vec<(CreatorId, Balance)> {
 			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
 		}
 
 		fn withdrawable_amounts_from_inactive_creators(
 			backer: AccountId,
-		) -> Vec<(SpaceId, Balance)> {
+		) -> Vec<(CreatorId, Balance)> {
 			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
 		}
 
 		fn available_claims_by_backer(
 			backer: AccountId,
-		) -> Vec<(SpaceId, u32)> {
+		) -> Vec<(CreatorId, u32)> {
 			CreatorStaking::available_claims_by_backer(backer)
+		}
+
+		fn estimated_creator_rewards(
+			creator: CreatorId,
+		) -> Balance {
+			CreatorStaking::estimated_creator_rewards(creator)
+		}
+
+		fn available_claims_by_creator(
+			creator: CreatorId,
+		) -> Vec<EraIndex> {
+			CreatorStaking::available_claims_by_creator(creator)
 		}
 	}
 

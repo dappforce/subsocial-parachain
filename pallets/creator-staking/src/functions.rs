@@ -451,10 +451,8 @@ impl<T: Config> Pallet<T> {
         withdrawable_amounts_by_creator
     }
 
-    pub fn available_claims_by_backer(
-        backer: T::AccountId,
-    ) -> Vec<(CreatorId, u32)> {
-        let mut available_claims_by_creator = BTreeMap::new();
+    pub fn available_claims_by_backer(backer: T::AccountId) -> Vec<(CreatorId, u32)> {
+        let mut available_backer_claims_by_creator = BTreeMap::new();
 
         let current_era = Self::current_era();
 
@@ -471,11 +469,43 @@ impl<T: Config> Pallet<T> {
                     break;
                 }
 
-                available_claims_by_creator.entry(creator).and_modify(|e| *e += 1).or_insert(1);
+                available_backer_claims_by_creator.entry(creator)
+                    .and_modify(|e| *e += 1).or_insert(1);
             }
         }
 
-        available_claims_by_creator.into_iter().collect()
+        available_backer_claims_by_creator.into_iter().collect()
+    }
+
+    pub fn estimated_creator_rewards(creator_id: CreatorId) -> BalanceOf<T> {
+        let mut estimated_rewards: BalanceOf<T> = Zero::zero();
+
+        for (era, stake_info) in CreatorStakeInfoByEra::<T>::iter_prefix(creator_id) {
+            if !stake_info.rewards_claimed {
+                if let Some(era_info) = Self::general_era_info(era) {
+                    let (creator_reward_share, _) =
+                        Self::distributed_rewards_between_creator_and_backers(&stake_info, &era_info);
+                    estimated_rewards = estimated_rewards
+                        .saturating_add(creator_reward_share);
+                }
+            }
+        }
+
+        estimated_rewards
+    }
+
+    pub fn available_claims_by_creator(creator_id: CreatorId) -> Vec<EraIndex> {
+        let mut available_claims: Vec<EraIndex> = Vec::new();
+
+        let current_era = Self::current_era();
+        for (era, stake_info) in CreatorStakeInfoByEra::<T>::iter_prefix(creator_id) {
+            if !stake_info.rewards_claimed && era < current_era {
+                available_claims.push(era);
+            }
+        }
+
+        available_claims.sort();
+        available_claims
     }
 }
 

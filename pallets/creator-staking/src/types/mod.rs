@@ -87,7 +87,7 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
     pub(crate) staked: Balance,
     /// Staked era
     #[codec(compact)]
-    era: EraIndex,
+    pub(super) era: EraIndex,
 }
 
 /// Used to provide a compact and bounded storage for information about stakes in unclaimed eras.
