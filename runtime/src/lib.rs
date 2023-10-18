@@ -707,6 +707,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type CreatorStakingProvider = CreatorStaking;
 	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
@@ -759,7 +760,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type MaxEraStakeItems = ConstU32<5>;
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
-	type MaxUnlockingChunks = ConstU32<32>;
+	type MaxUnbondingChunks = ConstU32<32>;
 	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;

@@ -5,11 +5,8 @@ pub use pallet::*;
 pub mod types;
 pub mod functions;
 pub mod inflation;
-// #[cfg(test)]
-// mod mock;
-
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -103,10 +100,10 @@ pub mod pallet {
         #[pallet::constant]
         type UnbondingPeriodInEras: Get<u32>;
 
-        /// The max number of unlocking chunks per `(backer, creator)` pair.
-        /// If value is zero, unlocking becomes impossible.
+        /// The max number of unbonding chunks per `(backer, creator)` pair.
+        /// If value is zero, unbonding becomes impossible.
         #[pallet::constant]
-        type MaxUnlockingChunks: Get<u32>;
+        type MaxUnbondingChunks: Get<u32>;
 
         #[pallet::constant]
         type AnnualInflation: Get<Perbill>;
@@ -175,8 +172,8 @@ pub mod pallet {
 
     /// Info about backers stakes on particular creator.
     #[pallet::storage]
-    #[pallet::getter(fn backer_info)]
-    pub type GeneralBackerInfo<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn backer_stakes)]
+    pub type BackerStakesByCreator<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         T::AccountId,
@@ -204,15 +201,15 @@ pub mod pallet {
     pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
 
     #[pallet::type_value]
-    pub fn RewardConfigOnEmpty() -> RewardsDistributionConfig {
-        RewardsDistributionConfig::default()
+    pub fn RewardConfigOnEmpty() -> RewardDistributionConfig {
+        RewardDistributionConfig::default()
     }
 
     /// An active list of the configuration parameters used to calculate the reward distribution.
     #[pallet::storage]
     #[pallet::getter(fn reward_config)]
     pub type ActiveRewardDistributionConfig<T> =
-        StorageValue<_, RewardsDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
+        StorageValue<_, RewardDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -221,15 +218,16 @@ pub mod pallet {
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnUnstaked { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnFromInactiveCreator { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawnFromInactiveCreator { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         AnnualInflationSet { value: Perbill },
         RewardsCalculated { total_rewards_amount: BalanceOf<T> },
         CreatorRegistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
-        NewCreatorStakingEra { number: EraIndex },
+        NewCreatorStakingEra { era: EraIndex },
         MaintenanceModeSet { enabled: bool },
+        RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
     }
 
     #[pallet::error]
@@ -246,15 +244,15 @@ pub mod pallet {
         TooManyEraStakeValues,
         InsufficientStakingAmount,
         NotStakedCreator,
-        TooManyUnlockingChunks,
+        TooManyUnbondingChunks,
         NothingToWithdraw,
-        NotUnregisteredCreator,
+        CreatorIsActive,
         UnclaimedRewardsRemaining,
         CannotClaimInFutureEra,
         EraNotFound,
         AlreadyClaimedInThisEra,
         MaintenanceModeNotChanged,
-        RewardDistributionConfigInconsistent,
+        InvalidSumOfRewardDistributionConfig,
         StakeHasExpired,
     }
 
@@ -285,6 +283,7 @@ pub mod pallet {
                 NextEraStartingBlock::<T>::put(now + blocks_per_era);
 
                 let reward = BlockRewardAccumulator::<T>::take();
+                // 2 reads and 1 write inside the `reward_balance_snapshot` fn
                 Self::reward_balance_snapshot(previous_era, reward);
                 let consumed_weight = Self::rotate_staking_info(previous_era);
 
@@ -292,10 +291,10 @@ pub mod pallet {
                     ForceEra::<T>::put(Forcing::NotForcing);
                 }
 
-                Self::deposit_event(Event::<T>::NewCreatorStakingEra { number: next_era });
+                Self::deposit_event(Event::<T>::NewCreatorStakingEra { era: next_era });
 
                 let force_new_era_write = if force_new_era { 1 } else { 0 };
-                consumed_weight + T::DbWeight::get().reads_writes(6, 3 + force_new_era_write)
+                consumed_weight + T::DbWeight::get().reads_writes(6, 5 + force_new_era_write)
             } else {
                 T::DbWeight::get().reads(4)
             }
@@ -368,7 +367,7 @@ pub mod pallet {
         pub fn stake(
             origin: OriginFor<T>,
             creator_id: CreatorId,
-            #[pallet::compact] amount: BalanceOf<T>,
+            #[pallet::compact] desired_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
@@ -379,16 +378,16 @@ pub mod pallet {
             // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
             let available_balance = Self::balance_available_for_staking(&backer, &backer_locks);
-            let amount_to_stake = amount.min(available_balance);
+            let amount_to_stake = desired_amount.min(available_balance);
             ensure!(amount_to_stake > Zero::zero(), Error::<T>::CannotStakeZero);
 
             let current_era = Self::current_era();
-            let mut backer_info = Self::backer_info(&backer, creator_id);
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
             let mut staking_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
-                &mut backer_info,
+                &mut backer_stakes,
                 &mut staking_info,
                 amount_to_stake,
                 current_era,
@@ -405,7 +404,7 @@ pub mod pallet {
             });
 
             Self::update_backer_locks(&backer, backer_locks);
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, staking_info);
 
             Self::deposit_event(Event::<T>::Staked {
@@ -449,24 +448,19 @@ pub mod pallet {
             ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
 
             let current_era = Self::current_era();
-            let mut backer_info = Self::backer_info(&backer, creator_id);
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
             let mut stake_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_final_unstaking_amount(&mut backer_info, &mut stake_info, amount, current_era)?;
+                Self::calculate_final_unstaking_amount(&mut backer_stakes, &mut stake_info, amount, current_era)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
-            backer_locks.unbonding_info.add(UnlockingChunk {
+            backer_locks.unbonding_info.add(UnbondingChunk {
                 amount: amount_to_unstake,
                 unlock_era: current_era + T::UnbondingPeriodInEras::get(),
-            });
-            // This should be done AFTER insertion since it's possible for chunks to merge
-            ensure!(
-                backer_locks.unbonding_info.len() <= T::MaxUnlockingChunks::get(),
-                Error::<T>::TooManyUnlockingChunks
-            );
+            }).map_err(|_| Error::<T>::TooManyUnbondingChunks)?;
 
             Self::update_backer_locks(&backer, backer_locks);
 
@@ -476,7 +470,7 @@ pub mod pallet {
                     x.staked = x.staked.saturating_sub(amount_to_unstake)
                 }
             });
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
             CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
@@ -514,7 +508,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnUnstaked {
+            Self::deposit_event(Event::<T>::StakeWithdrawn {
                 who: backer,
                 amount: withdraw_amount,
             });
@@ -524,7 +518,7 @@ pub mod pallet {
 
         #[pallet::call_index(6)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
-        pub fn withdraw_from_unregistered(
+        pub fn withdraw_from_inactive_creator(
             origin: OriginFor<T>,
             creator_id: CreatorId,
         ) -> DispatchResultWithPostInfo {
@@ -534,21 +528,21 @@ pub mod pallet {
             // Creator must exist and be unregistered
             let creator_info = Self::require_creator(creator_id)?;
 
-            let unregistered_era = if let CreatorStatus::Inactive(x) = creator_info.status {
+            let unregistration_era = if let CreatorStatus::Inactive(x) = creator_info.status {
                 x
             } else {
-                return Err(Error::<T>::NotUnregisteredCreator.into());
+                return Err(Error::<T>::CreatorIsActive.into());
             };
 
             // There should be some leftover staked amount
-            let mut backer_info = Self::backer_info(&backer, creator_id);
-            let staked_value = backer_info.current_stake();
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
+            let staked_value = backer_stakes.current_stake();
             ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
             // Don't allow withdrawal until all rewards have been claimed.
-            let (claimable_era, _) = backer_info.claim();
+            let (claimable_era, _) = backer_stakes.claim();
             ensure!(
-                claimable_era >= unregistered_era || claimable_era.is_zero(),
+                claimable_era >= unregistration_era || claimable_era.is_zero(),
                 Error::<T>::UnclaimedRewardsRemaining
             );
 
@@ -557,7 +551,7 @@ pub mod pallet {
             backer_locks.total_locked = backer_locks.total_locked.saturating_sub(staked_value);
             Self::update_backer_locks(&backer, backer_locks);
 
-            Self::update_backer_info(&backer, creator_id, Default::default());
+            Self::update_backer_stakes(&backer, creator_id, Default::default());
 
             let current_era = Self::current_era();
             GeneralEraInfo::<T>::mutate(current_era, |value| {
@@ -567,8 +561,9 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnFromInactiveCreator {
+            Self::deposit_event(Event::<T>::StakeWithdrawnFromInactiveCreator {
                 who: backer,
+                creator_id,
                 amount: staked_value,
             });
 
@@ -586,8 +581,8 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             // Ensure we have something to claim
-            let mut backer_info = Self::backer_info(&backer, creator_id);
-            let (era_to_claim, backer_staked) = backer_info.claim();
+            let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
+            let (era_to_claim, backer_staked) = backer_stakes.claim();
             ensure!(backer_staked > Zero::zero(), Error::<T>::NotStakedCreator);
 
             let creator_info = Self::require_creator(creator_id)?;
@@ -604,10 +599,11 @@ pub mod pallet {
             let (_, combined_backers_reward_share) =
                 Self::distributed_rewards_between_creator_and_backers(&staking_info, &reward_and_stake);
             let backer_reward =
-                Perbill::from_rational(backer_staked, staking_info.total) * combined_backers_reward_share;
+                Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
 
-            let should_restake_reward = Self::ensure_should_restake_reward(
-                restake, creator_info.status, &mut backer_info, current_era, backer_reward
+            // FIXME: we mustn't modify `backer_stakes` here!
+            let can_restake_reward = Self::ensure_can_restake_reward(
+                restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
             )?;
 
             // Withdraw reward funds from the rewards holding account
@@ -620,11 +616,11 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&backer, reward_imbalance);
 
-            if should_restake_reward {
+            if can_restake_reward {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
             }
 
-            Self::update_backer_info(&backer, creator_id, backer_info);
+            Self::update_backer_stakes(&backer, creator_id, backer_stakes);
 
             Self::deposit_event(Event::<T>::BackerRewardsClaimed {
                 who: backer,
@@ -663,7 +659,7 @@ pub mod pallet {
             );
 
             ensure!(
-                creator_stake_info.total > Zero::zero(),
+                creator_stake_info.total_staked > Zero::zero(),
                 Error::<T>::NotStakedCreator,
             );
 
@@ -732,13 +728,15 @@ pub mod pallet {
         #[pallet::weight(Weight::from_ref_time(10_000))]
         pub fn set_reward_distribution_config(
             origin: OriginFor<T>,
-            new_config: RewardsDistributionConfig,
+            new_config: RewardDistributionConfig,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
 
-            ensure!(new_config.is_consistent(), Error::<T>::RewardDistributionConfigInconsistent);
-            ActiveRewardDistributionConfig::<T>::put(new_config);
+            ensure!(new_config.is_sum_equal_to_one(), Error::<T>::InvalidSumOfRewardDistributionConfig);
+            ActiveRewardDistributionConfig::<T>::put(new_config.clone());
+
+            Self::deposit_event(Event::<T>::RewardDistributionConfigChanged { new_config });
 
             Ok(())
         }

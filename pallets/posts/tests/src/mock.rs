@@ -147,5 +147,6 @@ impl pallet_space_follows::Config for Test {
 impl pallet_space_ownership::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type CreatorStakingProvider = ();
     type WeightInfo = ();
 }

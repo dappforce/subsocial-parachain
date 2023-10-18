@@ -5441,6 +5441,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "lazy_static",
+ "mockall",
  "num-traits",
  "pallet-balances",
  "pallet-permissions",

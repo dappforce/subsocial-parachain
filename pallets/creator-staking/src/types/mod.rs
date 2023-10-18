@@ -20,20 +20,20 @@ pub type EraIndex = u32;
 pub type CreatorId = SpaceId;
 
 /// Convenience type for `BackerLocks` usage.
-pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnlockingChunks>;
+pub(crate) type BackerLocksOf<T> = BackerLocks<BalanceOf<T>, <T as Config>::MaxUnbondingChunks>;
 
 /// Convenience type fo `StakesInfo` usage.
 pub(crate) type StakesInfoOf<T> = StakesInfo<BalanceOf<T>, <T as Config>::MaxEraStakeItems>;
 
 /// This enum is used to determine who is calling the `unregister_creator` function.
-pub(super) enum UnregistrationAuthority<AccountId> {
+pub(crate) enum UnregistrationAuthority<AccountId> {
     Root,
     Creator(AccountId),
 }
 
 /// `CreatorStatus` is an enumeration that represents the current status of a creator in the system.
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub(super) enum CreatorStatus {
+pub(crate) enum CreatorStatus {
     /// Creator is registered and active.
     Active,
     /// Creator has been unregistered and is inactive.
@@ -44,9 +44,9 @@ pub(super) enum CreatorStatus {
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct CreatorInfo<AccountId> {
     /// Space owner account
-    pub(super) stakeholder: AccountId,
+    pub(crate) stakeholder: AccountId,
     /// Current Creator State
-    pub(super) status: CreatorStatus,
+    pub(crate) status: CreatorStatus,
 }
 
 /// Used to split total EraPayout among creators.
@@ -56,26 +56,26 @@ pub struct CreatorInfo<AccountId> {
 pub struct CreatorStakeInfo<Balance: HasCompact + MaxEncodedLen> {
     /// Total amount staked on a creator.
     #[codec(compact)]
-    pub total: Balance,
+    pub total_staked: Balance,
     /// Total number of active backers staking towards a creator.
     #[codec(compact)]
-    pub(super) backers_count: u32,
+    pub(crate) backers_count: u32,
     /// Indicates whether rewards were claimed for this era or not
-    pub(super) rewards_claimed: bool,
+    pub(crate) rewards_claimed: bool,
 }
 
 /// Contains information about an account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxUnlockingChunks))]
+#[scale_info(skip_type_params(MaxUnbondingChunks))]
 pub struct BackerLocks<
     Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen + Debug,
-    MaxUnlockingChunks: Get<u32>,
+    MaxUnbondingChunks: Get<u32>,
 > {
     /// Total balance locked.
     #[codec(compact)]
     pub total_locked: Balance,
     /// Information about unbonding chunks.
-    pub(super) unbonding_info: UnbondingInfo<Balance, MaxUnlockingChunks>,
+    pub(crate) unbonding_info: UnbondingInfo<Balance, MaxUnbondingChunks>,
 }
 
 /// Used to represent how many total tokens were staked on the chain in a particular era.
@@ -84,7 +84,7 @@ pub struct BackerLocks<
 pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
     /// Staked amount in era
     #[codec(compact)]
-    pub(super) staked: Balance,
+    pub(crate) staked: Balance,
     /// Staked era
     #[codec(compact)]
     pub(super) era: EraIndex,
@@ -119,12 +119,12 @@ pub struct EraStake<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> {
 /// **NOTE:** It is important to understand that backer **DID NOT** claim any rewards during this
 /// period.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxEraStakeValues))]
+#[scale_info(skip_type_params(MaxEraStakeItems))]
 pub struct StakesInfo<
     Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
-    MaxEraStakeValues: Get<u32>,
+    MaxEraStakeItems: Get<u32>,
 > {
-    pub(super) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeValues>,
+    pub(crate) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeItems>,
 }
 
 /// Represents a balance amount that is currently unbonding.
@@ -132,26 +132,26 @@ pub struct StakesInfo<
 #[derive(
 Clone, Copy, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
-pub struct UnlockingChunk<Balance: MaxEncodedLen> {
+pub struct UnbondingChunk<Balance: MaxEncodedLen> {
     /// Amount being unbonded
     #[codec(compact)]
-    pub(super) amount: Balance,
+    pub(crate) amount: Balance,
     /// Era in which the amount will become unlocked and can be withdrawn.
     #[codec(compact)]
-    pub(super) unlock_era: EraIndex,
+    pub(crate) unlock_era: EraIndex,
 }
 
-/// Contains unlocking chunks.
+/// Contains unbonding chunks.
 /// This is a convenience struct that provides various utility methods to help with unbonding
 /// handling.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxUnlockingChunks))]
+#[scale_info(skip_type_params(MaxUnbondingChunks))]
 pub struct UnbondingInfo<
     Balance: AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen,
-    MaxUnlockingChunks: Get<u32>,
+    MaxUnbondingChunks: Get<u32>,
 > {
-    // Vector of unlocking chunks. Sorted in ascending order in respect to unlock_era.
-    unlocking_chunks: BoundedVec<UnlockingChunk<Balance>, MaxUnlockingChunks>,
+    // Vector of unbonding chunks. Sorted in ascending order in respect to unlock_era.
+    pub(crate) unbonding_chunks: BoundedVec<UnbondingChunk<Balance>, MaxUnbondingChunks>,
 }
 
 /// A record of rewards allocated for backers and creators
@@ -192,7 +192,7 @@ pub enum Forcing {
 /// A list of configuration parameters used to calculate reward distribution portions.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct RewardsDistributionConfig {
+pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to backers
     #[codec(compact)]
     pub backers_percent: Perbill,
