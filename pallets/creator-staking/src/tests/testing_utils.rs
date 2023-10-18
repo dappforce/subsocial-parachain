@@ -160,8 +160,9 @@ pub(super) fn assert_withdraw_from_inactive_creator(
         creator_id
     ));
     System::assert_last_event(mock::RuntimeEvent::CreatorStaking(
-        Event::WithdrawnFromInactiveCreator {
+        Event::StakeWithdrawnFromInactiveCreator {
             who: backer.clone(),
+            creator_id,
             amount: staked_value,
         },
     ));
@@ -373,7 +374,7 @@ pub(super) fn assert_withdraw_unbonded(backer: AccountId) {
     assert_ok!(CreatorStaking::withdraw_unstaked(RuntimeOrigin::signed(
         backer
     ),));
-    System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::WithdrawnUnstaked{
+    System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::StakeWithdrawn {
         who: backer.clone(),
         amount: expected_unbond_amount,
     }));
@@ -444,7 +445,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     );
 
     // check for stake event if restaking is performed
-    if CreatorStaking::ensure_should_restake_reward(
+    if CreatorStaking::ensure_can_restake_reward(
         restake,
         init_state_current_era.creator_info.status,
         &mut init_state_current_era.backer_stakes,
@@ -508,7 +509,7 @@ fn assert_restake_reward(
     reward: Balance,
 ) {
     let mut init_backer_stakes = StakesInfo { stakes: init_state_current_era.backer_stakes.stakes.clone() };
-    if CreatorStaking::ensure_should_restake_reward(
+    if CreatorStaking::ensure_can_restake_reward(
         restake,
         init_state_current_era.clone().creator_info.status,
         &mut init_backer_stakes,

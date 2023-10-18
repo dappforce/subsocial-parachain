@@ -218,14 +218,14 @@ pub mod pallet {
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnUnstaked { who: T::AccountId, amount: BalanceOf<T> },
-        WithdrawnFromInactiveCreator { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
+        StakeWithdrawnFromInactiveCreator { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         AnnualInflationSet { value: Perbill },
         RewardsCalculated { total_rewards_amount: BalanceOf<T> },
         CreatorRegistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregistered { who: T::AccountId, creator_id: CreatorId },
         CreatorUnregisteredWithSlash { creator_id: CreatorId, slash_amount: BalanceOf<T> },
-        NewCreatorStakingEra { number: EraIndex },
+        NewCreatorStakingEra { era: EraIndex },
         MaintenanceModeSet { enabled: bool },
         RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
     }
@@ -283,6 +283,7 @@ pub mod pallet {
                 NextEraStartingBlock::<T>::put(now + blocks_per_era);
 
                 let reward = BlockRewardAccumulator::<T>::take();
+                // 2 reads and 1 write inside the `reward_balance_snapshot` fn
                 Self::reward_balance_snapshot(previous_era, reward);
                 let consumed_weight = Self::rotate_staking_info(previous_era);
 
@@ -290,10 +291,10 @@ pub mod pallet {
                     ForceEra::<T>::put(Forcing::NotForcing);
                 }
 
-                Self::deposit_event(Event::<T>::NewCreatorStakingEra { number: next_era });
+                Self::deposit_event(Event::<T>::NewCreatorStakingEra { era: next_era });
 
                 let force_new_era_write = if force_new_era { 1 } else { 0 };
-                consumed_weight + T::DbWeight::get().reads_writes(6, 3 + force_new_era_write)
+                consumed_weight + T::DbWeight::get().reads_writes(6, 5 + force_new_era_write)
             } else {
                 T::DbWeight::get().reads(4)
             }
@@ -366,7 +367,7 @@ pub mod pallet {
         pub fn stake(
             origin: OriginFor<T>,
             creator_id: CreatorId,
-            #[pallet::compact] amount: BalanceOf<T>,
+            #[pallet::compact] desired_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
@@ -377,7 +378,7 @@ pub mod pallet {
             // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
             let available_balance = Self::balance_available_for_staking(&backer, &backer_locks);
-            let amount_to_stake = amount.min(available_balance);
+            let amount_to_stake = desired_amount.min(available_balance);
             ensure!(amount_to_stake > Zero::zero(), Error::<T>::CannotStakeZero);
 
             let current_era = Self::current_era();
@@ -507,7 +508,7 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnUnstaked {
+            Self::deposit_event(Event::<T>::StakeWithdrawn {
                 who: backer,
                 amount: withdraw_amount,
             });
@@ -560,8 +561,9 @@ pub mod pallet {
                 }
             });
 
-            Self::deposit_event(Event::<T>::WithdrawnFromInactiveCreator {
+            Self::deposit_event(Event::<T>::StakeWithdrawnFromInactiveCreator {
                 who: backer,
+                creator_id,
                 amount: staked_value,
             });
 
@@ -599,7 +601,8 @@ pub mod pallet {
             let backer_reward =
                 Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
 
-            let should_restake_reward = Self::ensure_should_restake_reward(
+            // FIXME: we mustn't modify `backer_stakes` here!
+            let can_restake_reward = Self::ensure_can_restake_reward(
                 restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
             )?;
 
@@ -613,7 +616,7 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&backer, reward_imbalance);
 
-            if should_restake_reward {
+            if can_restake_reward {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
             }
 

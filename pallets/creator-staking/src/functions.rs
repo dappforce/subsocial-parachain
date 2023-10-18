@@ -2,7 +2,7 @@ use crate::pallet::*;
 use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, LockableCurrency, WithdrawReasons}};
 use sp_runtime::{traits::{AccountIdConversion, Zero}, Perbill, Saturating};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-use subsocial_support::traits::SpacePermissionsProvider;
+use subsocial_support::traits::{CreatorStakingProvider, SpacePermissionsProvider};
 
 impl<T: Config> Pallet<T> {
     /// `Err` if pallet disabled for maintenance, `Ok` otherwise
@@ -37,10 +37,11 @@ impl<T: Config> Pallet<T> {
         creator_info: &CreatorInfo<T::AccountId>,
         era: EraIndex,
     ) -> DispatchResult {
-        if let CreatorStatus::Inactive(unregistration_era) = creator_info.status {
-            ensure!(era < unregistration_era, Error::<T>::InactiveCreator);
+        match creator_info.status {
+            CreatorStatus::Active => Ok(()),
+            CreatorStatus::Inactive(unregistration_era) if era < unregistration_era => Ok(()),
+            _ => Err(Error::<T>::InactiveCreator.into()),
         }
-        Ok(())
     }
 
     pub(crate) fn do_unregister_creator(
@@ -86,7 +87,7 @@ impl<T: Config> Pallet<T> {
     pub(crate) fn stake_to_creator(
         backer_stakes: &mut StakesInfoOf<T>,
         staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
-        desired_amount: BalanceOf<T>,
+        amount: BalanceOf<T>,
         current_era: EraIndex,
     ) -> Result<(), DispatchError> {
         let current_stake = backer_stakes.current_stake();
@@ -102,10 +103,10 @@ impl<T: Config> Pallet<T> {
         }
 
         backer_stakes
-            .increase_stake(current_era, desired_amount)
+            .increase_stake(current_era, amount)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
+        Self::ensure_can_add_stake_item(backer_stakes)?;
 
         ensure!(
             backer_stakes.current_stake() >= T::MinimumStake::get(),
@@ -113,7 +114,7 @@ impl<T: Config> Pallet<T> {
         );
 
         // Increment the backer's total deposit for a particular creator.
-        staking_info.total_staked = staking_info.total_staked.saturating_add(desired_amount);
+        staking_info.total_staked = staking_info.total_staked.saturating_add(amount);
 
         Ok(())
     }
@@ -167,7 +168,7 @@ impl<T: Config> Pallet<T> {
             .decrease_stake(current_era, amount_to_unstake)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_max_era_stake_items_not_exceeded(backer_stakes)?;
+        Self::ensure_can_add_stake_item(backer_stakes)?;
 
         Ok(amount_to_unstake)
     }
@@ -282,7 +283,7 @@ impl<T: Config> Pallet<T> {
         RegisteredCreators::<T>::get(creator_id).ok_or(Error::<T>::CreatorNotFound.into())
     }
 
-    pub(crate) fn ensure_max_era_stake_items_not_exceeded(
+    pub(crate) fn ensure_can_add_stake_item(
         backer_stakes: &StakesInfoOf<T>,
     ) -> DispatchResult {
         ensure!(
@@ -292,7 +293,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub(crate) fn ensure_should_restake_reward(
+    pub(crate) fn ensure_can_restake_reward(
         restake: bool,
         creator_status: CreatorStatus,
         backer_stakes: &mut StakesInfoOf<T>,
@@ -301,11 +302,11 @@ impl<T: Config> Pallet<T> {
     ) -> Result<bool, DispatchError> {
         // Can restake only if the backer is already staking on the active creator
         // and all the other conditions are met:
-        let should_restake_reward = restake
+        let can_restake = restake
             && creator_status == CreatorStatus::Active
             && backer_stakes.current_stake() > Zero::zero();
 
-        return if should_restake_reward {
+        return if can_restake {
             backer_stakes
                 .increase_stake(current_era, backer_reward)
                 .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
@@ -372,10 +373,10 @@ impl<T: Config> Pallet<T> {
     // For internal use only.
     fn get_unregistration_era_index(creator_id: CreatorId) -> Result<EraIndex, DispatchError> {
         return if let Some(creator_info) = Self::registered_creator(creator_id) {
-            if let CreatorStatus::Inactive(era) = creator_info.status {
-                Ok(era)
+            if let CreatorStatus::Inactive(unregistration_era) = creator_info.status {
+                Ok(unregistration_era)
             } else {
-                Err(DispatchError::Other("CreatorIsActive"))
+                Err(Error::<T>::CreatorIsActive.into())
             }
         } else {
             Err(Error::<T>::CreatorNotFound.into())
@@ -458,15 +459,15 @@ impl<T: Config> Pallet<T> {
         let current_era = Self::current_era();
 
         for (creator, mut stakes_info) in BackerStakesByCreator::<T>::iter_prefix(&backer) {
-            let unregistration_era = match Self::get_unregistration_era_index(creator) {
-                Ok(era) => era,
+            let last_claimable_era = match Self::get_unregistration_era_index(creator) {
                 Err(error) if error.eq(&Error::<T>::CreatorNotFound.into()) => continue,
+                Ok(unregistration_era) => unregistration_era,
                 _ => current_era,
             };
 
             loop {
                 let (era, _) = stakes_info.claim();
-                if era >= unregistration_era || era == 0 {
+                if era >= last_claimable_era || era == 0 {
                     break;
                 }
 
@@ -475,5 +476,17 @@ impl<T: Config> Pallet<T> {
         }
 
         available_claims_by_creator.into_iter().collect()
+    }
+}
+
+/// Implementation of `CreatorStakingProvider` for `creator-staking` pallet.
+///
+/// This is used in space-ownership pallet to forbid ownership transfer for spaces, which
+/// are registered as creators.
+impl<T: Config> CreatorStakingProvider<T::AccountId> for Pallet<T> {
+    fn is_creator_active(
+        creator_id: CreatorId,
+    ) -> bool {
+        Self::is_creator_active(creator_id)
     }
 }
