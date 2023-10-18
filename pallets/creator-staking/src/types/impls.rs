@@ -94,18 +94,18 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
         Ok(stakes)
     }
 
-    /// Stakes some value in the specified era.
+    /// Increase existing stake in the specified era.
     ///
-    /// User should ensure that the given era is either equal to or greater than the
-    /// latest available era in the staking info.
+    /// User should ensure that given era is either equal or greater than the
+    /// latest available era in the `StakesInfo`.
     ///
     /// # Example
     ///
-    /// The following example demonstrates how the internal vector changes when `stake` is called:
+    /// The following example demonstrates how internal vector changes when `increase_stake()` is called:
     ///
     /// `stakes: [<5, 1000>, <7, 1300>]`
-    /// * `stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
-    /// * `stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
+    /// * `increase_stake(7, 100)` will result in `[<5, 1000>, <7, 1400>]`
+    /// * `increase_stake(9, 200)` will result in `[<5, 1000>, <7, 1400>, <9, 1600>]`
     pub(crate) fn increase_stake(&mut self, current_era: EraIndex, value: Balance) -> Result<(), &str> {
         if self.stakes.last().is_some() {
             let new_stakes =
@@ -118,7 +118,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
         Ok(())
     }
 
-    /// Unstakes some value in the specified era.
+    /// Decrease existing stake in the specified era.
     ///
     /// User should ensure that the given era is either equal to or greater than the
     /// latest available era in the staking info.
