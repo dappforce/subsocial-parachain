@@ -1,6 +1,6 @@
 [package]
 name = 'pallet-spaces-tests'
-version = '0.1.9'
+version = '0.1.10'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
