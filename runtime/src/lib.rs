@@ -39,6 +39,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
+use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
 
 #[cfg(any(feature = "std", test))]
@@ -706,6 +707,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type CreatorStakingProvider = CreatorStaking;
 	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
@@ -731,7 +733,7 @@ impl pallet_energy::Config for Runtime {
 
 parameter_types! {
 	pub const BlockPerEra: BlockNumber = 6 * HOURS;
-	pub const MaxErasToReward: u32 = 90 * DAYS / BlockPerEra::get();
+	pub const StakeExpirationInEras: u32 = 90 * DAYS / BlockPerEra::get();
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
@@ -750,15 +752,16 @@ impl pallet_creator_staking::Config for Runtime {
 	type BlockPerEra = BlockPerEra;
 	type Currency = Balances;
 	type SpacesInterface = Spaces;
-	type RegistrationDeposit = RegistrationDeposit;
-	type MinimumStakingAmount = MinimumStakingAmount;
-	type MinimumRemainingAmount = MinimumRemainingAmount;
-	type MaxNumberOfStakersPerCreator = ConstU32<100>;
-	type MaxEraStakeValues = ConstU32<5>;
-	type MaxErasToReward = MaxErasToReward;
+	type SpacePermissionsProvider = Spaces;
+	type CreatorRegistrationDeposit = RegistrationDeposit;
+	type MinimumStake = MinimumStakingAmount;
+	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
+	type MaxNumberOfBackersPerCreator = ConstU32<100>;
+	type MaxEraStakeItems = ConstU32<5>;
+	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = ConstU32<2>;
-	type MaxUnlockingChunks = ConstU32<32>;
-	type CurrentAnnualInflation = CurrentAnnualInflation;
+	type MaxUnbondingChunks = ConstU32<32>;
+	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
@@ -971,6 +974,41 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+		for Runtime
+	{
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
+			creators: Vec<CreatorId>,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
+		}
+
+		fn withdrawable_amounts_from_inactive_creators(
+			backer: AccountId,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
+		}
+
+		fn available_claims_by_backer(
+			backer: AccountId,
+		) -> Vec<(CreatorId, u32)> {
+			CreatorStaking::available_claims_by_backer(backer)
+		}
+
+		fn estimated_creator_rewards(
+			creator: CreatorId,
+		) -> Balance {
+			CreatorStaking::estimated_creator_rewards(creator)
+		}
+
+		fn available_claims_by_creator(
+			creator: CreatorId,
+		) -> Vec<EraIndex> {
+			CreatorStaking::available_claims_by_creator(creator)
 		}
 	}
 

@@ -5436,13 +5436,16 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "lazy_static",
+ "mockall",
  "num-traits",
  "pallet-balances",
+ "pallet-permissions",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -5454,6 +5457,32 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "subsocial-support",
+]
+
+[[package]]
+name = "pallet-creator-staking-rpc"
+version = "0.1.9"
+dependencies = [
+ "jsonrpsee",
+ "pallet-creator-staking",
+ "pallet-creator-staking-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-creator-staking-rpc-runtime-api"
+version = "0.1.9"
+dependencies = [
+ "pallet-creator-staking",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -11268,6 +11297,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-creator-staking-rpc",
  "pallet-domains-rpc",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
@@ -11338,6 +11368,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-creator-staking",
+ "pallet-creator-staking-rpc-runtime-api",
  "pallet-domains",
  "pallet-domains-rpc-runtime-api",
  "pallet-energy",
@@ -11377,6 +11408,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "subsocial-support",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",

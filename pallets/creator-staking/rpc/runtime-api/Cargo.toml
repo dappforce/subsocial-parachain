@@ -1,0 +1,31 @@
+[package]
+name = "pallet-creator-staking-rpc-runtime-api"
+version = "0.1.9"
+authors = ["DappForce <dappforce@pm.me>"]
+edition = "2021"
+license = "GPL-3.0-only"
+homepage = "https://subsocial.network"
+repository = "https://github.com/dappforce/subsocial-parachain"
+description = "RPC runtime API for the creator staking pallet."
+keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
+categories = ["cryptography::cryptocurrencies"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+sp-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.37', default-features = false }
+pallet-creator-staking = { path = '../..', default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "sp-api/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "pallet-creator-staking/std",
+]

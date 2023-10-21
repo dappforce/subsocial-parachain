@@ -21,6 +21,7 @@ jsonrpsee = { version = "0.16.2", features = ["server"] }
 
 # Local
 subsocial-parachain-runtime = { path = "../runtime" }
+pallet-creator-staking-rpc = { path = "../pallets/creator-staking/rpc" }
 pallet-domains-rpc = { path = "../pallets/domains/rpc" }
 
 # Substrate
