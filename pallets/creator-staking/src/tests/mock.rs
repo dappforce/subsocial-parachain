@@ -1,4 +1,4 @@
-use crate::{self as pallet_creator_staking};
+use crate::{self as pallet_creator_staking, PalletDisabled};
 
 use frame_support::{
     construct_runtime, parameter_types,
@@ -222,7 +222,11 @@ impl ExternalityBuilder {
         .ok();
 
         let mut ext = TestExternalities::from(storage);
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            System::set_block_number(1);
+            // TODO: revert when default PalletDisabled changed back to false
+            PalletDisabled::<TestRuntime>::put(false);
+        });
         ext
     }
 }
@@ -257,6 +261,7 @@ pub fn advance_to_era(n: EraIndex) {
 pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
+    PalletDisabled::<TestRuntime>::put(false);
 
     // This is performed outside of creators staking but we expect it before on_initialize
     payout_block_rewards();

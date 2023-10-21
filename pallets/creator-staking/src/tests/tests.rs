@@ -1628,10 +1628,15 @@ fn maintenance_mode_is_ok() {
         initialize_first_block();
 
         assert_ok!(CreatorStaking::ensure_pallet_enabled());
-        assert!(!PalletDisabled::<TestRuntime>::exists());
+        // TODO: revert when default PalletDisabled changed back to false
+        // assert!(!PalletDisabled::<TestRuntime>::exists());
+        assert!(!PalletDisabled::<TestRuntime>::get());
 
         assert_ok!(CreatorStaking::set_maintenance_mode(RuntimeOrigin::root(), true));
-        assert!(PalletDisabled::<TestRuntime>::exists());
+        // TODO: revert when default PalletDisabled changed back to false
+        // assert!(PalletDisabled::<TestRuntime>::exists());
+        assert!(PalletDisabled::<TestRuntime>::get());
+
         System::assert_last_event(RuntimeEvent::CreatorStaking(Event::MaintenanceModeSet {
             enabled: true,
         }));
