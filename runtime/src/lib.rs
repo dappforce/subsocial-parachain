@@ -732,15 +732,16 @@ impl pallet_energy::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BlockPerEra: BlockNumber = 6 * HOURS;
-	pub const StakeExpirationInEras: u32 = 90 * DAYS / BlockPerEra::get();
+	pub const BlockPerEra: BlockNumber = 1 * DAYS;
+	pub const StakeExpirationInEras: EraIndex = 60 * DAYS / BlockPerEra::get();
+	pub const UnbondingPeriodInEras: EraIndex = 7 * DAYS / BlockPerEra::get();
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
-	pub const RegistrationDeposit: Balance = 1000 * UNIT;
+	pub const RegistrationDeposit: Balance = 10 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(10);
+	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(3);
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -756,10 +757,10 @@ impl pallet_creator_staking::Config for Runtime {
 	type CreatorRegistrationDeposit = RegistrationDeposit;
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
-	type MaxNumberOfBackersPerCreator = ConstU32<100>;
-	type MaxEraStakeItems = ConstU32<5>;
+	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
+	type MaxEraStakeItems = ConstU32<10>;
 	type StakeExpirationInEras = StakeExpirationInEras;
-	type UnbondingPeriodInEras = ConstU32<2>;
+	type UnbondingPeriodInEras = UnbondingPeriodInEras;
 	type MaxUnbondingChunks = ConstU32<32>;
 	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
