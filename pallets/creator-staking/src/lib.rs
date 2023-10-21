@@ -125,10 +125,14 @@ pub mod pallet {
     #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
+    #[pallet::type_value]
+    pub fn PalletDisabledDefault() -> bool {
+        true
+    }
     #[pallet::storage]
     #[pallet::whitelist_storage]
     #[pallet::getter(fn pallet_disabled)]
-    pub type PalletDisabled<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub type PalletDisabled<T: Config> = StorageValue<_, bool, ValueQuery, PalletDisabledDefault>;
 
     /// The current era index.
     #[pallet::storage]
