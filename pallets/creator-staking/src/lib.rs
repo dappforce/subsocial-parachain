@@ -303,6 +303,21 @@ pub mod pallet {
                 T::DbWeight::get().reads(4)
             }
         }
+
+        fn on_runtime_upgrade() -> Weight {
+            PalletDisabled::<T>::put(true);
+
+            let old_storage_prefix =
+                storage::storage_prefix(Pallet::<T>::name().as_bytes(), b"GeneralBackerInfo");
+            let new_storage_prefix =
+                storage::storage_prefix(Pallet::<T>::name().as_bytes(), b"BackerStakesByCreator");
+
+            storage::migration::move_prefix(&old_storage_prefix, &new_storage_prefix);
+
+            ForceEra::<T>::put(Forcing::ForceNew);
+
+            T::DbWeight::get().reads_writes(1, 1)
+        }
     }
 
     #[pallet::call]
