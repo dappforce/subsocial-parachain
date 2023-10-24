@@ -112,7 +112,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	// pallet_domains::migration::v1::MigrateToV1<Runtime>,
+	(),
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 2707,
+	spec_version: 2900,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 7,
@@ -706,6 +706,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_space_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type CreatorStakingProvider = CreatorStaking;
 	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
 }
 
@@ -731,14 +732,15 @@ impl pallet_energy::Config for Runtime {
 
 parameter_types! {
 	pub const BlockPerEra: BlockNumber = 14 * MINUTES;
-	pub const StakeExpirationInEras: u32 = 1 * HOURS / BlockPerEra::get();
+	pub const StakeExpirationInEras: EraIndex = 60 * DAYS / BlockPerEra::get();
+	pub const UnbondingPeriodInEras: EraIndex = 2;
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const RegistrationDeposit: Balance = 1000 * UNIT;
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub AnnualInflation: Perbill = Perbill::from_rational(1u32, 200);
+	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(3);
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -754,12 +756,12 @@ impl pallet_creator_staking::Config for Runtime {
 	type CreatorRegistrationDeposit = RegistrationDeposit;
 	type MinimumStake = MinimumStakingAmount;
 	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
-	type MaxNumberOfBackersPerCreator = ConstU32<100>;
+	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
 	type MaxEraStakeItems = ConstU32<10>;
 	type StakeExpirationInEras = StakeExpirationInEras;
-	type UnbondingPeriodInEras = ConstU32<2>;
-	type MaxUnlockingChunks = ConstU32<32>;
-	type AnnualInflation = AnnualInflation;
+	type UnbondingPeriodInEras = UnbondingPeriodInEras;
+	type MaxUnbondingChunks = ConstU32<32>;
+	type AnnualInflation = CurrentAnnualInflation;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
