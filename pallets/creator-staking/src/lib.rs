@@ -106,7 +106,7 @@ pub mod pallet {
         type MaxUnbondingChunks: Get<u32>;
 
         #[pallet::constant]
-        type AnnualInflation: Get<Perbill>;
+        type BlockReward: Get<BalanceOf<Self>>;
 
         /// Represents the estimated number of blocks that are generated within the span of one year.
         #[pallet::constant]

@@ -741,7 +741,8 @@ parameter_types! {
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(3);
+	// Assuming initial total issuance is 1_000_000_000, 3% of it is 30_000_000, thus 115 per block.
+	pub const BlockReward: Balance = 115 * UNIT;
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -762,7 +763,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = UnbondingPeriodInEras;
 	type MaxUnbondingChunks = ConstU32<32>;
-	type AnnualInflation = CurrentAnnualInflation;
+	type BlockReward = BlockReward;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
