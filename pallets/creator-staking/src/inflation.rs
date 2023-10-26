@@ -2,7 +2,7 @@ use crate::*;
 use frame_support::traits::{Currency, Get, OnTimestampSet, Imbalance};
 use sp_runtime::traits::Saturating;
 
-type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
+pub(super) type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;
 
