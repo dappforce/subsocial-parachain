@@ -106,7 +106,7 @@ pub mod pallet {
         type MaxUnbondingChunks: Get<u32>;
 
         #[pallet::constant]
-        type InitialPerBlockReward: Get<BalanceOf<Self>>;
+        type InitialRewardPerBlock: Get<BalanceOf<Self>>;
 
         /// Represents the estimated number of blocks that are generated within the span of one year.
         #[pallet::constant]
@@ -216,13 +216,13 @@ pub mod pallet {
         StorageValue<_, RewardDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
 
     #[pallet::type_value]
-    pub fn PerBlockRewardOnEmpty<T: Config>() -> BalanceOf<T> {
-        T::InitialPerBlockReward::get()
+    pub fn RewardPerBlockOnEmpty<T: Config>() -> BalanceOf<T> {
+        T::InitialRewardPerBlock::get()
     }
 
     #[pallet::storage]
     #[pallet::getter(fn per_block_reward)]
-    pub type PerBlockReward<T> = StorageValue<_, BalanceOf<T>, ValueQuery, PerBlockRewardOnEmpty<T>>;
+    pub type RewardPerBlock<T> = StorageValue<_, BalanceOf<T>, ValueQuery, RewardPerBlockOnEmpty<T>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -241,6 +241,7 @@ pub mod pallet {
         NewCreatorStakingEra { era: EraIndex },
         MaintenanceModeSet { enabled: bool },
         RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
+        RewardPerBlockChanged { new_reward: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -757,7 +758,9 @@ pub mod pallet {
         pub fn set_per_block_reward(origin: OriginFor<T>, new_reward: BalanceOf<T>) -> DispatchResult {
             ensure_root(origin)?;
 
-            PerBlockReward::<T>::put(new_reward);
+            RewardPerBlock::<T>::put(new_reward);
+
+            Self::deposit_event(Event::<T>::RewardPerBlockChanged { new_reward });
 
             Ok(())
         }

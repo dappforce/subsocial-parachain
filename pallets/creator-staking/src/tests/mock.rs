@@ -187,7 +187,7 @@ impl pallet_creator_staking::Config for TestRuntime {
     type UnbondingPeriodInEras = UnbondingPeriodInEras;
     type MaxUnbondingChunks = MaxUnbondingChunks;
     // Inflation config:
-    type InitialPerBlockReward = BlockReward;
+    type InitialRewardPerBlock = BlockReward;
     type BlocksPerYear = BlocksPerYear;
     type TreasuryAccount = TreasuryAccount;
     // type WeightInfo = weights::SubstrateWeight<TestRuntime>;

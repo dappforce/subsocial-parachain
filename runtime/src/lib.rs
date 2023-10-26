@@ -741,7 +741,7 @@ parameter_types! {
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const InitialPerBlockReward: Balance = 6 * UNIT;
+	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -762,7 +762,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = UnbondingPeriodInEras;
 	type MaxUnbondingChunks = ConstU32<32>;
-	type InitialPerBlockReward = InitialPerBlockReward;
+	type InitialRewardPerBlock = InitialRewardPerBlock;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }
