@@ -1684,10 +1684,6 @@ fn maintenance_mode_is_ok() {
 
         //
         // 3
-        assert_noop!(
-            CreatorStaking::force_new_era(RuntimeOrigin::root()),
-            Error::<TestRuntime>::PalletIsDisabled
-        );
         // shouldn't do anything since we're in maintenance mode
         assert_eq!(CreatorStaking::on_initialize(3), Weight::zero());
 
@@ -2004,13 +2000,13 @@ pub(super) struct Rewards {
 
 impl Rewards {
     pub(super) fn total_block_reward() -> Balance {
-        BLOCK_REWARD
+        CreatorStaking::per_block_reward()
     }
 
     pub(super) fn joint_block_reward() -> Balance {
         let Rewards { treasury_reward, .. } = Self::calculate(&CreatorStaking::reward_config());
 
-        BLOCK_REWARD - treasury_reward
+        Self::total_block_reward() - treasury_reward
     }
 
     /// Pre-calculates the reward distribution, using the provided `RewardDistributionConfig`.

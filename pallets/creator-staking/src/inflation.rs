@@ -12,7 +12,7 @@ impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
             return;
         }
 
-        let new_tokens_per_block: BalanceOf<T> = T::BlockReward::get();
+        let new_tokens_per_block: BalanceOf<T> = Self::per_block_reward();
         let inflation = T::Currency::issue(new_tokens_per_block);
 
         Self::distribute_rewards(inflation);
