@@ -170,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 29,
+	spec_version: 30,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 5,
@@ -741,7 +741,7 @@ parameter_types! {
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(3);
+	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -762,7 +762,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = UnbondingPeriodInEras;
 	type MaxUnbondingChunks = ConstU32<32>;
-	type AnnualInflation = CurrentAnnualInflation;
+	type InitialRewardPerBlock = InitialRewardPerBlock;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }

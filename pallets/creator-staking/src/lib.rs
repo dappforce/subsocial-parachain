@@ -106,7 +106,7 @@ pub mod pallet {
         type MaxUnbondingChunks: Get<u32>;
 
         #[pallet::constant]
-        type AnnualInflation: Get<Perbill>;
+        type InitialRewardPerBlock: Get<BalanceOf<Self>>;
 
         /// Represents the estimated number of blocks that are generated within the span of one year.
         #[pallet::constant]
@@ -215,6 +215,15 @@ pub mod pallet {
     pub type ActiveRewardDistributionConfig<T> =
         StorageValue<_, RewardDistributionConfig, ValueQuery, RewardConfigOnEmpty>;
 
+    #[pallet::type_value]
+    pub fn RewardPerBlockOnEmpty<T: Config>() -> BalanceOf<T> {
+        T::InitialRewardPerBlock::get()
+    }
+
+    #[pallet::storage]
+    #[pallet::getter(fn per_block_reward)]
+    pub type RewardPerBlock<T> = StorageValue<_, BalanceOf<T>, ValueQuery, RewardPerBlockOnEmpty<T>>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -232,6 +241,7 @@ pub mod pallet {
         NewCreatorStakingEra { era: EraIndex },
         MaintenanceModeSet { enabled: bool },
         RewardDistributionConfigChanged { new_config: RewardDistributionConfig },
+        RewardPerBlockChanged { new_reward: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -722,7 +732,6 @@ pub mod pallet {
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::from_ref_time(10_000))]
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
             Ok(Pays::No.into())
@@ -734,7 +743,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             new_config: RewardDistributionConfig,
         ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
 
             ensure!(new_config.is_sum_equal_to_one(), Error::<T>::InvalidSumOfRewardDistributionConfig);
@@ -745,10 +753,16 @@ pub mod pallet {
             Ok(())
         }
 
-        // #[weight = 10_000]
-        // fn set_annual_inflation(origin, inflation: Perbill) {
-        //     ensure_root(origin)?;
-        //     todo!()
-        // }
+        #[pallet::call_index(12)]
+        #[pallet::weight(T::DbWeight::get().writes(1) + Weight::from_ref_time(10_000))]
+        pub fn set_per_block_reward(origin: OriginFor<T>, new_reward: BalanceOf<T>) -> DispatchResult {
+            ensure_root(origin)?;
+
+            RewardPerBlock::<T>::put(new_reward);
+
+            Self::deposit_event(Event::<T>::RewardPerBlockChanged { new_reward });
+
+            Ok(())
+        }
     }
 }
