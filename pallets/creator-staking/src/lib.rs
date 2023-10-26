@@ -5,15 +5,11 @@ pub use pallet::*;
 pub mod types;
 pub mod functions;
 pub mod inflation;
-pub mod migration;
 #[cfg(test)]
 mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
-
-/// The log target of this pallet.
-pub const LOG_TARGET: &str = "runtime::creator-staking";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -125,12 +121,8 @@ pub mod pallet {
         type TreasuryAccount: Get<Self::AccountId>;
     }
 
-    /// The current storage version
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
-
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
-    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
