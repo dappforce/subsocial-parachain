@@ -1,4 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 

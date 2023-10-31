@@ -1,0 +1,52 @@
+name: Check and add copyright
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  copyright-check:
+    strategy:
+      matrix:
+        platform: [ ubuntu-latest ]
+        go-version: [ 1.16.x ]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install addlicense
+        run: |
+          go install github.com/google/addlicense@latest
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      # Check license notice in all files
+      - name: Copyright Check
+        id: check
+        continue-on-error: true
+        run: .maintain/add_license.sh -check
+
+      # Add license if check fails
+      - name: Add copyright notice
+        if: steps.check.outcome == 'failure'
+        run: |
+          .maintain/add_license.sh
+          
+          remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          git config http.sslVerify false
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "Add missing license headers"
+          git push "${remote_repo}" HEAD:${{ github.head_ref }}
