@@ -619,7 +619,7 @@ pub mod pallet {
             let (_, combined_backers_reward_share) =
                 Self::distributed_rewards_between_creator_and_backers(&staking_info, &reward_and_stake);
             let backer_reward =
-                Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
+                Perbill::from_rational(backer_staked, reward_and_stake.staked) * combined_backers_reward_share;
 
             // FIXME: we mustn't modify `backer_stakes` here!
             let can_restake_reward = Self::ensure_can_restake_reward(

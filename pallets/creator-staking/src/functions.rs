@@ -216,9 +216,8 @@ impl<T: Config> Pallet<T> {
             Perbill::from_rational(creator_info.total_staked, era_info.staked);
 
         let creator_reward_share = creator_proportional_stake * era_info.rewards.creators;
-        let combined_backers_reward_share = creator_proportional_stake * era_info.rewards.backers;
 
-        (creator_reward_share, combined_backers_reward_share)
+        (creator_reward_share, era_info.rewards.backers)
     }
 
     /// This utility function converts the PalletId specified in `Config` into an account ID.
@@ -370,7 +369,7 @@ impl<T: Config> Pallet<T> {
         if let Some(reward_and_stake) = Self::general_era_info(era) {
             let (_, combined_backers_reward_share) =
                 Self::distributed_rewards_between_creator_and_backers(creator_stake_info, &reward_and_stake);
-            Perbill::from_rational(staked, creator_stake_info.total_staked) * combined_backers_reward_share
+            Perbill::from_rational(staked, reward_and_stake.staked) * combined_backers_reward_share
         } else {
             Zero::zero()
         }
