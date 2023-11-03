@@ -15,12 +15,12 @@ use crate::tests::tests::Rewards;
 
 /// Helper struct used to store information relevant to era/creator/backer combination.
 pub(super) struct MemorySnapshot {
-    era_info: EraInfo<Balance>,
-    creator_info: CreatorInfo<AccountId>,
-    backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
-    creator_stakes_info: CreatorStakeInfo<Balance>,
-    free_balance: Balance,
-    backer_locks: BackerLocks<Balance, MaxUnbondingChunks>,
+    pub(super) era_info: EraInfo<Balance>,
+    pub(super) creator_info: CreatorInfo<AccountId>,
+    pub(super) backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
+    pub(super) creator_stakes_info: CreatorStakeInfo<Balance>,
+    pub(super) free_balance: Balance,
+    pub(super) backer_locks: BackerLocks<Balance, MaxUnbondingChunks>,
 }
 
 impl MemorySnapshot {

@@ -1629,6 +1629,72 @@ fn claim_creator_with_zero_stake_periods_is_ok() {
 }
 
 #[test]
+fn claim_rewards_are_equal_for_every_creator() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let start_era = CreatorStaking::current_era();
+        let register_era = start_era + 1;
+        let stake_era = start_era + 2;
+        let claim_era = start_era + 3;
+
+        let stakeholder = 10;
+        let first_creator_id = 1;
+        let second_creator_id = 2;
+
+        let dummy_backer_id = 1;
+        let backer_id = 2;
+
+        let stake_value = 100;
+
+        // Register creators
+        assert_register(stakeholder, first_creator_id);
+        assert_register(stakeholder, second_creator_id);
+        advance_to_era(register_era);
+
+        // Make creators have different total stakes
+        assert_stake(dummy_backer_id, first_creator_id, 200);
+        assert_stake(dummy_backer_id, second_creator_id, 400);
+        advance_to_era(stake_era);
+
+        // Stake some tokens (sake amount not to change total staked) for both creators
+        assert_stake(backer_id, first_creator_id, stake_value);
+        assert_stake(backer_id, second_creator_id, stake_value);
+        advance_to_era(claim_era);
+
+        // Claim rewards for both creators
+        let init_claimed_balance = Balances::free_balance(&backer_id);
+
+        assert_claim_backer(backer_id, first_creator_id, false);
+        let reward_for_first_creator = Balances::free_balance(&backer_id) - init_claimed_balance;
+
+        assert_claim_backer(backer_id, second_creator_id, false);
+        let reward_for_second_creator =
+            Balances::free_balance(&backer_id) - reward_for_first_creator - init_claimed_balance;
+
+        // Calculate expected reward
+        let first_creator_data = MemorySnapshot::creator(claim_era, first_creator_id);
+        let second_creator_data = MemorySnapshot::creator(claim_era, first_creator_id);
+
+        let expected_reward_for_first_creator = CreatorStaking::calculate_reward_for_backer_in_era(
+            &first_creator_data.creator_stakes_info,
+            stake_value,
+            stake_era,
+        );
+
+        let expected_reward_for_second_creator = CreatorStaking::calculate_reward_for_backer_in_era(
+            &second_creator_data.creator_stakes_info,
+            stake_value,
+            stake_era,
+        );
+
+        // Check rewards are as expected
+        assert_eq!(reward_for_first_creator, expected_reward_for_first_creator);
+        assert_eq!(reward_for_second_creator, expected_reward_for_second_creator);
+    })
+}
+
+#[test]
 fn maintenance_mode_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
