@@ -6,15 +6,9 @@ The Subsocial Creator Staking Pallet is a critical component of the Subsocial co
 
 - **Staking Information**: The pallet tracks staking information for creators by era, allowing users to stake funds to their favorite creators.
 
-- **Unstaking and Withdrawal**: Users can start the unbonding process, and once the unbonding period has passed, they can withdraw their staked funds.
+- **Unstaking and Withdrawal**: Users can start the unstaking process, and once the unstaking period has passed, they can withdraw their staked funds.
 
-- **Reward Distribution**: The pallet calculates and distributes rewards for stakeholders and creators on a periodic basis (e.g., per era), incentivizing participation in the ecosystem.
-
-- **Lock Periods**: To prevent immediate withdrawals, the pallet manages lock periods. Stakers must wait out an unbonding period after initiating an unstaking operation.
-
-- **Events**: The pallet emits events for various lifecycle events, such as staking, unstaking, claiming rewards, and era changes, which can be used for monitoring and analytics.
-
-- **Custom RPCs**: The pallet provides custom RPCs for querying staking information.
+- **Reward Distribution**: The pallet calculates and distributes rewards for backers and creators on a periodic basis (e.g., per era), incentivizing participation in the ecosystem.
 
 ## License
 
@@ -22,7 +16,7 @@ This Subsocial Staking Pallet is open-source software released under the [GNU GP
 
 ## Acknowledgements
 
-Special thanks for [Astar Network](https://github.com/AstarNetwork) for their [Pallet dapps-staking](https://github.com/AstarNetwork/astar-frame/tree/polkadot-v0.9.39/frame/dapps-staking).
+Special thanks to [Astar Network](https://github.com/AstarNetwork) for their [Pallet dapps-staking](https://github.com/AstarNetwork/astar-frame/tree/polkadot-v0.9.39/frame/dapps-staking).
 
 ## Support and Contact
 
