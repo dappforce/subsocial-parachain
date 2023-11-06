@@ -1817,12 +1817,12 @@ fn distributed_rewards_between_creator_and_backers_util() {
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
     let calculated_backers_reward = base_backers_reward;
-    let calculated_dev_reward = creator_stake_ratio * base_creators_reward;
-    assert_eq!(calculated_dev_reward, creator_reward_share);
+    let calculated_creator_reward = creator_stake_ratio * base_creators_reward;
+    assert_eq!(calculated_creator_reward, creator_reward_share);
     assert_eq!(calculated_backers_reward, combined_backers_reward_share);
 
     assert_eq!(
-        calculated_backers_reward + calculated_dev_reward,
+        calculated_backers_reward + calculated_creator_reward,
         creator_reward_share + combined_backers_reward_share
     );
 }

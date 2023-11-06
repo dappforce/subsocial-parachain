@@ -366,10 +366,10 @@ impl<T: Config> Pallet<T> {
         staked: BalanceOf<T>,
         era: EraIndex,
     ) -> BalanceOf<T> {
-        if let Some(reward_and_stake) = Self::general_era_info(era) {
+        if let Some(era_info) = Self::general_era_info(era) {
             let (_, combined_backers_reward_share) =
-                Self::distributed_rewards_between_creator_and_backers(creator_stake_info, &reward_and_stake);
-            Perbill::from_rational(staked, reward_and_stake.staked) * combined_backers_reward_share
+                Self::distributed_rewards_between_creator_and_backers(creator_stake_info, &era_info);
+            Perbill::from_rational(staked, era_info.staked) * combined_backers_reward_share
         } else {
             Zero::zero()
         }

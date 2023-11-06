@@ -612,12 +612,12 @@ pub mod pallet {
             let current_era = Self::current_era();
             ensure!(era_to_claim < current_era, Error::<T>::CannotClaimInFutureEra);
 
-            let staking_info = Self::creator_stake_info(creator_id, era_to_claim).unwrap_or_default();
+            let creator_stake_info = Self::creator_stake_info(creator_id, era_to_claim).unwrap_or_default();
             let reward_and_stake =
                 Self::general_era_info(era_to_claim).ok_or(Error::<T>::EraNotFound)?;
 
             let (_, combined_backers_reward_share) =
-                Self::distributed_rewards_between_creator_and_backers(&staking_info, &reward_and_stake);
+                Self::distributed_rewards_between_creator_and_backers(&creator_stake_info, &reward_and_stake);
             let backer_reward =
                 Perbill::from_rational(backer_staked, reward_and_stake.staked) * combined_backers_reward_share;
 

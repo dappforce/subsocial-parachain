@@ -595,7 +595,7 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
 
     assert!(final_state.creator_stakes_info.rewards_claimed);
 
-    // Just in case dev is also a backer - this shouldn't cause any change in StakesInfo or BackerLocksByAccount
+    // Just in case creator is also a backer - this shouldn't cause any change in StakesInfo or BackerLocksByAccount
     assert_eq!(init_state.backer_stakes.stakes, final_state.backer_stakes.stakes);
     assert_eq!(init_state.backer_locks.total_locked, final_state.backer_locks.total_locked);
     assert_eq!(init_state.backer_locks.unbonding_info.vec(), final_state.backer_locks.unbonding_info.vec());
