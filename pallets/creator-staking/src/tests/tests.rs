@@ -1653,24 +1653,14 @@ fn rewards_are_independent_of_total_staked_amount_for_creators() {
         advance_to_era(registration_era);
 
         // Make creators have different total stakes
-        assert_stake(dummy_backer_id, first_creator_id, 200);
-        assert_stake(dummy_backer_id, second_creator_id, 400);
+        assert_stake(dummy_backer_id, first_creator_id, 10);
+        assert_stake(dummy_backer_id, second_creator_id, 10_000);
         advance_to_era(staking_era);
 
         // Stake some tokens (stake amount not to change total staked) for both creators
         assert_stake(backer_id, first_creator_id, stake_value);
         assert_stake(backer_id, second_creator_id, stake_value);
         advance_to_era(claiming_era);
-
-        // Claim rewards for both creators
-        let initial_backer_balance = Balances::free_balance(&backer_id);
-
-        assert_claim_backer(backer_id, first_creator_id, false);
-        let reward_for_first_creator = Balances::free_balance(&backer_id) - initial_backer_balance;
-
-        assert_claim_backer(backer_id, second_creator_id, false);
-        let reward_for_second_creator =
-            Balances::free_balance(&backer_id) - reward_for_first_creator - initial_backer_balance;
 
         // Calculate expected reward
         let first_creator_snapshot = MemorySnapshot::creator(claiming_era, first_creator_id);
@@ -1688,9 +1678,21 @@ fn rewards_are_independent_of_total_staked_amount_for_creators() {
             staking_era,
         );
 
-        // Check rewards are as expected
-        assert_eq!(reward_for_first_creator, expected_reward_for_first_creator);
-        assert_eq!(reward_for_second_creator, expected_reward_for_second_creator);
+        // Expected rewards should be equal since total staked amount doesn't affect reward
+        assert_eq!(expected_reward_for_first_creator, expected_reward_for_second_creator);
+
+        // Claim rewards for both creators
+        let initial_backer_balance = Balances::free_balance(&backer_id);
+
+        assert_claim_backer(backer_id, first_creator_id, false);
+        let reward_for_first_creator = Balances::free_balance(&backer_id) - initial_backer_balance;
+
+        assert_claim_backer(backer_id, second_creator_id, false);
+        let reward_for_second_creator =
+            Balances::free_balance(&backer_id) - reward_for_first_creator - initial_backer_balance;
+
+        // Actual rewards should be equal since total staked amount doesn't affect reward
+        assert_eq!(reward_for_first_creator, reward_for_second_creator);
     })
 }
 
