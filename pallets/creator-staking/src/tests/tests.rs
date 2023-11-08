@@ -1781,7 +1781,7 @@ fn calculate_creator_reward_is_ok() {
     let total_staked = staked_on_creator * 3;
 
     // Prepare structs
-    let staking_points = CreatorStakeInfo::<Balance> {
+    let creator_info = CreatorStakeInfo::<Balance> {
         total_staked: staked_on_creator,
         backers_count: 10,
         rewards_claimed: false,
@@ -1796,7 +1796,7 @@ fn calculate_creator_reward_is_ok() {
     };
 
     let actual_creator_reward =
-        CreatorStaking::calculate_creator_reward(&staking_points, &era_info);
+        CreatorStaking::calculate_creator_reward(&creator_info, &era_info);
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
     let expected_creator_reward = creator_stake_ratio * base_creators_reward;
