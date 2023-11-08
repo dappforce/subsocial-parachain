@@ -1666,14 +1666,15 @@ fn rewards_are_independent_of_total_staked_amount_for_creators() {
         let initial_backer_balance = Balances::free_balance(&backer_id);
 
         assert_claim_backer(backer_id, first_creator_id, false);
-        let reward_for_first_creator = Balances::free_balance(&backer_id) - initial_backer_balance;
+        let backer_reward_from_first_creator =
+            Balances::free_balance(&backer_id) - initial_backer_balance;
 
         assert_claim_backer(backer_id, second_creator_id, false);
-        let reward_for_second_creator =
-            Balances::free_balance(&backer_id) - reward_for_first_creator - initial_backer_balance;
+        let backer_reward_from_second_creator =
+            Balances::free_balance(&backer_id) - backer_reward_from_first_creator - initial_backer_balance;
 
         // Actual rewards should be equal since total staked amount doesn't affect reward
-        assert_eq!(reward_for_first_creator, reward_for_second_creator);
+        assert_eq!(backer_reward_from_first_creator, backer_reward_from_second_creator);
     })
 }
 
