@@ -612,14 +612,12 @@ pub mod pallet {
             let current_era = Self::current_era();
             ensure!(era_to_claim < current_era, Error::<T>::CannotClaimInFutureEra);
 
-            let staking_info = Self::creator_stake_info(creator_id, era_to_claim).unwrap_or_default();
             let reward_and_stake =
                 Self::general_era_info(era_to_claim).ok_or(Error::<T>::EraNotFound)?;
 
-            let (_, combined_backers_reward_share) =
-                Self::distributed_rewards_between_creator_and_backers(&staking_info, &reward_and_stake);
+            // TODO: move to separate function
             let backer_reward =
-                Perbill::from_rational(backer_staked, staking_info.total_staked) * combined_backers_reward_share;
+                Perbill::from_rational(backer_staked, reward_and_stake.staked) * reward_and_stake.rewards.backers;
 
             // FIXME: we mustn't modify `backer_stakes` here!
             let can_restake_reward = Self::ensure_can_restake_reward(
@@ -687,7 +685,7 @@ pub mod pallet {
                 Self::general_era_info(era).ok_or(Error::<T>::EraNotFound)?;
 
             // Calculate the creator reward for this era.
-            let (creator_reward, _) = Self::distributed_rewards_between_creator_and_backers(
+            let creator_reward = Self::calculate_creator_reward(
                 &creator_stake_info,
                 &rewards_and_stakes,
             );

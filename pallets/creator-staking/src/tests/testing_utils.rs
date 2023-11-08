@@ -15,12 +15,12 @@ use crate::tests::tests::Rewards;
 
 /// Helper struct used to store information relevant to era/creator/backer combination.
 pub(super) struct MemorySnapshot {
-    era_info: EraInfo<Balance>,
-    creator_info: CreatorInfo<AccountId>,
-    backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
-    creator_stakes_info: CreatorStakeInfo<Balance>,
-    free_balance: Balance,
-    backer_locks: BackerLocks<Balance, MaxUnbondingChunks>,
+    pub(super) era_info: EraInfo<Balance>,
+    pub(super) creator_info: CreatorInfo<AccountId>,
+    pub(super) backer_stakes: StakesInfo<Balance, MaxEraStakeItems>,
+    pub(super) creator_stakes_info: CreatorStakeInfo<Balance>,
+    pub(super) free_balance: Balance,
+    pub(super) backer_locks: BackerLocks<Balance, MaxUnbondingChunks>,
 }
 
 impl MemorySnapshot {
@@ -427,7 +427,6 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     }
 
     let calculated_reward = CreatorStaking::calculate_reward_for_backer_in_era(
-        &init_state_claim_era.creator_stakes_info,
         staked,
         claim_era,
     );
@@ -572,8 +571,8 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     }
 
     // Calculate creator portion of the reward
-    let (creator_reward_share, _) =
-        CreatorStaking::distributed_rewards_between_creator_and_backers(
+    let creator_reward =
+        CreatorStaking::calculate_creator_reward(
             &init_state.creator_stakes_info, &init_state.era_info
         );
 
@@ -584,18 +583,18 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     ));
     System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::CreatorRewardsClaimed {
         who: stakeholder.clone(),
-        amount: creator_reward_share,
+        amount: creator_reward,
     }));
 
     let final_state = MemorySnapshot::all(claim_era, creator_id, stakeholder);
     assert_eq!(
-        init_state.free_balance + creator_reward_share,
+        init_state.free_balance + creator_reward,
         final_state.free_balance
     );
 
     assert!(final_state.creator_stakes_info.rewards_claimed);
 
-    // Just in case dev is also a backer - this shouldn't cause any change in StakesInfo or BackerLocksByAccount
+    // Just in case creator is also a backer - this shouldn't cause any change in StakesInfo or BackerLocksByAccount
     assert_eq!(init_state.backer_stakes.stakes, final_state.backer_stakes.stakes);
     assert_eq!(init_state.backer_locks.total_locked, final_state.backer_locks.total_locked);
     assert_eq!(init_state.backer_locks.unbonding_info.vec(), final_state.backer_locks.unbonding_info.vec());

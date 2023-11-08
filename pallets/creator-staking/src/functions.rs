@@ -205,20 +205,15 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    /// Calculate the reward distribution between a creator and everyone staking towards that creator.
-    ///
-    /// Returns (creator's reward, backers' combined reward)
-    pub(crate) fn distributed_rewards_between_creator_and_backers(
+    /// Calculate the reward for a creator in a specific era.
+    pub(crate) fn calculate_creator_reward(
         creator_info: &CreatorStakeInfo<BalanceOf<T>>,
         era_info: &EraInfo<BalanceOf<T>>,
-    ) -> (BalanceOf<T>, BalanceOf<T>) {
-        let creator_proportional_stake =
+    ) -> BalanceOf<T> {
+        let creator_reward_ratio =
             Perbill::from_rational(creator_info.total_staked, era_info.staked);
 
-        let creator_reward_share = creator_proportional_stake * era_info.rewards.creators;
-        let combined_backers_reward_share = creator_proportional_stake * era_info.rewards.backers;
-
-        (creator_reward_share, combined_backers_reward_share)
+        creator_reward_ratio * era_info.rewards.creators
     }
 
     /// This utility function converts the PalletId specified in `Config` into an account ID.
@@ -363,14 +358,11 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(crate) fn calculate_reward_for_backer_in_era(
-        creator_stake_info: &CreatorStakeInfo<BalanceOf<T>>,
         staked: BalanceOf<T>,
         era: EraIndex,
     ) -> BalanceOf<T> {
-        if let Some(reward_and_stake) = Self::general_era_info(era) {
-            let (_, combined_backers_reward_share) =
-                Self::distributed_rewards_between_creator_and_backers(creator_stake_info, &reward_and_stake);
-            Perbill::from_rational(staked, creator_stake_info.total_staked) * combined_backers_reward_share
+        if let Some(era_info) = Self::general_era_info(era) {
+            Perbill::from_rational(staked, era_info.staked) * era_info.rewards.backers
         } else {
             Zero::zero()
         }
@@ -429,8 +421,8 @@ impl<T: Config> Pallet<T> {
                     break;
                 }
 
-                let backer_era_reward = |creator_stake_info| {
-                    Self::calculate_reward_for_backer_in_era(&creator_stake_info, staked, era)
+                let backer_era_reward = |_| {
+                    Self::calculate_reward_for_backer_in_era(staked, era)
                 };
                 let creator_stake_info = Self::creator_stake_info(creator_id, era);
 
@@ -493,10 +485,10 @@ impl<T: Config> Pallet<T> {
         for (era, stake_info) in CreatorStakeInfoByEra::<T>::iter_prefix(creator_id) {
             if !stake_info.rewards_claimed {
                 if let Some(era_info) = Self::general_era_info(era) {
-                    let (creator_reward_share, _) =
-                        Self::distributed_rewards_between_creator_and_backers(&stake_info, &era_info);
+                    let creator_reward =
+                        Self::calculate_creator_reward(&stake_info, &era_info);
                     estimated_rewards = estimated_rewards
-                        .saturating_add(creator_reward_share);
+                        .saturating_add(creator_reward);
                 }
             }
         }

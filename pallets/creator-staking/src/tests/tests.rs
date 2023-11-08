@@ -1629,6 +1629,56 @@ fn claim_creator_with_zero_stake_periods_is_ok() {
 }
 
 #[test]
+fn rewards_are_independent_of_total_staked_amount_for_creators() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let start_era = CreatorStaking::current_era();
+        let registration_era = start_era + 1;
+        let staking_era = start_era + 2;
+        let claiming_era = start_era + 3;
+
+        let stakeholder = 10;
+        let first_creator_id = 1;
+        let second_creator_id = 2;
+
+        let dummy_backer_id = 1;
+        let backer_id = 2;
+
+        let stake_value = 100;
+
+        // Register creators
+        assert_register(stakeholder, first_creator_id);
+        assert_register(stakeholder, second_creator_id);
+        advance_to_era(registration_era);
+
+        // Make creators have different total stakes
+        assert_stake(dummy_backer_id, first_creator_id, 10);
+        assert_stake(dummy_backer_id, second_creator_id, 10_000);
+        advance_to_era(staking_era);
+
+        // Stake some tokens (stake amount not to change total staked) for both creators
+        assert_stake(backer_id, first_creator_id, stake_value);
+        assert_stake(backer_id, second_creator_id, stake_value);
+        advance_to_era(claiming_era);
+
+        // Claim rewards for both creators
+        let initial_backer_balance = Balances::free_balance(&backer_id);
+
+        assert_claim_backer(backer_id, first_creator_id, false);
+        let backer_reward_from_first_creator =
+            Balances::free_balance(&backer_id) - initial_backer_balance;
+
+        assert_claim_backer(backer_id, second_creator_id, false);
+        let backer_reward_from_second_creator =
+            Balances::free_balance(&backer_id) - backer_reward_from_first_creator - initial_backer_balance;
+
+        // Actual rewards should be equal since total staked amount doesn't affect reward
+        assert_eq!(backer_reward_from_first_creator, backer_reward_from_second_creator);
+    })
+}
+
+#[test]
 fn maintenance_mode_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -1725,14 +1775,14 @@ fn maintenance_mode_no_change() {
 }
 
 #[test]
-fn distributed_rewards_between_creator_and_backers_util() {
+fn calculate_creator_reward_is_ok() {
     let base_backers_reward = 7 * 11 * 13 * 17;
     let base_creators_reward = 19 * 23 * 31;
     let staked_on_creator = 123456;
     let total_staked = staked_on_creator * 3;
 
     // Prepare structs
-    let staking_points = CreatorStakeInfo::<Balance> {
+    let creator_info = CreatorStakeInfo::<Balance> {
         total_staked: staked_on_creator,
         backers_count: 10,
         rewards_claimed: false,
@@ -1746,19 +1796,13 @@ fn distributed_rewards_between_creator_and_backers_util() {
         locked: total_staked,
     };
 
-    let (creator_reward_share, combined_backers_reward_share) =
-        CreatorStaking::distributed_rewards_between_creator_and_backers(&staking_points, &era_info);
+    let actual_creator_reward =
+        CreatorStaking::calculate_creator_reward(&creator_info, &era_info);
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
-    let calculated_backers_reward = creator_stake_ratio * base_backers_reward;
-    let calculated_dev_reward = creator_stake_ratio * base_creators_reward;
-    assert_eq!(calculated_dev_reward, creator_reward_share);
-    assert_eq!(calculated_backers_reward, combined_backers_reward_share);
+    let expected_creator_reward = creator_stake_ratio * base_creators_reward;
 
-    assert_eq!(
-        calculated_backers_reward + calculated_dev_reward,
-        creator_reward_share + combined_backers_reward_share
-    );
+    assert_eq!(expected_creator_reward, actual_creator_reward);
 }
 
 #[test]
