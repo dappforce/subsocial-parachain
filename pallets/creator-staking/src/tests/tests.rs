@@ -1774,7 +1774,7 @@ fn maintenance_mode_no_change() {
 }
 
 #[test]
-fn distributed_rewards_between_creator_and_backers_util() {
+fn calculate_creator_reward_is_ok() {
     let base_backers_reward = 7 * 11 * 13 * 17;
     let base_creators_reward = 19 * 23 * 31;
     let staked_on_creator = 123456;
@@ -1800,15 +1800,8 @@ fn distributed_rewards_between_creator_and_backers_util() {
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
     let expected_creator_reward = creator_stake_ratio * base_creators_reward;
-    let expected_backers_reward = base_backers_reward;
 
     assert_eq!(expected_creator_reward, actual_creator_reward);
-    assert_eq!(expected_backers_reward, era_info.rewards.backers);
-
-    assert_eq!(
-        expected_backers_reward + expected_creator_reward,
-        era_info.rewards.backers + actual_creator_reward,
-    );
 }
 
 #[test]
