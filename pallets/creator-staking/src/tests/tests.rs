@@ -1795,18 +1795,19 @@ fn distributed_rewards_between_creator_and_backers_util() {
         locked: total_staked,
     };
 
-    let creator_reward =
+    let actual_creator_reward =
         CreatorStaking::calculate_creator_reward(&staking_points, &era_info);
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
-    let calculated_backers_reward = base_backers_reward;
-    let calculated_creator_reward = creator_stake_ratio * base_creators_reward;
-    assert_eq!(calculated_creator_reward, creator_reward);
-    assert_eq!(calculated_backers_reward, era_info.rewards.backers);
+    let expected_creator_reward = creator_stake_ratio * base_creators_reward;
+    let expected_backers_reward = base_backers_reward;
+
+    assert_eq!(expected_creator_reward, actual_creator_reward);
+    assert_eq!(expected_backers_reward, era_info.rewards.backers);
 
     assert_eq!(
-        calculated_backers_reward + calculated_creator_reward,
-        creator_reward + era_info.rewards.backers
+        expected_backers_reward + expected_creator_reward,
+        era_info.rewards.backers + actual_creator_reward,
     );
 }
 

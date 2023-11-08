@@ -615,6 +615,7 @@ pub mod pallet {
             let reward_and_stake =
                 Self::general_era_info(era_to_claim).ok_or(Error::<T>::EraNotFound)?;
 
+            // TODO: move to separate function
             let backer_reward =
                 Perbill::from_rational(backer_staked, reward_and_stake.staked) * reward_and_stake.rewards.backers;
 
