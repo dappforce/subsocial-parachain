@@ -1662,25 +1662,6 @@ fn rewards_are_independent_of_total_staked_amount_for_creators() {
         assert_stake(backer_id, second_creator_id, stake_value);
         advance_to_era(claiming_era);
 
-        // Calculate expected reward
-        let first_creator_snapshot = MemorySnapshot::creator(claiming_era, first_creator_id);
-        let second_creator_snapshot = MemorySnapshot::creator(claiming_era, second_creator_id);
-
-        let expected_reward_for_first_creator = CreatorStaking::calculate_reward_for_backer_in_era(
-            &first_creator_snapshot.creator_stakes_info,
-            stake_value,
-            staking_era,
-        );
-
-        let expected_reward_for_second_creator = CreatorStaking::calculate_reward_for_backer_in_era(
-            &second_creator_snapshot.creator_stakes_info,
-            stake_value,
-            staking_era,
-        );
-
-        // Expected rewards should be equal since total staked amount doesn't affect reward
-        assert_eq!(expected_reward_for_first_creator, expected_reward_for_second_creator);
-
         // Claim rewards for both creators
         let initial_backer_balance = Balances::free_balance(&backer_id);
 
@@ -1814,18 +1795,18 @@ fn distributed_rewards_between_creator_and_backers_util() {
         locked: total_staked,
     };
 
-    let (creator_reward_share, combined_backers_reward_share) =
-        CreatorStaking::distributed_rewards_between_creator_and_backers(&staking_points, &era_info);
+    let creator_reward =
+        CreatorStaking::calculate_creator_reward(&staking_points, &era_info);
 
     let creator_stake_ratio = Perbill::from_rational(staked_on_creator, total_staked);
     let calculated_backers_reward = base_backers_reward;
     let calculated_creator_reward = creator_stake_ratio * base_creators_reward;
-    assert_eq!(calculated_creator_reward, creator_reward_share);
-    assert_eq!(calculated_backers_reward, combined_backers_reward_share);
+    assert_eq!(calculated_creator_reward, creator_reward);
+    assert_eq!(calculated_backers_reward, era_info.rewards.backers);
 
     assert_eq!(
         calculated_backers_reward + calculated_creator_reward,
-        creator_reward_share + combined_backers_reward_share
+        creator_reward + era_info.rewards.backers
     );
 }
 

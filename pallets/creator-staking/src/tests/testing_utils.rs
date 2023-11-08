@@ -427,7 +427,6 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     }
 
     let calculated_reward = CreatorStaking::calculate_reward_for_backer_in_era(
-        &init_state_claim_era.creator_stakes_info,
         staked,
         claim_era,
     );
@@ -572,8 +571,8 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     }
 
     // Calculate creator portion of the reward
-    let (creator_reward_share, _) =
-        CreatorStaking::distributed_rewards_between_creator_and_backers(
+    let creator_reward =
+        CreatorStaking::calculate_creator_reward(
             &init_state.creator_stakes_info, &init_state.era_info
         );
 
@@ -584,12 +583,12 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     ));
     System::assert_last_event(mock::RuntimeEvent::CreatorStaking(Event::CreatorRewardsClaimed {
         who: stakeholder.clone(),
-        amount: creator_reward_share,
+        amount: creator_reward,
     }));
 
     let final_state = MemorySnapshot::all(claim_era, creator_id, stakeholder);
     assert_eq!(
-        init_state.free_balance + creator_reward_share,
+        init_state.free_balance + creator_reward,
         final_state.free_balance
     );
 
