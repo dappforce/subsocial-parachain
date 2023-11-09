@@ -39,6 +39,11 @@ impl<T: Config> Pallet<T> {
             .map_or(false, |info| info.status == CreatorStatus::Active)
     }
 
+    pub(crate) fn ensure_creator_is_active(creator_id: CreatorId) -> DispatchResult {
+        ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+        Ok(())
+    }
+
     pub(crate) fn ensure_creator_active_in_era(
         creator_info: &CreatorInfo<T::AccountId>,
         era: EraIndex,

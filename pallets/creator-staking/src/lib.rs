@@ -394,7 +394,7 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             // Check that a creator is ready for staking.
-            ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+            Self::ensure_creator_is_active(creator_id)?;
 
             // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
@@ -466,7 +466,7 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             ensure!(amount > Zero::zero(), Error::<T>::CannotUnstakeZero);
-            ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+            Self::ensure_creator_is_active(creator_id)?;
 
             let current_era = Self::current_era();
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
