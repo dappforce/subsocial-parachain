@@ -724,7 +724,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(8)]
+        #[pallet::call_index(9)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_creator_reward(origin: OriginFor<T>, creator_id: CreatorId, era: EraIndex) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -781,7 +781,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(9)]
+        #[pallet::call_index(10)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_maintenance_mode(
             origin: OriginFor<T>,
@@ -802,7 +802,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(10)]
+        #[pallet::call_index(11)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
@@ -810,7 +810,7 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        #[pallet::call_index(11)]
+        #[pallet::call_index(12)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_reward_distribution_config(
             origin: OriginFor<T>,
@@ -826,7 +826,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::call_index(12)]
+        #[pallet::call_index(13)]
         #[pallet::weight(T::DbWeight::get().writes(1) + Weight::from_parts(10_000, 0))]
         pub fn set_per_block_reward(origin: OriginFor<T>, new_reward: BalanceOf<T>) -> DispatchResult {
             ensure_root(origin)?;
