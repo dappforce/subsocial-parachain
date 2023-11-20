@@ -1,4 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
@@ -169,7 +175,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 2901,
+	spec_version: 3100,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
@@ -740,7 +746,7 @@ parameter_types! {
 	pub const MinimumStakingAmount: Balance = 100 * UNIT;
 	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
 
-	pub const CurrentAnnualInflation: Perbill = Perbill::from_percent(3);
+	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
 	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
 		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
@@ -761,7 +767,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type StakeExpirationInEras = StakeExpirationInEras;
 	type UnbondingPeriodInEras = UnbondingPeriodInEras;
 	type MaxUnbondingChunks = ConstU32<32>;
-	type AnnualInflation = CurrentAnnualInflation;
+	type InitialRewardPerBlock = InitialRewardPerBlock;
 	type BlocksPerYear = BlocksPerYear;
 	type TreasuryAccount = TreasuryAccount;
 }

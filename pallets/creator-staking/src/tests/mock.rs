@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use crate::{self as pallet_creator_staking, PalletDisabled};
 
 use frame_support::{
@@ -13,7 +19,7 @@ use mockall::mock;
 
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{DispatchError, Perbill, testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}};
+use sp_runtime::{DispatchError, testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}};
 use sp_std::sync::{Mutex, MutexGuard};
 
 pub(super) type AccountId = u64;
@@ -38,6 +44,7 @@ pub(super) const MAX_ERA_STAKE_ITEMS: u32 = 8;
 // Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
 pub(super) const BLOCKS_PER_ERA: BlockNumber = 3;
 pub(super) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
+pub(super) const BLOCK_REWARD: Balance = 100;
 
 pub(super) const TREASURY_ACCOUNT: BlockNumber = 42;
 
@@ -137,7 +144,7 @@ parameter_types! {
     pub const MaxUnbondingChunks: u32 = MAX_UNBONDING_CHUNKS;
     pub const UnbondingPeriodInEras: EraIndex = UNBONDING_PERIOD_IN_ERAS;
     pub const MaxEraStakeItems: u32 = MAX_ERA_STAKE_ITEMS;
-    pub const AnnualInflation: Perbill = Perbill::from_percent(10);
+    pub const BlockReward: Balance = BLOCK_REWARD;
     pub const BlocksPerYear: BlockNumber = BLOCKS_PER_YEAR;
     pub const TreasuryAccount: AccountId = TREASURY_ACCOUNT;
 }
@@ -186,7 +193,7 @@ impl pallet_creator_staking::Config for TestRuntime {
     type UnbondingPeriodInEras = UnbondingPeriodInEras;
     type MaxUnbondingChunks = MaxUnbondingChunks;
     // Inflation config:
-    type AnnualInflation = AnnualInflation;
+    type InitialRewardPerBlock = BlockReward;
     type BlocksPerYear = BlocksPerYear;
     type TreasuryAccount = TreasuryAccount;
     // type WeightInfo = weights::SubstrateWeight<TestRuntime>;

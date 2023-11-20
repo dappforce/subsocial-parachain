@@ -1,6 +1,12 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use crate::*;
 use frame_support::traits::{Currency, Get, OnTimestampSet, Imbalance};
-use sp_runtime::traits::{Saturating, SaturatedConversion, UniqueSaturatedInto};
+use sp_runtime::traits::Saturating;
 
 type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
@@ -8,20 +14,18 @@ type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
 
 impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
     fn on_timestamp_set(_moment: Moment) {
-        let total_issuance = T::Currency::total_issuance();
-        let new_tokens_per_block: BalanceOf<T> = Self::calc_per_block_rewards(total_issuance);
+        if PalletDisabled::<T>::get() {
+            return;
+        }
 
+        let new_tokens_per_block: BalanceOf<T> = Self::per_block_reward();
         let inflation = T::Currency::issue(new_tokens_per_block);
+
         Self::distribute_rewards(inflation);
     }
 }
 
 impl<T: Config> Pallet<T> {
-    pub(crate) fn calc_per_block_rewards(total_issuance: BalanceOf<T>) -> BalanceOf<T> {
-        T::AnnualInflation::get() * total_issuance
-            / T::BlocksPerYear::get().saturated_into::<u32>().unique_saturated_into()
-    }
-
     fn distribute_rewards(block_reward: NegativeImbalanceOf<T>) {
         let distro_params = Self::reward_config();
 
