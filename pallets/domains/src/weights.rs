@@ -69,7 +69,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
         // Minimum execution time: 96_604 nanoseconds.
-        Weight::from_ref_time(98_722_000)
+        Weight::from_parts(98_722_000, 0)
             .saturating_add(T::DbWeight::get().reads(8))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -77,7 +77,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn set_inner_value() -> Weight {
         // Minimum execution time: 45_544 nanoseconds.
-        Weight::from_ref_time(46_048_000)
+        Weight::from_parts(46_048_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -85,21 +85,21 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn force_set_inner_value() -> Weight {
         // Minimum execution time: 44_561 nanoseconds.
-        Weight::from_ref_time(45_635_000)
+        Weight::from_parts(45_635_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(3))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_outer_value() -> Weight {
         // Minimum execution time: 57_639 nanoseconds.
-        Weight::from_ref_time(58_498_000)
+        Weight::from_parts(58_498_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_domain_content() -> Weight {
         // Minimum execution time: 38_702 nanoseconds.
-        Weight::from_ref_time(38_974_000)
+        Weight::from_parts(38_974_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -107,9 +107,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `s` is `[1, 2860]`.
         fn reserve_words(s: u32, ) -> Weight {
         // Minimum execution time: 24_683 nanoseconds.
-        Weight::from_ref_time(153_633_074)
+        Weight::from_parts(153_633_074, 0)
             // Standard Error: 6_880
-            .saturating_add(Weight::from_ref_time(2_532_838).saturating_mul(s.into()))
+            .saturating_add(Weight::from_parts(2_532_838, 0).saturating_mul(s.into()))
             .saturating_add(T::DbWeight::get().writes(313))
             .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(s.into())))
         }
@@ -117,9 +117,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `s` is `[1, 2860]`.
         fn support_tlds(s: u32, ) -> Weight {
         // Minimum execution time: 24_766 nanoseconds.
-        Weight::from_ref_time(154_478_755)
+        Weight::from_parts(154_478_755, 0)
             // Standard Error: 6_885
-            .saturating_add(Weight::from_ref_time(2_495_524).saturating_mul(s.into()))
+            .saturating_add(Weight::from_parts(2_495_524, 0).saturating_mul(s.into()))
             .saturating_add(T::DbWeight::get().writes(313))
             .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(s.into())))
         }
@@ -137,7 +137,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Timestamp Now (r:1 w:0)
         fn register_domain() -> Weight {
         // Minimum execution time: 96_604 nanoseconds.
-        Weight::from_ref_time(98_722_000)
+        Weight::from_parts(98_722_000, 0)
             .saturating_add(RocksDbWeight::get().reads(8))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -145,7 +145,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn set_inner_value() -> Weight {
         // Minimum execution time: 45_544 nanoseconds.
-        Weight::from_ref_time(46_048_000)
+        Weight::from_parts(46_048_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -153,21 +153,21 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Domains DomainByInnerValue (r:0 w:2)
         fn force_set_inner_value() -> Weight {
         // Minimum execution time: 44_561 nanoseconds.
-        Weight::from_ref_time(45_635_000)
+        Weight::from_parts(45_635_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_outer_value() -> Weight {
         // Minimum execution time: 57_639 nanoseconds.
-        Weight::from_ref_time(58_498_000)
+        Weight::from_parts(58_498_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: Domains RegisteredDomains (r:1 w:1)
         fn set_domain_content() -> Weight {
         // Minimum execution time: 38_702 nanoseconds.
-        Weight::from_ref_time(38_974_000)
+        Weight::from_parts(38_974_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
@@ -175,9 +175,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `s` is `[1, 2860]`.
         fn reserve_words(s: u32, ) -> Weight {
         // Minimum execution time: 24_683 nanoseconds.
-        Weight::from_ref_time(153_633_074)
+        Weight::from_parts(153_633_074, 0)
             // Standard Error: 6_880
-            .saturating_add(Weight::from_ref_time(2_532_838).saturating_mul(s.into()))
+            .saturating_add(Weight::from_parts(2_532_838, 0).saturating_mul(s.into()))
             .saturating_add(RocksDbWeight::get().writes(313))
             .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(s.into())))
         }
@@ -185,9 +185,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `s` is `[1, 2860]`.
         fn support_tlds(s: u32, ) -> Weight {
         // Minimum execution time: 24_766 nanoseconds.
-        Weight::from_ref_time(154_478_755)
+        Weight::from_parts(154_478_755, 0)
             // Standard Error: 6_885
-            .saturating_add(Weight::from_ref_time(2_495_524).saturating_mul(s.into()))
+            .saturating_add(Weight::from_parts(2_495_524, 0).saturating_mul(s.into()))
             .saturating_add(RocksDbWeight::get().writes(313))
             .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(s.into())))
         }

@@ -104,7 +104,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
@@ -396,7 +395,7 @@ pub mod pallet {
 
         #[pallet::call_index(7)]
         #[pallet::weight((
-            T::DbWeight::get().writes(1) + Weight::from_ref_time(100_000),
+            T::DbWeight::get().writes(1) + Weight::from_parts(100_000, 0),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -412,7 +411,7 @@ pub mod pallet {
         #[pallet::call_index(8)]
         #[pallet::weight((
             T::DbWeight::get().writes(1) +
-                Weight::from_ref_time(100_000 * new_prices_config.len() as u64 * 2),
+                Weight::from_parts(100_000 * new_prices_config.len() as u64 * 2, 0),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

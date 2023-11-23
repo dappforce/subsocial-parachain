@@ -17,10 +17,7 @@ use jsonrpsee::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 pub use pallet_domains_rpc_runtime_api::DomainsApi as DomainsRuntimeApi;
 
@@ -75,7 +72,7 @@ DomainsApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Option<Balance>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         fn map_err(error: impl ToString, desc: &'static str) -> CallError {
             CallError::Custom(ErrorObject::owned(
@@ -86,7 +83,7 @@ DomainsApiServer<
         }
 
         let res = api
-            .calculate_price(&at, subdomain)
+            .calculate_price(at_hash, subdomain)
             .map_err(|e| map_err(e, "Unable to calculate price for domain."))?;
 
         Ok(res)

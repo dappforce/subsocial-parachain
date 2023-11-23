@@ -59,7 +59,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceOwnership PendingSpaceOwner (r:0 w:1)
         fn transfer_space_ownership() -> Weight {
         // Minimum execution time: 36_442 nanoseconds.
-        Weight::from_ref_time(36_970_000)
+        Weight::from_parts(36_970_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -69,7 +69,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Profiles ProfileSpaceIdByAccount (r:1 w:0)
         fn accept_pending_ownership() -> Weight {
         // Minimum execution time: 60_105 nanoseconds.
-        Weight::from_ref_time(60_893_000)
+        Weight::from_parts(60_893_000, 0)
             .saturating_add(T::DbWeight::get().reads(5))
             .saturating_add(T::DbWeight::get().writes(4))
         }
@@ -77,7 +77,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceOwnership PendingSpaceOwner (r:1 w:1)
         fn reject_pending_ownership() -> Weight {
         // Minimum execution time: 40_600 nanoseconds.
-        Weight::from_ref_time(41_309_000)
+        Weight::from_parts(41_309_000, 0)
             .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -89,7 +89,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceOwnership PendingSpaceOwner (r:0 w:1)
         fn transfer_space_ownership() -> Weight {
         // Minimum execution time: 36_442 nanoseconds.
-        Weight::from_ref_time(36_970_000)
+        Weight::from_parts(36_970_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
@@ -99,7 +99,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Profiles ProfileSpaceIdByAccount (r:1 w:0)
         fn accept_pending_ownership() -> Weight {
         // Minimum execution time: 60_105 nanoseconds.
-        Weight::from_ref_time(60_893_000)
+        Weight::from_parts(60_893_000, 0)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(4))
         }
@@ -107,7 +107,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceOwnership PendingSpaceOwner (r:1 w:1)
         fn reject_pending_ownership() -> Weight {
         // Minimum execution time: 40_600 nanoseconds.
-        Weight::from_ref_time(41_309_000)
+        Weight::from_parts(41_309_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(1))
         }

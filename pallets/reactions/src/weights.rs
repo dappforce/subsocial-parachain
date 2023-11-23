@@ -65,7 +65,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Reactions ReactionById (r:0 w:1)
         fn create_post_reaction() -> Weight {
         // Minimum execution time: 73_075 nanoseconds.
-        Weight::from_ref_time(74_198_000)
+        Weight::from_parts(74_198_000, 0)
             .saturating_add(T::DbWeight::get().reads(7))
             .saturating_add(T::DbWeight::get().writes(5))
         }
@@ -74,7 +74,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostById (r:1 w:1)
         fn update_post_reaction() -> Weight {
         // Minimum execution time: 48_899 nanoseconds.
-        Weight::from_ref_time(52_268_000)
+        Weight::from_parts(52_268_000, 0)
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().writes(2))
         }
@@ -84,7 +84,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Reactions ReactionIdsByPostId (r:1 w:1)
         fn delete_post_reaction() -> Weight {
         // Minimum execution time: 55_284 nanoseconds.
-        Weight::from_ref_time(56_721_000)
+        Weight::from_parts(56_721_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(4))
         }
@@ -102,7 +102,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Reactions ReactionById (r:0 w:1)
         fn create_post_reaction() -> Weight {
         // Minimum execution time: 73_075 nanoseconds.
-        Weight::from_ref_time(74_198_000)
+        Weight::from_parts(74_198_000, 0)
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(5))
         }
@@ -111,7 +111,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostById (r:1 w:1)
         fn update_post_reaction() -> Weight {
         // Minimum execution time: 48_899 nanoseconds.
-        Weight::from_ref_time(52_268_000)
+        Weight::from_parts(52_268_000, 0)
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().writes(2))
         }
@@ -121,7 +121,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Reactions ReactionIdsByPostId (r:1 w:1)
         fn delete_post_reaction() -> Weight {
         // Minimum execution time: 55_284 nanoseconds.
-        Weight::from_ref_time(56_721_000)
+        Weight::from_parts(56_721_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(4))
         }

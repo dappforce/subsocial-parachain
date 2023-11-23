@@ -60,7 +60,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
     pub MockBlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(
-			frame_support::weights::Weight::from_ref_time(1_000_000)
+			frame_support::weights::Weight::from_parts(1_000_000, 0)
                 .set_proof_size(u64::MAX)
 		);
 }
@@ -158,18 +158,18 @@ impl pallet_transaction_payment::Config for Test {
 
 #[test]
 fn test_that_pallet_transaction_payment_works_as_expected() {
-    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(4000)), 0);
-    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(1)), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_parts(4000, 0)), 0);
+    assert_eq!(ZeroWeightToFeePolynomial::weight_to_fee(&Weight::from_parts(1, 0)), 0);
 
-    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(4000)), 4000);
-    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_ref_time(1)), 1);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_parts(4000, 0)), 4000);
+    assert_eq!(IdentityWeightToFeePolynomial::weight_to_fee(&Weight::from_parts(1, 0)), 1);
 
     fn compute_fee(len: u32, weight: u64, tip: Balance) -> Balance {
         ExtBuilder::default().build().execute_with(|| {
             pallet_transaction_payment::Pallet::<Test>::compute_fee(
                 len,
                 &DispatchInfo {
-                    weight: Weight::from_ref_time(weight),
+                    weight: Weight::from_parts(weight, 0),
                     class: DispatchClass::Normal,
                     pays_fee: Pays::Yes,
                 },
@@ -210,8 +210,8 @@ where
     }
 
     #[cfg(feature = "runtime-benchmarks")]
-    fn successful_origin() -> O {
-        O::from(RawOrigin::Signed(Account::get()))
+    fn try_successful_origin() -> Result<O, ()> {
+        Ok(O::from(RawOrigin::Signed(Account::get())))
     }
 }
 

@@ -18,7 +18,7 @@ use super::*;
 
 benchmarks! {
     update_value_coefficient {
-        let origin = T::UpdateOrigin::successful_origin();
+        let origin = T::UpdateOrigin::try_successful_origin().unwrap();
         let coefficient = FixedI64::checked_from_rational(2_65, 100).unwrap();
     }: _<T::RuntimeOrigin>(origin, coefficient)
     verify {

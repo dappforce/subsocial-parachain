@@ -60,7 +60,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpacesFollowedByAccount (r:1 w:1)
         fn follow_space() -> Weight {
         // Minimum execution time: 48_140 nanoseconds.
-        Weight::from_ref_time(48_862_000)
+        Weight::from_parts(48_862_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -70,7 +70,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpaceFollowers (r:1 w:1)
         fn unfollow_space() -> Weight {
         // Minimum execution time: 55_112 nanoseconds.
-        Weight::from_ref_time(55_868_000)
+        Weight::from_parts(55_868_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -84,7 +84,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpacesFollowedByAccount (r:1 w:1)
         fn follow_space() -> Weight {
         // Minimum execution time: 48_140 nanoseconds.
-        Weight::from_ref_time(48_862_000)
+        Weight::from_parts(48_862_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -94,7 +94,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpaceFollowers (r:1 w:1)
         fn unfollow_space() -> Weight {
         // Minimum execution time: 55_112 nanoseconds.
-        Weight::from_ref_time(55_868_000)
+        Weight::from_parts(55_868_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(3))
         }

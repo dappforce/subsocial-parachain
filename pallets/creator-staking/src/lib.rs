@@ -128,7 +128,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
@@ -324,7 +323,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(3, 1))]
+        #[pallet::weight(Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(3, 1))]
         pub fn force_register_creator(
             origin: OriginFor<T>,
             space_id: SpaceId,
@@ -348,7 +347,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(2, 1))]
         pub fn unregister_creator(
             origin: OriginFor<T>,
             creator_id: CreatorId,
@@ -364,7 +363,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(2)]
-        #[pallet::weight(Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(2, 1))]
+        #[pallet::weight(Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(2, 1))]
         pub fn force_unregister_creator(
             origin: OriginFor<T>,
             creator_id: CreatorId,
@@ -383,7 +382,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(3)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn stake(
             origin: OriginFor<T>,
             creator_id: CreatorId,
@@ -455,7 +454,7 @@ pub mod pallet {
         /// If the remaining balance staked on that creator is below the minimum staking amount,
         /// the entire stake for that creator will be unstaked.
         #[pallet::call_index(4)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn unstake(
             origin: OriginFor<T>,
             creator_id: CreatorId,
@@ -504,7 +503,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(5)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
@@ -537,7 +536,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(6)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn withdraw_from_inactive_creator(
             origin: OriginFor<T>,
             creator_id: CreatorId,
@@ -595,7 +594,7 @@ pub mod pallet {
         // Not sure here whether to calculate total rewards for all creators
         //  or to withdraw per-creator rewards (preferably)
         #[pallet::call_index(7)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_backer_reward(origin: OriginFor<T>, creator_id: CreatorId, restake: bool) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let backer = ensure_signed(origin)?;
@@ -656,7 +655,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_creator_reward(origin: OriginFor<T>, creator_id: CreatorId, era: EraIndex) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let _ = ensure_signed(origin)?;
@@ -713,7 +712,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(9)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_maintenance_mode(
             origin: OriginFor<T>,
             enable_maintenance: bool,
@@ -734,7 +733,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(10)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
@@ -742,7 +741,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(11)]
-        #[pallet::weight(Weight::from_ref_time(10_000))]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_reward_distribution_config(
             origin: OriginFor<T>,
             new_config: RewardDistributionConfig,
@@ -758,7 +757,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(12)]
-        #[pallet::weight(T::DbWeight::get().writes(1) + Weight::from_ref_time(10_000))]
+        #[pallet::weight(T::DbWeight::get().writes(1) + Weight::from_parts(10_000, 0))]
         pub fn set_per_block_reward(origin: OriginFor<T>, new_reward: BalanceOf<T>) -> DispatchResult {
             ensure_root(origin)?;
 
