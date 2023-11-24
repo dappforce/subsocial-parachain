@@ -12,7 +12,7 @@ keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "mark
 categories = ["cryptography::cryptocurrencies"]
 
 [dependencies]
-clap = { version = "4.1.8", features = ["derive"] }
+clap = { version = "4.0.9", features = ["derive"] }
 log = "0.4.17"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.152", features = ["derive"] }
