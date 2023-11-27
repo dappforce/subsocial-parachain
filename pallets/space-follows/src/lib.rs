@@ -41,7 +41,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -119,7 +118,7 @@ pub mod pallet {
 
         #[pallet::call_index(2)]
         #[pallet::weight((
-            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(3, 4),
+            Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(3, 4),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

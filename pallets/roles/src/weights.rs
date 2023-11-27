@@ -64,7 +64,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Roles RoleById (r:0 w:1)
         fn create_role() -> Weight {
         // Minimum execution time: 52_528 nanoseconds.
-        Weight::from_ref_time(53_688_000)
+        Weight::from_parts(53_688_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -72,7 +72,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:1 w:0)
         fn update_role() -> Weight {
         // Minimum execution time: 48_647 nanoseconds.
-        Weight::from_ref_time(50_219_000)
+        Weight::from_parts(50_219_000, 0)
             .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -84,9 +84,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[0, 40]`.
         fn delete_role(x: u32, ) -> Weight {
         // Minimum execution time: 57_007 nanoseconds.
-        Weight::from_ref_time(64_783_236)
+        Weight::from_parts(64_783_236, 0)
             // Standard Error: 26_706
-            .saturating_add(Weight::from_ref_time(8_701_651).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(8_701_651, 0).saturating_mul(x.into()))
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(T::DbWeight::get().writes(3))
@@ -99,9 +99,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[1, 500]`.
         fn grant_role(x: u32, ) -> Weight {
         // Minimum execution time: 56_274 nanoseconds.
-        Weight::from_ref_time(56_612_000)
+        Weight::from_parts(56_612_000, 0)
             // Standard Error: 131_120
-            .saturating_add(Weight::from_ref_time(21_272_680).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(21_272_680, 0).saturating_mul(x.into()))
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(T::DbWeight::get().writes(1))
@@ -114,9 +114,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[1, 500]`.
         fn revoke_role(x: u32, ) -> Weight {
         // Minimum execution time: 61_065 nanoseconds.
-        Weight::from_ref_time(61_492_000)
+        Weight::from_parts(61_492_000, 0)
             // Standard Error: 13_040
-            .saturating_add(Weight::from_ref_time(9_647_540).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(9_647_540, 0).saturating_mul(x.into()))
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(T::DbWeight::get().writes(1))
@@ -133,7 +133,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Roles RoleById (r:0 w:1)
         fn create_role() -> Weight {
         // Minimum execution time: 52_528 nanoseconds.
-        Weight::from_ref_time(53_688_000)
+        Weight::from_parts(53_688_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -141,7 +141,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:1 w:0)
         fn update_role() -> Weight {
         // Minimum execution time: 48_647 nanoseconds.
-        Weight::from_ref_time(50_219_000)
+        Weight::from_parts(50_219_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
@@ -153,9 +153,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[0, 40]`.
         fn delete_role(x: u32, ) -> Weight {
         // Minimum execution time: 57_007 nanoseconds.
-        Weight::from_ref_time(64_783_236)
+        Weight::from_parts(64_783_236, 0)
             // Standard Error: 26_706
-            .saturating_add(Weight::from_ref_time(8_701_651).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(8_701_651, 0).saturating_mul(x.into()))
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(RocksDbWeight::get().writes(3))
@@ -168,9 +168,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[1, 500]`.
         fn grant_role(x: u32, ) -> Weight {
         // Minimum execution time: 56_274 nanoseconds.
-        Weight::from_ref_time(56_612_000)
+        Weight::from_parts(56_612_000, 0)
             // Standard Error: 131_120
-            .saturating_add(Weight::from_ref_time(21_272_680).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(21_272_680, 0).saturating_mul(x.into()))
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(RocksDbWeight::get().writes(1))
@@ -183,9 +183,9 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             /// The range of component `x` is `[1, 500]`.
         fn revoke_role(x: u32, ) -> Weight {
         // Minimum execution time: 61_065 nanoseconds.
-        Weight::from_ref_time(61_492_000)
+        Weight::from_parts(61_492_000, 0)
             // Standard Error: 13_040
-            .saturating_add(Weight::from_ref_time(9_647_540).saturating_mul(x.into()))
+            .saturating_add(Weight::from_parts(9_647_540, 0).saturating_mul(x.into()))
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(x.into())))
             .saturating_add(RocksDbWeight::get().writes(1))

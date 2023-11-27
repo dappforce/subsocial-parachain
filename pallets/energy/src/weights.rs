@@ -56,7 +56,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Energy ValueCoefficient (r:0 w:1)
         fn update_value_coefficient() -> Weight {
         // Minimum execution time: 21_783 nanoseconds.
-        Weight::from_ref_time(22_445_000)
+        Weight::from_parts(22_445_000, 0)
             .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: System Account (r:2 w:2)
@@ -64,7 +64,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Energy TotalEnergy (r:1 w:1)
         fn generate_energy() -> Weight {
         // Minimum execution time: 72_275 nanoseconds.
-        Weight::from_ref_time(73_882_000)
+        Weight::from_parts(73_882_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(4))
         }
@@ -75,7 +75,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Energy ValueCoefficient (r:0 w:1)
         fn update_value_coefficient() -> Weight {
         // Minimum execution time: 21_783 nanoseconds.
-        Weight::from_ref_time(22_445_000)
+        Weight::from_parts(22_445_000, 0)
             .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: System Account (r:2 w:2)
@@ -83,7 +83,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Energy TotalEnergy (r:1 w:1)
         fn generate_energy() -> Weight {
         // Minimum execution time: 72_275 nanoseconds.
-        Weight::from_ref_time(73_882_000)
+        Weight::from_parts(73_882_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(4))
         }
