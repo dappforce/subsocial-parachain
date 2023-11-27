@@ -57,7 +57,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: FreeProxy CanAddFreeProxy (r:0 w:1)
         fn add_free_proxy() -> Weight {
         // Minimum execution time: 40_581 nanoseconds.
-        Weight::from_ref_time(43_918_000)
+        Weight::from_parts(43_918_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(2))
         }
@@ -69,7 +69,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: FreeProxy CanAddFreeProxy (r:0 w:1)
         fn add_free_proxy() -> Weight {
         // Minimum execution time: 40_581 nanoseconds.
-        Weight::from_ref_time(43_918_000)
+        Weight::from_parts(43_918_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(2))
         }

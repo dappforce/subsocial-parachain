@@ -266,8 +266,8 @@ fn charge_transaction<PreValidator: FnOnce()>(
     pre_validator: PreValidator,
 ) -> Result<(), ChargeTransactionError> {
     let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
-    let info = DispatchInfo { weight: Weight::from_ref_time(fee), class: DispatchClass::Normal, pays_fee: Pays::Yes };
-    let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_ref_time(actual_fee)), pays_fee: Pays::Yes };
+    let info = DispatchInfo { weight: Weight::from_parts(fee, 0), class: DispatchClass::Normal, pays_fee: Pays::Yes };
+    let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_parts(actual_fee, 0)), pays_fee: Pays::Yes };
 
     let pre = ChargeTransactionPayment::<Test>::from(tip)
         .pre_dispatch(caller, &call, &info, 0)

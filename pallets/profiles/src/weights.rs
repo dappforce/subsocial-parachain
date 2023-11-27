@@ -59,14 +59,14 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Profiles ProfileSpaceIdByAccount (r:0 w:1)
         fn set_profile() -> Weight {
         // Minimum execution time: 37_278 nanoseconds.
-        Weight::from_ref_time(38_209_000)
+        Weight::from_parts(38_209_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
         }
             // Storage: Profiles ProfileSpaceIdByAccount (r:1 w:1)
         fn reset_profile() -> Weight {
         // Minimum execution time: 32_373 nanoseconds.
-        Weight::from_ref_time(32_897_000)
+        Weight::from_parts(32_897_000, 0)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -77,7 +77,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:0 w:1)
         fn create_space_as_profile() -> Weight {
         // Minimum execution time: 52_972 nanoseconds.
-        Weight::from_ref_time(54_218_000)
+        Weight::from_parts(54_218_000, 0)
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().writes(4))
         }
@@ -89,14 +89,14 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Profiles ProfileSpaceIdByAccount (r:0 w:1)
         fn set_profile() -> Weight {
         // Minimum execution time: 37_278 nanoseconds.
-        Weight::from_ref_time(38_209_000)
+        Weight::from_parts(38_209_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
             // Storage: Profiles ProfileSpaceIdByAccount (r:1 w:1)
         fn reset_profile() -> Weight {
         // Minimum execution time: 32_373 nanoseconds.
-        Weight::from_ref_time(32_897_000)
+        Weight::from_parts(32_897_000, 0)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
@@ -107,7 +107,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Spaces SpaceById (r:0 w:1)
         fn create_space_as_profile() -> Weight {
         // Minimum execution time: 52_972 nanoseconds.
-        Weight::from_ref_time(54_218_000)
+        Weight::from_parts(54_218_000, 0)
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().writes(4))
         }

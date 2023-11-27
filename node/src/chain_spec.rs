@@ -309,6 +309,7 @@ fn parachain_genesis(
 		spaces: subsocial_parachain_runtime::SpacesConfig {
 			endowed_account: Some(root_key),
 		},
+		transaction_payment: Default::default(),
 	}
 }
 

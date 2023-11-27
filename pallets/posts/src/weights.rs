@@ -64,7 +64,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostById (r:0 w:1)
         fn create_post__regular() -> Weight {
         // Minimum execution time: 30_000 nanoseconds.
-        Weight::from_ref_time(47_502_000)
+        Weight::from_parts(47_502_000, 0)
             .saturating_add(T::DbWeight::get().reads(5))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -77,7 +77,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostIdsBySpaceId (r:1 w:1)
         fn create_post__shared() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(62_353_000)
+        Weight::from_parts(62_353_000, 0)
             .saturating_add(T::DbWeight::get().reads(7))
             .saturating_add(T::DbWeight::get().writes(4))
         }
@@ -89,7 +89,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts ReplyIdsByPostId (r:1 w:1)
         fn create_post__comment() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(59_771_000)
+        Weight::from_parts(59_771_000, 0)
             .saturating_add(T::DbWeight::get().reads(7))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -98,7 +98,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpaceFollowedByAccount (r:1 w:0)
         fn update_post() -> Weight {
         // Minimum execution time: 30_000 nanoseconds.
-        Weight::from_ref_time(48_472_000)
+        Weight::from_parts(48_472_000, 0)
             .saturating_add(T::DbWeight::get().reads(4))
             .saturating_add(T::DbWeight::get().writes(1))
         }
@@ -108,7 +108,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostIdsBySpaceId (r:2 w:2)
         fn move_post() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(60_733_000)
+        Weight::from_parts(60_733_000, 0)
             .saturating_add(T::DbWeight::get().reads(7))
             .saturating_add(T::DbWeight::get().writes(3))
         }
@@ -124,7 +124,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostById (r:0 w:1)
         fn create_post__regular() -> Weight {
         // Minimum execution time: 30_000 nanoseconds.
-        Weight::from_ref_time(47_502_000)
+        Weight::from_parts(47_502_000, 0)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -137,7 +137,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostIdsBySpaceId (r:1 w:1)
         fn create_post__shared() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(62_353_000)
+        Weight::from_parts(62_353_000, 0)
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(4))
         }
@@ -149,7 +149,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts ReplyIdsByPostId (r:1 w:1)
         fn create_post__comment() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(59_771_000)
+        Weight::from_parts(59_771_000, 0)
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(3))
         }
@@ -158,7 +158,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: SpaceFollows SpaceFollowedByAccount (r:1 w:0)
         fn update_post() -> Weight {
         // Minimum execution time: 30_000 nanoseconds.
-        Weight::from_ref_time(48_472_000)
+        Weight::from_parts(48_472_000, 0)
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(1))
         }
@@ -168,7 +168,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
             // Storage: Posts PostIdsBySpaceId (r:2 w:2)
         fn move_post() -> Weight {
         // Minimum execution time: 39_000 nanoseconds.
-        Weight::from_ref_time(60_733_000)
+        Weight::from_parts(60_733_000, 0)
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(3))
         }

@@ -78,7 +78,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
@@ -323,7 +322,7 @@ pub mod pallet {
 
         #[pallet::call_index(3)]
         #[pallet::weight((
-            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(2, 3),
+            Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -361,7 +360,7 @@ pub mod pallet {
 
         #[pallet::call_index(4)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(3, 3),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().reads_writes(3, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -395,7 +394,7 @@ pub mod pallet {
 
         #[pallet::call_index(5)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

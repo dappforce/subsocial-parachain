@@ -17,10 +17,7 @@ use jsonrpsee::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 use pallet_creator_staking::{CreatorId, EraIndex};
 pub use pallet_creator_staking_rpc_runtime_api::CreatorStakingApi as CreatorStakingRuntimeApi;
@@ -112,10 +109,10 @@ CreatorStakingApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .estimated_backer_rewards_by_creators(&at, backer, creators)
+            .estimated_backer_rewards_by_creators(at_hash, backer, creators)
             .map_err(|e| map_err(e, "Unable to get estimated rewards by creator."))?;
 
         Ok(res)
@@ -127,10 +124,10 @@ CreatorStakingApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Vec<(CreatorId, Balance)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .withdrawable_amounts_from_inactive_creators(&at, backer)
+            .withdrawable_amounts_from_inactive_creators(at_hash, backer)
             .map_err(|e| map_err(e, "Unable to get withdrawable amounts from inactive creators."))?;
 
         Ok(res)
@@ -142,10 +139,10 @@ CreatorStakingApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Vec<(CreatorId, u32)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .available_claims_by_backer(&at, backer)
+            .available_claims_by_backer(at_hash, backer)
             .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
 
         Ok(res)
@@ -157,10 +154,10 @@ CreatorStakingApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Balance> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .estimated_creator_rewards(&at, creator)
+            .estimated_creator_rewards(at_hash, creator)
             .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
 
         Ok(res)
@@ -172,10 +169,10 @@ CreatorStakingApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<Vec<EraIndex>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .available_claims_by_creator(&at, creator)
+            .available_claims_by_creator(at_hash, creator)
             .map_err(|e| map_err(e, "Unable to get claims number by backer."))?;
 
         Ok(res)
