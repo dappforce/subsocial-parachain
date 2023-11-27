@@ -1,6 +1,6 @@
 [package]
 name = 'reactions-rpc'
-version = '0.1.10'
+version = '0.2.0'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2018'
 license = 'GPL-3.0-only'
