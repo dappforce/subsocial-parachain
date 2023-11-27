@@ -845,6 +845,7 @@ mod benches {
 		[pallet_energy, Energy]
 		[pallet_profiles, Profiles]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_xcm, PolkadotXcm]
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
