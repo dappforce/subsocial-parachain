@@ -275,12 +275,11 @@ parameter_types! {
 pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
 	fn contains(c: &RuntimeCall) -> bool {
-		let is_force_transfer =
-			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
+		let is_set_balance =
+			matches!(c, RuntimeCall::Balances(pallet_balances::Call::set_balance { .. }));
 
 		match *c {
-			RuntimeCall::Balances(..) => is_force_transfer,
-			RuntimeCall::Vesting(pallet_vesting::Call::vested_transfer { .. }) => false,
+			RuntimeCall::Balances(..) if is_set_balance => false,
 			_ => true,
 		}
 	}
