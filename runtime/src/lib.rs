@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 32,
+	spec_version: 33,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 6,
@@ -229,9 +229,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 	WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-	// TODO: drop `* 10` after https://github.com/paritytech/substrate/issues/13501
-	// and the benchmarked size is not 10x of the measured size
-	polkadot_primitives::v2::MAX_POV_SIZE as u64 * 10,
+	polkadot_primitives::v2::MAX_POV_SIZE as u64,
 );
 
 /// The version information used to identify this runtime when compiled natively.
@@ -277,9 +275,11 @@ impl Contains<RuntimeCall> for BaseFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		let is_set_balance =
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::set_balance { .. }));
+		let is_force_transfer =
+			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
 
 		match *c {
-			RuntimeCall::Balances(..) if is_set_balance => false,
+			RuntimeCall::Balances(..) if is_set_balance || is_force_transfer => false,
 			_ => true,
 		}
 	}
