@@ -175,7 +175,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 3300,
+	spec_version: 3301,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 9,
@@ -420,7 +420,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const Period: u32 = 6 * HOURS;
+	pub const Period: u32 = 14 * MINUTES;
 	pub const Offset: u32 = 0;
 }
 
