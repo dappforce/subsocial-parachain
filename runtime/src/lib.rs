@@ -274,9 +274,11 @@ impl Contains<RuntimeCall> for BaseFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		let is_set_balance =
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::set_balance { .. }));
+		let is_force_transfer =
+			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
 
 		match *c {
-			RuntimeCall::Balances(..) if is_set_balance => false,
+			RuntimeCall::Balances(..) if is_set_balance || is_force_transfer => false,
 			_ => true,
 		}
 	}
