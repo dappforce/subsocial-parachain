@@ -1983,7 +1983,7 @@ fn move_zero_stake_should_fail() {
         let stakeholder = 1;
         let backer = 3;
         let source_creator_id = 1;
-        let target_creator_id = 1;
+        let target_creator_id = 2;
 
         assert_register(stakeholder, source_creator_id);
         assert_register(stakeholder, target_creator_id);
