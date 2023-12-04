@@ -234,6 +234,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         Staked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
+        StakeMoved { who: T::AccountId, from_creator: CreatorId, to_creator: CreatorId, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
         StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
@@ -273,6 +274,7 @@ pub mod pallet {
         MaintenanceModeNotChanged,
         InvalidSumOfRewardDistributionConfig,
         StakeHasExpired,
+        CannotMoveStakeToSameCreator,
     }
 
     #[pallet::hooks]
@@ -589,11 +591,79 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Move stake from one creator to another.
+        ///
+        /// Same rules as for `stake` and `unstake` apply.
+        /// Minor difference is that there is no unbonding period so this call won't
+        /// check whether max number of unbonding chunks is exceeded.
+        #[pallet::call_index(7)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
+        pub fn move_stake(
+            origin: OriginFor<T>,
+            previous_creator: CreatorId,
+            #[pallet::compact] amount: BalanceOf<T>,
+            target_creator: CreatorId,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            let backer = ensure_signed(origin)?;
+
+            // Creators must differ and both must be active
+            ensure!(
+                previous_creator != target_creator,
+                Error::<T>::CannotMoveStakeToSameCreator
+            );
+
+            Self::ensure_creator_is_active(previous_creator)?;
+            Self::ensure_creator_is_active(target_creator)?;
+
+            // Validate and update previous creator related data
+            let current_era = Self::current_era();
+            let mut backer_stakes = Self::backer_stakes(&backer, previous_creator);
+            let mut previous_creator_info =
+                Self::creator_stake_info(previous_creator, current_era).unwrap_or_default();
+
+            let previous_to_target_moving_amount = Self::calculate_final_unstaking_amount(
+                &mut backer_stakes,
+                &mut previous_creator_info,
+                amount,
+                current_era,
+            )?;
+
+            // Validate and update target creator related data
+            let mut target_backer_info = Self::backer_stakes(&backer, target_creator);
+            let mut target_creator_info =
+                Self::creator_stake_info(target_creator, current_era).unwrap_or_default();
+
+            Self::stake_to_creator(
+                &mut target_backer_info,
+                &mut target_creator_info,
+                previous_to_target_moving_amount,
+                current_era,
+            )?;
+
+            // Update origin data
+            CreatorStakeInfoByEra::<T>::insert(previous_creator, current_era, previous_creator_info);
+            Self::update_backer_stakes(&backer, previous_creator, backer_stakes);
+
+            // Update target data
+            CreatorStakeInfoByEra::<T>::insert(target_creator, current_era, target_creator_info);
+            Self::update_backer_stakes(&backer, target_creator, target_backer_info);
+
+            Self::deposit_event(Event::<T>::StakeMoved {
+                who: backer,
+                from_creator: previous_creator,
+                to_creator: target_creator,
+                amount: previous_to_target_moving_amount,
+            });
+
+            Ok(().into())
+        }
+
         // Claim rewards for the backer on the oldest unclaimed era where they have a stake
         // and optionally restake the rewards to the same creator.
         // Not sure here whether to calculate total rewards for all creators
         //  or to withdraw per-creator rewards (preferably)
-        #[pallet::call_index(7)]
+        #[pallet::call_index(8)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_backer_reward(origin: OriginFor<T>, creator_id: CreatorId, restake: bool) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
