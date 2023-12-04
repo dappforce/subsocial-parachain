@@ -474,7 +474,7 @@ pub mod pallet {
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_final_unstaking_amount(&mut backer_stakes, &mut stake_info, amount, current_era)?;
+                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut stake_info, amount, current_era)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
