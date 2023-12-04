@@ -1831,6 +1831,307 @@ pub fn tvl_util_test() {
     })
 }
 
+// Move stake tests
+// ----------------
+
+#[test]
+fn move_stake_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let from_creator_id = 1;
+        let to_creator_id = 2;
+
+        assert_register(stakeholder, from_creator_id);
+        assert_register(stakeholder, to_creator_id);
+        assert_stake(backer, from_creator_id, MINIMUM_STAKING_AMOUNT * 2);
+
+        // The first transfer will ensure that both creators are staked after operation is complete
+        assert_move_stake(
+            backer,
+            from_creator_id,
+            to_creator_id,
+            MINIMUM_STAKING_AMOUNT,
+        );
+        assert!(
+            !BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
+                .current_stake()
+                .is_zero()
+        );
+
+        // The second operation should fully unstake source creator since it takes it below minimum staking amount
+        assert_move_stake(
+            backer,
+            from_creator_id,
+            to_creator_id,
+            MINIMUM_STAKING_AMOUNT,
+        );
+        assert!(
+            BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
+                .current_stake()
+                .is_zero()
+        );
+    })
+}
+
+#[test]
+fn move_stake_to_same_creator_should_fail() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+        let stakeholder = 1;
+        let backer = 2;
+        let creator_id = 1;
+
+        assert_register(stakeholder, creator_id);
+
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                creator_id,
+                creator_id,
+                100,
+            ),
+            Error::<TestRuntime>::CannotMoveStakeToSameCreator
+        );
+    })
+}
+
+#[test]
+fn move_stake_should_work_from_inactive_creator() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+
+        let stake_amount = MINIMUM_STAKING_AMOUNT * 2;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+        assert_stake(backer, source_creator_id, stake_amount);
+        assert_move_stake(backer, source_creator_id, target_creator_id, stake_amount / 2);
+
+        assert_unregister(stakeholder, source_creator_id);
+        assert_move_stake(backer, source_creator_id, target_creator_id, stake_amount / 2);
+    })
+}
+
+#[test]
+fn move_stake_to_inactive_creator_should_fail() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+        
+        let stake_amount = MINIMUM_STAKING_AMOUNT * 2;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+        assert_stake(backer, source_creator_id, stake_amount);
+        assert_move_stake(backer, source_creator_id, target_creator_id, stake_amount / 2);
+
+        assert_unregister(stakeholder, target_creator_id);
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                100,
+            ),
+            Error::<TestRuntime>::InactiveCreator
+        );
+    })
+}
+
+#[test]
+fn nomination_transfer_from_not_staked_contract() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                20,
+            ),
+            Error::<TestRuntime>::NotStakedCreator
+        );
+    })
+}
+
+#[test]
+fn move_zero_stake_should_fail() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 1;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+        assert_stake(backer, source_creator_id, 100);
+
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                Zero::zero(),
+            ),
+            Error::<TestRuntime>::CannotMoveZeroStake
+        );
+    })
+}
+
+#[test]
+// When target_creator wasn't staked by a backer before, 
+// moving amount should be more than MinimumStakingAmount
+fn move_stake_should_fail_with_insufficient_staking_amount() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+        assert_stake(backer, source_creator_id, 100);
+
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                MINIMUM_STAKING_AMOUNT - 1,
+            ),
+            Error::<TestRuntime>::InsufficientStakingAmount
+        );
+    })
+}
+
+#[test]
+fn nomination_transfer_contracts_have_too_many_era_stake_values() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        let backer = 3;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+
+        // Ensure we fill up era stakes vector
+        for _ in 1..MAX_ERA_STAKE_ITEMS {
+            // We use stake since its only limiting factor is max era stake items
+            assert_stake(backer, source_creator_id, 15);
+            advance_to_era(CreatorStaking::current_era() + 1);
+        }
+        assert_noop!(
+            CreatorStaking::stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                15
+            ),
+            Error::<TestRuntime>::TooManyEraStakeValues
+        );
+
+        // Ensure it's not possible to transfer from source creator since it's era stake items are at max
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                15,
+            ),
+            Error::<TestRuntime>::TooManyEraStakeValues
+        );
+
+        // Swap source and target to verify that same is true if target creator era stake imtes is maxed out
+        let (source_creator_id, target_creator_id) = (target_creator_id, source_creator_id);
+        assert_stake(backer, source_creator_id, 15);
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(backer),
+                source_creator_id,
+                target_creator_id,
+                15,
+            ),
+            Error::<TestRuntime>::TooManyEraStakeValues
+        );
+    })
+}
+
+#[test]
+fn move_stake_with_max_number_of_backers_exceeded_should_fail() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let stakeholder = 1;
+        // This one will only stake on source creator
+        let first_backer = 3;
+        // This one will stake on both origin and target contracts
+        let second_backer = 4;
+        let source_creator_id = 1;
+        let target_creator_id = 2;
+
+        // Register creators and stake them with both backers
+        assert_register(stakeholder, source_creator_id);
+        assert_register(stakeholder, target_creator_id);
+
+        assert_stake(first_backer, source_creator_id, 23);
+        assert_stake(second_backer, target_creator_id, 37);
+        assert_stake(second_backer, target_creator_id, 41);
+
+        // Fill up the second creator with backers until max number of backers limit has been reached
+        for temp_backer in (second_backer + 1)..(MAX_NUMBER_OF_BACKERS as u64 + second_backer) {
+            Balances::resolve_creating(&temp_backer, Balances::issue(100));
+            assert_stake(temp_backer, target_creator_id, 13);
+        }
+        // Sanity check + assurance that first_backer isn't staking on target creator
+        assert_noop!(
+            CreatorStaking::stake(
+                RuntimeOrigin::signed(first_backer),
+                target_creator_id,
+                19
+            ),
+            Error::<TestRuntime>::MaxNumberOfBackersExceeded
+        );
+
+        // Now attempt move stake and expect an error
+        assert_noop!(
+            CreatorStaking::move_stake(
+                RuntimeOrigin::signed(first_backer),
+                source_creator_id,
+                target_creator_id,
+                19,
+            ),
+            Error::<TestRuntime>::MaxNumberOfBackersExceeded
+        );
+    })
+}
+
 // Inflation tests
 // ---------------
 

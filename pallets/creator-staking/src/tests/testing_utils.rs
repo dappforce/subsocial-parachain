@@ -417,8 +417,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     let mut init_state_current_era = MemorySnapshot::all(current_era, creator_id, claimer);
 
     // Calculate backer's portion of the reward
-    let stakes = init_state_claim_era.backer_stakes.stakes.clone();
-    let (claim_era, staked) = StakesInfo { stakes }.claim();
+    let (claim_era, staked) = init_state_claim_era.backer_stakes.clone().claim();
     assert!(claim_era > 0); // Sanity check - if this fails, method is being used incorrectly
 
     // Cannot claim rewards post unregister era, this indicates a bug!
@@ -479,8 +478,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
         amount: calculated_reward,
     }));
 
-    let stakes = final_state_current_era.backer_stakes.stakes.clone();
-    let (new_era, _) = StakesInfo { stakes }.claim();
+    let (new_era, _) = final_state_current_era.backer_stakes.clone().claim();
     if final_state_current_era.backer_stakes.is_empty() {
         assert!(new_era.is_zero());
         assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
@@ -513,7 +511,7 @@ fn assert_restake_reward(
     final_state_current_era: &MemorySnapshot,
     reward: Balance,
 ) {
-    let mut init_backer_stakes = StakesInfo { stakes: init_state_current_era.backer_stakes.stakes.clone() };
+    let mut init_backer_stakes = init_state_current_era.backer_stakes.clone();
     if CreatorStaking::ensure_can_restake_reward(
         restake,
         init_state_current_era.clone().creator_info.status,
@@ -598,4 +596,93 @@ pub(super) fn assert_claim_creator(creator_id: SpaceId, claim_era: EraIndex) {
     assert_eq!(init_state.backer_stakes.stakes, final_state.backer_stakes.stakes);
     assert_eq!(init_state.backer_locks.total_locked, final_state.backer_locks.total_locked);
     assert_eq!(init_state.backer_locks.unbonding_info.vec(), final_state.backer_locks.unbonding_info.vec());
+}
+
+/// Used to perform move stake with success and storage assertions.
+pub(crate) fn assert_move_stake(
+    backer: AccountId,
+    from_creator_id: CreatorId,
+    to_creator_id: CreatorId,
+    amount: Balance,
+) {
+    // Get latest staking info
+    let current_era = CreatorStaking::current_era();
+    let source_creator_init_state = MemorySnapshot::all(current_era, from_creator_id, backer);
+    let target_creator_init_state = MemorySnapshot::all(current_era, to_creator_id, backer);
+
+    // Calculate value which will actually be transfered
+    let init_staked_value = source_creator_init_state.backer_stakes.current_stake();
+    let expected_amount_to_move = if init_staked_value - amount >= MINIMUM_STAKING_AMOUNT {
+        amount
+    } else {
+        init_staked_value
+    };
+
+    // Ensure op is successful and event is emitted
+    assert_ok!(CreatorStaking::move_stake(
+        RuntimeOrigin::signed(backer),
+        from_creator_id,
+        to_creator_id,
+        amount,
+    ));
+    System::assert_last_event(RuntimeEvent::CreatorStaking(Event::StakeMoved {
+        who: backer.clone(),
+        from_creator: from_creator_id,
+        to_creator: to_creator_id,
+        amount: expected_amount_to_move,
+    }));
+
+    let source_creator_final_state = MemorySnapshot::all(current_era, from_creator_id, backer);
+    let target_creator_final_state = MemorySnapshot::all(current_era, to_creator_id, backer);
+
+    // Ensure backer stakes has increased/decreased staked amount
+    assert_eq!(
+        source_creator_final_state.backer_stakes.current_stake(),
+        init_staked_value - expected_amount_to_move
+    );
+    assert_eq!(
+        target_creator_final_state.backer_stakes.current_stake(),
+        target_creator_init_state.backer_stakes.current_stake() + expected_amount_to_move
+    );
+
+    // Ensure total value staked on creators has appropriately increased/decreased
+    assert_eq!(
+        source_creator_final_state.creator_stakes_info.total_staked,
+        source_creator_init_state.creator_stakes_info.total_staked - expected_amount_to_move
+    );
+    assert_eq!(
+        target_creator_final_state.creator_stakes_info.total_staked,
+        target_creator_init_state.creator_stakes_info.total_staked + expected_amount_to_move
+    );
+
+    // Ensure number of backers has been reduced on source creator if it is fully unstaked
+    let source_creator_fully_unstaked = init_staked_value == expected_amount_to_move;
+    if source_creator_fully_unstaked {
+        assert_eq!(
+            source_creator_final_state.creator_stakes_info.backers_count + 1,
+            source_creator_init_state.creator_stakes_info.backers_count
+        );
+    }
+
+    // Ensure number of backers has been increased on target creator it is first stake by the backer
+    let no_init_stake_on_target_creator = target_creator_init_state
+        .backer_stakes
+        .current_stake()
+        .is_zero();
+    if no_init_stake_on_target_creator {
+        assert_eq!(
+            target_creator_final_state.creator_stakes_info.backers_count,
+            target_creator_init_state.creator_stakes_info.backers_count + 1
+        );
+    }
+
+    // Ensure DB entry has been removed if era stake vector is empty
+    let fully_unstaked_and_nothing_to_claim =
+        source_creator_fully_unstaked && source_creator_final_state.backer_stakes.clone().claim() == (0, 0);
+    if fully_unstaked_and_nothing_to_claim {
+        assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
+            &backer,
+            &from_creator_id
+        ));
+    }
 }
