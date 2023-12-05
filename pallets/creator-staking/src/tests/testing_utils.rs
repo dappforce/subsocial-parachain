@@ -659,8 +659,8 @@ pub(crate) fn assert_move_stake(
     let is_source_creator_fully_unstaked = source_creator_init_stake_amount == expected_amount_to_move;
     if is_source_creator_fully_unstaked {
         assert_eq!(
-            source_creator_init_state.creator_stakes_info.backers_count,
-            source_creator_final_state.creator_stakes_info.backers_count + 1,
+            source_creator_final_state.creator_stakes_info.backers_count,
+            source_creator_init_state.creator_stakes_info.backers_count - 1,
         );
     }
 
