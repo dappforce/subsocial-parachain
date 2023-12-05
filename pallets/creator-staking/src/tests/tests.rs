@@ -1951,7 +1951,7 @@ fn move_stake_to_inactive_creator_should_fail() {
 }
 
 #[test]
-fn nomination_transfer_from_not_staked_contract() {
+fn move_stake_from_not_staked_creator_should_fail() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -2030,7 +2030,7 @@ fn move_stake_should_fail_with_insufficient_staking_amount() {
 }
 
 #[test]
-fn nomination_transfer_contracts_have_too_many_era_stake_values() {
+fn move_stake_with_max_era_stake_items_exceeded_should_fail() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
