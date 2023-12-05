@@ -611,11 +611,11 @@ pub(crate) fn assert_move_stake(
     let target_creator_init_state = MemorySnapshot::all(current_era, to_creator_id, backer);
 
     // Calculate value which will actually be transfered
-    let init_staked_value = source_creator_init_state.backer_stakes.current_stake();
-    let expected_amount_to_move = if init_staked_value - amount >= MINIMUM_STAKING_AMOUNT {
+    let source_creator_init_stake_amount = source_creator_init_state.backer_stakes.current_stake();
+    let expected_amount_to_move = if source_creator_init_stake_amount - amount >= MINIMUM_STAKING_AMOUNT {
         amount
     } else {
-        init_staked_value
+        source_creator_init_stake_amount
     };
 
     // Ensure op is successful and event is emitted
@@ -638,7 +638,7 @@ pub(crate) fn assert_move_stake(
     // Ensure backer stakes has increased/decreased staked amount
     assert_eq!(
         source_creator_final_state.backer_stakes.current_stake(),
-        init_staked_value - expected_amount_to_move
+        source_creator_init_stake_amount - expected_amount_to_move
     );
     assert_eq!(
         target_creator_final_state.backer_stakes.current_stake(),
@@ -656,15 +656,16 @@ pub(crate) fn assert_move_stake(
     );
 
     // Ensure number of backers has been reduced on source creator if it is fully unstaked
-    let source_creator_fully_unstaked = init_staked_value == expected_amount_to_move;
-    if source_creator_fully_unstaked {
+    let is_source_creator_fully_unstaked = source_creator_init_stake_amount == expected_amount_to_move;
+    if is_source_creator_fully_unstaked {
         assert_eq!(
             source_creator_final_state.creator_stakes_info.backers_count + 1,
             source_creator_init_state.creator_stakes_info.backers_count
         );
     }
 
-    // Ensure number of backers has been increased on target creator it is first stake by the backer
+    // Ensure the number of backers has been increased on the target creator
+    // if it is first stake by the backer
     let no_init_stake_on_target_creator = target_creator_init_state
         .backer_stakes
         .current_stake()
@@ -678,7 +679,7 @@ pub(crate) fn assert_move_stake(
 
     // Ensure DB entry has been removed if era stake vector is empty
     let fully_unstaked_and_nothing_to_claim =
-        source_creator_fully_unstaked && source_creator_final_state.backer_stakes.clone().claim() == (0, 0);
+        is_source_creator_fully_unstaked && source_creator_final_state.backer_stakes.clone().claim() == (0, 0);
     if fully_unstaked_and_nothing_to_claim {
         assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
             &backer,
