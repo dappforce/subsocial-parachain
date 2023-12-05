@@ -584,7 +584,6 @@ pub mod pallet {
 
         /// Move stake from one creator to another.
         ///
-        /// This function allows to move some amount of stake from one creator to another.
         /// It follows the same rules as the `stake` and `unstake` functions, with one notable
         /// difference: there is no unbonding period.
         ///
@@ -597,8 +596,8 @@ pub mod pallet {
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn move_stake(
             origin: OriginFor<T>,
-            from_creator: CreatorId,
-            to_creator: CreatorId,
+            from_creator_id: CreatorId,
+            to_creator_id: CreatorId,
             #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -612,15 +611,15 @@ pub mod pallet {
 
             ensure!(amount > Zero::zero(), Error::<T>::CannotMoveZeroStake);
 
-            Self::ensure_creator_is_active(to_creator)?;
+            Self::ensure_creator_is_active(to_creator_id)?;
 
             // Validate and update previous creator related data
             let current_era = Self::current_era();
-            let mut backer_stakes_by_source_creator = Self::backer_stakes(&backer, from_creator);
+            let mut backer_stakes_by_source_creator = Self::backer_stakes(&backer, from_creator_id);
             let mut source_creator_info =
-                Self::creator_stake_info(from_creator, current_era).unwrap_or_default();
+                Self::creator_stake_info(from_creator_id, current_era).unwrap_or_default();
 
-            // Backer stake is decreased in `calculate_final_unstaking_amount`
+            // Backer stake is decreased in `calculate_and_apply_stake_decrease`
             let stake_amount_to_move = Self::calculate_and_apply_stake_decrease(
                 &mut backer_stakes_by_source_creator,
                 &mut source_creator_info,
@@ -629,9 +628,9 @@ pub mod pallet {
             )?;
 
             // Validate and update target creator related data
-            let mut backer_stakes_by_target_creator = Self::backer_stakes(&backer, to_creator);
+            let mut backer_stakes_by_target_creator = Self::backer_stakes(&backer, to_creator_id);
             let mut target_creator_info =
-                Self::creator_stake_info(to_creator, current_era).unwrap_or_default();
+                Self::creator_stake_info(to_creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
                 &mut backer_stakes_by_target_creator,
@@ -640,16 +639,16 @@ pub mod pallet {
                 current_era,
             )?;
 
-            CreatorStakeInfoByEra::<T>::insert(from_creator, current_era, source_creator_info);
-            Self::update_backer_stakes(&backer, from_creator, backer_stakes_by_source_creator);
+            CreatorStakeInfoByEra::<T>::insert(from_creator_id, current_era, source_creator_info);
+            Self::update_backer_stakes(&backer, from_creator_id, backer_stakes_by_source_creator);
 
-            CreatorStakeInfoByEra::<T>::insert(to_creator, current_era, target_creator_info);
-            Self::update_backer_stakes(&backer, to_creator, backer_stakes_by_target_creator);
+            CreatorStakeInfoByEra::<T>::insert(to_creator_id, current_era, target_creator_info);
+            Self::update_backer_stakes(&backer, to_creator_id, backer_stakes_by_target_creator);
 
             Self::deposit_event(Event::<T>::StakeMoved {
                 who: backer,
-                from_creator,
-                to_creator,
+                from_creator: from_creator_id,
+                to_creator: to_creator_id,
                 amount: stake_amount_to_move,
             });
 
