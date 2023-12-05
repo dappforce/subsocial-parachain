@@ -627,8 +627,8 @@ pub(crate) fn assert_move_stake(
     ));
     System::assert_last_event(RuntimeEvent::CreatorStaking(Event::StakeMoved {
         who: backer.clone(),
-        from_creator: from_creator_id,
-        to_creator: to_creator_id,
+        from_creator_id,
+        to_creator_id,
         amount: expected_amount_to_move,
     }));
 

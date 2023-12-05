@@ -234,7 +234,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         Staked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
-        StakeMoved { who: T::AccountId, from_creator: CreatorId, to_creator: CreatorId, amount: BalanceOf<T> },
+        StakeMoved { who: T::AccountId, from_creator_id: CreatorId, to_creator_id: CreatorId, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
         StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
@@ -647,8 +647,8 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::StakeMoved {
                 who: backer,
-                from_creator: from_creator_id,
-                to_creator: to_creator_id,
+                from_creator_id,
+                to_creator_id,
                 amount: stake_amount_to_move,
             });
 
