@@ -605,7 +605,7 @@ pub mod pallet {
 
             // Creators must differ and both must be active
             ensure!(
-                from_creator != to_creator,
+                from_creator_id != to_creator_id,
                 Error::<T>::CannotMoveStakeToSameCreator
             );
 
