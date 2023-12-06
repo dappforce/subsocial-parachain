@@ -234,6 +234,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         Staked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
         Unstaked { who: T::AccountId, creator_id: CreatorId, era: EraIndex, amount: BalanceOf<T> },
+        StakeMoved { who: T::AccountId, from_creator_id: CreatorId, to_creator_id: CreatorId, amount: BalanceOf<T> },
         BackerRewardsClaimed { who: T::AccountId, creator_id: CreatorId, amount: BalanceOf<T> },
         CreatorRewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
         StakeWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
@@ -273,6 +274,8 @@ pub mod pallet {
         MaintenanceModeNotChanged,
         InvalidSumOfRewardDistributionConfig,
         StakeHasExpired,
+        CannotMoveStakeToSameCreator,
+        CannotMoveZeroStake,
     }
 
     #[pallet::hooks]
@@ -407,7 +410,7 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             // Check that a creator is ready for staking.
-            ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+            Self::ensure_creator_is_active(creator_id)?;
 
             // Retrieve the backer's locks, or create an entry if it doesn't exist.
             let mut backer_locks = Self::backer_locks(&backer);
@@ -450,16 +453,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // #[weight = 10_000]
-        // fn increase_stake(origin, creator_id, additional_amount) {
-        //     todo!()
-        // }
-        //
-        // #[weight = 10_000]
-        // fn move_stake(origin, from_creator_id, to_creator_id, amount) {
-        //     todo!()
-        // }
-
         /// Start unbonding process and unstake balance from the creator.
         ///
         /// The unstaked amount will no longer be eligible for rewards but still won't be unlocked.
@@ -479,7 +472,7 @@ pub mod pallet {
             let backer = ensure_signed(origin)?;
 
             ensure!(amount > Zero::zero(), Error::<T>::CannotUnstakeZero);
-            ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+            Self::ensure_creator_is_active(creator_id)?;
 
             let current_era = Self::current_era();
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
@@ -487,7 +480,7 @@ pub mod pallet {
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_final_unstaking_amount(&mut backer_stakes, &mut stake_info, amount, current_era)?;
+                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut stake_info, amount, current_era)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
@@ -604,11 +597,84 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Move stake from one creator to another.
+        ///
+        /// It follows the same rules as the `stake` and `unstake` functions, with one notable
+        /// difference: there is no unbonding period.
+        ///
+        /// # Parameters
+        /// - `from_creator_id`: The ID of the source creator.
+        /// - `to_creator_id`: The ID of the target creator.
+        /// - `amount`: The amount of stake to be moved.
+        ///
+        #[pallet::call_index(7)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
+        pub fn move_stake(
+            origin: OriginFor<T>,
+            from_creator_id: CreatorId,
+            to_creator_id: CreatorId,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            let backer = ensure_signed(origin)?;
+
+            // Creators must differ and both must be active
+            ensure!(
+                from_creator_id != to_creator_id,
+                Error::<T>::CannotMoveStakeToSameCreator
+            );
+
+            ensure!(amount > Zero::zero(), Error::<T>::CannotMoveZeroStake);
+
+            Self::ensure_creator_is_active(to_creator_id)?;
+
+            // Validate and update previous creator related data
+            let current_era = Self::current_era();
+            let mut backer_stakes_by_source_creator = Self::backer_stakes(&backer, from_creator_id);
+            let mut source_creator_info =
+                Self::creator_stake_info(from_creator_id, current_era).unwrap_or_default();
+
+            // Backer stake is decreased in `calculate_and_apply_stake_decrease`
+            let stake_amount_to_move = Self::calculate_and_apply_stake_decrease(
+                &mut backer_stakes_by_source_creator,
+                &mut source_creator_info,
+                amount,
+                current_era,
+            )?;
+
+            // Validate and update target creator related data
+            let mut backer_stakes_by_target_creator = Self::backer_stakes(&backer, to_creator_id);
+            let mut target_creator_info =
+                Self::creator_stake_info(to_creator_id, current_era).unwrap_or_default();
+
+            Self::stake_to_creator(
+                &mut backer_stakes_by_target_creator,
+                &mut target_creator_info,
+                stake_amount_to_move,
+                current_era,
+            )?;
+
+            CreatorStakeInfoByEra::<T>::insert(from_creator_id, current_era, source_creator_info);
+            Self::update_backer_stakes(&backer, from_creator_id, backer_stakes_by_source_creator);
+
+            CreatorStakeInfoByEra::<T>::insert(to_creator_id, current_era, target_creator_info);
+            Self::update_backer_stakes(&backer, to_creator_id, backer_stakes_by_target_creator);
+
+            Self::deposit_event(Event::<T>::StakeMoved {
+                who: backer,
+                from_creator_id,
+                to_creator_id,
+                amount: stake_amount_to_move,
+            });
+
+            Ok(().into())
+        }
+
         // Claim rewards for the backer on the oldest unclaimed era where they have a stake
         // and optionally restake the rewards to the same creator.
         // Not sure here whether to calculate total rewards for all creators
         //  or to withdraw per-creator rewards (preferably)
-        #[pallet::call_index(7)]
+        #[pallet::call_index(8)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_backer_reward(origin: OriginFor<T>, creator_id: CreatorId, restake: bool) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -669,7 +735,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(8)]
+        #[pallet::call_index(9)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_creator_reward(origin: OriginFor<T>, creator_id: CreatorId, era: EraIndex) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -726,7 +792,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(9)]
+        #[pallet::call_index(10)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_maintenance_mode(
             origin: OriginFor<T>,
@@ -747,7 +813,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(10)]
+        #[pallet::call_index(11)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
@@ -755,7 +821,7 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
-        #[pallet::call_index(11)]
+        #[pallet::call_index(12)]
         #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_reward_distribution_config(
             origin: OriginFor<T>,
@@ -771,7 +837,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::call_index(12)]
+        #[pallet::call_index(13)]
         #[pallet::weight(T::DbWeight::get().writes(1) + Weight::from_parts(10_000, 0))]
         pub fn set_per_block_reward(origin: OriginFor<T>, new_reward: BalanceOf<T>) -> DispatchResult {
             ensure_root(origin)?;

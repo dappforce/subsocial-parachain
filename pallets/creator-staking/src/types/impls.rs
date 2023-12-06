@@ -72,6 +72,13 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
         self.stakes.len() as u32
     }
 
+    #[cfg(test)]
+    pub(crate) fn clone(&self) -> Self {
+        Self {
+            stakes: self.stakes.clone(),
+        }
+    }
+
     fn change_stake<F>(
         mut stakes: BoundedVec<EraStake<Balance>, MaxEraStakeItems>,
         current_era: EraIndex,

@@ -39,6 +39,11 @@ impl<T: Config> Pallet<T> {
             .map_or(false, |info| info.status == CreatorStatus::Active)
     }
 
+    pub(crate) fn ensure_creator_is_active(creator_id: CreatorId) -> DispatchResult {
+        ensure!(Self::is_creator_active(creator_id), Error::<T>::InactiveCreator);
+        Ok(())
+    }
+
     pub(crate) fn ensure_creator_active_in_era(
         creator_info: &CreatorInfo<T::AccountId>,
         era: EraIndex,
@@ -145,7 +150,7 @@ impl<T: Config> Pallet<T> {
     /// If the unstake operation was successful, the given structs are properly modified and the total
     /// unstaked value is returned. If not, an error is returned and the structs are left in
     /// an undefined state.
-    pub(crate) fn calculate_final_unstaking_amount(
+    pub(crate) fn calculate_and_apply_stake_decrease(
         backer_stakes: &mut StakesInfoOf<T>,
         stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
@@ -154,11 +159,10 @@ impl<T: Config> Pallet<T> {
         let staked_value = backer_stakes.current_stake();
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
-        // Calculate the value which will be unstaked.
         let remaining = staked_value.saturating_sub(desired_amount);
 
         // If the remaining amount is less than the minimum staking amount, unstake the entire amount.
-        let amount_to_unstake = if remaining < T::MinimumStake::get() {
+        let amount_to_decrease = if remaining < T::MinimumStake::get() {
             stake_info.backers_count = stake_info.backers_count.saturating_sub(1);
             staked_value
         } else {
@@ -166,17 +170,18 @@ impl<T: Config> Pallet<T> {
         };
 
         // Sanity check
-        ensure!(amount_to_unstake > Zero::zero(), Error::<T>::CannotUnstakeZero);
+        ensure!(amount_to_decrease > Zero::zero(), Error::<T>::CannotUnstakeZero);
 
-        stake_info.total_staked = stake_info.total_staked.saturating_sub(amount_to_unstake);
+        // Modify data
+        stake_info.total_staked = stake_info.total_staked.saturating_sub(amount_to_decrease);
 
         backer_stakes
-            .decrease_stake(current_era, amount_to_unstake)
+            .decrease_stake(current_era, amount_to_decrease)
             .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
         Self::ensure_can_add_stake_item(backer_stakes)?;
 
-        Ok(amount_to_unstake)
+        Ok(amount_to_decrease)
     }
 
     /// Update the locks for a backer. This will also update the stash lock.
