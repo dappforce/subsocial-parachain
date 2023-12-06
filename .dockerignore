@@ -6,7 +6,6 @@
 **/*.txt
 **/*.md
 /docker/
-rust-toolchain.toml
 
 # dotfiles in the repo root
 /.*
