@@ -1,4 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 
 use frame_system::ensure_signed;
 use sp_std::prelude::*;
@@ -21,7 +27,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
-    use subsocial_support::traits::ProfileManager;
+    use subsocial_support::traits::{CreatorStakingProvider, ProfileManager};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_spaces::Config {
@@ -29,11 +35,12 @@ pub mod pallet {
 
         type ProfileManager: ProfileManager<Self::AccountId>;
 
+        type CreatorStakingProvider: CreatorStakingProvider<Self::AccountId>;
+
         type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::error]
@@ -42,6 +49,8 @@ pub mod pallet {
         CannotTransferToCurrentOwner,
         /// Account is already an owner of a space.
         AlreadyASpaceOwner,
+        /// Cannot transfer ownership, because a space is registered as an active creator.
+        ActiveCreatorCannotTransferOwnership,
         /// There is no pending ownership transfer for a given space.
         NoPendingTransferOnSpace,
         /// Account is not allowed to accept ownership transfer.
@@ -92,6 +101,8 @@ pub mod pallet {
                 ModerationError::AccountIsBlocked
             );
 
+            Self::ensure_not_active_creator(space_id)?;
+
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
             Self::deposit_event(Event::SpaceOwnershipTransferCreated {
@@ -114,6 +125,8 @@ pub mod pallet {
                 Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
 
             ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
+
+            Self::ensure_not_active_creator(space_id)?;
 
             Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
 
@@ -162,6 +175,16 @@ pub mod pallet {
             PendingSpaceOwner::<T>::remove(space_id);
 
             Self::deposit_event(Event::SpaceOwnershipTransferRejected { account: who, space_id });
+            Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        fn ensure_not_active_creator(creator_id: SpaceId) -> DispatchResult {
+            ensure!(
+                !T::CreatorStakingProvider::is_creator_active(creator_id),
+                Error::<T>::ActiveCreatorCannotTransferOwnership,
+            );
             Ok(())
         }
     }

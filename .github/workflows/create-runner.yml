@@ -7,9 +7,9 @@ on:
         required: true
         type: choice
         options: [ 'Create', 'Delete' ]
-  workflow_run:
-    workflows: [ "Build a new docker image" ]
-    types: [ requested, completed ]
+  # workflow_run:
+  #   workflows: [ "Build a new docker image" ]
+  #   types: [ requested, completed ]
 
 jobs:
   create-runner:
@@ -81,7 +81,7 @@ jobs:
 
       - name: Create droplet
         run: |
-          do_snapshot_id=$(doctl compute image list  | grep gh-runner | awk '{ print $1 }')                
+          do_snapshot_id=$(doctl compute image list  | grep gh-runner | awk '{ print $1 }')
           ssh=$(doctl compute ssh-key import build-runner --public-key-file build-runner.pub --no-header --format FingerPrint)
           droplet_ip="$(doctl compute droplet create build-runner \
             --image $do_snapshot_id \

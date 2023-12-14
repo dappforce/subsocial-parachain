@@ -1,4 +1,10 @@
 #![cfg(feature = "runtime-benchmarks")]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 
 use frame_benchmarking::{account, benchmarks};
 use frame_support::traits::{Currency, EnsureOrigin, Get};
@@ -12,7 +18,7 @@ use super::*;
 
 benchmarks! {
     update_value_coefficient {
-        let origin = T::UpdateOrigin::successful_origin();
+        let origin = T::UpdateOrigin::try_successful_origin().unwrap();
         let coefficient = FixedI64::checked_from_rational(2_65, 100).unwrap();
     }: _<T::RuntimeOrigin>(origin, coefficient)
     verify {

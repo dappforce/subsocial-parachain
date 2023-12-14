@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Spaces Module
 //!
 //! Spaces are the primary components of Subsocial. This module allows you to create a Space
@@ -75,7 +81,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -235,7 +240,7 @@ pub mod pallet {
 
         #[pallet::call_index(2)]
         #[pallet::weight((
-            Weight::from_ref_time(1_000_000) + T::DbWeight::get().reads_writes(1, 3),
+            Weight::from_parts(1_000_000, 0) + T::DbWeight::get().reads_writes(1, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -295,7 +300,7 @@ pub mod pallet {
 
         #[pallet::call_index(3)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

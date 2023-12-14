@@ -1,10 +1,16 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! Benchmarking for pallet-domains
 
 use super::*;
 use types::*;
 
 use crate::Pallet as Pallet;
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure, assert_ok,
 	dispatch::{DispatchError, DispatchErrorWithPostInfo},
@@ -84,10 +90,14 @@ fn add_domain<T: Config>(owner: &T::AccountId) -> Result<DomainName<T>, Dispatch
 	add_default_tld::<T>().map_err(|e| e.error)?;
 	let domain = mock_domain::<T>();
 	let expires_in = T::RegistrationPeriodLimit::get();
-	let owner_lookup = lookup_source_from_account::<T>(owner);
+	let owner_lookup = lookup_source_from_account::<T>(&owner);
 
-	Pallet::<T>::force_register_domain(
-		RawOrigin::Root.into(), owner_lookup, domain.clone(), valid_content_ipfs(), expires_in,
+	Pallet::<T>::register_domain(
+		RawOrigin::Signed(owner.clone()).into(),
+		Some(owner_lookup),
+		domain.clone(),
+		valid_content_ipfs(),
+		expires_in,
 	)?;
 
 	Ok(domain)
@@ -105,34 +115,19 @@ benchmarks! {
 	register_domain {
 		add_default_tld::<T>()?;
 
-		let who = account_with_balance::<T>();
-		let domain = mock_domain::<T>();
-
-		let expires_in = T::RegistrationPeriodLimit::get();
-		let price = BalanceOf::<T>::max_value();
-
-	}: _(RawOrigin::Signed(who.clone()), domain.clone(), valid_content_ipfs(), expires_in)
-	verify {
-		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain }.into()
-		);
-	}
-
-	force_register_domain {
-		add_default_tld::<T>()?;
-
-		let who = account_with_balance::<T>();
-		let owner_lookup = lookup_source_from_account::<T>(&who);
+		let caller = account_with_balance::<T>();
+		let recipient_acc = account::<T::AccountId>("recipient", 0, 0);
+		let recipient = lookup_source_from_account::<T>(&recipient_acc);
 
 		let domain = mock_domain::<T>();
 
 		let expires_in = T::RegistrationPeriodLimit::get();
 		let price = BalanceOf::<T>::max_value();
 
-	}: _(RawOrigin::Root, owner_lookup, domain.clone(), valid_content_ipfs(), expires_in)
+	}: _(RawOrigin::Signed(caller.clone()), Some(recipient), domain.clone(), valid_content_ipfs(), expires_in)
 	verify {
 		assert_last_event::<T>(
-			Event::DomainRegistered { who, domain }.into()
+			Event::DomainRegistered { who: caller, recipient: recipient_acc, domain }.into()
 		);
 	}
 
