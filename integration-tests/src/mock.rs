@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use sp_core::H256;
 use sp_io::TestExternalities;
 
@@ -157,6 +163,7 @@ impl pallet_space_follows::Config for TestRuntime {
 impl pallet_space_ownership::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type CreatorStakingProvider = ();
     type WeightInfo = ();
 }
 

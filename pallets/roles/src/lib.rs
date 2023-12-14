@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Roles Module
 //!
 //! This module allow you to create dynalic roles with an associated set of permissions
@@ -80,7 +86,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -385,7 +390,7 @@ pub mod pallet {
 
         #[pallet::call_index(5)]
         #[pallet::weight((
-            Weight::from_ref_time(25_000) + T::DbWeight::get().reads_writes(1, 2),
+            Weight::from_parts(25_000, 0) + T::DbWeight::get().reads_writes(1, 2),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -435,7 +440,7 @@ pub mod pallet {
 
         #[pallet::call_index(6)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -474,7 +479,7 @@ pub mod pallet {
 
         #[pallet::call_index(7)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

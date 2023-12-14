@@ -1,4 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 
 use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -72,7 +78,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
@@ -317,7 +322,7 @@ pub mod pallet {
 
         #[pallet::call_index(3)]
         #[pallet::weight((
-            Weight::from_ref_time(100_000) + T::DbWeight::get().reads_writes(2, 3),
+            Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -355,7 +360,7 @@ pub mod pallet {
 
         #[pallet::call_index(4)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(3, 3),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().reads_writes(3, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -389,7 +394,7 @@ pub mod pallet {
 
         #[pallet::call_index(5)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

@@ -1,4 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 
 pub use pallet::*;
 
@@ -22,7 +28,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -69,7 +74,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_ref_time(1_250_000) + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(Weight::from_parts(1_250_000, 0) + T::DbWeight::get().reads_writes(2, 3))]
         pub fn follow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -90,7 +95,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_ref_time(1_250_000) + T::DbWeight::get().reads_writes(2, 3))]
+        #[pallet::weight(Weight::from_parts(1_250_000, 0) + T::DbWeight::get().reads_writes(2, 3))]
         pub fn unfollow_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
             let follower = ensure_signed(origin)?;
 
@@ -114,7 +119,7 @@ pub mod pallet {
 
         #[pallet::call_index(2)]
         #[pallet::weight((
-            Weight::from_ref_time(10_000) + T::DbWeight::get().reads_writes(4, 4),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().reads_writes(4, 4),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

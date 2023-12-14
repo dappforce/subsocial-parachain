@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{
     assert_noop, assert_ok,
     dispatch::{DispatchInfo, GetDispatchInfo, extract_actual_weight, PostDispatchInfo, Weight},
@@ -260,8 +266,8 @@ fn charge_transaction<PreValidator: FnOnce()>(
     pre_validator: PreValidator,
 ) -> Result<(), ChargeTransactionError> {
     let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
-    let info = DispatchInfo { weight: Weight::from_ref_time(fee), class: DispatchClass::Normal, pays_fee: Pays::Yes };
-    let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_ref_time(actual_fee)), pays_fee: Pays::Yes };
+    let info = DispatchInfo { weight: Weight::from_parts(fee, 0), class: DispatchClass::Normal, pays_fee: Pays::Yes };
+    let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_parts(actual_fee, 0)), pays_fee: Pays::Yes };
 
     let pre = ChargeTransactionPayment::<Test>::from(tip)
         .pre_dispatch(caller, &call, &info, 0)
