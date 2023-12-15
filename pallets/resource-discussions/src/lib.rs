@@ -38,7 +38,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
@@ -64,7 +63,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_ref_time(500_000_000))]
+        #[pallet::weight(Weight::from_parts(500_000_000, 0))]
         #[transactional]
         pub fn link_post_to_resource(
             origin: OriginFor<T>,
@@ -77,7 +76,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_ref_time(750_000_000))]
+        #[pallet::weight(Weight::from_parts(750_000_000, 0))]
         #[transactional]
         pub fn create_resource_discussion(
             origin: OriginFor<T>,
