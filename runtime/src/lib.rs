@@ -738,11 +738,11 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_evm_addresses::Config for Runtime {
+impl pallet_evm_accounts::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type CallHasher = BlakeTwo256;
-	type MaxLinkedAddresses = ConstU32<256>;
+	type MaxLinkedAccounts = ConstU32<256>;
 }
 
 // impl TryInto<pallet_evm_accounts::Call<Runtime>> for RuntimeCall {
@@ -832,7 +832,7 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
-		EvmAddresses: pallet_evm_addresses = 64,
+		EvmAccounts: pallet_evm_accounts = 64,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
