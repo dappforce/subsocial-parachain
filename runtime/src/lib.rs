@@ -737,10 +737,6 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_evm_addresses::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -781,7 +777,6 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
-		EvmAddresses: pallet_evm_addresses = 64,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
