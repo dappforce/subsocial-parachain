@@ -31,7 +31,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
@@ -73,7 +72,7 @@ pub mod pallet {
         #[pallet::call_index(0)]
         // FIXME: put here at least something near real weights
         #[pallet::weight(
-            Weight::from_ref_time(300_000_000)
+            Weight::from_parts(300_000_000, 0)
                 .saturating_add(T::DbWeight::get().reads_writes(2, 2))
         )]
         pub fn link_evm_address(
@@ -110,7 +109,7 @@ pub mod pallet {
         #[pallet::call_index(1)]
         // FIXME: put here at least something near real weights
         #[pallet::weight(
-            Weight::from_ref_time(300_000_000)
+            Weight::from_parts(300_000_000, 0)
                 .saturating_add(T::DbWeight::get().reads_writes(1, 2))
         )]
         pub fn unlink_evm_address(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
