@@ -104,7 +104,6 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	// pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -738,58 +737,8 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_evm_accounts::Config for Runtime {
+impl pallet_evm_addresses::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type CallHasher = BlakeTwo256;
-	type MaxLinkedAccounts = ConstU32<256>;
-}
-
-// impl TryInto<pallet_evm_accounts::Call<Runtime>> for RuntimeCall {
-// 	type Error = ();
-//
-// 	fn try_into(self) -> Result<Call<Runtime>, Self::Error> {
-// 		match self {
-// 			Self::EvmAccounts(call) => Ok(call),
-// 			_ => Err(()),
-// 		}
-// 	}
-// }
-
-parameter_types! {
-	pub const BlockPerEra: BlockNumber = 1 * DAYS;
-	pub const StakeExpirationInEras: EraIndex = 60 * DAYS / BlockPerEra::get();
-	pub const UnbondingPeriodInEras: EraIndex = 7 * DAYS / BlockPerEra::get();
-
-	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
-	pub const RegistrationDeposit: Balance = 10 * UNIT;
-	pub const MinimumStakingAmount: Balance = 100 * UNIT;
-	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
-
-	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
-	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
-	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
-		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
-}
-
-impl pallet_creator_staking::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type PalletId = CreatorStakingPalletId;
-	type BlockPerEra = BlockPerEra;
-	type Currency = Balances;
-	type SpacesInterface = Spaces;
-	type SpacePermissionsProvider = Spaces;
-	type CreatorRegistrationDeposit = RegistrationDeposit;
-	type MinimumStake = MinimumStakingAmount;
-	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
-	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
-	type MaxEraStakeItems = ConstU32<10>;
-	type StakeExpirationInEras = StakeExpirationInEras;
-	type UnbondingPeriodInEras = UnbondingPeriodInEras;
-	type MaxUnbondingChunks = ConstU32<32>;
-	type InitialRewardPerBlock = InitialRewardPerBlock;
-	type BlocksPerYear = BlocksPerYear;
-	type TreasuryAccount = TreasuryAccount;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -832,7 +781,7 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
-		EvmAccounts: pallet_evm_accounts = 64,
+		EvmAddresses: pallet_evm_addresses = 64,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
