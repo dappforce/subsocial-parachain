@@ -737,6 +737,42 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const BlockPerEra: BlockNumber = 1 * DAYS;
+	pub const StakeExpirationInEras: EraIndex = 60 * DAYS / BlockPerEra::get();
+	pub const UnbondingPeriodInEras: EraIndex = 7 * DAYS / BlockPerEra::get();
+
+	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
+	pub const RegistrationDeposit: Balance = 10 * UNIT;
+	pub const MinimumStakingAmount: Balance = 100 * UNIT;
+	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
+
+	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
+	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
+	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
+		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
+}
+
+impl pallet_creator_staking::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = CreatorStakingPalletId;
+	type BlockPerEra = BlockPerEra;
+	type Currency = Balances;
+	type SpacesInterface = Spaces;
+	type SpacePermissionsProvider = Spaces;
+	type CreatorRegistrationDeposit = RegistrationDeposit;
+	type MinimumStake = MinimumStakingAmount;
+	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
+	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
+	type MaxEraStakeItems = ConstU32<10>;
+	type StakeExpirationInEras = StakeExpirationInEras;
+	type UnbondingPeriodInEras = UnbondingPeriodInEras;
+	type MaxUnbondingChunks = ConstU32<32>;
+	type InitialRewardPerBlock = InitialRewardPerBlock;
+	type BlocksPerYear = BlocksPerYear;
+	type TreasuryAccount = TreasuryAccount;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
