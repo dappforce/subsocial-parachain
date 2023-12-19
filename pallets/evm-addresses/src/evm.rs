@@ -30,12 +30,15 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+    /// In accordance with https://eips.ethereum.org/EIPS/eip-191
     fn eth_signable_message(sub_address: &T::AccountId, sub_nonce: T::Index) -> Vec<u8> {
         let addr = hex::encode(sub_address.encode());
         let nonce = format!("{:?}", sub_nonce);
-        let l = MSG_PART_1.len() + addr.len() + MSG_PART_2.len() + nonce.len();
 
-        format!("\x19Ethereum Signed Message:\n{l}{MSG_PART_1}{addr}{MSG_PART_2}{nonce}")
+        let personal_sign = format!("{MSG_PART_1}{addr}{MSG_PART_2}{nonce}");
+        let len = personal_sign.len();
+
+        format!("\x19Ethereum Signed Message:\n{len}{personal_sign}")
             .as_bytes()
             .to_vec()
     }
