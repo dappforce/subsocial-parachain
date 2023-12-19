@@ -1,4 +1,4 @@
-//! # EVM Integration Pallet
+//! Pallet for linking EVM addresses to Substrate accounts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
