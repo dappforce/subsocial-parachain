@@ -35,10 +35,10 @@ impl<T: Config> Pallet<T> {
         let addr = hex::encode(sub_address.encode());
         let nonce = format!("{:?}", sub_nonce);
 
-        let personal_sign = format!("{MSG_PART_1}{addr}{MSG_PART_2}{nonce}");
-        let len = personal_sign.len();
+        let personal_part = format!("{MSG_PART_1}{addr}{MSG_PART_2}{nonce}");
+        let len = personal_part.len();
 
-        format!("\x19Ethereum Signed Message:\n{len}{personal_sign}")
+        format!("\x19Ethereum Signed Message:\n{len}{personal_part}")
             .as_bytes()
             .to_vec()
     }
