@@ -1,4 +1,4 @@
-//! # Evm Integration Pallet
+//! # EVM Integration Pallet
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -38,37 +38,37 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Account have been linked to evm address
+        /// Account has been linked to EVM address
         EvmAddressLinkedToAccount { ethereum: EvmAddress, substrate: T::AccountId },
-        /// Account have been unlinked from evm address
+        /// Account has been unlinked from EVM address
         EvmAddressUnlinkedFromAccount { ethereum: EvmAddress, substrate: T::AccountId },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The substrate address have an existing linkage already.
+        /// The Substrate account is already linked to the EVM address.
         EvmAddressAlreadyLinkedToThisAccount,
-        /// The evm address has not an existing linkage.
+        /// The EVM address is not linked to this Substrate account.
         EvmAddressNotLinkedToThisAccount,
-        /// The provided signature is invalid
-        BadSignature,
-        /// Either provided payload (message or nonce) or evm address is invalid.
+        /// The provided EVM signature is invalid
+        BadEvmSignature,
+        /// Either provided payload (message or nonce) or EVM address is invalid.
         EitherBadAddressOrPayload,
     }
 
-    /// Map of one evm address to many substrate accounts
+    /// Map of one EVM address to many Substrate accounts
     #[pallet::storage]
     pub type AccountsByEvmAddress<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddress, BTreeSet<T::AccountId>, ValueQuery>;
 
-    /// Map of substrate account to EVM address
+    /// Map of one Substrate account to one EVM address (for reverse lookup).
     #[pallet::storage]
     pub type EvmAddressByAccount<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, EvmAddress, OptionQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Link substrate address to EVM address.
+        /// Link Substrate address to EVM address.
         #[pallet::call_index(0)]
         // FIXME: put here at least something near real weights
         #[pallet::weight(
@@ -84,11 +84,11 @@ pub mod pallet {
 
             let sub_nonce = frame_system::Pallet::<T>::account_nonce(&who);
 
-            // recover evm address from signature
-            let address = Self::verify_signature(&evm_signature, &who, sub_nonce)
-                .ok_or(Error::<T>::BadSignature)?;
+            // Recover the EVM address from the signature
+            let recovered_address = Self::verify_evm_signature(&evm_signature, &who, sub_nonce)
+                .ok_or(Error::<T>::BadEvmSignature)?;
 
-            ensure!(evm_address == address, Error::<T>::EitherBadAddressOrPayload);
+            ensure!(evm_address == recovered_address, Error::<T>::EitherBadAddressOrPayload);
 
             AccountsByEvmAddress::<T>::try_mutate(evm_address, |accounts| {
                 ensure!(!accounts.contains(&who), Error::<T>::EvmAddressAlreadyLinkedToThisAccount);
@@ -105,7 +105,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Unlink substrate address from EVM address.
+        /// Unlink Substrate address from EVM address.
         #[pallet::call_index(1)]
         // FIXME: put here at least something near real weights
         #[pallet::weight(

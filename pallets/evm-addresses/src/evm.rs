@@ -6,7 +6,7 @@ use sp_std::vec::Vec;
 
 use crate::{Config, Pallet};
 
-/// Evm Address.
+/// EVM Address.
 pub(crate) type EvmAddress = sp_core::H160;
 
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
@@ -16,7 +16,7 @@ const MSG_PART_1: &str = "Link to Subsocial address ";
 const MSG_PART_2: &str = " (in hex) with nonce ";
 
 impl<T: Config> Pallet<T> {
-    pub(crate) fn verify_signature(
+    pub(crate) fn verify_evm_signature(
         sig: &EcdsaSignature,
         sub_address: &T::AccountId,
         sub_nonce: T::Index,
