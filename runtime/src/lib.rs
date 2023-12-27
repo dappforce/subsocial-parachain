@@ -29,14 +29,14 @@ use sp_version::RuntimeVersion;
 use frame_support::{
 	construct_runtime, parameter_types,
 	dispatch::DispatchClass,
-	traits::{ConstU32, ConstU64, ConstU8, Contains, WithdrawReasons},
+	traits::{ConstU32, ConstU64, ConstU8, Contains, Currency, OnUnbalanced, WithdrawReasons},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 	PalletId,
 };
-use frame_support::traits::InstanceFilter;
+use frame_support::traits::{Imbalance, InstanceFilter};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureWithSuccess,
@@ -372,6 +372,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	// Pallet energy has NativeOnChargeTransaction instead.
 	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
@@ -768,6 +769,19 @@ impl pallet_account_follows::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		if let Some(mut fees) = fees_then_tips.next() {
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut fees);
+			}
+			// for fees and tips, 100% to treasury
+			Treasury::on_unbalanced(fees);
+		}
+	}
+}
 
 parameter_types! {
 	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
@@ -779,7 +793,7 @@ impl pallet_energy::Config for Runtime {
 	type Balance = Balance;
 	type DefaultValueCoefficient = DefaultValueCoefficient;
 	type UpdateOrigin = EnsureRoot<AccountId>;
-	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type ExistentialDeposit = ExistentialDeposit;
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
