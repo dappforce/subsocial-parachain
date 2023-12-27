@@ -29,19 +29,19 @@ use sp_version::RuntimeVersion;
 use frame_support::{
 	construct_runtime, parameter_types, PalletId,
 	dispatch::DispatchClass,
-	traits::{ConstU32, ConstU64, ConstU8, Contains, WithdrawReasons, Everything},
+	traits::{ConstU32, ConstU64, ConstU8, Contains, Currency, OnUnbalanced, WithdrawReasons, Everything},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 };
-use frame_support::traits::InstanceFilter;
+use frame_support::traits::{Imbalance, InstanceFilter};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
+	EnsureRoot, EnsureWithSuccess,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill, FixedI64, FixedPointNumber};
+pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use pallet_creator_staking::{CreatorId, EraIndex};
@@ -371,11 +371,42 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	// Pallet energy has NativeOnChargeTransaction instead.
 	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+}
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 10000 * UNIT;
+	pub const SpendPeriod: BlockNumber = 7 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(0);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"df/trsry");
+	pub const MaxApprovals: u32 = 100;
+	// FIXME: The maximum amount in a native asset that root origin is allowed to spend at a time.
+	pub const MaxBalance: Balance = Balance::max_value();
+}
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type RuntimeEvent = RuntimeEvent;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ();
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = MaxApprovals;
+	type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
 }
 
 parameter_types! {
@@ -606,6 +637,23 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
+// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	pub const DepositBase: Balance = deposit(1, 88);
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = deposit(0, 32);
+}
+
+impl pallet_multisig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = ConstU32<100>;
+	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
     pub const MinDomainLength: u32 = 4;
     pub const MaxDomainLength: u32 = 63;
 
@@ -720,6 +768,19 @@ impl pallet_account_follows::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		if let Some(mut fees) = fees_then_tips.next() {
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut fees);
+			}
+			// for fees and tips, 100% to treasury
+			Treasury::on_unbalanced(fees);
+		}
+	}
+}
 
 parameter_types! {
 	pub DefaultValueCoefficient: FixedI64 = FixedI64::checked_from_rational(1_25, 100).unwrap();
@@ -731,7 +792,7 @@ impl pallet_energy::Config for Runtime {
 	type Balance = Balance;
 	type DefaultValueCoefficient = DefaultValueCoefficient;
 	type UpdateOrigin = EnsureRoot<AccountId>;
-	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type NativeOnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type ExistentialDeposit = ExistentialDeposit;
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
@@ -789,6 +850,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances = 10,
 		TransactionPayment: pallet_transaction_payment = 11,
+		Treasury: pallet_treasury = 12,
 
 		// Collator support. The order of these 5 is important and shall not change.
 		Authorship: pallet_authorship = 20,
@@ -800,6 +862,7 @@ construct_runtime!(
 		Vesting: pallet_vesting = 26,
 		Proxy: pallet_proxy = 27,
 		Utility: pallet_utility = 28,
+		Multisig: pallet_multisig = 29,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue = 30,
