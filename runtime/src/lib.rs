@@ -104,7 +104,6 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	// pallet_evm_accounts::ChargeTransactionPaymentEvmMapped<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -738,24 +737,6 @@ impl pallet_energy::Config for Runtime {
 	type WeightInfo = pallet_energy::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_evm_addresses::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type CallHasher = BlakeTwo256;
-	type MaxLinkedAddresses = ConstU32<256>;
-}
-
-// impl TryInto<pallet_evm_accounts::Call<Runtime>> for RuntimeCall {
-// 	type Error = ();
-//
-// 	fn try_into(self) -> Result<Call<Runtime>, Self::Error> {
-// 		match self {
-// 			Self::EvmAccounts(call) => Ok(call),
-// 			_ => Err(()),
-// 		}
-// 	}
-// }
-
 parameter_types! {
 	pub const BlockPerEra: BlockNumber = 1 * DAYS;
 	pub const StakeExpirationInEras: EraIndex = 60 * DAYS / BlockPerEra::get();
@@ -832,7 +813,6 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
-		EvmAddresses: pallet_evm_addresses = 64,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,

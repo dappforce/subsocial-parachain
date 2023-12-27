@@ -1,40 +1,23 @@
-//! # Evm Integration Pallet
+//! Pallet for linking EVM addresses to Substrate accounts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    dispatch::{Codec, DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
-    pallet_prelude::*,
-    traits::{tokens::Balance, Currency, IsSubType},
-};
-use frame_system::pallet_prelude::*;
-use pallet_transaction_payment::OnChargeTransaction;
-use sp_runtime::{
-    traits::{
-        Bounded, CheckedAdd, CheckedSub, Extrinsic, Hash, MaybeSerialize, Saturating,
-        SignedExtension, StaticLookup, Zero,
-    },
-    FixedPointNumber, FixedPointOperand,
-};
-use sp_std::{
-    convert::TryInto,
-    fmt::Debug,
-    marker::{Send, Sync},
-};
+use sp_std::{collections::btree_set::BTreeSet, convert::TryInto};
 
 pub use pallet::*;
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod test;
+// #[cfg(test)]
+// mod mock;
+// #[cfg(test)]
+// mod test;
 
 mod evm;
 
-type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
-
 #[frame_support::pallet]
 pub mod pallet {
+    use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
+
     use crate::evm::*;
 
     use super::*;
@@ -43,107 +26,106 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-        /// The overarching call type.
-        type RuntimeCall: Parameter
-            + Dispatchable<
-                RuntimeOrigin = Self::RuntimeOrigin,
-                Info = DispatchInfo,
-                PostInfo = PostDispatchInfo,
-            > + GetDispatchInfo
-            + From<frame_system::Call<Self>>
-            + IsSubType<Call<Self>>
-            + IsType<<Self as frame_system::Config>::RuntimeCall>;
-
-        /// The type of hash used for hashing the call.
-        type CallHasher: Hash;
-
-        /// The max number of substrate accounts that are linked to a given evm address.
-        type MaxLinkedAddresses: Get<u32>;
     }
 
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
+
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Account have been linked to evm address
-        AccountLinked {
-            substrate: T::AccountId,
-            ethereum: EvmAddress,
-        },
-        // EvmCallExecuted {
-        //     result: DispatchResult,
-        // },
+        /// Account has been linked to EVM address
+        EvmAddressLinkedToAccount { ethereum: EvmAddress, substrate: T::AccountId },
+        /// Account has been unlinked from EVM address
+        EvmAddressUnlinkedFromAccount { ethereum: EvmAddress, substrate: T::AccountId },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The evm address have an existing linkage already.
-        EvmAddressAlreadyLinked,
-        /// The substrate address have an existing linkage already.
-        SubstrateAddressAlreadyLinked,
-        /// The provided signature is invalid
-        BadSignature,
-        /// The substrate address is not linked to the given evm address
-        AddressNotLinked,
-        /// User have reached the maximum number of linked addresses.
-        CannotLinkMoreAddresses,
+        /// The Substrate account is already linked to the EVM address.
+        EvmAddressAlreadyLinkedToThisAccount,
+        /// The EVM address is not linked to this Substrate account.
+        EvmAddressNotLinkedToThisAccount,
+        /// The provided EVM signature is invalid
+        BadEvmSignature,
+        /// Either provided payload (message or nonce) or EVM address is invalid.
+        EitherBadAddressOrPayload,
     }
 
-    /// Map of one EVM addresses to many substrate addresses
+    /// Map of one EVM address to many Substrate accounts
     #[pallet::storage]
-    pub type SubstrateAddresses<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        EvmAddress,
-        BoundedVec<T::AccountId, T::MaxLinkedAddresses>,
-        ValueQuery,
-    >;
+    pub type AccountsByEvmAddress<T: Config> =
+        StorageMap<_, Blake2_128Concat, EvmAddress, BTreeSet<T::AccountId>, ValueQuery>;
 
-    /// Map of substrate address to EVM account
+    /// Map of one Substrate account to one EVM address (for reverse lookup).
     #[pallet::storage]
-    pub type EvmAddresses<T: Config> =
+    pub type EvmAddressByAccount<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, EvmAddress, OptionQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Link substrate address to EVM address.
+        /// Link Substrate address to EVM address.
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_ref_time(340_000_000)
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64)))]
+        // FIXME: put here at least something near real weights
+        #[pallet::weight(
+            Weight::from_parts(300_000_000, 0)
+                .saturating_add(T::DbWeight::get().reads_writes(2, 2))
+        )]
         pub fn link_evm_address(
             origin: OriginFor<T>,
             evm_address: EvmAddress,
-            evm_signature: Eip712Signature,
+            evm_signature: EcdsaSignature,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            // ensure account_id and evm_address has not been linked
-            ensure!(!EvmAddresses::<T>::contains_key(&who), Error::<T>::SubstrateAddressAlreadyLinked);
-            ensure!(
-                !SubstrateAddresses::<T>::get(evm_address).contains(&who),
-                Error::<T>::EvmAddressAlreadyLinked
-            );
+            let sub_nonce = frame_system::Pallet::<T>::account_nonce(&who);
 
-            let message = SingableMessage::LinkEvmAddress {
-                evm_address: evm_address.clone(),
-                substrate_address: who.clone(),
-            };
-            // recover evm address from signature
-            let address = Self::verify_eip712_signature(&message, &evm_signature)
-                .ok_or(Error::<T>::BadSignature)?;
-            ensure!(evm_address == address, Error::<T>::BadSignature);
+            // Recover the EVM address from the signature
+            let recovered_address = Self::verify_evm_signature(&evm_signature, &who, sub_nonce)
+                .ok_or(Error::<T>::BadEvmSignature)?;
 
-            SubstrateAddresses::<T>::mutate(evm_address, |addresses| {
-                addresses.try_push(who.clone()).map_err(|e| Error::<T>::CannotLinkMoreAddresses)
+            ensure!(evm_address == recovered_address, Error::<T>::EitherBadAddressOrPayload);
+
+            AccountsByEvmAddress::<T>::try_mutate(evm_address, |accounts| {
+                ensure!(!accounts.contains(&who), Error::<T>::EvmAddressAlreadyLinkedToThisAccount);
+                accounts.insert(who.clone());
+                Ok::<(), DispatchError>(())
             })?;
-            EvmAddresses::<T>::insert(&who, evm_address);
+            EvmAddressByAccount::<T>::insert(&who, evm_address);
 
-            Self::deposit_event(Event::AccountLinked { substrate: who, ethereum: evm_address });
+            Self::deposit_event(Event::EvmAddressLinkedToAccount {
+                substrate: who,
+                ethereum: evm_address,
+            });
+
+            Ok(())
+        }
+
+        /// Unlink Substrate address from EVM address.
+        #[pallet::call_index(1)]
+        // FIXME: put here at least something near real weights
+        #[pallet::weight(
+            Weight::from_parts(300_000_000, 0)
+                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+        )]
+        pub fn unlink_evm_address(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            AccountsByEvmAddress::<T>::try_mutate(evm_address, |accounts| {
+                ensure!(accounts.contains(&who), Error::<T>::EvmAddressNotLinkedToThisAccount);
+                accounts.remove(&who);
+                Ok::<(), DispatchError>(())
+            })?;
+            EvmAddressByAccount::<T>::remove(&who);
+
+            Self::deposit_event(Event::EvmAddressUnlinkedFromAccount {
+                substrate: who,
+                ethereum: evm_address,
+            });
 
             Ok(())
         }
