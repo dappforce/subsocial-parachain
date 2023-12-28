@@ -277,10 +277,12 @@ impl Contains<RuntimeCall> for BaseFilter {
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::set_balance { .. }));
 		let is_force_transfer =
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
+		let is_treasury_spend =
+			matches!(c, RuntimeCall::Treasury(pallet_treasury::Call::spend { .. }));
 
 		match *c {
 			RuntimeCall::Balances(..) if is_set_balance || is_force_transfer => false,
-			RuntimeCall::Treasury(pallet_treasury::Call::propose_spend { .. }) => false,
+			RuntimeCall::Treasury(..) if !is_treasury_spend => false,
 			_ => true,
 		}
 	}
