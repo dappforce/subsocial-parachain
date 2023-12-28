@@ -380,12 +380,12 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 10000 * UNIT;
-	pub const SpendPeriod: BlockNumber = 7 * DAYS;
+	pub const ProposalBond: Permill = Permill::from_percent(10);
+	pub const ProposalBondMinimum: Balance = 1000 * UNIT;
+	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"df/trsry");
-	pub const MaxApprovals: u32 = 100;
+	pub const MaxApprovals: u32 = 5;
 	// FIXME: The maximum amount in a native asset that root origin is allowed to spend at a time.
 	pub const MaxBalance: Balance = Balance::max_value();
 }
