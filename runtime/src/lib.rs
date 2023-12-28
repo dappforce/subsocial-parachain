@@ -392,9 +392,8 @@ parameter_types! {
 	pub const SpendPeriod: BlockNumber = 7 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"df/trsry");
-	pub const MaxApprovals: u32 = 100;
-	// FIXME: The maximum amount in a native asset that root origin is allowed to spend at a time.
-	pub const MaxBalance: Balance = Balance::max_value();
+	pub const MaxApprovals: u32 = 10;
+	pub const MaxBalance: Balance = 10_000_000 * UNIT;
 }
 
 impl pallet_treasury::Config for Runtime {
