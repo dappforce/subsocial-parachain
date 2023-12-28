@@ -280,6 +280,7 @@ impl Contains<RuntimeCall> for BaseFilter {
 
 		match *c {
 			RuntimeCall::Balances(..) if is_set_balance || is_force_transfer => false,
+			RuntimeCall::Treasury(pallet_treasury::Call::propose_spend { .. }) => false,
 			_ => true,
 		}
 	}
