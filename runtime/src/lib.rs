@@ -375,7 +375,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// Pallet energy has NativeOnChargeTransaction instead.
+	// We process transaction fees with NativeOnChargeTransaction in the Energy pallet.
 	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
