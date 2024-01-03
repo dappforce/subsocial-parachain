@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  subsocial-full-node:
+    image: dappforce/subsocial-parachain:latest
+    container_name: subsocial-full-node
+    user:
+      subsocial:subsocial
+    restart: on-failure
+    command: >
+      --port=40333
+      --ws-port=8844
+      --ws-external
+      --ws-max-connections=5000
+      --rpc-port=8833
+      --rpc-external
+      --rpc-methods=Safe
+      --rpc-cors="*"
+      --base-path=/data
+      --node-key-file=/data/node_key
+      --name="Subsocial Full Node 🚀"
+      --prometheus-port=9615
+      --prometheus-external
+      --execution=wasm
+      --sync=warp
+      --
+      --execution=wasm
+      --wasm-execution=Compiled
+      --sync=warp
+    volumes:
+      - ./data:/data
+    ports:
+      - "40333:40333"
+      - "8844:8844"
+      - "8833:8833"
+      - "9615:9615"
+    networks:
+      - nodes_network
+
+networks:
+  nodes_network:
+    external:
+      name: nodes_network

@@ -1,6 +1,6 @@
-# Subsocial parachain node
+# Subsocial Parachain Node
 
-The Subsocial parachain is our custom built Kusama blockchain, based on the Substrate framework.
+The Subsocial parachain is our custom-built Polkadot blockchain, based on the Substrate framework.
 
 ## Build
 
@@ -15,7 +15,7 @@ cargo build --release
 
 ## Run
 
-Take into account that you need to build a binary as described in the previous step.
+Please note that you need to build a binary as described in the previous step.
 
 Simply run and join the network:
 
@@ -24,10 +24,10 @@ Simply run and join the network:
 --name=your-node-name \
 -- \
 --execution=wasm \
---chain=kusama
+--chain=polkadot
 ```
 
-Run as an archive node (store all blocks state):
+Run as an archive node (store all block states):
 
 ```shell
 ./target/release/subsocial-collator \
@@ -35,15 +35,16 @@ Run as an archive node (store all blocks state):
 --pruning=archive \
 -- \
 --execution=wasm \
---chain=kusama
+--chain=polkadot
 ```
 
-### Using docker
+### Using Docker
 
-Official Docker Hub image of the Subsocial parachain: 
-https://hub.docker.com/r/dappforce/subsocial-parachain
+Find the complete example in the [docker/docker-compose.yml](docker/docker-compose.yml) file.
 
-Simply run and join the network with docker:
+Official Docker Hub image of the Subsocial parachain: [Dappforce Docker Hub](https://hub.docker.com/r/dappforce/subsocial-parachain)
+
+Simply run and join the network with Docker:
 
 ```shell
 docker run -d -v node-data:/data dappforce/subsocial-parachain:latest subsocial-collator \
@@ -53,16 +54,11 @@ docker run -d -v node-data:/data dappforce/subsocial-parachain:latest subsocial-
 --chain=kusama
 ```
 
-### Run a local testnet using parachain-launch
-
-- Install [parachain-launch](https://github.com/open-web3-stack/parachain-launch)
-- Install [Docker-compose](https://docs.docker.com/compose/install/)
-- Configure and launch with a single command: `./parachain-launch/launch.sh`
-
 **Note:**
 
-- You may need to build docker image if the one [in registry](https://hub.docker.com/r/dappforce/subsocial-parachain) is outdated.
-- To build latest docker image, compatible with parachain-launch, run exactly:
-    ```shell
-    docker build . -f docker/Dockerfile -t dappforce/subsocial-parachain:rococo
-    ```
+- You may need to build the Docker image if the one [in the registry](https://hub.docker.com/r/dappforce/subsocial-parachain) is outdated.
+- To build the latest Docker image, compatible with parachain-launch, run exactly:
+
+  ```shell
+  docker build . -f docker/Dockerfile -t dappforce/subsocial-parachain:rococo
+  ```
