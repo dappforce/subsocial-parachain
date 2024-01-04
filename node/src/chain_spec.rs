@@ -310,6 +310,7 @@ fn parachain_genesis(
 			endowed_account: Some(root_key),
 		},
 		transaction_payment: Default::default(),
+		treasury: Default::default(),
 	}
 }
 
