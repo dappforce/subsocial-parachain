@@ -49,28 +49,28 @@ impl<T: Config> Pallet<T> {
 
 /// Returns an Ethereum secret key using a provided seed.
 /// Used for tests and benchmarks only.
-#[cfg(any(feature = "runtime-benchmarks"/*, feature = "std"*/))]
+#[cfg(any(feature = "runtime-benchmarks", test))]
 pub(crate) fn evm_secret_key(seed: &[u8]) -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(seed)).unwrap()
 }
 
 /// Returns an Ethereum public key derived from an Ethereum secret key.
 /// Used for tests and benchmarks only.
-#[cfg(any(feature = "runtime-benchmarks"/*, feature = "std"*/))]
+#[cfg(any(feature = "runtime-benchmarks", test))]
 pub fn evm_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
     libsecp256k1::PublicKey::from_secret_key(secret)
 }
 
 /// Returns an Ethereum address derived from an Ethereum secret key.
 /// Used for tests and benchmarks only.
-#[cfg(any(feature = "runtime-benchmarks"/*, feature = "std"*/))]
+#[cfg(any(feature = "runtime-benchmarks", test))]
 pub fn evm_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
     EvmAddress::from_slice(&keccak_256(&evm_public(secret).serialize()[1..65])[12..])
 }
 
 /// Constructs a message and signs it.
 /// Used for tests and benchmarks only.
-#[cfg(any(feature = "runtime-benchmarks"/*, feature = "std"*/))]
+#[cfg(any(feature = "runtime-benchmarks", test))]
 pub fn evm_sign(secret: &libsecp256k1::SecretKey, msg_hash: &[u8]) -> EcdsaSignature {
     let (sig, recovery_id) =
         libsecp256k1::sign(&libsecp256k1::Message::parse_slice(&msg_hash).unwrap(), secret);

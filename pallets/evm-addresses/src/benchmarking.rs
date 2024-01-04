@@ -1,6 +1,6 @@
 #![cfg(feature = "runtime-benchmarks")]
 
-use frame_benchmarking::{account, benchmarks, Zero};
+use frame_benchmarking::{account, benchmarks};
 use frame_support::ensure;
 use frame_system::RawOrigin;
 use sp_core_hashing::keccak_256;
@@ -11,6 +11,10 @@ use crate::{
 };
 
 use super::*;
+
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+    frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
 
 benchmarks! {
     link_evm_address {
@@ -29,7 +33,7 @@ benchmarks! {
             EvmAddressByAccount::<T>::get(linker.clone()).unwrap(),
             linked_evm_address.clone(),
         );
-        frame_system::pallet::Pallet::<T>::assert_last_event(Event::<T>::EvmAddressLinkedToAccount {
+        assert_last_event::<T>(Event::<T>::EvmAddressLinkedToAccount {
             substrate: linker.clone(),
             ethereum: linked_evm_address.clone(),
         }.into());
@@ -54,15 +58,15 @@ benchmarks! {
             EvmAddressByAccount::<T>::get(account.clone()).is_none(),
             "Evm account is still linked",
         );
-        frame_system::pallet::Pallet::<T>::assert_last_event(Event::<T>::EvmAddressUnlinkedFromAccount {
+        assert_last_event::<T>(Event::<T>::EvmAddressUnlinkedFromAccount {
             substrate: account.clone(),
             ethereum: linked_evm_address.clone(),
         }.into());
     }
 
-    /*impl_benchmark_test_suite!(
+    impl_benchmark_test_suite!(
         Pallet,
         crate::mock::ExtBuilder::default().build(),
         crate::mock::Test,
-    );*/
+    );
 }

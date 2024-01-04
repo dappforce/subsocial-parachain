@@ -6,10 +6,10 @@ use sp_std::{collections::btree_set::BTreeSet, convert::TryInto};
 
 pub use pallet::*;
 
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod test;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod test;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

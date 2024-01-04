@@ -4,7 +4,9 @@ use frame_support::{assert_noop, assert_ok};
 use sp_core_hashing::keccak_256;
 use sp_runtime::DispatchError::BadOrigin;
 
-use crate::{evm::{evm_address, evm_secret_key, evm_sign, EcdsaSignature, MessageHash}, mock::*, AccountsByEvmAddress, Error, EvmAddressByAccount, Pallet, Event};
+use crate::{evm::{evm_address, evm_secret_key, evm_sign, EcdsaSignature}, mock::*, AccountsByEvmAddress, Error, EvmAddressByAccount, Pallet, Event};
+
+type MessageHash = [u8; 32];
 
 fn get_nonce(account: &AccountId) -> u64 {
     frame_system::pallet::Pallet::<Test>::account_nonce(&account)
@@ -50,7 +52,7 @@ fn link_substrate_account_should_fail_if_bad_signature() {
                 evm_pub,
                 bad_sig
             ),
-            Error::<Test>::BadSignature,
+            Error::<Test>::BadEvmSignature,
         );
     });
 }
