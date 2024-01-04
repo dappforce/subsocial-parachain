@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Spaces Module
 //!
 //! Spaces are the primary components of Subsocial. This module allows you to create a Space
@@ -57,7 +63,7 @@ pub mod pallet {
         frame_system::Config + pallet_permissions::Config + pallet_timestamp::Config
     {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type Roles: PermissionChecker<AccountId = Self::AccountId>;
 
@@ -75,7 +81,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -148,6 +153,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight(< T as Config >::WeightInfo::create_space())]
         pub fn create_space(
             origin: OriginFor<T>,
@@ -160,6 +166,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(1)]
         #[pallet::weight(< T as Config >::WeightInfo::update_space())]
         pub fn update_space(
             origin: OriginFor<T>,
@@ -231,8 +238,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight((
-            1_000_000 + T::DbWeight::get().reads_writes(1, 3),
+            Weight::from_parts(1_000_000, 0) + T::DbWeight::get().reads_writes(1, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -290,8 +298,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

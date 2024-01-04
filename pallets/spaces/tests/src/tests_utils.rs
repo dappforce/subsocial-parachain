@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -247,12 +253,12 @@ pub(crate) fn _create_default_space() -> DispatchResult {
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResult {
     Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
@@ -263,12 +269,12 @@ pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
 }
 
 pub(crate) fn _update_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     update: Option<SpaceUpdate>,
 ) -> DispatchResult {
     Spaces::update_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         update.unwrap_or_else(|| space_update(None, None)),
     )
@@ -289,13 +295,13 @@ pub(crate) fn _create_default_post() -> DispatchResult {
 }
 
 pub(crate) fn _create_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id_opt: Option<Option<SpaceId>>,
     extension: Option<PostExtension>,
     content: Option<Content>,
 ) -> DispatchResult {
     Posts::create_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id_opt.unwrap_or(Some(SPACE1)),
         extension.unwrap_or_else(extension_regular_post),
         content.unwrap_or_else(post_content_ipfs),
@@ -308,9 +314,9 @@ pub(crate) fn _default_follow_space() -> DispatchResult {
     _follow_space(None, None)
 }
 
-pub(crate) fn _follow_space(origin: Option<Origin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _follow_space(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
     SpaceFollows::follow_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT2)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
     )
 }
@@ -326,7 +332,7 @@ pub(crate) fn _create_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _create_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     time_to_live: Option<Option<BlockNumber>>,
     content: Option<Content>,
@@ -334,7 +340,7 @@ pub(crate) fn _create_role(
 ) -> DispatchResult {
     // TODO: remove
     Roles::create_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         time_to_live.unwrap_or_default(), // Should return 'None'
         content.unwrap_or_else(default_role_content_ipfs),
@@ -347,12 +353,12 @@ pub(crate) fn _create_default_role_with_permissions(permissions: Vec<SpacePermis
 }
 
 pub(crate) fn _grant_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
 ) -> DispatchResult {
     Roles::grant_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
     )
@@ -362,10 +368,10 @@ pub(crate) fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub(crate) fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
+pub(crate) fn _delete_role(origin: Option<RuntimeOrigin>, role_id: Option<RoleId>) -> DispatchResult {
     let users_count = Roles::users_by_role_id(role_id.unwrap_or(ROLE1)).len();
     Roles::delete_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users_count as u32,
     )

@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use crate::{mock::*, *};
 
 use frame_support::{assert_noop, assert_ok};
@@ -26,7 +32,7 @@ fn create_role_should_work() {
 fn create_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_create_role(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None, // On SpaceId 1
             None, // Without time_to_live
             None, // With default content
@@ -68,7 +74,7 @@ fn create_role_should_fail_with_no_permission() {
     ExtBuilder::build().execute_with(|| {
         assert_noop!(
             _create_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On SpaceId 1
                 None, // Without time_to_live
                 None, // With default content
@@ -117,7 +123,7 @@ fn create_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _create_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On SpaceId 1
                 None, // Without time_to_live
                 None, // With default content
@@ -203,7 +209,7 @@ fn update_role_should_work_with_same_perms_provided_no_update() {
 fn update_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_update_role(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             Some(ROLE1),
             Some(self::role_update(
                 None,
@@ -265,7 +271,7 @@ fn update_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _update_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On RoleId 1
                 None  // With RoleUpdate that updates every mutable (updatable) field
             ),
@@ -310,7 +316,7 @@ fn update_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _update_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // On RoleId 1
                 Some(self::role_update(
                     None,
@@ -342,7 +348,7 @@ fn grant_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         let user = User::Account(ACCOUNT3);
         assert_ok!(_grant_role(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None, // RoleId 1
             Some(vec![User::Account(ACCOUNT3)])
         ));
@@ -369,7 +375,7 @@ fn grant_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _grant_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
             ),
@@ -399,7 +405,7 @@ fn grant_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _grant_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
             ),
@@ -428,7 +434,7 @@ fn revoke_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         let user = User::Account(ACCOUNT3);
         assert_ok!(_revoke_role(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None, // RoleId 1
             Some(vec![User::Account(ACCOUNT2)])
         ));
@@ -460,7 +466,7 @@ fn revoke_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _revoke_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
             ),
@@ -475,7 +481,7 @@ fn revoke_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _revoke_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // RoleId 1
                 Some(vec![User::Account(ACCOUNT3)])
             ),
@@ -504,7 +510,7 @@ fn delete_role_should_work() {
 fn delete_role_should_work_with_a_few_roles() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2().execute_with(|| {
         assert_ok!(_delete_role(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None // RoleId 1
         ));
 
@@ -530,7 +536,7 @@ fn delete_role_should_fail_with_no_permission() {
         assert_ok!(_create_default_role()); // RoleId 1
         assert_noop!(
             _delete_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None // RoleId 1
             ),
             Error::<Test>::NoPermissionToManageRoles
@@ -558,7 +564,7 @@ fn delete_role_should_fail_with_a_few_roles_no_permission() {
         assert_ok!(_delete_role(None, Some(ROLE2)));
         assert_noop!(
             _delete_role(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None // RoleId 1
             ),
             Error::<Test>::NoPermissionToManageRoles

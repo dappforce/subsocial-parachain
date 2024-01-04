@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Posts Module
 //!
 //! Posts are the second crucial component of Subsocial after Spaces. This module allows you to
@@ -62,7 +68,7 @@ pub mod pallet {
         + pallet_timestamp::Config
     {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Max comments depth
         #[pallet::constant]
@@ -74,7 +80,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -191,11 +196,12 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight(
             match extension {
                 PostExtension::RegularPost => <T as Config>::WeightInfo::create_post__regular(),
-                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__shared(),
-                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__comment(),
+                PostExtension::Comment(..) => <T as Config>::WeightInfo::create_post__comment(),
+                PostExtension::SharedPost(..) => <T as Config>::WeightInfo::create_post__shared(),
             }
         )]
         pub fn create_post(
@@ -265,6 +271,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::update_post())]
         pub fn update_post(
             origin: OriginFor<T>,
@@ -322,6 +329,7 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::move_post())]
         pub fn move_post(
             origin: OriginFor<T>,
@@ -357,8 +365,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight((
-            50_000 + T::DbWeight::get().reads_writes(4, 3),
+            Weight::from_parts(50_000, 0) + T::DbWeight::get().reads_writes(4, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -422,8 +431,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(4)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().reads_writes(2, 3),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().reads_writes(2, 3),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -462,8 +472,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

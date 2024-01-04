@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Energy Pallet
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -41,7 +47,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The currency type.
         type Currency: Currency<Self::AccountId, Balance = Self::Balance>;
@@ -58,7 +64,7 @@ pub mod pallet {
         type DefaultValueCoefficient: Get<FixedI64>;
 
         /// The origin which may update the value coefficient ratio.
-        type UpdateOrigin: EnsureOrigin<Self::Origin>;
+        type UpdateOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// The fallback [OnChargeTransaction] that should be used if there is not enough energy to
         /// pay the transaction fees.
@@ -72,7 +78,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
@@ -133,6 +138,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Updates the value coefficient. Only callable by the `UpdateOrigin`.
+        #[pallet::call_index(0)]
         #[pallet::weight(< T as Config >::WeightInfo::update_value_coefficient())]
         pub fn update_value_coefficient(
             origin: OriginFor<T>,
@@ -150,6 +156,7 @@ pub mod pallet {
         }
 
         /// Generate energy for a target account by burning balance from the caller.
+        #[pallet::call_index(1)]
         #[pallet::weight(< T as Config >::WeightInfo::generate_energy())]
         pub fn generate_energy(
             origin: OriginFor<T>,
@@ -344,8 +351,8 @@ pub mod pallet {
 
         fn withdraw_fee(
             who: &T::AccountId,
-            call: &T::Call,
-            dispatch_info: &DispatchInfoOf<T::Call>,
+            call: &T::RuntimeCall,
+            dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
             fee: Self::Balance,
             tip: Self::Balance,
         ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
@@ -390,8 +397,8 @@ pub mod pallet {
 
         fn correct_and_deposit_fee(
             who: &T::AccountId,
-            dispatch_info: &DispatchInfoOf<T::Call>,
-            post_info: &PostDispatchInfoOf<T::Call>,
+            dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+            post_info: &PostDispatchInfoOf<T::RuntimeCall>,
             corrected_fee: Self::Balance,
             tip: Self::Balance,
             already_withdrawn: Self::LiquidityInfo,

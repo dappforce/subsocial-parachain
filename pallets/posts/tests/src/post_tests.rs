@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
@@ -121,7 +127,7 @@ fn create_post_should_work_when_one_of_roles_is_permitted() {
     ExtBuilder::build_with_a_few_roles_granted_to_account2(vec![SP::CreatePosts]).execute_with(
         || {
             assert_ok!(_create_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // SpaceId 1,
                 None, // RegularPost extension
                 None, // Default post content
@@ -162,7 +168,7 @@ fn create_post_should_fail_when_ipfs_cid_is_invalid() {
 fn create_post_should_fail_when_account_has_no_permission() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
-            _create_post(Some(Origin::signed(ACCOUNT2)), None, None, None),
+            _create_post(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None, None),
             PostsError::<Test>::NoPermissionToCreatePosts
         );
     });
@@ -176,7 +182,7 @@ fn create_post_should_fail_when_no_right_permission_in_account_roles() {
 
             assert_noop!(
                 _create_post(
-                    Some(Origin::signed(ACCOUNT2)),
+                    Some(RuntimeOrigin::signed(ACCOUNT2)),
                     None, // SpaceId 1,
                     None, // RegularPost extension
                     None, // Default post content
@@ -299,7 +305,7 @@ fn move_hidden_post_should_fail_when_provided_space_not_found() {
 fn move_hidden_post_should_fail_origin_has_no_permission_to_create_posts() {
     ExtBuilder::build_with_post().execute_with(|| {
         // Create a space #2 from account #2
-        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), None, None));
+        assert_ok!(_create_space(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None));
 
         // Should not be possible to move the post b/c it's owner is account #1
         // when the space #2 is owned by account #2
@@ -311,7 +317,7 @@ fn move_hidden_post_should_fail_origin_has_no_permission_to_create_posts() {
 fn move_post_should_fail_when_account_has_no_permission() {
     ExtBuilder::build_with_post_and_two_spaces().execute_with(|| {
         assert_noop!(
-            _move_post(Some(Origin::signed(ACCOUNT2)), None, None),
+            _move_post(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None),
             PostsError::<Test>::NoPermissionToUpdateAnyPost
         );
     });
@@ -322,7 +328,7 @@ fn move_post_should_fail_when_space_none_and_account_is_not_post_owner() {
     ExtBuilder::build_with_post_and_two_spaces().execute_with(|| {
         assert_ok!(_move_post_to_nowhere(POST1));
         assert_noop!(
-            _move_post(Some(Origin::signed(ACCOUNT2)), None, None),
+            _move_post(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None),
             PostsError::<Test>::NotAPostOwner
         );
     });
@@ -359,7 +365,7 @@ fn update_any_post_should_work_when_account_has_default_permission() {
         || {
             let post_update = post_update(None, Some(updated_post_content()), Some(true));
             assert_ok!(_create_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None, // SpaceId 1
                 None, // RegularPost extension
                 None  // Default post content
@@ -384,7 +390,7 @@ fn update_any_post_should_work_when_one_of_roles_is_permitted() {
 
             // Post update with ID 1 should be fine
             assert_ok!(_update_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(POST1),
                 Some(post_update)
             ));
@@ -430,7 +436,7 @@ fn update_post_should_fail_when_account_has_no_permission_to_update_any_post() {
         // Try to catch an error updating a post with different account
         assert_noop!(
             _update_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None,
                 Some(post_update(
                     // FIXME: when Post's `space_id` update is fully implemented
@@ -466,7 +472,7 @@ fn update_post_should_fail_when_no_right_permission_in_account_roles() {
 
             // Post update with ID 1 should be fine
             assert_noop!(
-                _update_post(Some(Origin::signed(ACCOUNT2)), Some(POST1), Some(post_update)),
+                _update_post(Some(RuntimeOrigin::signed(ACCOUNT2)), Some(POST1), Some(post_update)),
                 PostsError::<Test>::NoPermissionToUpdateAnyPost
             );
         },

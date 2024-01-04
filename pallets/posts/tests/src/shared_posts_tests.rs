@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{assert_noop, assert_ok};
 
 use pallet_permissions::SpacePermission as SP;
@@ -8,10 +14,10 @@ use crate::{mock::*, tests_utils::*};
 #[test]
 fn share_post_should_work() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
+        assert_ok!(_create_space(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
 
         assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             Some(Some(SPACE2)),
             Some(extension_shared_post(POST1)),
             None
@@ -50,7 +56,7 @@ fn share_post_should_work_when_one_of_roles_is_permitted() {
             )); // PostId 1 on SpaceId 2
 
             assert_ok!(_create_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(Some(SPACE1)),
                 Some(extension_shared_post(POST1)),
                 None
@@ -63,7 +69,7 @@ fn share_post_should_work_when_one_of_roles_is_permitted() {
 fn share_post_should_work_for_share_own_post_in_same_own_space() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT1)),
+            Some(RuntimeOrigin::signed(ACCOUNT1)),
             Some(Some(SPACE1)),
             Some(extension_shared_post(POST1)),
             None
@@ -85,12 +91,12 @@ fn share_post_should_work_for_share_own_post_in_same_own_space() {
 #[test]
 fn share_post_should_fail_when_original_post_not_found() {
     ExtBuilder::build_with_space().execute_with(|| {
-        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
+        assert_ok!(_create_space(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
 
         // Skipped creating PostId 1
         assert_noop!(
             _create_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(Some(SPACE2)),
                 Some(extension_shared_post(POST1)),
                 None
@@ -103,10 +109,10 @@ fn share_post_should_fail_when_original_post_not_found() {
 #[test]
 fn share_post_should_fail_when_trying_to_share_shared_post() {
     ExtBuilder::build_with_post().execute_with(|| {
-        assert_ok!(_create_space(Some(Origin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
+        assert_ok!(_create_space(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None)); // SpaceId 2 by ACCOUNT2
 
         assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             Some(Some(SPACE2)),
             Some(extension_shared_post(POST1)),
             None
@@ -115,7 +121,7 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
         // Try to share post with extension SharedPost
         assert_noop!(
             _create_post(
-                Some(Origin::signed(ACCOUNT1)),
+                Some(RuntimeOrigin::signed(ACCOUNT1)),
                 Some(Some(SPACE1)),
                 Some(extension_shared_post(POST2)),
                 None
@@ -129,7 +135,7 @@ fn share_post_should_fail_when_trying_to_share_shared_post() {
 fn share_post_should_fail_when_account_has_no_permission_to_create_posts_in_new_space() {
     ExtBuilder::build_with_post().execute_with(|| {
         assert_ok!(_create_space(
-            Some(Origin::signed(ACCOUNT1)),
+            Some(RuntimeOrigin::signed(ACCOUNT1)),
             None,       // Default space content,
             None
         )); // SpaceId 2 by ACCOUNT1
@@ -137,7 +143,7 @@ fn share_post_should_fail_when_account_has_no_permission_to_create_posts_in_new_
         // Try to share post with extension SharedPost
         assert_noop!(
             _create_post(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(Some(SPACE2)),
                 Some(extension_shared_post(POST1)),
                 None
@@ -168,7 +174,7 @@ fn share_post_should_fail_when_no_right_permission_in_account_roles() {
 
             assert_noop!(
                 _create_post(
-                    Some(Origin::signed(ACCOUNT2)),
+                    Some(RuntimeOrigin::signed(ACCOUNT2)),
                     Some(Some(SPACE1)),
                     Some(extension_shared_post(POST1)),
                     None

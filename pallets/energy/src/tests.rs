@@ -1,8 +1,13 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{
     assert_noop, assert_ok,
-    dispatch::{DispatchInfo, GetDispatchInfo},
+    dispatch::{DispatchInfo, GetDispatchInfo, extract_actual_weight, PostDispatchInfo, Weight},
     pallet_prelude::{DispatchClass, Pays},
-    weights::{extract_actual_weight, PostDispatchInfo},
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
@@ -21,7 +26,7 @@ use crate::{mock::*, Error, WeightInfo};
 fn update_value_coefficient_should_fail_when_unsigned() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            Energy::update_value_coefficient(Origin::none(), FixedI64::from_float(1.5),),
+            Energy::update_value_coefficient(RuntimeOrigin::none(), FixedI64::from_float(1.5),),
             DispatchError::BadOrigin
         );
     });
@@ -33,7 +38,7 @@ fn update_value_coefficient_should_fail_when_caller_is_not_update_origin() {
         let not_update_origin = 2;
         assert_noop!(
             Energy::update_value_coefficient(
-                Origin::signed(not_update_origin),
+                RuntimeOrigin::signed(not_update_origin),
                 FixedI64::from_float(1.5),
             ),
             DispatchError::BadOrigin
@@ -47,7 +52,7 @@ fn update_value_coefficient_should_fail_when_new_ratio_is_negative() {
     ExtBuilder::default().update_origin(update_origin).build().execute_with(|| {
         assert_noop!(
             Energy::update_value_coefficient(
-                Origin::signed(update_origin),
+                RuntimeOrigin::signed(update_origin),
                 FixedI64::from_float(-4.0),
             ),
             Error::<Test>::ValueCoefficientIsNotPositive,
@@ -71,7 +76,7 @@ fn update_value_coefficient_should_work_as_expected() {
 
             let coff = 1.12354;
             assert_ok!(Energy::update_value_coefficient(
-                Origin::signed(update_origin),
+                RuntimeOrigin::signed(update_origin),
                 FixedI64::from_float(coff),
             ),);
 
@@ -94,13 +99,13 @@ fn update_value_coefficient_should_have_correct_weight() {
         .update_origin(update_origin)
         .build()
         .execute_with(|| {
-            let call: Call = EnergyCall::<Test>::update_value_coefficient {
+            let call: RuntimeCall = EnergyCall::<Test>::update_value_coefficient {
                 new_coefficient: FixedI64::from_float(1.5),
             }
             .into();
 
             let info = call.get_dispatch_info();
-            let result = call.dispatch(Origin::signed(update_origin));
+            let result = call.dispatch(RuntimeOrigin::signed(update_origin));
 
             assert_ok!(result);
 
@@ -116,7 +121,7 @@ fn update_value_coefficient_should_have_correct_weight() {
 #[test]
 fn generate_energy_should_fail_when_unsigned() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(Energy::generate_energy(Origin::none(), 1, 10,), DispatchError::BadOrigin);
+        assert_noop!(Energy::generate_energy(RuntimeOrigin::none(), 1, 10,), DispatchError::BadOrigin);
     });
 }
 
@@ -125,7 +130,7 @@ fn generate_energy_should_fail_when_caller_have_not_enough_balance() {
     ExtBuilder::default().build().execute_with(|| {
         let caller = account_with_balance(1, 0);
         assert_noop!(
-            Energy::generate_energy(Origin::signed(caller), 1, 10,),
+            Energy::generate_energy(RuntimeOrigin::signed(caller), 1, 10,),
             Error::<Test>::NotEnoughBalance,
         );
     });
@@ -138,11 +143,11 @@ fn generate_energy_should_fail_when_energy_balance_below_existential_deposit() {
         let receiver = account(10);
 
         assert_noop!(
-            Energy::generate_energy(Origin::signed(caller), receiver, 10),
+            Energy::generate_energy(RuntimeOrigin::signed(caller), receiver, 10),
             Error::<Test>::BalanceBelowExistentialDeposit
         );
 
-        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver, 100));
+        assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver, 100));
     });
 }
 
@@ -152,7 +157,7 @@ fn generate_energy_should_work_when_energy_balance_equal_to_existential_deposit(
         let caller = account_with_balance(1, 1000);
         let receiver = account(10);
 
-        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver, 100));
+        assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver, 100));
 
         assert_total_energy!(100);
         assert_energy_balance!(receiver, 100);
@@ -175,7 +180,7 @@ fn generate_energy_should_work_when_caller_have_enough_balance() {
             assert_energy_balance!(receiver, 0);
             assert_total_energy!(0);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver, 100,),);
+            assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver, 100,),);
             assert_balance!(caller, 0);
             assert_total_issuance!(0);
             assert_energy_balance!(receiver, 100);
@@ -201,13 +206,13 @@ fn generate_energy_should_increase_total_energy() {
         assert_energy_balance!(receiver2, 0);
         assert_total_energy!(0);
 
-        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver1, 35,),);
+        assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver1, 35,),);
         assert_total_issuance!(965);
         assert_total_energy!(35);
-        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver1, 55,),);
+        assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver1, 55,),);
         assert_total_issuance!(910);
         assert_total_energy!(90);
-        assert_ok!(Energy::generate_energy(Origin::signed(caller), receiver2, 200,),);
+        assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver2, 200,),);
 
         assert_total_issuance!(710);
         assert_balance!(caller, 710);
@@ -223,11 +228,11 @@ fn generate_energy_should_have_correct_weight() {
         let caller = account_with_balance(1, 1000);
         let receiver = account(2);
 
-        let call: Call =
+        let call: RuntimeCall =
             EnergyCall::<Test>::generate_energy { target: receiver, burn_amount: 100 }.into();
 
         let info = call.get_dispatch_info();
-        let result = call.dispatch(Origin::signed(caller));
+        let result = call.dispatch(RuntimeOrigin::signed(caller));
 
         assert_ok!(result);
 
@@ -261,8 +266,8 @@ fn charge_transaction<PreValidator: FnOnce()>(
     pre_validator: PreValidator,
 ) -> Result<(), ChargeTransactionError> {
     let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
-    let info = DispatchInfo { weight: fee, class: DispatchClass::Normal, pays_fee: Pays::Yes };
-    let post_info = PostDispatchInfo { actual_weight: Some(actual_fee), pays_fee: Pays::Yes };
+    let info = DispatchInfo { weight: Weight::from_parts(fee, 0), class: DispatchClass::Normal, pays_fee: Pays::Yes };
+    let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_parts(actual_fee, 0)), pays_fee: Pays::Yes };
 
     let pre = ChargeTransactionPayment::<Test>::from(tip)
         .pre_dispatch(caller, &call, &info, 0)
@@ -444,7 +449,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transactions() {
             assert_energy_balance!(caller, 1_000_000 - 80);
 
             assert_ok!(Energy::update_value_coefficient(
-                Origin::signed(update_origin),
+                RuntimeOrigin::signed(update_origin),
                 FixedI64::checked_from_rational(50, 100).unwrap(), // 50%
             ),);
 
@@ -460,7 +465,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transactions() {
             assert_energy_balance!(caller, 1_000_000 - 300);
 
             assert_ok!(Energy::update_value_coefficient(
-                Origin::signed(update_origin),
+                RuntimeOrigin::signed(update_origin),
                 FixedI64::checked_from_rational(12_345, 10_000).unwrap(), // 123.45%
             ),);
 
@@ -476,7 +481,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transactions() {
             assert_energy_balance!(caller, 1_000_000 - 567_031);
 
             assert_ok!(Energy::update_value_coefficient(
-                Origin::signed(update_origin),
+                RuntimeOrigin::signed(update_origin),
                 FixedI64::checked_from_rational(333_333_334, 1_000_000_000).unwrap(), // 33.3333334%
             ),);
 
@@ -510,19 +515,19 @@ fn existential_deposit_and_providers() {
             assert_eq!(System::providers(&account1), 0);
 
             assert_ok!(pallet_balances::Pallet::<Test>::transfer(
-                Origin::signed(treasury),
+                RuntimeOrigin::signed(treasury),
                 account1,
                 10_000
             ));
             assert_eq!(System::providers(&account1), 1);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 100));
+            assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(account1), account1, 100));
             assert_eq!(System::providers(&account1), 2);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 90));
+            assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(treasury), account1, 90));
             assert_eq!(System::providers(&account1), 2);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(treasury), account1, 1000));
+            assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(treasury), account1, 1000));
             assert_eq!(System::providers(&account1), 2);
 
             // Now Account 1 has 1190 energy
@@ -547,14 +552,14 @@ fn existential_deposit_and_providers() {
             assert_ok!(charge_transaction(&account1, 10, 10, 0, || {}));
             assert_eq!(System::providers(&account1), 1);
 
-            assert_ok!(Energy::generate_energy(Origin::signed(account1), account1, 900));
+            assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(account1), account1, 900));
 
             assert_balance!(account1, 8990);
             assert_energy_balance!(account1, 900);
             assert_eq!(System::providers(&account1), 2);
 
             assert_ok!(pallet_balances::Pallet::<Test>::transfer_all(
-                Origin::signed(account1),
+                RuntimeOrigin::signed(account1),
                 treasury,
                 false
             ));
@@ -564,7 +569,7 @@ fn existential_deposit_and_providers() {
 
             assert_ok!(charge_transaction(&account1, 850, 850, 0, || {},),);
 
-            System::assert_last_event(
+            System::assert_has_event(
                 EnergyEvent::DustLost { account: account1, amount: 50 }.into(),
             );
 

@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use sp_core::H256;
 use sp_io::TestExternalities;
 
@@ -55,8 +61,8 @@ impl system::Config for TestRuntime {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -64,7 +70,7 @@ impl system::Config for TestRuntime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -96,7 +102,7 @@ parameter_types! {
 impl pallet_balances::Config for TestRuntime {
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -117,21 +123,21 @@ parameter_types! {
     }
 
 impl pallet_posts::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type MaxCommentDepth = MaxCommentDepth;
     type IsPostBlocked = MockModeration;
     type WeightInfo = ();
 }
 
 impl pallet_profiles::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = Spaces;
     type SpacesInterface = Spaces;
     type WeightInfo = ();
 }
 
 impl pallet_reactions::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -140,7 +146,7 @@ parameter_types! {
     }
 
 impl pallet_roles::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type SpacePermissionsProvider = Spaces;
     type SpaceFollows = SpaceFollows;
@@ -150,18 +156,19 @@ impl pallet_roles::Config for TestRuntime {
 }
 
 impl pallet_space_follows::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_space_follows::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl pallet_space_ownership::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type CreatorStakingProvider = ();
     type WeightInfo = ();
 }
 
 impl pallet_spaces::Config for TestRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Roles = Roles;
     type SpaceFollows = SpaceFollows;
     type IsAccountBlocked = MockModeration;

@@ -1,4 +1,7 @@
 .git
+.idea
+.vscode
+
 **/target/
 **/*.txt
 **/*.md

@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{assert_noop, assert_ok};
 
 use pallet_posts::Error as PostsError;
@@ -209,7 +215,7 @@ fn update_comment_should_fail_when_account_is_not_a_comment_author() {
     ExtBuilder::build_with_comment().execute_with(|| {
         // Try to catch an error updating a comment with wrong Account
         assert_noop!(
-            _update_comment(Some(Origin::signed(ACCOUNT2)), None, None),
+            _update_comment(Some(RuntimeOrigin::signed(ACCOUNT2)), None, None),
             PostsError::<TestRuntime>::NotACommentAuthor
         );
     });

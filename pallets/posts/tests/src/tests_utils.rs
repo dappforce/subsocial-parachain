@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -266,12 +272,12 @@ pub(crate) fn _create_default_space() -> DispatchResult {
 }
 
 pub(crate) fn _create_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     content: Option<Content>,
     permissions: Option<Option<SpacePermissions>>,
 ) -> DispatchResult {
     Spaces::create_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         content.unwrap_or_else(space_content_ipfs),
         permissions.unwrap_or_default(),
     )
@@ -282,12 +288,12 @@ pub(crate) fn _create_space_with_content(content: Content) -> DispatchResult {
 }
 
 pub(crate) fn _update_space(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     update: Option<SpaceUpdate>,
 ) -> DispatchResult {
     Spaces::update_space(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         update.unwrap_or_else(|| space_update(None, None)),
     )
@@ -336,13 +342,13 @@ pub(crate) fn _create_default_post() -> DispatchResult {
 }
 
 pub(crate) fn _create_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id_opt: Option<Option<SpaceId>>,
     extension: Option<PostExtension>,
     content: Option<Content>,
 ) -> DispatchResult {
     Posts::create_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id_opt.unwrap_or(Some(SPACE1)),
         extension.unwrap_or_else(extension_regular_post),
         content.unwrap_or_else(post_content_ipfs),
@@ -350,12 +356,12 @@ pub(crate) fn _create_post(
 }
 
 pub(crate) fn _update_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     update: Option<PostUpdate>,
 ) -> DispatchResult {
     Posts::update_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         update.unwrap_or_else(|| post_update(None, None, None)),
     )
@@ -371,12 +377,12 @@ pub(crate) fn _move_post_to_nowhere(post_id: PostId) -> DispatchResult {
 }
 
 pub(crate) fn _move_post(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     new_space_id: Option<Option<SpaceId>>,
 ) -> DispatchResult {
     Posts::move_post(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         post_id.unwrap_or(POST1),
         new_space_id.unwrap_or(Some(SPACE2)),
     )
@@ -387,7 +393,7 @@ pub(crate) fn _create_default_comment() -> DispatchResult {
 }
 
 pub(crate) fn _create_comment(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     parent_id: Option<Option<PostId>>,
     content: Option<Content>,
@@ -401,7 +407,7 @@ pub(crate) fn _create_comment(
 }
 
 pub(crate) fn _update_comment(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     post_id: Option<PostId>,
     update: Option<PostUpdate>,
 ) -> DispatchResult {
@@ -423,7 +429,7 @@ pub fn _create_default_role() -> DispatchResult {
 }
 
 pub fn _create_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     time_to_live: Option<Option<BlockNumber>>,
     content: Option<Content>,
@@ -431,7 +437,7 @@ pub fn _create_role(
 ) -> DispatchResult {
     // TODO: remove
     Roles::create_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         time_to_live.unwrap_or_default(), // Should return 'None'
         content.unwrap_or_else(default_role_content_ipfs),
@@ -440,12 +446,12 @@ pub fn _create_role(
 }
 
 pub fn _grant_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
 ) -> DispatchResult {
     Roles::grant_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
     )
@@ -455,10 +461,10 @@ pub fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
+pub fn _delete_role(origin: Option<RuntimeOrigin>, role_id: Option<RoleId>) -> DispatchResult {
     let users_count = Roles::users_by_role_id(role_id.unwrap_or(ROLE1)).len();
     Roles::delete_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users_count as u32,
     )
@@ -476,12 +482,12 @@ pub(crate) fn _transfer_default_space_ownership() -> DispatchResult {
 }
 
 pub(crate) fn _transfer_space_ownership(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     transfer_to: Option<AccountId>,
 ) -> DispatchResult {
     SpaceOwnership::transfer_space_ownership(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         transfer_to.unwrap_or(ACCOUNT2),
     )

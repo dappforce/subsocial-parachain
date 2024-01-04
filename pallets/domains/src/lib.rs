@@ -1,8 +1,15 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Module for registering decentralized domain names
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod migration;
 
 #[cfg(test)]
 mod mock;
@@ -20,6 +27,9 @@ pub mod types;
 
 pub use subsocial_support::{SpaceId, PostId, Content};
 
+/// The log target of this pallet.
+pub const LOG_TARGET: &str = "runtime::domains";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -27,7 +37,7 @@ pub mod pallet {
 
     use frame_system::Pallet as System;
 
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency, weights::DispatchClass};
+    use frame_support::{pallet_prelude::*, traits::{Currency, ReservableCurrency, WithdrawReasons, ExistenceRequirement::KeepAlive}, dispatch::DispatchClass};
 
     use frame_system::pallet_prelude::*;
 
@@ -39,26 +49,22 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The currency trait.
         type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Domain's minimum length.
         #[pallet::constant]
-        type MinDomainLength: Get<u32>;
+        type MinDomainLength: Get<DomainLength>;
 
         /// Domain's maximum length.
         #[pallet::constant]
-        type MaxDomainLength: Get<u32>;
+        type MaxDomainLength: Get<DomainLength>;
 
         /// Maximum number of domains that can be registered per account.
         #[pallet::constant]
         type MaxDomainsPerAccount: Get<u32>;
-
-        /// Maximum number of promotional domains that can be registered per account.
-        #[pallet::constant]
-        type MaxPromoDomainsPerAccount: Get<u32>;
 
         /// The maximum number of domains that can be inserted into a storage at once.
         #[pallet::constant]
@@ -80,13 +86,26 @@ pub mod pallet {
         #[pallet::constant]
         type OuterValueByteDeposit: Get<BalanceOf<Self>>;
 
+        /// Account that receives funds spent for domain purchase.
+        /// Used only once, when the pallet is initialized.
+        #[pallet::constant]
+        type InitialPaymentBeneficiary: Get<Self::AccountId>;
+
+        /// A set of prices based on the length of a domain.
+        /// Used only once, when the pallet is initialized.
+        #[pallet::constant]
+        type InitialPricesConfig: Get<PricesConfigVec<Self>>;
+
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
@@ -129,11 +148,35 @@ pub mod pallet {
     pub(super) type SupportedTlds<T: Config> =
         StorageMap<_, Blake2_128Concat, DomainName<T>, bool, ValueQuery>;
 
+    #[pallet::type_value]
+    pub(super) fn DefaultPricesConfig<T: Config>() -> PricesConfigVec<T> {
+        let mut prices_config = T::InitialPricesConfig::get();
+        Pallet::<T>::sort_and_dedup_prices(&mut prices_config);
+
+        prices_config
+    }
+
+    #[pallet::storage]
+    #[pallet::getter(fn prices_config)]
+    pub(super) type PricesConfig<T: Config> =
+        StorageValue<_, PricesConfigVec<T>, ValueQuery, DefaultPricesConfig<T>>;
+
+    #[pallet::type_value]
+    pub(super) fn DefaultPaymentBeneficiary<T: Config>() -> T::AccountId {
+        T::InitialPaymentBeneficiary::get()
+    }
+
+    /// An account that receives payment for domain registration.
+    #[pallet::storage]
+    #[pallet::getter(fn payment_beneficiary)]
+    pub(super) type PaymentBeneficiary<T: Config> =
+        StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// The domain name was successfully registered.
-        DomainRegistered { who: T::AccountId, domain: DomainName<T> },
+        DomainRegistered { who: T::AccountId, recipient: T::AccountId, domain: DomainName<T> },
         /// The domain meta was successfully updated.
         DomainMetaUpdated { who: T::AccountId, domain: DomainName<T> },
         /// New words have been reserved.
@@ -146,11 +189,12 @@ pub mod pallet {
     pub enum Error<T> {
         /// The content stored in a domain metadata was not changed.
         DomainContentNotChanged,
-        /// Cannot register more than `MaxDomainsPerAccount` domains.
+        /// Cannot register more than [`Config::MaxDomainsPerAccount`] domains.
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain label length must be between `MinDomainLength` and 63 characters, inclusive.
+        /// This domain name length must be within the limits defined by
+        /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
         DomainIsTooShort,
         /// This domain has expired.
         DomainHasExpired,
@@ -176,6 +220,12 @@ pub mod pallet {
         TldNotSpecified,
         /// Top-level domain is not supported.
         TldNotSupported,
+        /// The domain price cannot be calculated.
+        CannotCalculatePrice,
+        /// There are not enough funds to reserve the domain deposit.
+        InsufficientBalanceToReserveDeposit,
+        /// There are insufficient funds to pay for the domain and reserve the deposit on it.
+        InsufficientBalanceToRegisterDomain,
     }
 
     #[pallet::call]
@@ -184,38 +234,24 @@ pub mod pallet {
         /// and set the domain to expire in [expires_in] number of blocks.
         /// [full_domain] is a full domain name including a dot (.) and TLD.
         /// Example of a [full_domain]: `mytoken.ksm`
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::register_domain())]
         pub fn register_domain(
             origin: OriginFor<T>,
+            alt_recipient: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
         ) -> DispatchResult {
-            let owner = ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
+            let recipient = alt_recipient
+                .map_or(Ok(caller.clone()), T::Lookup::lookup)?;
 
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::No)
-        }
-
-        /// Registers a domain ([full_domain]) using root on behalf of a [target] with [content],
-        /// and set the domain to expire in [expires_in] number of blocks.
-        #[pallet::weight((
-            <T as Config>::WeightInfo::force_register_domain(),
-            DispatchClass::Operational,
-        ))]
-        pub fn force_register_domain(
-            origin: OriginFor<T>,
-            target: <T::Lookup as StaticLookup>::Source,
-            full_domain: DomainName<T>,
-            content: Content,
-            expires_in: T::BlockNumber,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-            let owner = T::Lookup::lookup(target)?;
-
-            Self::do_register_domain(owner, full_domain, content, expires_in, IsForced::Yes)
+            Self::do_register_domain(caller, recipient, full_domain, content, expires_in)
         }
 
         /// Sets the domain inner_value to be one of Subsocial account, space, or post.
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::set_inner_value())]
         pub fn set_inner_value(
             origin: OriginFor<T>,
@@ -230,6 +266,7 @@ pub mod pallet {
         }
 
         /// Sets the domain inner_value to be one of subsocial account, space, or post.
+        #[pallet::call_index(2)]
         #[pallet::weight((
             <T as Config>::WeightInfo::force_set_inner_value(),
             DispatchClass::Operational,
@@ -247,6 +284,7 @@ pub mod pallet {
         }
 
         /// Sets the domain outer_value to be a custom string.
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as Config>::WeightInfo::set_outer_value())]
         pub fn set_outer_value(
             origin: OriginFor<T>,
@@ -287,6 +325,7 @@ pub mod pallet {
         }
 
         /// Sets the domain content to be an outside link.
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::set_domain_content())]
         pub fn set_domain_content(
             origin: OriginFor<T>,
@@ -311,6 +350,7 @@ pub mod pallet {
         }
 
         /// Mark set of domains as not reservable by users.
+        #[pallet::call_index(5)]
         #[pallet::weight((
             <T as Config>::WeightInfo::reserve_words(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -332,6 +372,7 @@ pub mod pallet {
         }
 
         /// Add support for a set of top-level domains.
+        #[pallet::call_index(6)]
         #[pallet::weight((
             <T as Config>::WeightInfo::support_tlds(T::DomainsInsertLimit::get()),
             DispatchClass::Operational,
@@ -351,15 +392,49 @@ pub mod pallet {
             Self::deposit_event(Event::NewTldsSupported { count: inserted_tlds_count });
             Ok(Some(<T as Config>::WeightInfo::support_tlds(inserted_tlds_count)).into())
         }
+
+        #[pallet::call_index(7)]
+        #[pallet::weight((
+            T::DbWeight::get().writes(1) + Weight::from_parts(100_000, 0),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn set_payment_beneficiary(
+            origin: OriginFor<T>,
+            payment_beneficiary: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            PaymentBeneficiary::<T>::set(payment_beneficiary);
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::call_index(8)]
+        #[pallet::weight((
+            T::DbWeight::get().writes(1) +
+                Weight::from_parts(100_000 * new_prices_config.len() as u64 * 2, 0),
+            DispatchClass::Operational,
+            Pays::Yes,
+        ))]
+        pub fn set_prices_config(
+            origin: OriginFor<T>,
+            mut new_prices_config: PricesConfigVec<T>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            Self::sort_and_dedup_prices(&mut new_prices_config);
+            PricesConfig::<T>::set(new_prices_config);
+
+            Ok(Pays::No.into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
         fn do_register_domain(
-            owner: T::AccountId,
+            caller: T::AccountId,
+            recipient: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
             expires_in: T::BlockNumber,
-            is_forced: IsForced,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
@@ -379,55 +454,60 @@ pub mod pallet {
             let subdomain = domain_parts.first().unwrap();
             let tld = domain_parts.last().unwrap();
 
-            // FIXME: this is hot fix, change asap
+            // FIXME: this is hot fix, change whenever possible
             // ensure!(Self::is_tld_supported(tld), Error::<T>::TldNotSupported);
-            ensure!(tld.as_slice() == b"sub", Error::<T>::TldNotSupported);
+            ensure!(
+                tld.as_slice() == b"sub" || tld.as_slice() == b"polka",
+                Error::<T>::TldNotSupported,
+            );
 
-            let domains_per_account = Self::domains_by_owner(&owner).len();
-
-            if let IsForced::No = is_forced {
-                ensure!(
-                    domains_per_account < T::MaxPromoDomainsPerAccount::get() as usize,
-                    Error::<T>::TooManyDomainsPerAccount,
-                );
-                Self::ensure_word_is_not_reserved(subdomain)?;
-            }
+            Self::ensure_word_is_not_reserved(subdomain)?;
 
             ensure!(
                 Self::registered_domain(&domain_lc).is_none(),
                 Error::<T>::DomainAlreadyOwned,
             );
 
+            let recipient_domains_count = Self::domains_by_owner(&recipient).len();
             ensure!(
-                domains_per_account < T::MaxDomainsPerAccount::get() as usize,
+                recipient_domains_count < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
 
-            let mut deposit = Zero::zero();
-            if let IsForced::No = is_forced {
-                // TODO: unreserve the balance for expired or sold domains
-                deposit = T::BaseDomainDeposit::get();
-                <T as Config>::Currency::reserve(&owner, deposit)?;
-            }
+            let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
+                (caller.clone(), T::BaseDomainDeposit::get()).into();
+
+            let price = Self::calculate_price(&subdomain).ok_or(Error::<T>::DomainIsTooShort)?;
+
+            Self::ensure_can_pay_for_domain(&caller, price, deposit_info.deposit)?;
+
+            // TODO: unreserve the balance for expired or sold domains
+            <T as Config>::Currency::reserve(&deposit_info.depositor, deposit_info.deposit)?;
+
+            <T as Config>::Currency::transfer(
+                &caller,
+                &Self::payment_beneficiary(),
+                price,
+                KeepAlive,
+            )?;
 
             let expires_at = expires_in.saturating_add(System::<T>::block_number());
             let domain_meta = DomainMeta::new(
+                caller.clone(),
+                recipient.clone(),
                 expires_at,
-                owner.clone(),
                 content,
-                deposit,
+                deposit_info,
             );
-
-            // TODO: withdraw balance when it will be possible to purchase domains.
 
             RegisteredDomains::<T>::insert(domain_lc.clone(), domain_meta);
             DomainsByOwner::<T>::mutate(
-                &owner, |domains| {
+                &recipient, |domains| {
                     domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
                 }
             );
 
-            Self::deposit_event(Event::DomainRegistered { who: owner, domain: full_domain });
+            Self::deposit_event(Event::DomainRegistered { who: caller, recipient, domain: full_domain });
             Ok(())
         }
 
@@ -461,6 +541,11 @@ pub mod pallet {
 
             Self::deposit_event(Event::DomainMetaUpdated { who: meta.owner, domain: domain_lc });
             Ok(())
+        }
+
+        pub fn sort_and_dedup_prices(prices_config: &mut PricesConfigVec<T>) {
+            prices_config.sort_by_key(|(length, _)| *length);
+            prices_config.dedup_by_key(|(length, _)| *length);
         }
 
         fn ensure_ascii_alphanumeric(domain: &[u8]) -> DispatchResult {
@@ -554,7 +639,7 @@ pub mod pallet {
 
         /// Try to get domain meta by it's custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
-            Ok(Self::registered_domain(&domain).ok_or(Error::<T>::DomainNotFound)?)
+            Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -562,9 +647,10 @@ pub mod pallet {
             domain_meta: &DomainMeta<T>,
             sender: &T::AccountId,
         ) -> DispatchResult {
-            let DomainMeta { owner, expires_at, .. } = domain_meta;
+            let DomainMeta { owner, .. } = domain_meta;
 
-            ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
+            // FIXME: this is hotfix, handle expired domains correctly!
+            // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
             ensure!(sender == owner, Error::<T>::NotDomainOwner);
             Ok(())
         }
@@ -600,6 +686,36 @@ pub mod pallet {
 
             ensure!(!Self::is_word_reserved(word_without_hyphens), Error::<T>::DomainIsReserved);
             Ok(())
+        }
+
+        pub fn calculate_price(subdomain: &[u8]) -> Option<BalanceOf<T>> {
+            let prices_config = Self::prices_config();
+            let subdomain_len = subdomain.len() as u32;
+
+            if subdomain_len < prices_config[0].0 {
+                return None;
+            }
+
+            let price_index = prices_config.partition_point(|(l, _)| l <= &subdomain_len).saturating_sub(1);
+            let (_, price) = prices_config[price_index];
+
+            Some(price)
+        }
+
+        fn ensure_can_pay_for_domain(
+            owner: &T::AccountId,
+            price: BalanceOf<T>,
+            deposit: BalanceOf<T>,
+        ) -> DispatchResult {
+            let owner_balance = T::Currency::free_balance(owner);
+            let total_price = price.saturating_add(deposit);
+
+            ensure!(owner_balance >= total_price, Error::<T>::InsufficientBalanceToRegisterDomain);
+            ensure!(T::Currency::can_reserve(&owner, deposit), Error::<T>::InsufficientBalanceToReserveDeposit);
+
+            T::Currency::ensure_can_withdraw(
+                &owner, price, WithdrawReasons::TRANSFER, owner_balance.saturating_sub(total_price)
+            )
         }
     }
 }

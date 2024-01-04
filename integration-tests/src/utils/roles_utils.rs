@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::pallet_prelude::*;
 
 use pallet_permissions::SpacePermission;
@@ -26,7 +32,7 @@ pub fn _create_default_role() -> DispatchResult {
 }
 
 pub fn _create_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     time_to_live: Option<Option<BlockNumber>>,
     content: Option<Content>,
@@ -35,7 +41,7 @@ pub fn _create_role(
     // TODO: remove
     use crate::utils::permissions_utils::permission_set_default;
     Roles::create_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         time_to_live.unwrap_or_default(), // Should return 'None'
         content.unwrap_or_else(default_role_content_ipfs),
@@ -48,12 +54,12 @@ pub fn _grant_default_role() -> DispatchResult {
 }
 
 pub fn _grant_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
 ) -> DispatchResult {
     Roles::grant_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
     )
@@ -64,12 +70,12 @@ pub fn _delete_default_role() -> DispatchResult {
 }
 
 pub fn _delete_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
 ) -> DispatchResult {
     let role_id = role_id.unwrap_or(ROLE1);
     Roles::delete_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id,
         UsersByRoleId::<TestRuntime>::get(role_id).len() as u32,
     )

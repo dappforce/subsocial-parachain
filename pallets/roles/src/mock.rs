@@ -55,8 +55,8 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -64,7 +64,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -96,7 +96,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
@@ -114,7 +114,7 @@ parameter_types! {
 }
 
 impl Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
     type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
@@ -124,7 +124,7 @@ impl Config for Test {
 }
 
 impl pallet_spaces::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Roles = Roles;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();
@@ -259,14 +259,14 @@ pub(crate) fn _create_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _create_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
     time_to_live: Option<Option<BlockNumber>>,
     content: Option<Content>,
     permissions: Option<Vec<SpacePermission>>,
 ) -> DispatchResult {
     Roles::create_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         time_to_live.unwrap_or_default(), // Should return 'None'
         content.unwrap_or_else(self::default_role_content_ipfs),
@@ -279,12 +279,12 @@ pub(crate) fn _update_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _update_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     update: Option<RoleUpdate>,
 ) -> DispatchResult {
     Roles::update_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         update.unwrap_or_else(|| {
             self::role_update(
@@ -301,12 +301,12 @@ pub(crate) fn _grant_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _grant_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
 ) -> DispatchResult {
     Roles::grant_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
     )
@@ -317,12 +317,12 @@ pub(crate) fn _revoke_default_role() -> DispatchResult {
 }
 
 pub(crate) fn _revoke_role(
-    origin: Option<Origin>,
+    origin: Option<RuntimeOrigin>,
     role_id: Option<RoleId>,
     users: Option<Vec<User<AccountId>>>,
 ) -> DispatchResult {
     Roles::revoke_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id.unwrap_or(ROLE1),
         users.unwrap_or_else(|| vec![User::Account(ACCOUNT2)]),
     )
@@ -332,10 +332,10 @@ pub(crate) fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub(crate) fn _delete_role(origin: Option<Origin>, role_id: Option<RoleId>) -> DispatchResult {
+pub(crate) fn _delete_role(origin: Option<RuntimeOrigin>, role_id: Option<RoleId>) -> DispatchResult {
     let role_id = role_id.unwrap_or(ROLE1);
     Roles::delete_role(
-        origin.unwrap_or_else(|| Origin::signed(ACCOUNT1)),
+        origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         role_id,
         UsersByRoleId::<Test>::get(role_id).len() as u32,
     )

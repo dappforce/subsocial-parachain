@@ -1,10 +1,10 @@
 {
-  "name": "SubsocialX",
-  "id": "subsocialx",
+  "name": "Subsocial",
+  "id": "subsocial",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/collator-1.subsocial.network/tcp/40333/p2p/12D3KooWFPDqUd9Sp6WLYyn6PhYouQTp6dEsByogbkgZCuS1a8BD",
-    "/dns/collator-2.subsocial.network/tcp/40334/p2p/12D3KooWEwfubVedFLP2Roi9iXKgRP78eJiKFHCq7v3mgxuH5aN6"
+    "/dns/dot-collator-1.subsocial.network/tcp/40333/p2p/12D3KooWE4RpCHdU6Wrx7NYN4PxCW5yuAtxq92BPascGJMxhmQSx",
+    "/dns/dot-collator-2.subsocial.network/tcp/40333/p2p/12D3KooW9w6HaGrKj8Mg1c8hiM4YDR8VsNe6uvr76aec9Npy6c1v"
   ],
   "telemetryEndpoints": [
     [
@@ -12,15 +12,15 @@
       0
     ]
   ],
-  "protocolId": "subx",
+  "protocolId": "sub",
   "properties": {
     "ss58Format": 28,
     "tokenDecimals": 10,
     "tokenSymbol": "SUB"
   },
-  "relay_chain": "kusama",
-  "para_id": 2100,
-  "consensusEngine": null,
+  "relay_chain": "polkadot",
+  "para_id": 2101,
+  "bad_blocks": null,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {

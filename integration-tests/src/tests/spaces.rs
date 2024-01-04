@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{assert_noop, assert_ok};
 
 use pallet_spaces::Error as SpacesError;
@@ -86,7 +92,7 @@ fn create_post_should_work_overridden_space_permission_for_everyone() {
     )
         .execute_with(|| {
             assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None,
             None,
             None
@@ -103,7 +109,7 @@ fn create_post_should_work_overridden_space_permission_for_followers() {
             assert_ok!(_default_follow_space());
 
             assert_ok!(_create_post(
-            Some(Origin::signed(ACCOUNT2)),
+            Some(RuntimeOrigin::signed(ACCOUNT2)),
             None,
             None,
             None
@@ -254,7 +260,7 @@ fn update_space_should_work_when_one_of_roles_is_permitted() {
             );
 
             assert_ok!(_update_space(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 Some(SPACE1),
                 Some(space_update)
             ));
@@ -314,7 +320,7 @@ fn update_space_should_fail_when_account_has_no_permission_to_update_space() {
         // Try to catch an error updating a space with an account that it not permitted
         assert_noop!(
             _update_space(
-                Some(Origin::signed(ACCOUNT2)),
+                Some(RuntimeOrigin::signed(ACCOUNT2)),
                 None,
                 Some(update_for_space_content(updated_space_content()))
             ),
@@ -434,7 +440,7 @@ fn update_space_should_fail_when_no_right_permission_in_account_roles() {
 
             assert_noop!(
                 _update_space(
-                    Some(Origin::signed(ACCOUNT2)),
+                    Some(RuntimeOrigin::signed(ACCOUNT2)),
                     Some(SPACE1),
                     Some(space_update)
                 ),

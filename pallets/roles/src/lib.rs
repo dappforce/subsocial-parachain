@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 //! # Roles Module
 //!
 //! This module allow you to create dynalic roles with an associated set of permissions
@@ -59,7 +65,7 @@ pub mod pallet {
         frame_system::Config + pallet_permissions::Config + pallet_timestamp::Config
     {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// When deleting a role via `delete_role()` dispatch, this parameter is checked.
         /// If the number of users that own a given role is greater or equal to this number,
@@ -83,7 +89,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -183,6 +188,7 @@ pub mod pallet {
         /// such as a name, description, and image for a role. This may be useful for end users.
         ///
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::create_role())]
         pub fn create_role(
             origin: OriginFor<T>,
@@ -224,6 +230,7 @@ pub mod pallet {
 
         /// Update an existing role by a given id.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as Config>::WeightInfo::update_role())]
         pub fn update_role(
             origin: OriginFor<T>,
@@ -285,6 +292,7 @@ pub mod pallet {
 
         /// Delete a given role and clean all associated storage items.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::delete_role(*user_count))]
         pub fn delete_role(
             origin: OriginFor<T>,
@@ -322,6 +330,7 @@ pub mod pallet {
 
         /// Grant a given role to a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as Config>::WeightInfo::grant_role(users.len() as u32))]
         pub fn grant_role(
             origin: OriginFor<T>,
@@ -361,6 +370,7 @@ pub mod pallet {
 
         /// Revoke a given role from a list of users.
         /// Only the space owner or a user with `ManageRoles` permission can call this dispatch.
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as Config>::WeightInfo::revoke_role(users.len() as u32))]
         pub fn revoke_role(
             origin: OriginFor<T>,
@@ -381,8 +391,9 @@ pub mod pallet {
             Ok(())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight((
-            25_000 + T::DbWeight::get().reads_writes(1, 2),
+            Weight::from_parts(25_000, 0) + T::DbWeight::get().reads_writes(1, 2),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -430,8 +441,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(6)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]
@@ -468,8 +480,9 @@ pub mod pallet {
             Ok(Pays::No.into())
         }
 
+        #[pallet::call_index(7)]
         #[pallet::weight((
-            10_000 + T::DbWeight::get().writes(1),
+            Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1),
             DispatchClass::Operational,
             Pays::Yes,
         ))]

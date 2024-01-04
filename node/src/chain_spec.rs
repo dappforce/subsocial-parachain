@@ -1,5 +1,11 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use cumulus_primitives_core::ParaId;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
+use sc_chain_spec::{ChainSpecExtension, Properties};
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
@@ -8,10 +14,10 @@ use sp_runtime::traits::{IdentifyAccount, Verify, Zero};
 use hex_literal::hex;
 
 use subsocial_parachain_runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT, Signature, Balance, UNIT};
-use crate::command::DEFAULT_PARA_ID;
 
 pub const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const DEFAULT_PROTOCOL_ID: &str = "subx";
+const DEFAULT_PARA_ID: u32 = 2100;
 
 const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 
@@ -23,20 +29,22 @@ pub type ChainSpec =
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// Helper function to generate a crypto pair from seed
-pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
 }
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
 	/// The relay chain of the Parachain.
 	pub relay_chain: String,
 	/// The id of the Parachain.
 	pub para_id: u32,
+	/// Known bad block hashes.
+	pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::v2::Block>,
 }
 
 impl Extensions {
@@ -52,7 +60,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
 pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
-	get_pair_from_seed::<AuraId>(seed)
+	get_from_seed::<AuraId>(seed)
 }
 
 /// Helper function to generate an account ID from seed
@@ -60,7 +68,7 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
-	AccountPublic::from(get_pair_from_seed::<TPublic>(seed)).into_account()
+	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
 /// Generate the session keys from individual elements.
@@ -106,6 +114,7 @@ pub fn development_config() -> ChainSpec {
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
@@ -156,6 +165,7 @@ pub fn local_testnet_config(relay_chain: String) -> ChainSpec {
 		Extensions {
 			relay_chain,
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
@@ -168,8 +178,12 @@ pub fn kusama_local_testnet_config() -> ChainSpec {
 	local_testnet_config("kusama-local".into())
 }
 
+pub fn subsocialx_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-kusama.json")[..])
+}
+
 pub fn subsocial_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial.json")[..])
+	ChainSpec::from_json_bytes(&include_bytes!("../res/subsocial-polkadot.json")[..])
 }
 
 pub fn staging_testnet_config() -> ChainSpec {
@@ -237,8 +251,9 @@ pub fn staging_testnet_config() -> ChainSpec {
 		None,
 		Some(subsocial_properties()),
 		Extensions {
-			relay_chain: "kusama".into(),
+			relay_chain: "polkadot".into(),
 			para_id: DEFAULT_PARA_ID,
+			bad_blocks: None,
 		},
 	)
 }
@@ -294,6 +309,8 @@ fn parachain_genesis(
 		spaces: subsocial_parachain_runtime::SpacesConfig {
 			endowed_account: Some(root_key),
 		},
+		transaction_payment: Default::default(),
+		treasury: Default::default(),
 	}
 }
 

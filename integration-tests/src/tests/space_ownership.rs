@@ -1,3 +1,9 @@
+// Copyright (C) DAPPFORCE PTE. LTD.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
+//
+// Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
+// Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
+
 use frame_support::{assert_ok, assert_noop};
 use sp_runtime::traits::Zero;
 
@@ -34,7 +40,7 @@ fn transfer_space_ownership_should_fail_when_space_not_found() {
 fn transfer_space_ownership_should_fail_when_account_is_not_space_owner() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
-            _transfer_space_ownership(Some(Origin::signed(ACCOUNT2)), None, Some(ACCOUNT1)),
+            _transfer_space_ownership(Some(RuntimeOrigin::signed(ACCOUNT2)), None, Some(ACCOUNT1)),
             SpacesError::<TestRuntime>::NotASpaceOwner
         );
     });
@@ -44,7 +50,7 @@ fn transfer_space_ownership_should_fail_when_account_is_not_space_owner() {
 fn transfer_space_ownership_should_fail_when_trying_to_transfer_to_current_owner() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
-            _transfer_space_ownership(Some(Origin::signed(ACCOUNT1)), None, Some(ACCOUNT1)),
+            _transfer_space_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None, Some(ACCOUNT1)),
             SpaceOwnershipError::<TestRuntime>::CannotTransferToCurrentOwner
         );
     });
@@ -101,7 +107,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_already_an_owner() {
         assert_ok!(_transfer_default_space_ownership());
 
         assert_noop!(
-            _accept_pending_ownership(Some(Origin::signed(ACCOUNT1)), None),
+            _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None),
             SpaceOwnershipError::<TestRuntime>::AlreadyASpaceOwner
         );
     });
@@ -113,7 +119,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_not_equal_to_pending_accoun
         assert_ok!(_transfer_default_space_ownership());
 
         assert_noop!(
-            _accept_pending_ownership(Some(Origin::signed(ACCOUNT3)), None),
+            _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT3)), None),
             SpaceOwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer
         );
     });
@@ -177,7 +183,7 @@ fn reject_pending_ownership_should_fail_when_account_is_not_allowed_to_reject() 
         assert_ok!(_transfer_default_space_ownership()); // Transfer SpaceId 1 owned by ACCOUNT1 to ACCOUNT2
 
         assert_noop!(
-            _reject_pending_ownership(Some(Origin::signed(ACCOUNT3)), None),
+            _reject_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT3)), None),
             SpaceOwnershipError::<TestRuntime>::NotAllowedToRejectOwnershipTransfer
         ); // Rejecting a transfer from ACCOUNT2
     });
