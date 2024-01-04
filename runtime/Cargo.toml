@@ -32,6 +32,7 @@ pallet-permissions = { path = '../pallets/permissions', default-features = false
 pallet-posts = { path = '../pallets/posts', default-features = false }
 pallet-profiles = { path = '../pallets/profiles', default-features = false }
 pallet-reactions = { path = '../pallets/reactions', default-features = false }
+pallet-resource-discussions = { path = '../pallets/resource-discussions', default-features = false }
 pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
@@ -160,6 +161,7 @@ std = [
 	"pallet-posts/std",
 	"pallet-profiles/std",
 	"pallet-reactions/std",
+	"pallet-resource-discussions/std",
 	"pallet-roles/std",
 	"pallet-space-follows/std",
 	"pallet-space-ownership/std",
@@ -193,6 +195,7 @@ runtime-benchmarks = [
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
 	"pallet-reactions/runtime-benchmarks",
+	"pallet-resource-discussions/runtime-benchmarks",
 	"pallet-roles/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
 	"pallet-space-ownership/runtime-benchmarks",
@@ -235,6 +238,7 @@ try-runtime = [
 	"pallet-profiles/try-runtime",
 	"pallet-free-proxy/try-runtime",
 	"pallet-reactions/try-runtime",
+	"pallet-resource-discussions/try-runtime",
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
 	"pallet-space-ownership/try-runtime",
