@@ -6,7 +6,7 @@
 
 //! # Roles Module
 //!
-//! This module allow you to create dynalic roles with an associated set of permissions
+//! This module allow you to create dynamic roles with an associated set of permissions
 //! and grant them to users (accounts or space ids) within a given space.
 //!
 //! For example if you want to create a space that enables editors in a similar way to Medium,
@@ -17,8 +17,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{self as system, ensure_signed};
+use frame_support::{dispatch::DispatchResult, ensure};
+use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};

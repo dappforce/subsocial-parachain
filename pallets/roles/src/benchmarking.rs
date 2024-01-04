@@ -12,7 +12,7 @@
 
 use cfg_if::cfg_if;
 use frame_benchmarking::{account, benchmarks};
-use frame_support::dispatch::DispatchError;
+use frame_support::{dispatch::DispatchError, traits::Get};
 use frame_system::RawOrigin;
 use sp_std::{prelude::Vec, vec};
 
