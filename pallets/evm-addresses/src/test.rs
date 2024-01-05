@@ -105,8 +105,7 @@ fn link_substrate_account_should_fail_if_message_is_incorrect() {
             Error::<Test>::EitherBadAddressOrPayload,
         );
 
-        //// Using wrong evm address
-
+        // Using invalid nonce
         let sig = evm_sign(
             &evm_sec1,
             &eth_signable_message(&another_account, get_nonce(&another_account) + 100),
