@@ -573,7 +573,7 @@ fn existential_deposit_and_providers() {
 }
 
 
-///// tests for dust lost event
+// Tests for DustLost event
 
 #[test]
 fn dust_lost_should_not_be_emitted_when_ed_is_zero() {
