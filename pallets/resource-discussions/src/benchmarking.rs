@@ -1,15 +1,10 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use frame_benchmarking::{account, benchmarks};
-use frame_support::traits::{Currency, EnsureOrigin, Get};
 use frame_support::ensure;
 use frame_system::RawOrigin;
 use sp_std::convert::TryFrom;
 use subsocial_support::Content;
-use sp_runtime::{
-    traits::{Bounded, StaticLookup},
-    FixedI64, FixedPointNumber,
-};
 
 use super::*;
 

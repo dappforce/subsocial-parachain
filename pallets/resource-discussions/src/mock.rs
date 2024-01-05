@@ -1,4 +1,4 @@
-use frame_support::{assert_ok, dispatch::DispatchResult, parameter_types, traits::Everything};
+use frame_support::{dispatch::DispatchResult, parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -12,8 +12,7 @@ use pallet_permissions::{
     default_permissions::DefaultSpacePermissions, PermissionChecker, SpacePermission,
     SpacePermissionsContext,
 };
-use pallet_spaces::NextSpaceId;
-use subsocial_support::{traits::SpaceFollowsProvider, Content, SpaceId, User};
+use subsocial_support::{traits::SpaceFollowsProvider, SpaceId, User};
 
 pub(crate) use crate as pallet_resource_discussions;
 
@@ -126,10 +125,10 @@ impl PermissionChecker for FakeImpls {
     type AccountId = AccountId;
 
     fn ensure_user_has_space_permission(
-        user: User<Self::AccountId>,
-        ctx: SpacePermissionsContext,
-        permission: SpacePermission,
-        error: DispatchError,
+        _user: User<Self::AccountId>,
+        _ctx: SpacePermissionsContext,
+        _permission: SpacePermission,
+        _error: DispatchError,
     ) -> DispatchResult {
         Ok(())
     }
@@ -138,7 +137,7 @@ impl PermissionChecker for FakeImpls {
 impl SpaceFollowsProvider for FakeImpls {
     type AccountId = AccountId;
 
-    fn is_space_follower(account: Self::AccountId, space_id: SpaceId) -> bool {
+    fn is_space_follower(_account: Self::AccountId, _space_id: SpaceId) -> bool {
         false
     }
 }
@@ -179,6 +178,8 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
+    // TODO: add tests related to [pallet_resource_discussions::Config::MaxResourceIdLength] changes
+    #[allow(dead_code)]
     pub(crate) fn max_resource_id_length(mut self, max_resource_id_length: u32) -> Self {
         self.max_resource_id_length = max_resource_id_length;
         self
