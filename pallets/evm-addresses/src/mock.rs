@@ -1,6 +1,6 @@
 use frame_support::{
     parameter_types,
-    traits::{ConstU8, Currency, Everything},
+    traits::{ConstU8, Everything},
     weights::{
         constants::ExtrinsicBaseWeight, ConstantMultiplier, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -128,47 +128,18 @@ parameter_types! {
 
 impl pallet_evm_accounts::Config for Test {
     type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type MaxLinkedAccounts = MaxLinkedAccounts;
+    type WeightInfo = ();
 }
 
 pub(crate) fn account(id: AccountId) -> AccountId {
     id
 }
 
-pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId {
-    let account = account(id);
-    set_native_balance(account, balance);
-    account
-}
-
-pub(crate) fn set_native_balance(id: AccountId, balance: Balance) {
-    let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&id, balance);
-}
-
-pub struct ExtBuilder {
-    pub(crate) max_linked_accounts: u32,
-}
-
-impl Default for ExtBuilder {
-    fn default() -> Self {
-        ExtBuilder { max_linked_accounts: 1 }
-    }
-}
+#[derive(Default)]
+pub struct ExtBuilder;
 
 impl ExtBuilder {
-    pub(crate) fn max_linked_accounts(mut self, max_linked_accounts: u32) -> Self {
-        self.max_linked_accounts = max_linked_accounts;
-        self
-    }
-
-    fn set_configs(&self) {
-        MAX_LINKED_ACCOUNTS.with(|x| *x.borrow_mut() = self.max_linked_accounts);
-    }
-
     pub(crate) fn build(self) -> TestExternalities {
-        self.set_configs();
-
         let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
         let mut ext = TestExternalities::from(storage.clone());
