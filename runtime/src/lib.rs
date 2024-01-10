@@ -841,13 +841,13 @@ impl pallet_creator_staking::Config for Runtime {
 
 impl pallet_evm_addresses::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// type WeightInfo = ();
+	type WeightInfo = pallet_evm_addresses::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_resource_discussions::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxResourceIdLength = ConstU32<256>;
-	// type WeightInfo = ();
+	type WeightInfo = pallet_resource_discussions::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
