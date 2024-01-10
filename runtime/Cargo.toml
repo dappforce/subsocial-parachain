@@ -32,6 +32,7 @@ pallet-permissions = { path = '../pallets/permissions', default-features = false
 pallet-posts = { path = '../pallets/posts', default-features = false }
 pallet-profiles = { path = '../pallets/profiles', default-features = false }
 pallet-reactions = { path = '../pallets/reactions', default-features = false }
+pallet-resource-discussions = { path = '../pallets/resource-discussions', default-features = false }
 pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
 pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
@@ -51,11 +52,13 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-f
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.40" }
@@ -122,12 +125,14 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-multisig/std",
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
 	"pallet-xcm/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
@@ -160,6 +165,7 @@ std = [
 	"pallet-posts/std",
 	"pallet-profiles/std",
 	"pallet-reactions/std",
+	"pallet-resource-discussions/std",
 	"pallet-roles/std",
 	"pallet-space-follows/std",
 	"pallet-space-ownership/std",
@@ -180,7 +186,9 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
@@ -193,6 +201,7 @@ runtime-benchmarks = [
 	"pallet-domains/runtime-benchmarks",
 	"pallet-energy/runtime-benchmarks",
 	"pallet-reactions/runtime-benchmarks",
+	"pallet-resource-discussions/runtime-benchmarks",
 	"pallet-roles/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
 	"pallet-space-ownership/runtime-benchmarks",
@@ -216,12 +225,14 @@ try-runtime = [
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-multisig/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
+	"pallet-treasury/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-xcm/try-runtime",
@@ -235,6 +246,7 @@ try-runtime = [
 	"pallet-profiles/try-runtime",
 	"pallet-free-proxy/try-runtime",
 	"pallet-reactions/try-runtime",
+	"pallet-resource-discussions/try-runtime",
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
 	"pallet-space-ownership/try-runtime",
