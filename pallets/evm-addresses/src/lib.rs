@@ -6,12 +6,17 @@ use sp_std::{collections::btree_set::BTreeSet, convert::TryInto};
 
 pub use pallet::*;
 
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod test;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod test;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 mod evm;
+
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -19,6 +24,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use crate::evm::*;
+    use crate::weights::*;
 
     use super::*;
 
@@ -26,6 +32,9 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -70,11 +79,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Link Substrate address to EVM address.
         #[pallet::call_index(0)]
-        // FIXME: put here at least something near real weights
-        #[pallet::weight(
-            Weight::from_parts(300_000_000, 0)
-                .saturating_add(T::DbWeight::get().reads_writes(2, 2))
-        )]
+        #[pallet::weight(< T as Config >::WeightInfo::link_evm_address())]
         pub fn link_evm_address(
             origin: OriginFor<T>,
             evm_address: EvmAddress,
@@ -107,11 +112,7 @@ pub mod pallet {
 
         /// Unlink Substrate address from EVM address.
         #[pallet::call_index(1)]
-        // FIXME: put here at least something near real weights
-        #[pallet::weight(
-            Weight::from_parts(300_000_000, 0)
-                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
-        )]
+        #[pallet::weight(< T as Config >::WeightInfo::unlink_evm_address())]
         pub fn unlink_evm_address(origin: OriginFor<T>, evm_address: EvmAddress) -> DispatchResult {
             let who = ensure_signed(origin)?;
 

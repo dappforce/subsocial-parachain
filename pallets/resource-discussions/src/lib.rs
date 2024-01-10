@@ -10,9 +10,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
-// pub mod weights;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -23,9 +23,9 @@ pub mod pallet {
     use pallet_posts::{NextPostId, PostExtension};
     use subsocial_support::{Content, PostId};
 
-    // use crate::weights::WeightInfo;
+    use crate::weights::WeightInfo;
 
-    type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourceIdLength>;
+    pub(crate) type ResourceId<T> = BoundedVec<u8, <T as Config>::MaxResourceIdLength>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_posts::Config + pallet_spaces::Config {
@@ -35,6 +35,9 @@ pub mod pallet {
         /// The maximum number of characters in a resource id.
         #[pallet::constant]
         type MaxResourceIdLength: Get<u32>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::pallet]
@@ -63,7 +66,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_parts(500_000_000, 0))]
+        #[pallet::weight(<T as Config>::WeightInfo::link_post_to_resource())]
         #[transactional]
         pub fn link_post_to_resource(
             origin: OriginFor<T>,
@@ -76,7 +79,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_parts(750_000_000, 0))]
+        #[pallet::weight(<T as Config>::WeightInfo::create_resource_discussion())]
         #[transactional]
         pub fn create_resource_discussion(
             origin: OriginFor<T>,
