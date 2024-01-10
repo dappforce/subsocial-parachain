@@ -5775,6 +5775,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-addresses"
+version = "0.2.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "libsecp256k1",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-core-hashing",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-fast-unstake"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.40#98f2e3451c9143278ec53c6718940aeabcd3b68a"
@@ -6271,6 +6292,29 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-resource-discussions"
+version = "0.2.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-space-follows",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
 ]
 
 [[package]]
@@ -11681,6 +11725,7 @@ dependencies = [
  "pallet-domains",
  "pallet-domains-rpc-runtime-api",
  "pallet-energy",
+ "pallet-evm-addresses",
  "pallet-free-proxy",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
@@ -11689,6 +11734,7 @@ dependencies = [
  "pallet-profiles",
  "pallet-proxy",
  "pallet-reactions",
+ "pallet-resource-discussions",
  "pallet-roles",
  "pallet-session",
  "pallet-space-follows",
@@ -12503,7 +12549,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
  "digest 0.10.6",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

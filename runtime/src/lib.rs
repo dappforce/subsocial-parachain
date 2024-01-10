@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 35,
+	spec_version: 36,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 7,
@@ -839,6 +839,17 @@ impl pallet_creator_staking::Config for Runtime {
 	type TreasuryAccount = TreasuryAccount;
 }
 
+impl pallet_evm_addresses::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_evm_addresses::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_resource_discussions::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxResourceIdLength = ConstU32<256>;
+	type WeightInfo = pallet_resource_discussions::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -881,6 +892,8 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
+		EvmAddresses: pallet_evm_addresses = 64,
+		ResourceDiscussions: pallet_resource_discussions = 65,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -910,6 +923,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
+		[pallet_evm_addresses, EvmAddresses]
 		[pallet_profiles, Profiles]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_xcm, PolkadotXcm]
@@ -919,6 +933,7 @@ mod benches {
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
 		[pallet_posts, Posts]
+		[pallet_resource_discussions, ResourceDiscussions]
 		[pallet_free_proxy, FreeProxy]
 	);
 }
