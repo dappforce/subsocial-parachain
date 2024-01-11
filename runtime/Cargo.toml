@@ -29,6 +29,7 @@ pallet-creator-staking = { path = "../pallets/creator-staking", default-features
 pallet-domains = { path = "../pallets/domains", default-features = false }
 pallet-energy = { path = "../pallets/energy", default-features = false }
 pallet-permissions = { path = '../pallets/permissions', default-features = false }
+pallet-post-follows = { path = '../pallets/post-follows', default-features = false }
 pallet-posts = { path = '../pallets/posts', default-features = false }
 pallet-profiles = { path = '../pallets/profiles', default-features = false }
 pallet-reactions = { path = '../pallets/reactions', default-features = false }
@@ -162,6 +163,7 @@ std = [
 	"pallet-domains/std",
 	"pallet-energy/std",
 	"pallet-permissions/std",
+	"pallet-post-follows/std",
 	"pallet-posts/std",
 	"pallet-profiles/std",
 	"pallet-reactions/std",
@@ -206,6 +208,7 @@ runtime-benchmarks = [
 	"pallet-space-follows/runtime-benchmarks",
 	"pallet-space-ownership/runtime-benchmarks",
 	"pallet-spaces/runtime-benchmarks",
+	"pallet-post-follows/runtime-benchmarks",
 	"pallet-posts/runtime-benchmarks",
 	"pallet-profiles/runtime-benchmarks",
 	"pallet-free-proxy/runtime-benchmarks",
@@ -242,6 +245,7 @@ try-runtime = [
 	"pallet-domains/try-runtime",
 	"pallet-energy/try-runtime",
 	"pallet-permissions/try-runtime",
+	"pallet-post-follows/try-runtime",
 	"pallet-posts/try-runtime",
 	"pallet-profiles/try-runtime",
 	"pallet-free-proxy/try-runtime",
