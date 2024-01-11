@@ -938,6 +938,7 @@ mod benches {
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
+		[pallet_post_follows, PostFollows]
 		[pallet_posts, Posts]
 		[pallet_resource_discussions, ResourceDiscussions]
 		[pallet_free_proxy, FreeProxy]
