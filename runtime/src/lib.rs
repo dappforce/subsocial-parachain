@@ -277,8 +277,14 @@ impl Contains<RuntimeCall> for BaseFilter {
 		let is_force_transfer =
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
 
+		let is_treasury_spend =
+			matches!(c, RuntimeCall::Treasury(pallet_treasury::Call::spend { .. }));
+		let is_remove_treasury_approval =
+			matches!(c, RuntimeCall::Treasury(pallet_treasury::Call::remove_approval { .. }));
+
 		match *c {
 			RuntimeCall::Balances(..) if is_set_balance || is_force_transfer => false,
+			RuntimeCall::Treasury(..) if !is_treasury_spend && !is_remove_treasury_approval => false,
 			_ => true,
 		}
 	}
@@ -371,7 +377,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// Pallet energy has NativeOnChargeTransaction instead.
+	// We process transaction fees with NativeOnChargeTransaction in the Energy pallet.
 	type OnChargeTransaction = Energy;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
@@ -380,14 +386,14 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(10);
-	pub const ProposalBondMinimum: Balance = 1000 * UNIT;
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 10000 * UNIT;
 	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"df/trsry");
-	pub const MaxApprovals: u32 = 5;
+	pub const MaxApprovals: u32 = 10;
 	// FIXME: The maximum amount in a native asset that root origin is allowed to spend at a time.
-	pub const MaxBalance: Balance = Balance::max_value();
+	pub const MaxBalance: Balance = 10_000_000 * UNIT;
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -701,6 +707,11 @@ impl pallet_permissions::Config for Runtime {
 	type DefaultSpacePermissions = DefaultSpacePermissions;
 }
 
+impl pallet_post_follows::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_post_follows::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
   pub const MaxCommentDepth: u32 = 10;
 }
@@ -833,6 +844,17 @@ impl pallet_creator_staking::Config for Runtime {
 	type TreasuryAccount = TreasuryAccount;
 }
 
+impl pallet_evm_addresses::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_evm_addresses::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_resource_discussions::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxResourceIdLength = ConstU32<256>;
+	type WeightInfo = pallet_resource_discussions::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -875,6 +897,8 @@ construct_runtime!(
 		Energy: pallet_energy = 61,
 		FreeProxy: pallet_free_proxy = 62,
 		CreatorStaking: pallet_creator_staking = 63,
+		EvmAddresses: pallet_evm_addresses = 64,
+		ResourceDiscussions: pallet_resource_discussions = 65,
 
 		Permissions: pallet_permissions = 70,
 		Roles: pallet_roles = 71,
@@ -883,8 +907,9 @@ construct_runtime!(
 		SpaceFollows: pallet_space_follows = 74,
 		SpaceOwnership: pallet_space_ownership = 75,
 		Spaces: pallet_spaces = 76,
-		Posts: pallet_posts = 77,
-		Reactions: pallet_reactions = 78,
+		PostFollows: pallet_post_follows = 77,
+		Posts: pallet_posts = 78,
+		Reactions: pallet_reactions = 79,
 
 		// Temporary
 		Sudo: pallet_sudo = 255,
@@ -904,6 +929,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
+		[pallet_evm_addresses, EvmAddresses]
 		[pallet_profiles, Profiles]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_xcm, PolkadotXcm]
@@ -913,6 +939,7 @@ mod benches {
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
 		[pallet_posts, Posts]
+		[pallet_resource_discussions, ResourceDiscussions]
 		[pallet_free_proxy, FreeProxy]
 	);
 }
