@@ -176,10 +176,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 36,
+	spec_version: 37,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 7,
+	transaction_version: 8,
 	state_version: 0,
 };
 
@@ -707,6 +707,11 @@ impl pallet_permissions::Config for Runtime {
 	type DefaultSpacePermissions = DefaultSpacePermissions;
 }
 
+impl pallet_post_follows::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_post_follows::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
   pub const MaxCommentDepth: u32 = 10;
 }
@@ -902,8 +907,9 @@ construct_runtime!(
 		SpaceFollows: pallet_space_follows = 74,
 		SpaceOwnership: pallet_space_ownership = 75,
 		Spaces: pallet_spaces = 76,
-		Posts: pallet_posts = 77,
-		Reactions: pallet_reactions = 78,
+		PostFollows: pallet_post_follows = 77,
+		Posts: pallet_posts = 78,
+		Reactions: pallet_reactions = 79,
 
 		// Temporary
 		Sudo: pallet_sudo = 255,
@@ -932,6 +938,7 @@ mod benches {
 		[pallet_space_follows, SpaceFollows]
 		[pallet_space_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
+		[pallet_post_follows, PostFollows]
 		[pallet_posts, Posts]
 		[pallet_resource_discussions, ResourceDiscussions]
 		[pallet_free_proxy, FreeProxy]
