@@ -1,43 +1,25 @@
 [package]
-name = 'posts-rpc'
+name = "pallet-posts-rpc"
 version = '0.2.1'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2018'
+edition = "2021"
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
-description = 'RPC methods for the posts pallet'
-keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
-categories = ['cryptography::cryptocurrencies']
+description = "RPC interface for the posts pallet."
+keywords = ["blockchain", "cryptocurrency", "social-network", "news-feed", "marketplace"]
+categories = ["cryptography::cryptocurrencies"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-serde = { features = ['derive'], optional = true, version = '1.0.119' }
-
-jsonrpc-core = '18.0.0'
-jsonrpc-core-client = '18.0.0'
-jsonrpc-derive = '18.0.0'
-
-# Local dependencies
-pallet-posts = { default-features = false, path = '..' }
-pallet-utils = { default-features = false, path = '../../utils' }
-
-# Custom Runtime API
-posts-runtime-api = { default-features = false, path = 'runtime-api' }
-
-# Substrate dependencies
-sp-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-sp-blockchain = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-sp-rpc = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
-
-[features]
-default = ['std']
-std = [
-  'serde',
-  'sp-runtime/std',
-  'sp-api/std',
-  'posts-runtime-api/std',
-  'pallet-utils/std',
-  'pallet-posts/std',
-]
+codec = { package = "parity-scale-codec", version = "3.0.0" }
+jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+pallet-posts-rpc-runtime-api = { path = "./runtime-api" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+subsocial-support = { path = "../../support" }
