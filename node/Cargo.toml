@@ -23,6 +23,7 @@ jsonrpsee = { version = "0.16.2", features = ["server"] }
 subsocial-parachain-runtime = { path = "../runtime" }
 pallet-creator-staking-rpc = { path = "../pallets/creator-staking/rpc" }
 pallet-domains-rpc = { path = "../pallets/domains/rpc" }
+pallet-posts-rpc = { path = "../pallets/posts/rpc" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
