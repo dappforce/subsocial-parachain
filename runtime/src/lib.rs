@@ -42,11 +42,13 @@ use frame_system::{
 	EnsureRoot, EnsureWithSuccess,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber};
+pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber, DispatchResult};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
+
+use subsocial_support::{Content, PostId, SpaceId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -1119,6 +1121,25 @@ impl_runtime_apis! {
 	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
 		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
 			Domains::calculate_price(&subdomain)
+		}
+	}
+
+	impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
+		fn check_account_can_create_post(
+			account: AccountId,
+			space_id: SpaceId,
+			content_opt: Option<Content>,
+		) -> DispatchResult {
+			Posts::check_account_can_create_regular_post(account, space_id, content_opt)
+		}
+
+		fn check_account_can_create_comment(
+            account: AccountId,
+            root_post_id: PostId,
+            parent_id_opt: Option<PostId>,
+            content_opt: Option<Content>
+        ) -> DispatchResult {
+			Posts::check_account_can_create_comment(account, root_post_id, parent_id_opt, content_opt)
 		}
 	}
 
