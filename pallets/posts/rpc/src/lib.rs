@@ -10,7 +10,7 @@ use jsonrpsee::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{DispatchResult, generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{DispatchResult, traits::Block as BlockT};
 
 pub use pallet_posts_rpc_runtime_api::PostsApi as PostsRuntimeApi;
 use subsocial_support::{Content, PostId, SpaceId};
@@ -84,10 +84,10 @@ PostsApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<DispatchResult> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .check_account_can_create_post(&at, account, space_id, content_opt)
+            .check_account_can_create_post(at_hash, account, space_id, content_opt)
             .map_err(|e| map_err(e, "Unable to validate post creation."))?;
 
         Ok(res)
@@ -102,10 +102,10 @@ PostsApiServer<
         at: Option<Block::Hash>,
     ) -> RpcResult<DispatchResult> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .check_account_can_create_comment(&at, account, root_post_id, parent_id_opt, content_opt)
+            .check_account_can_create_comment(at_hash, account, root_post_id, parent_id_opt, content_opt)
             .map_err(|e| map_err(e, "Unable to validate comment creation."))?;
 
         Ok(res)
