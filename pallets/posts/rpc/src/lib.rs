@@ -4,7 +4,7 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-//! RPC interface for the domains pallet.
+//! RPC interface for the posts pallet.
 
 use std::{fmt::Display, sync::Arc};
 
@@ -43,7 +43,7 @@ pub trait PostsApi<AccountId, BlockHash> {
     ) -> RpcResult<DispatchResult>;
 }
 
-/// Provides RPC method to query a domain price.
+/// Provides RPC methods for posts pallet.
 pub struct Posts<C, P> {
     /// Shared reference to the client.
     client: Arc<C>,

@@ -341,45 +341,6 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn ensure_account_can_create_post(account: T::AccountId, space_id: SpaceId) -> DispatchResult {
-        let space: Space<T> = Spaces::require_space(space_id)?;
-        let new_post_id = Self::next_post_id();
-        let new_post: Post<T> = Post::new(
-            new_post_id,
-            account.clone(),
-            Some(space_id),
-            PostExtension::RegularPost,
-            Content::None,
-        );
-
-        ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
-
-        ensure!(
-            T::IsAccountBlocked::is_allowed_account(account.clone(), space.id),
-            ModerationError::AccountIsBlocked
-        );
-        // ensure!(
-        //     T::IsContentBlocked::is_allowed_content(content, space.id),
-        //     ModerationError::ContentIsBlocked
-        // );
-
-        let root_post = &mut new_post.get_root_post()?;
-        ensure!(!root_post.hidden, Error::<T>::CannotCreateInHiddenScope);
-
-        // Check whether account has permission to create Post (by extension)
-        let permission_to_check = SpacePermission::CreatePosts;
-        let error_on_permission_failed = Error::<T>::NoPermissionToCreatePosts;
-
-        Spaces::ensure_account_has_space_permission(
-            account.clone(),
-            &space,
-            permission_to_check,
-            error_on_permission_failed.into(),
-        )?;
-
-        Ok(())
-    }
-
     fn check_account_can_create_post(
         account: T::AccountId,
         new_post: &Post<T>,
@@ -389,6 +350,13 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResult {
         let space = &new_post.get_space()?;
 
+        ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
+
+        ensure!(
+            T::IsAccountBlocked::is_allowed_account(account.clone(), space.id),
+            ModerationError::AccountIsBlocked
+        );
+
         if let Some(content) = content_opt {
             ensure!(
                 T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
@@ -396,12 +364,6 @@ impl<T: Config> Pallet<T> {
             );
             ensure_content_is_valid(content)?;
         }
-        ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
-
-        ensure!(
-            T::IsAccountBlocked::is_allowed_account(account.clone(), space.id),
-            ModerationError::AccountIsBlocked
-        );
 
         let root_post = &mut new_post.get_root_post()?;
         ensure!(!root_post.hidden, Error::<T>::CannotCreateInHiddenScope);
