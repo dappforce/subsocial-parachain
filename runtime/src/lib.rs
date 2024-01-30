@@ -1133,11 +1133,11 @@ impl_runtime_apis! {
 		}
 
 		fn check_account_can_create_comment(
-            account: AccountId,
-            root_post_id: PostId,
-            parent_id_opt: Option<PostId>,
-            content_opt: Option<Content>
-        ) -> DispatchResult {
+			account: AccountId,
+			root_post_id: PostId,
+			parent_id_opt: Option<PostId>,
+			content_opt: Option<Content>
+		) -> DispatchResult {
 			Posts::check_account_can_create_comment(account, root_post_id, parent_id_opt, content_opt)
 		}
 	}
