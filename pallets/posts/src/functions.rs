@@ -333,7 +333,7 @@ impl<T: Config> Pallet<T> {
 
     /// This function performs validation checks to determine if an account can create or reply
     /// to a post in a specific space.
-    pub(super) fn ensure_can_account_create_post(
+    pub(super) fn ensure_can_create_post(
         account: T::AccountId,
         new_post: &Post<T>,
         content_opt: Option<Content>,
@@ -389,7 +389,7 @@ impl<T: Config> Pallet<T> {
     /// `account` - account that wants to create a post
     /// `space_id` - id of the space where the post will be created
     /// `content_opt` - optional content of the post. Content checks are skipped if `None`.
-    pub fn can_account_create_regular_post(
+    pub fn can_create_regular_post(
         account: T::AccountId,
         space_id: SpaceId,
         content_opt: Option<Content>,
@@ -403,7 +403,7 @@ impl<T: Config> Pallet<T> {
             content_opt.clone().unwrap_or_default(),
         );
 
-        Self::ensure_can_account_create_post(
+        Self::ensure_can_create_post(
             account,
             &new_post,
             content_opt,
@@ -420,7 +420,7 @@ impl<T: Config> Pallet<T> {
     /// `root_post_id` - id of the root post of the comment
     /// `parent_id_opt` - optional id of the parent comment
     /// `content_opt` - optional content of the comment. Content checks are skipped if `None`.
-    pub fn can_account_create_comment(
+    pub fn can_create_comment(
         account: T::AccountId,
         root_post_id: PostId,
         parent_id_opt: Option<PostId>,
@@ -438,7 +438,7 @@ impl<T: Config> Pallet<T> {
             content_opt.clone().unwrap_or_default(),
         );
 
-        Self::ensure_can_account_create_post(
+        Self::ensure_can_create_post(
             account,
             &new_post,
             content_opt,

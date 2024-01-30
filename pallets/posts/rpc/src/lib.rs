@@ -23,8 +23,8 @@ use subsocial_support::{Content, PostId, SpaceId};
 
 #[rpc(client, server)]
 pub trait PostsApi<AccountId, BlockHash> {
-    #[method(name = "posts_canAccountCreatePost")]
-    fn can_account_create_post(
+    #[method(name = "posts_canCreatePost")]
+    fn can_create_post(
         &self,
         account: AccountId,
         space_id: SpaceId,
@@ -32,8 +32,8 @@ pub trait PostsApi<AccountId, BlockHash> {
         at: Option<BlockHash>,
     ) -> RpcResult<DispatchResult>;
 
-    #[method(name = "posts_canAccountCreateComment")]
-    fn can_account_create_comment(
+    #[method(name = "posts_canCreateComment")]
+    fn can_create_comment(
         &self,
         account: AccountId,
         root_post_id: PostId,
@@ -82,7 +82,7 @@ PostsApiServer<
         C::Api: PostsRuntimeApi<Block, AccountId>,
         AccountId: Clone + Display + Codec + Send + 'static,
 {
-    fn can_account_create_post(
+    fn can_create_post(
         &self,
         account: AccountId,
         space_id: SpaceId,
@@ -93,13 +93,13 @@ PostsApiServer<
         let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .can_account_create_post(at_hash, account, space_id, content_opt)
+            .can_create_post(at_hash, account, space_id, content_opt)
             .map_err(|e| map_err(e, "Unable to validate post creation."))?;
 
         Ok(res)
     }
 
-    fn can_account_create_comment(
+    fn can_create_comment(
         &self,
         account: AccountId,
         root_post_id: PostId,
@@ -111,7 +111,7 @@ PostsApiServer<
         let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .can_account_create_comment(at_hash, account, root_post_id, parent_id_opt, content_opt)
+            .can_create_comment(at_hash, account, root_post_id, parent_id_opt, content_opt)
             .map_err(|e| map_err(e, "Unable to validate comment creation."))?;
 
         Ok(res)

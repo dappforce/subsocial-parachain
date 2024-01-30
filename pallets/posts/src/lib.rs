@@ -229,7 +229,7 @@ pub mod pallet {
                 error_on_permission_failed = Error::<T>::NoPermissionToCreateComments;
             }
 
-            Self::ensure_can_account_create_post(
+            Self::ensure_can_create_post(
                 creator.clone(),
                 &new_post,
                 Some(content.clone()),
