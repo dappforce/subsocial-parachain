@@ -1,6 +1,6 @@
 [package]
 name = "subsocial-parachain-runtime"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -102,6 +102,7 @@ parachain-info = { git = "https://github.com/paritytech/cumulus", default-featur
 # Custom Runtime API
 pallet-creator-staking-rpc-runtime-api = { path = "../pallets/creator-staking/rpc/runtime-api", default-features = false }
 pallet-domains-rpc-runtime-api = { path = "../pallets/domains/rpc/runtime-api", default-features = false }
+pallet-posts-rpc-runtime-api = { path = "../pallets/posts/rpc/runtime-api", default-features = false }
 
 [features]
 default = [
@@ -178,6 +179,7 @@ std = [
 	#---------------
 	"pallet-creator-staking-rpc-runtime-api/std",
 	"pallet-domains-rpc-runtime-api/std",
+	"pallet-posts-rpc-runtime-api/std",
 ]
 
 runtime-benchmarks = [

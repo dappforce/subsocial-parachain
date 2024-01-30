@@ -1,3 +1,5 @@
+//! Runtime API definition for posts pallet.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 // Copyright (C) DAPPFORCE PTE. LTD.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
@@ -7,39 +9,27 @@
 
 
 use codec::Codec;
-use sp_std::collections::btree_map::BTreeMap;
-use sp_std::vec::Vec;
+use sp_runtime::DispatchResult;
+use sp_runtime::traits::MaybeDisplay;
 
-use pallet_posts::rpc::{FlatPost, FlatPostKind, RepliesByPostId};
-use pallet_utils::{PostId, SpaceId};
+use subsocial_support::{Content, PostId, SpaceId};
 
 sp_api::decl_runtime_apis! {
-    pub trait PostsApi<AccountId, BlockNumber> where
-        AccountId: Codec,
-        BlockNumber: Codec
+    pub trait PostsApi<AccountId>
+        where
+            AccountId: Codec + MaybeDisplay,
     {
-        fn get_next_post_id() -> PostId;
+        fn can_create_post(
+            account: AccountId,
+            space_id: SpaceId,
+            content_opt: Option<Content>,
+        ) -> DispatchResult;
 
-        fn get_posts_by_ids(post_ids: Vec<PostId>, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
-
-        fn get_public_posts(kind_filter: Vec<FlatPostKind>, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
-
-        fn get_public_posts_by_space_id(space_id: SpaceId, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
-    
-        fn get_unlisted_posts_by_space_id(space_id: SpaceId, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
-
-        fn get_public_post_ids_by_space_id(space_id: SpaceId) -> Vec<PostId>;
-
-        fn get_unlisted_post_ids_by_space_id(space_id: SpaceId) -> Vec<PostId>;
-
-        fn get_reply_ids_by_parent_id(parent_id: PostId) -> Vec<PostId>;
-
-        fn get_reply_ids_by_parent_ids(parent_ids: Vec<PostId>) -> BTreeMap<PostId, Vec<PostId>>;
-
-        fn get_replies_by_parent_id(parent_id: PostId, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
-
-        fn get_replies_by_parent_ids(parent_ids: Vec<PostId>, offset: u64, limit: u16) -> RepliesByPostId<AccountId, BlockNumber>;
-
-        fn get_feed(account: AccountId, offset: u64, limit: u16) -> Vec<FlatPost<AccountId, BlockNumber>>;
+        fn can_create_comment(
+            account: AccountId,
+            root_post_id: PostId,
+            parent_id_opt: Option<PostId>,
+            content_opt: Option<Content>
+        ) -> DispatchResult;
     }
 }

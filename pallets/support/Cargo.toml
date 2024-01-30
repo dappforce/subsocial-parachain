@@ -1,6 +1,6 @@
 [package]
 name = "subsocial-support"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -13,6 +13,7 @@ categories = ["cryptography::cryptocurrencies"]
 [features]
 default = ["std"]
 std = [
+    "serde/std",
     "strum/std",
     "codec/std",
     "scale-info/std",
@@ -24,6 +25,7 @@ std = [
 
 [dependencies]
 strum = { version = "0.24", default-features = false, features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"], default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
