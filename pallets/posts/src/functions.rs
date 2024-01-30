@@ -333,7 +333,7 @@ impl<T: Config> Pallet<T> {
 
     /// This function performs validation checks to determine if an account can create or reply
     /// to a post in a specific space.
-    pub(super) fn can_account_create_post(
+    pub(super) fn ensure_can_account_create_post(
         account: T::AccountId,
         new_post: &Post<T>,
         content_opt: Option<Content>,
@@ -403,7 +403,7 @@ impl<T: Config> Pallet<T> {
             content_opt.clone().unwrap_or_default(),
         );
 
-        Self::can_account_create_post(
+        Self::ensure_can_account_create_post(
             account,
             &new_post,
             content_opt,
@@ -438,7 +438,7 @@ impl<T: Config> Pallet<T> {
             content_opt.clone().unwrap_or_default(),
         );
 
-        Self::can_account_create_post(
+        Self::ensure_can_account_create_post(
             account,
             &new_post,
             content_opt,

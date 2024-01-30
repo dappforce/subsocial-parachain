@@ -212,8 +212,6 @@ pub mod pallet {
         ) -> DispatchResult {
             let creator = ensure_signed(origin)?;
 
-            ensure_content_is_valid(content.clone())?;
-
             let new_post_id = Self::next_post_id();
             let new_post: Post<T> =
                 Post::new(new_post_id, creator.clone(), space_id_opt, extension, content.clone());
@@ -231,7 +229,7 @@ pub mod pallet {
                 error_on_permission_failed = Error::<T>::NoPermissionToCreateComments;
             }
 
-            Self::can_account_create_post(
+            Self::ensure_can_account_create_post(
                 creator.clone(),
                 &new_post,
                 Some(content.clone()),
