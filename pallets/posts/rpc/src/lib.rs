@@ -23,8 +23,8 @@ use subsocial_support::{Content, PostId, SpaceId};
 
 #[rpc(client, server)]
 pub trait PostsApi<AccountId, BlockHash> {
-    #[method(name = "posts_checkAccountCanCreatePost")]
-    fn check_account_can_create_post(
+    #[method(name = "posts_canAccountCreatePost")]
+    fn can_account_create_post(
         &self,
         account: AccountId,
         space_id: SpaceId,
@@ -32,8 +32,8 @@ pub trait PostsApi<AccountId, BlockHash> {
         at: Option<BlockHash>,
     ) -> RpcResult<DispatchResult>;
 
-    #[method(name = "posts_checkAccountCanCreateComment")]
-    fn check_account_can_create_comment(
+    #[method(name = "posts_canAccountCreateComment")]
+    fn can_account_create_comment(
         &self,
         account: AccountId,
         root_post_id: PostId,
@@ -82,7 +82,7 @@ PostsApiServer<
         C::Api: PostsRuntimeApi<Block, AccountId>,
         AccountId: Clone + Display + Codec + Send + 'static,
 {
-    fn check_account_can_create_post(
+    fn can_account_create_post(
         &self,
         account: AccountId,
         space_id: SpaceId,
@@ -99,7 +99,7 @@ PostsApiServer<
         Ok(res)
     }
 
-    fn check_account_can_create_comment(
+    fn can_account_create_comment(
         &self,
         account: AccountId,
         root_post_id: PostId,

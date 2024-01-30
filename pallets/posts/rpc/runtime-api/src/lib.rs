@@ -19,13 +19,13 @@ sp_api::decl_runtime_apis! {
         where
             AccountId: Codec + MaybeDisplay,
     {
-        fn check_account_can_create_post(
+        fn can_account_create_post(
             account: AccountId,
             space_id: SpaceId,
             content_opt: Option<Content>,
         ) -> DispatchResult;
 
-        fn check_account_can_create_comment(
+        fn can_account_create_comment(
             account: AccountId,
             root_post_id: PostId,
             parent_id_opt: Option<PostId>,
