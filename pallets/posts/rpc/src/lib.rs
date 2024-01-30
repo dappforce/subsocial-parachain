@@ -93,7 +93,7 @@ PostsApiServer<
         let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .check_account_can_create_post(at_hash, account, space_id, content_opt)
+            .can_account_create_post(at_hash, account, space_id, content_opt)
             .map_err(|e| map_err(e, "Unable to validate post creation."))?;
 
         Ok(res)
@@ -111,7 +111,7 @@ PostsApiServer<
         let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let res = api
-            .check_account_can_create_comment(at_hash, account, root_post_id, parent_id_opt, content_opt)
+            .can_account_create_comment(at_hash, account, root_post_id, parent_id_opt, content_opt)
             .map_err(|e| map_err(e, "Unable to validate comment creation."))?;
 
         Ok(res)
