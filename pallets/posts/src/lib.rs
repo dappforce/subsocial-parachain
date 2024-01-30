@@ -220,19 +220,7 @@ pub mod pallet {
 
             // Get space from either space_id_opt or Comment if a comment provided
             let space = &new_post.get_space()?;
-            ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
-
-            ensure!(
-                T::IsAccountBlocked::is_allowed_account(creator.clone(), space.id),
-                ModerationError::AccountIsBlocked
-            );
-            ensure!(
-                T::IsContentBlocked::is_allowed_content(content, space.id),
-                ModerationError::ContentIsBlocked
-            );
-
             let root_post = &mut new_post.get_root_post()?;
-            ensure!(!root_post.hidden, Error::<T>::CannotCreateInHiddenScope);
 
             // Check whether account has permission to create Post (by extension)
             let mut permission_to_check = SpacePermission::CreatePosts;
@@ -243,9 +231,10 @@ pub mod pallet {
                 error_on_permission_failed = Error::<T>::NoPermissionToCreateComments;
             }
 
-            Spaces::ensure_account_has_space_permission(
+            Self::can_account_create_post(
                 creator.clone(),
-                space,
+                &new_post,
+                Some(content.clone()),
                 permission_to_check,
                 error_on_permission_failed.into(),
             )?;

@@ -237,17 +237,7 @@ impl<T: Config> Pallet<T> {
         let mut commented_post_id = root_post_id;
 
         if let Some(parent_id) = comment_ext.parent_id {
-            let parent_comment =
-                Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
-
-            ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
-
-            let ancestors = Self::get_post_ancestors(parent_id);
-            ensure!(
-                ancestors.len() < T::MaxCommentDepth::get() as usize,
-                Error::<T>::MaxCommentDepthReached
-            );
-
+            Self::ensure_can_reply_to_parent(parent_id)?;
             commented_post_id = parent_id;
         }
 
@@ -343,7 +333,7 @@ impl<T: Config> Pallet<T> {
 
     /// This function performs validation checks to determine if an account can create or reply
     /// to a post in a specific space.
-    fn can_account_create_post(
+    pub(super) fn can_account_create_post(
         account: T::AccountId,
         new_post: &Post<T>,
         content_opt: Option<Content>,
@@ -351,7 +341,6 @@ impl<T: Config> Pallet<T> {
         error_on_permission_failed: DispatchError,
     ) -> DispatchResult {
         let space = &new_post.get_space()?;
-
         ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
 
         ensure!(
@@ -376,6 +365,21 @@ impl<T: Config> Pallet<T> {
             space_permission_to_check,
             error_on_permission_failed.into(),
         )
+    }
+
+    pub fn ensure_can_reply_to_parent(parent_id: PostId) -> DispatchResult {
+        let parent_comment =
+            Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
+
+        ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
+
+        let ancestors = Self::get_post_ancestors(parent_id);
+        ensure!(
+            ancestors.len() < T::MaxCommentDepth::get() as usize,
+            Error::<T>::MaxCommentDepthReached,
+        );
+
+        Ok(())
     }
 
     /// Function to check whether account can create a post in the given space.
@@ -443,16 +447,7 @@ impl<T: Config> Pallet<T> {
         )?;
 
         if let Some(parent_id) = parent_id_opt {
-            let parent_comment =
-                Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
-
-            ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
-
-            let ancestors = Self::get_post_ancestors(parent_id);
-            ensure!(
-                ancestors.len() < T::MaxCommentDepth::get() as usize,
-                Error::<T>::MaxCommentDepthReached,
-            );
+            Self::ensure_can_reply_to_parent(parent_id)?;
         }
 
         Ok(())
