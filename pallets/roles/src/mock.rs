@@ -4,30 +4,32 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use super::*;
-
-use sp_core::H256;
-use sp_io::TestExternalities;
-use sp_std::{collections::btree_set::BTreeSet, prelude::Vec};
-
 use frame_support::{
     assert_ok,
     dispatch::{DispatchError, DispatchResult},
     parameter_types,
     traits::{ConstU32, Everything},
 };
+use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::{collections::btree_set::BTreeSet, prelude::Vec};
 
-use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
+use pallet_permissions::{
+    default_permissions::DefaultSpacePermissions, SpacePermission, SpacePermission as SP,
+    SpacePermissions,
+};
 use subsocial_support::{
     traits::{SpaceFollowsProvider, SpacePermissionsProvider as SpacePermissionsProviderT},
     Content, SpaceId, SpacePermissionsInfo, User,
 };
 
 use crate as roles;
+
+use super::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -109,8 +111,6 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = ();
 }
 
-use pallet_permissions::default_permissions::DefaultSpacePermissions;
-
 impl pallet_permissions::Config for Test {
     type DefaultSpacePermissions = DefaultSpacePermissions;
 }
@@ -122,9 +122,6 @@ parameter_types! {
 impl Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type MaxUsersToProcessPerDeleteRole = MaxUsersToProcessPerDeleteRole;
-    #[cfg(feature = "runtime-benchmarks")]
-    type SpacePermissionsProvider = Spaces;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type SpacePermissionsProvider = Self;
     type SpaceFollows = Roles;
     type IsAccountBlocked = ();

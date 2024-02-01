@@ -6,7 +6,7 @@
 
 //! # Roles Module
 //!
-//! This module allow you to create dynalic roles with an associated set of permissions
+//! This module allow you to create dynamic roles with an associated set of permissions
 //! and grant them to users (accounts or space ids) within a given space.
 //!
 //! For example if you want to create a space that enables editors in a similar way to Medium,
@@ -17,12 +17,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{self as system, ensure_signed};
+use frame_support::{dispatch::DispatchResult, ensure};
+use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
+pub use pallet::*;
 use pallet_permissions::{
     Pallet as Permissions, PermissionChecker, SpacePermission, SpacePermissionSet,
 };
@@ -31,12 +32,11 @@ use subsocial_support::{
     traits::{IsAccountBlocked, IsContentBlocked, SpaceFollowsProvider, SpacePermissionsProvider},
     Content, ModerationError, SpaceId, User, WhoAndWhenOf,
 };
+pub use types::*;
 
-pub use pallet::*;
 pub mod functions;
 
 pub mod types;
-pub use types::*;
 // pub mod rpc;
 
 #[cfg(test)]
@@ -44,18 +44,21 @@ mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-#[cfg(all(test, not(feature = "runtime-benchmarks")))]
+#[cfg(test)]
 mod tests;
 pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
     use pallet_permissions::SpacePermissionsInfoOf;
     use subsocial_support::{remove_from_vec, WhoAndWhen};
+
+    use crate::weights::WeightInfo;
+
+    use super::*;
 
     #[pallet::config]
     pub trait Config:
