@@ -96,21 +96,22 @@ impl<T: Config> Pallet<T> {
     /// If the stake operation was successful, the given structs are properly modified.
     /// If not, an error is returned and the structs are left in an undefined state.
     pub(crate) fn stake_to_creator(
+        backer: &T::AccountId,
         backer_stakes: &mut StakesInfoOf<T>,
-        staking_info: &mut CreatorStakeInfo<BalanceOf<T>>,
+        creator_stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         amount: BalanceOf<T>,
-        current_era: EraIndex,
     ) -> Result<(), DispatchError> {
-        let current_stake = backer_stakes.current_stake();
+        let current_era = Self::current_era();
+        let staked_before = backer_stakes.current_stake();
 
         // FIXME: this check is not needed if we ensure that backer_stakes is always empty
         ensure!(
-            !current_stake.is_zero() ||
-                staking_info.backers_count < T::MaxNumberOfBackersPerCreator::get(),
+            !staked_before.is_zero() ||
+                creator_stake_info.backers_count < T::MaxNumberOfBackersPerCreator::get(),
             Error::<T>::MaxNumberOfBackersExceeded
         );
-        if current_stake.is_zero() {
-            staking_info.backers_count = staking_info.backers_count.saturating_add(1);
+        if staked_before.is_zero() {
+            creator_stake_info.backers_count = creator_stake_info.backers_count.saturating_add(1);
         }
 
         backer_stakes
@@ -119,13 +120,17 @@ impl<T: Config> Pallet<T> {
 
         Self::ensure_can_add_stake_item(backer_stakes)?;
 
+        let total_stake = Self::total_staked_amount(&backer)
+            .saturating_sub(staked_before)
+            .saturating_add(backer_stakes.current_stake());
+
         ensure!(
-            backer_stakes.current_stake() >= T::MinimumStake::get(),
+            total_stake >= T::MinimumTotalStake::get(),
             Error::<T>::InsufficientStakingAmount,
         );
 
         // Increment the backer's total deposit for a particular creator.
-        staking_info.total_staked = staking_info.total_staked.saturating_add(amount);
+        creator_stake_info.total_staked = creator_stake_info.total_staked.saturating_add(amount);
 
         Ok(())
     }
@@ -133,7 +138,7 @@ impl<T: Config> Pallet<T> {
     /// A utility method used to unstake a specified amount from an arbitrary creator.
     ///
     /// The amount unstaked can be different in case the staked amount would fall bellow
-    /// `MinimumStake`. In that case, the entire staked amount will be unstaked.
+    /// `MinimumTotalStake`. In that case, the entire staked amount will be unstaked.
     ///
     /// `StakesInfoOf` and `CreatorStakeInfo` are provided and all checks are made to ensure that
     /// it's possible to complete the unstake operation.
@@ -151,18 +156,20 @@ impl<T: Config> Pallet<T> {
     /// unstaked value is returned. If not, an error is returned and the structs are left in
     /// an undefined state.
     pub(crate) fn calculate_and_apply_stake_decrease(
+        backer: &T::AccountId,
         backer_stakes: &mut StakesInfoOf<T>,
         stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
-        current_era: EraIndex,
     ) -> Result<BalanceOf<T>, DispatchError> {
+        let current_era = Self::current_era();
         let staked_value = backer_stakes.current_stake();
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
-        let remaining = staked_value.saturating_sub(desired_amount);
+        let total_stake = Self::total_staked_amount(&backer);
+        let remaining = total_stake.saturating_sub(desired_amount);
 
-        // If the remaining amount is less than the minimum staking amount, unstake the entire amount.
-        let amount_to_decrease = if remaining < T::MinimumStake::get() {
+        // If the remaining amount is less than the minimum total stake, unstake the entire amount.
+        let amount_to_decrease = if remaining < T::MinimumTotalStake::get() {
             stake_info.backers_count = stake_info.backers_count.saturating_sub(1);
             staked_value
         } else {
@@ -189,9 +196,9 @@ impl<T: Config> Pallet<T> {
     pub(crate) fn update_backer_locks(backer: &T::AccountId, backer_locks: BackerLocksOf<T>) {
         if backer_locks.is_empty() {
             BackerLocksByAccount::<T>::remove(backer);
-            T::Currency::remove_lock(STAKING_ID, backer);
+            T::Currency::remove_lock(STAKING_LOCKS_ID, backer);
         } else {
-            T::Currency::set_lock(STAKING_ID, backer, backer_locks.total_locked, WithdrawReasons::all());
+            T::Currency::set_lock(STAKING_LOCKS_ID, backer, backer_locks.total_locked, WithdrawReasons::all());
             BackerLocksByAccount::<T>::insert(backer, backer_locks);
         }
     }
@@ -225,6 +232,13 @@ impl<T: Config> Pallet<T> {
     /// Rewards are deposited into this account before they are distributed to creators and backers.
     pub(crate) fn rewards_pot_account() -> T::AccountId {
         T::PalletId::get().into_account_truncating()
+    }
+
+    pub(crate) fn total_staked_amount(backer: &T::AccountId) -> BalanceOf<T> {
+        let backer_locks = BackerLocksByAccount::<T>::get(&backer);
+
+        backer_locks.total_locked
+            .saturating_sub(backer_locks.unbonding_info.sum())
     }
 
     /// The block rewards are accumulated in this pallet's account during each era.

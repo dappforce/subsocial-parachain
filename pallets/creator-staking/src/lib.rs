@@ -35,7 +35,7 @@ pub mod pallet {
 
     /// An identifier for the locks made in this pallet.
     /// Used to determine the locks in this pallet so that they can be replaced or removed.
-    pub(crate) const STAKING_ID: LockIdentifier = *b"crestake";
+    pub(crate) const STAKING_LOCKS_ID: LockIdentifier = *b"crestake";
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_permissions::Config {
@@ -68,11 +68,10 @@ pub mod pallet {
         #[pallet::constant]
         type CreatorRegistrationDeposit: Get<BalanceOf<Self>>;
 
-        /// The minimum amount that can be staked to the creator.
-        /// User can stake less if they already have the minimum staking amount staked to that
-        /// particular creator.
+        /// The minimum amount that should be staked in the creator staking system.
+        /// User can stake less if they already have the minimum stake staked in the system.
         #[pallet::constant]
-        type MinimumStake: Get<BalanceOf<Self>>;
+        type MinimumTotalStake: Get<BalanceOf<Self>>;
 
         // TODO: make it MinimumRemainingRatio
         //  (e.g. 0.1 = 10%, so that account can lock only 90% of its balance)
@@ -409,10 +408,10 @@ pub mod pallet {
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
+                &backer,
                 &mut backer_stakes,
                 &mut staking_info,
                 amount_to_stake,
-                current_era,
             )?;
 
             backer_locks.total_locked = backer_locks.total_locked.saturating_add(amount_to_stake);
@@ -465,7 +464,7 @@ pub mod pallet {
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut stake_info, amount, current_era)?;
+                Self::calculate_and_apply_stake_decrease(&backer, &mut backer_stakes, &mut stake_info, amount)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
@@ -621,10 +620,10 @@ pub mod pallet {
 
             // Backer stake is decreased in `calculate_and_apply_stake_decrease`
             let stake_amount_to_move = Self::calculate_and_apply_stake_decrease(
+                &backer,
                 &mut backer_stakes_by_source_creator,
                 &mut source_creator_info,
                 amount,
-                current_era,
             )?;
 
             // Validate and update target creator related data
@@ -633,10 +632,10 @@ pub mod pallet {
                 Self::creator_stake_info(to_creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
+                &backer,
                 &mut backer_stakes_by_target_creator,
                 &mut target_creator_info,
                 stake_amount_to_move,
-                current_era,
             )?;
 
             CreatorStakeInfoByEra::<T>::insert(from_creator_id, current_era, source_creator_info);
