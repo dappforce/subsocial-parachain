@@ -469,8 +469,9 @@ pub mod pallet {
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
 
+            let locks_remaining = backer_locks.total_staked().saturating_sub(amount_to_unstake);
             ensure!(
-                backer_locks.total_staked().saturating_sub(amount_to_unstake) >= T::MinimumTotalStake::get(),
+                locks_remaining.is_zero() || locks_remaining >= T::MinimumTotalStake::get(),
                 Error::<T>::InsufficientStakingAmount,
             );
 
