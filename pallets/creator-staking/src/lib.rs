@@ -460,14 +460,20 @@ pub mod pallet {
 
             let current_era = Self::current_era();
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
-            let mut stake_info =
+            let mut creator_stake_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_and_apply_stake_decrease(&backer, &mut backer_stakes, &mut stake_info, amount)?;
+                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut creator_stake_info, amount)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
+
+            ensure!(
+                backer_locks.total_staked().saturating_sub(amount_to_unstake) >= T::MinimumTotalStake::get(),
+                Error::<T>::InsufficientStakingAmount,
+            );
+
             backer_locks.unbonding_info.add(UnbondingChunk {
                 amount: amount_to_unstake,
                 unlock_era: current_era + T::UnbondingPeriodInEras::get(),
@@ -482,7 +488,7 @@ pub mod pallet {
                 }
             });
             Self::update_backer_stakes(&backer, creator_id, backer_stakes);
-            CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, stake_info);
+            CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, creator_stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
                 who: backer,

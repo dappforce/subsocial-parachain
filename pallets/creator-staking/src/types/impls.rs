@@ -36,6 +36,10 @@ impl<Balance, MaxUnbondingChunks> BackerLocks<Balance, MaxUnbondingChunks>
     pub fn is_empty(&self) -> bool {
         self.total_locked.is_zero() && self.unbonding_info.is_empty()
     }
+
+    pub fn total_staked(&self) -> Balance {
+        self.total_locked.saturating_sub(self.unbonding_info.sum())
+    }
 }
 
 impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> EraStake<Balance> {
