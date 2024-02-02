@@ -158,10 +158,8 @@ impl<T: Config> Pallet<T> {
         let staked_value = backer_stakes.current_stake();
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
-        let remaining = staked_value.saturating_sub(desired_amount);
-
         // If the remaining amount equals to zero, unstake the entire amount by this creator.
-        let amount_to_decrease = if remaining.is_zero() {
+        let amount_to_decrease = if desired_amount >= staked_value {
             creator_stake_info.backers_count = creator_stake_info.backers_count.saturating_sub(1);
             staked_value
         } else {

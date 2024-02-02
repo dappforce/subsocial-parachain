@@ -612,7 +612,7 @@ pub(crate) fn assert_move_stake(
 
     // Calculate value which will actually be transferred
     let source_creator_init_stake_amount = source_creator_init_state.backer_stakes.current_stake();
-    let expected_amount_to_move = if source_creator_init_stake_amount - amount > 0 {
+    let expected_amount_to_move = if amount < source_creator_init_stake_amount {
         amount
     } else {
         source_creator_init_stake_amount
