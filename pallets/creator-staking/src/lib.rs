@@ -35,7 +35,7 @@ pub mod pallet {
 
     /// An identifier for the locks made in this pallet.
     /// Used to determine the locks in this pallet so that they can be replaced or removed.
-    pub(crate) const STAKING_LOCKS_ID: LockIdentifier = *b"crestake";
+    pub(crate) const STAKING_LOCK_ID: LockIdentifier = *b"crestake";
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_permissions::Config {

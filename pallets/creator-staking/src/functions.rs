@@ -120,14 +120,8 @@ impl<T: Config> Pallet<T> {
 
         Self::ensure_can_add_stake_item(backer_stakes)?;
 
-        let total_stake = Self::total_staked_amount(&backer)
-            .saturating_sub(staked_before)
-            .saturating_add(backer_stakes.current_stake());
-
-        ensure!(
-            total_stake >= T::MinimumTotalStake::get(),
-            Error::<T>::InsufficientStakingAmount,
-        );
+        let total_stake = Self::total_staked_amount(&backer).saturating_add(amount);
+        ensure!(total_stake >= T::MinimumTotalStake::get(), Error::<T>::InsufficientStakingAmount);
 
         // Increment the backer's total deposit for a particular creator.
         creator_stake_info.total_staked = creator_stake_info.total_staked.saturating_add(amount);
@@ -196,9 +190,9 @@ impl<T: Config> Pallet<T> {
     pub(crate) fn update_backer_locks(backer: &T::AccountId, backer_locks: BackerLocksOf<T>) {
         if backer_locks.is_empty() {
             BackerLocksByAccount::<T>::remove(backer);
-            T::Currency::remove_lock(STAKING_LOCKS_ID, backer);
+            T::Currency::remove_lock(STAKING_LOCK_ID, backer);
         } else {
-            T::Currency::set_lock(STAKING_LOCKS_ID, backer, backer_locks.total_locked, WithdrawReasons::all());
+            T::Currency::set_lock(STAKING_LOCK_ID, backer, backer_locks.total_locked, WithdrawReasons::all());
             BackerLocksByAccount::<T>::insert(backer, backer_locks);
         }
     }
