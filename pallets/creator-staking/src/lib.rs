@@ -626,7 +626,6 @@ pub mod pallet {
 
             // Backer stake is decreased in `calculate_and_apply_stake_decrease`
             let stake_amount_to_move = Self::calculate_and_apply_stake_decrease(
-                &backer,
                 &mut backer_stakes_by_source_creator,
                 &mut source_creator_info,
                 amount,
