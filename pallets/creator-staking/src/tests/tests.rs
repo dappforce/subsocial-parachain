@@ -782,7 +782,7 @@ fn stake_insufficient_value() {
             CreatorStaking::stake(
                 RuntimeOrigin::signed(backer_id),
                 creator_id.clone(),
-                MINIMUM_STAKING_AMOUNT - 1
+                MINIMUM_TOTAL_STAKE - 1
             ),
             Error::<TestRuntime>::InsufficientStakingAmount
         );
@@ -860,7 +860,7 @@ fn unstake_multiple_time_is_ok() {
         let stakeholder = 10;
         let backer_id = 1;
         let creator_id = 1;
-        let original_staked_value = 300 + MINIMUM_STAKING_AMOUNT;
+        let original_staked_value = 300 + MINIMUM_TOTAL_STAKE;
         let old_era = CreatorStaking::current_era();
 
         // Insert a creator under registered creators, stake it.
@@ -880,25 +880,24 @@ fn unstake_multiple_time_is_ok() {
 }
 
 #[test]
-fn unstake_value_below_staking_threshold() {
+fn unstake_value_below_staked_to_creator() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
         let stakeholder = 10;
         let backer_id = 1;
         let creator_id = 1;
-        let first_value_to_unstake = 300;
-        let staked_value = first_value_to_unstake + MINIMUM_STAKING_AMOUNT;
+        let staked_value = MINIMUM_TOTAL_STAKE * 2;
 
         // Insert a creator under registered creators, stake it.
         assert_register(stakeholder, creator_id);
         assert_stake(backer_id, creator_id, staked_value);
 
         // Unstake such an amount that exactly minimum staking amount will remain staked.
-        assert_unstake(backer_id, creator_id, first_value_to_unstake);
+        assert_unstake(backer_id, creator_id, MINIMUM_TOTAL_STAKE);
 
-        // Unstake 1 token and expect that the entire staked amount will be unstaked.
-        assert_unstake(backer_id, creator_id, 1);
+        // Unstake 2x of remaining tokens and expect that the entire staked amount will be unstaked.
+        assert_unstake(backer_id, creator_id, MINIMUM_TOTAL_STAKE * 2);
     })
 }
 
@@ -985,7 +984,7 @@ fn unstake_too_many_unbonding_chunks_is_not_ok() {
         let backer = 1;
         let unstake_amount = 10;
         let stake_amount =
-            MINIMUM_STAKING_AMOUNT * 10 + unstake_amount * MAX_UNBONDING_CHUNKS as Balance;
+            MINIMUM_TOTAL_STAKE * 10 + unstake_amount * MAX_UNBONDING_CHUNKS as Balance;
 
         assert_stake(backer, creator_id, stake_amount);
 
@@ -1846,14 +1845,14 @@ fn move_stake_is_ok() {
 
         assert_register(stakeholder, from_creator_id);
         assert_register(stakeholder, to_creator_id);
-        assert_stake(backer, from_creator_id, MINIMUM_STAKING_AMOUNT * 2);
+        assert_stake(backer, from_creator_id, MINIMUM_TOTAL_STAKE * 2);
 
         // The first transfer will ensure that both creators are staked after operation is complete
         assert_move_stake(
             backer,
             from_creator_id,
             to_creator_id,
-            MINIMUM_STAKING_AMOUNT,
+            MINIMUM_TOTAL_STAKE,
         );
         assert!(
             !BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
@@ -1866,7 +1865,7 @@ fn move_stake_is_ok() {
             backer,
             from_creator_id,
             to_creator_id,
-            MINIMUM_STAKING_AMOUNT,
+            MINIMUM_TOTAL_STAKE,
         );
         assert!(
             BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
@@ -1908,7 +1907,7 @@ fn move_stake_should_work_from_inactive_creator() {
         let source_creator_id = 1;
         let target_creator_id = 2;
 
-        let stake_amount = MINIMUM_STAKING_AMOUNT * 2;
+        let stake_amount = MINIMUM_TOTAL_STAKE * 2;
 
         assert_register(stakeholder, source_creator_id);
         assert_register(stakeholder, target_creator_id);
@@ -1930,7 +1929,7 @@ fn move_stake_to_inactive_creator_should_fail() {
         let source_creator_id = 1;
         let target_creator_id = 2;
         
-        let stake_amount = MINIMUM_STAKING_AMOUNT * 2;
+        let stake_amount = MINIMUM_TOTAL_STAKE * 2;
 
         assert_register(stakeholder, source_creator_id);
         assert_register(stakeholder, target_creator_id);
@@ -1997,34 +1996,6 @@ fn move_zero_stake_should_fail() {
                 Zero::zero(),
             ),
             Error::<TestRuntime>::CannotMoveZeroStake
-        );
-    })
-}
-
-#[test]
-// When target_creator wasn't staked by a backer before, 
-// moving amount should be more than MinimumStakingAmount
-fn move_stake_should_fail_with_insufficient_staking_amount() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let stakeholder = 1;
-        let backer = 3;
-        let source_creator_id = 1;
-        let target_creator_id = 2;
-
-        assert_register(stakeholder, source_creator_id);
-        assert_register(stakeholder, target_creator_id);
-        assert_stake(backer, source_creator_id, 100);
-
-        assert_noop!(
-            CreatorStaking::move_stake(
-                RuntimeOrigin::signed(backer),
-                source_creator_id,
-                target_creator_id,
-                MINIMUM_STAKING_AMOUNT - 1,
-            ),
-            Error::<TestRuntime>::InsufficientStakingAmount
         );
     })
 }

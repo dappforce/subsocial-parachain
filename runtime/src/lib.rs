@@ -178,7 +178,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 38,
+	spec_version: 39,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
@@ -817,7 +817,7 @@ parameter_types! {
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
 	pub const CreatorRegistrationDeposit: Balance = 10 * UNIT;
-	pub const MinimumStake: Balance = 2000 * UNIT;
+	pub const MinimumTotalStake: Balance = 2000 * UNIT;
 	pub const MinimumRemainingFreeBalance: Balance = 10 * UNIT;
 
 	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
@@ -833,7 +833,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type SpacesInterface = Spaces;
 	type SpacePermissionsProvider = Spaces;
 	type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
-	type MinimumStake = MinimumStake;
+	type MinimumTotalStake = MinimumTotalStake;
 	type MinimumRemainingFreeBalance = MinimumRemainingFreeBalance;
 	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
 	type MaxEraStakeItems = ConstU32<10>;

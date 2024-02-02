@@ -281,7 +281,7 @@ pub(super) fn assert_unstake(
         .backer_stakes
         .current_stake()
         .saturating_sub(value);
-    let expected_unbond_amount = if remaining_staked < MINIMUM_STAKING_AMOUNT {
+    let expected_unbond_amount = if remaining_staked < MINIMUM_TOTAL_STAKE {
         init_state.backer_stakes.current_stake()
     } else {
         value
@@ -610,9 +610,9 @@ pub(crate) fn assert_move_stake(
     let source_creator_init_state = MemorySnapshot::all(current_era, from_creator_id, backer);
     let target_creator_init_state = MemorySnapshot::all(current_era, to_creator_id, backer);
 
-    // Calculate value which will actually be transfered
+    // Calculate value which will actually be transferred
     let source_creator_init_stake_amount = source_creator_init_state.backer_stakes.current_stake();
-    let expected_amount_to_move = if source_creator_init_stake_amount - amount >= MINIMUM_STAKING_AMOUNT {
+    let expected_amount_to_move = if amount < source_creator_init_stake_amount {
         amount
     } else {
         source_creator_init_stake_amount
