@@ -138,8 +138,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// Extrinsic base weight (smallest non-zero weight) is mapped to 10 MILLIUNIT
-		let p = 10 * MILLIUNIT;
+		// Extrinsic base weight (smallest non-zero weight) is mapped to 100 MILLIUNIT
+		let p = 100 * MILLIUNIT;
 		let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
