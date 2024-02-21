@@ -57,6 +57,7 @@ impl<Balance, MaxEraStakeItems> Default for StakesInfo<Balance, MaxEraStakeItems
     fn default() -> Self {
         Self {
             stakes: BoundedVec::<EraStake<Balance>, MaxEraStakeItems>::default(),
+            staked: Zero::zero(),
         }
     }
 }
@@ -72,6 +73,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     }
 
     /// number of `EraStake` chunks
+    #[cfg(test)]
     pub(crate) fn len(&self) -> u32 {
         self.stakes.len() as u32
     }
@@ -80,6 +82,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     pub(crate) fn clone(&self) -> Self {
         Self {
             stakes: self.stakes.clone(),
+            staked: self.staked,
         }
     }
 

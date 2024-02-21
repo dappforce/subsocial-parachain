@@ -101,24 +101,18 @@ impl<T: Config> Pallet<T> {
         creator_stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         amount: BalanceOf<T>,
     ) -> Result<(), DispatchError> {
-        let current_era = Self::current_era();
-        let staked_before = backer_stakes.current_stake();
+        // let current_era = Self::current_era();
+        let staked_before = backer_stakes.staked;
 
-        // FIXME: this check is not needed if we ensure that backer_stakes is always empty
-        ensure!(
-            !staked_before.is_zero() ||
-                creator_stake_info.backers_count < T::MaxNumberOfBackersPerCreator::get(),
-            Error::<T>::MaxNumberOfBackersExceeded
-        );
         if staked_before.is_zero() {
-            creator_stake_info.backers_count = creator_stake_info.backers_count.saturating_add(1);
+            creator_stake_info.backers_count.saturating_inc();
         }
 
-        backer_stakes
-            .increase_stake(current_era, amount)
-            .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
+        // backer_stakes
+        //     .increase_stake(current_era, amount)
+        //     .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_can_add_stake_item(backer_stakes)?;
+        backer_stakes.staked.saturating_accrue(amount);
 
         let total_stake = Self::total_staked_amount(&backer).saturating_add(amount);
         ensure!(total_stake >= T::MinimumTotalStake::get(), Error::<T>::InsufficientStakingAmount);
@@ -154,8 +148,8 @@ impl<T: Config> Pallet<T> {
         creator_stake_info: &mut CreatorStakeInfo<BalanceOf<T>>,
         desired_amount: BalanceOf<T>,
     ) -> Result<BalanceOf<T>, DispatchError> {
-        let current_era = Self::current_era();
-        let staked_value = backer_stakes.current_stake();
+        // let current_era = Self::current_era();
+        let staked_value = backer_stakes.staked;
         ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
         // If the remaining amount equals to zero, unstake the entire amount by this creator.
@@ -172,11 +166,11 @@ impl<T: Config> Pallet<T> {
         // Modify data
         creator_stake_info.total_staked = creator_stake_info.total_staked.saturating_sub(amount_to_decrease);
 
-        backer_stakes
-            .decrease_stake(current_era, amount_to_decrease)
-            .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
+        // backer_stakes
+        //     .decrease_stake(current_era, amount_to_decrease)
+        //     .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
 
-        Self::ensure_can_add_stake_item(backer_stakes)?;
+        backer_stakes.staked.saturating_reduce(amount_to_decrease);
 
         Ok(amount_to_decrease)
     }
@@ -200,7 +194,7 @@ impl<T: Config> Pallet<T> {
         creator_id: CreatorId,
         backer_stakes: StakesInfoOf<T>,
     ) {
-        if backer_stakes.is_empty() {
+        if backer_stakes.is_empty() && backer_stakes.staked.is_zero() {
             BackerStakesByCreator::<T>::remove(backer, creator_id)
         } else {
             BackerStakesByCreator::<T>::insert(backer, creator_id, backer_stakes)
@@ -291,45 +285,13 @@ impl<T: Config> Pallet<T> {
         RegisteredCreators::<T>::get(creator_id).ok_or(Error::<T>::CreatorNotFound.into())
     }
 
-    pub(crate) fn ensure_can_add_stake_item(
-        backer_stakes: &StakesInfoOf<T>,
-    ) -> DispatchResult {
-        ensure!(
-            backer_stakes.len() < T::MaxEraStakeItems::get(),
-            Error::<T>::TooManyEraStakeValues,
-        );
-        Ok(())
-    }
-
-    pub(crate) fn ensure_can_restake_reward(
+    pub(crate) fn can_restake_reward(
         restake: bool,
         creator_status: CreatorStatus,
-        backer_stakes: &mut StakesInfoOf<T>,
-        current_era: EraIndex,
-        backer_reward: BalanceOf<T>,
-    ) -> Result<bool, DispatchError> {
+        staked: BalanceOf<T>,
+    ) -> bool {
         // Can restake only if the backer is already staking on the active creator
-        // and all the other conditions are met:
-        let can_restake = restake
-            && creator_status == CreatorStatus::Active
-            && backer_stakes.current_stake() > Zero::zero();
-
-        return if can_restake {
-            backer_stakes
-                .increase_stake(current_era, backer_reward)
-                .map_err(|_| Error::<T>::CannotChangeStakeInPastEra)?;
-
-            // Restaking will, in the worst case, remove one record and add another one,
-            // so it's fine if the vector is full
-            ensure!(
-                backer_stakes.len() <= T::MaxEraStakeItems::get(),
-                Error::<T>::TooManyEraStakeValues,
-            );
-
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        restake && creator_status == CreatorStatus::Active && staked > Zero::zero()
     }
 
     pub(crate) fn do_restake_reward(

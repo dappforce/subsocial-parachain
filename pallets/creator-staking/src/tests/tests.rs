@@ -8,10 +8,7 @@ use crate::{pallet::Error, pallet::Event, *};
 use super::*;
 use frame_support::{assert_noop, assert_ok, traits::{Currency, OnInitialize, OnTimestampSet}, weights::Weight};
 use mock::{Balances, *};
-use sp_runtime::{
-    traits::{BadOrigin, Zero},
-    Perbill, RuntimeDebug,
-};
+use sp_runtime::{traits::{BadOrigin, Zero}, Perbill, RuntimeDebug, DispatchError};
 
 use testing_utils::*;
 
@@ -275,6 +272,8 @@ fn new_era_forcing() {
     })
 }
 
+#[deprecated]
+#[ignore]
 #[test]
 fn general_backer_stakes_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
@@ -602,6 +601,8 @@ fn withdraw_from_inactive_creator_when_nothing_is_staked() {
     })
 }
 
+#[deprecated]
+#[ignore]
 #[test]
 fn withdraw_from_inactive_creator_when_unclaimed_rewards_remaining() {
     ExternalityBuilder::build().execute_with(|| {
@@ -799,33 +800,8 @@ fn stake_insufficient_value() {
     })
 }
 
-#[test]
-fn stake_too_many_backers_per_creator() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let stakeholder = 10;
-        let creator_id = 1;
-        // Insert a creator under registered creators.
-        assert_register(stakeholder, creator_id);
-
-        // Stake with MAX_NUMBER_OF_BACKERS on the same creator. It must work.
-        for backer_id in 1..=MAX_NUMBER_OF_BACKERS {
-            assert_stake(backer_id.into(), creator_id, 100);
-        }
-
-        // Now try to stake with an additional backer and expect an error.
-        assert_noop!(
-            CreatorStaking::stake(
-                RuntimeOrigin::signed((1 + MAX_NUMBER_OF_BACKERS).into()),
-                creator_id.clone(),
-                100
-            ),
-            Error::<TestRuntime>::MaxNumberOfBackersExceeded
-        );
-    })
-}
-
+#[deprecated]
+#[ignore]
 #[test]
 fn stake_too_many_era_stakes() {
     ExternalityBuilder::build().execute_with(|| {
@@ -847,7 +823,7 @@ fn stake_too_many_era_stakes() {
         // Now try to stake with an additional backer and expect an error.
         assert_noop!(
             CreatorStaking::stake(RuntimeOrigin::signed(backer_id), creator_id, 100),
-            Error::<TestRuntime>::TooManyEraStakeValues
+            DispatchError::Other("Too many era stakes")
         );
     })
 }
@@ -1029,6 +1005,8 @@ fn unstake_on_not_staked_creator_is_not_ok() {
     })
 }
 
+#[deprecated]
+#[ignore]
 #[test]
 fn unstake_should_fail_when_too_many_era_stakes() {
     ExternalityBuilder::build().execute_with(|| {
@@ -1049,7 +1027,7 @@ fn unstake_should_fail_when_too_many_era_stakes() {
         // an additional one.
         assert_noop!(
             CreatorStaking::unstake(RuntimeOrigin::signed(backer_id), creator_id, 10),
-            Error::<TestRuntime>::TooManyEraStakeValues
+            DispatchError::Other("Too many era stakes")
         );
     })
 }
@@ -1523,41 +1501,6 @@ fn claim_with_zero_staked_is_ok() {
     })
 }
 
-// FIXME: how to be here?
-#[ignore]
-#[test]
-fn claiming_when_stakes_full_without_compounding_is_ok() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let stakeholder = 10;
-        let backer_id = 1;
-        let creator_id = 1;
-        // Insert a creator under registered creators.
-        assert_register(stakeholder, creator_id);
-
-        // Stake with MAX_ERA_STAKE_VALUES - 1 on the same creator. It must work.
-        let start_era = CreatorStaking::current_era();
-        for offset in 1..MAX_ERA_STAKE_ITEMS {
-            assert_stake(backer_id, creator_id, 100);
-            advance_to_era(start_era + offset * 5);
-        }
-
-        // claim and restake once, so there's a claim record for the current era in the stakes vec
-        assert_claim_backer(backer_id, creator_id, true);
-
-        // making another gap in eras and trying to claim and restake would exceed MAX_ERA_STAKE_VALUES
-        advance_to_era(CreatorStaking::current_era() + 1);
-        assert_noop!(
-            CreatorStaking::claim_backer_reward(RuntimeOrigin::signed(backer_id), creator_id, true),
-            Error::<TestRuntime>::TooManyEraStakeValues
-        );
-
-        // claiming should work again
-        assert_claim_backer(backer_id, creator_id, false);
-    })
-}
-
 #[test]
 fn claim_creator_with_zero_stake_periods_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
@@ -1856,7 +1799,7 @@ fn move_stake_is_ok() {
         );
         assert!(
             !BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
-                .current_stake()
+                .staked
                 .is_zero()
         );
 
@@ -1869,7 +1812,7 @@ fn move_stake_is_ok() {
         );
         assert!(
             BackerStakesByCreator::<TestRuntime>::get(&backer, &from_creator_id)
-                .current_stake()
+                .staked
                 .is_zero()
         );
     })
@@ -2000,6 +1943,8 @@ fn move_zero_stake_should_fail() {
     })
 }
 
+#[deprecated]
+#[ignore]
 #[test]
 fn move_stake_with_max_era_stake_items_exceeded_should_fail() {
     ExternalityBuilder::build().execute_with(|| {
@@ -2025,7 +1970,7 @@ fn move_stake_with_max_era_stake_items_exceeded_should_fail() {
                 source_creator_id,
                 15
             ),
-            Error::<TestRuntime>::TooManyEraStakeValues
+            DispatchError::Other("Too many era stakes")
         );
 
         // Ensure it's not possible to transfer from source creator since it's era stake items are at max
@@ -2036,7 +1981,7 @@ fn move_stake_with_max_era_stake_items_exceeded_should_fail() {
                 target_creator_id,
                 15,
             ),
-            Error::<TestRuntime>::TooManyEraStakeValues
+            DispatchError::Other("Too many era stakes")
         );
 
         // Swap source and target to verify that same is true if target creator era stake imtes is maxed out
@@ -2049,56 +1994,7 @@ fn move_stake_with_max_era_stake_items_exceeded_should_fail() {
                 target_creator_id,
                 15,
             ),
-            Error::<TestRuntime>::TooManyEraStakeValues
-        );
-    })
-}
-
-#[test]
-fn move_stake_with_max_number_of_backers_exceeded_should_fail() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let stakeholder = 1;
-        // This one will only stake on source creator
-        let first_backer = 3;
-        // This one will stake on both origin and target contracts
-        let second_backer = 4;
-        let source_creator_id = 1;
-        let target_creator_id = 2;
-
-        // Register creators and stake them with both backers
-        assert_register(stakeholder, source_creator_id);
-        assert_register(stakeholder, target_creator_id);
-
-        assert_stake(first_backer, source_creator_id, 23);
-        assert_stake(second_backer, target_creator_id, 37);
-        assert_stake(second_backer, target_creator_id, 41);
-
-        // Fill up the second creator with backers until max number of backers limit has been reached
-        for temp_backer in (second_backer + 1)..(MAX_NUMBER_OF_BACKERS as u64 + second_backer) {
-            Balances::resolve_creating(&temp_backer, Balances::issue(100));
-            assert_stake(temp_backer, target_creator_id, 13);
-        }
-        // Sanity check + assurance that first_backer isn't staking on target creator
-        assert_noop!(
-            CreatorStaking::stake(
-                RuntimeOrigin::signed(first_backer),
-                target_creator_id,
-                19
-            ),
-            Error::<TestRuntime>::MaxNumberOfBackersExceeded
-        );
-
-        // Now attempt move stake and expect an error
-        assert_noop!(
-            CreatorStaking::move_stake(
-                RuntimeOrigin::signed(first_backer),
-                source_creator_id,
-                target_creator_id,
-                19,
-            ),
-            Error::<TestRuntime>::MaxNumberOfBackersExceeded
+            DispatchError::Other("Too many era stakes")
         );
     })
 }

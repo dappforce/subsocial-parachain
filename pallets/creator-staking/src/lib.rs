@@ -13,6 +13,7 @@ pub mod functions;
 pub mod inflation;
 #[cfg(test)]
 mod tests;
+pub mod migration;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -126,7 +127,11 @@ pub mod pallet {
         type TreasuryAccount: Get<Self::AccountId>;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
@@ -258,9 +263,7 @@ pub mod pallet {
         InactiveCreator,
         CannotStakeZero,
         CannotUnstakeZero,
-        MaxNumberOfBackersExceeded,
         CannotChangeStakeInPastEra,
-        TooManyEraStakeValues,
         InsufficientStakingAmount,
         NotStakedCreator,
         TooManyUnbondingChunks,
@@ -554,7 +557,7 @@ pub mod pallet {
 
             // There should be some leftover staked amount
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
-            let staked_value = backer_stakes.current_stake();
+            let staked_value = backer_stakes.staked;
             ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
             // Don't allow withdrawal until all rewards have been claimed.
@@ -689,11 +692,6 @@ pub mod pallet {
             let backer_reward =
                 Perbill::from_rational(backer_staked, reward_and_stake.staked) * reward_and_stake.rewards.backers;
 
-            // FIXME: we mustn't modify `backer_stakes` here!
-            let can_restake_reward = Self::ensure_can_restake_reward(
-                restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
-            )?;
-
             // Withdraw reward funds from the rewards holding account
             let reward_imbalance = T::Currency::withdraw(
                 &Self::rewards_pot_account(),
@@ -704,8 +702,9 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&backer, reward_imbalance);
 
-            if can_restake_reward {
+            if Self::can_restake_reward(restake, creator_info.status, backer_stakes.staked) {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
+                backer_stakes.staked.saturating_accrue(backer_reward);
             }
 
             Self::update_backer_stakes(&backer, creator_id, backer_stakes);
