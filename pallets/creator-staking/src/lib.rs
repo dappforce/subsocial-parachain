@@ -704,7 +704,7 @@ pub mod pallet {
 
             if Self::can_restake_reward(restake, creator_info.status, backer_stakes.staked) {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
-                backer_stakes.staked.saturating_add(backer_reward);
+                backer_stakes.staked.saturating_accrue(backer_reward);
             }
 
             Self::update_backer_stakes(&backer, creator_id, backer_stakes);
