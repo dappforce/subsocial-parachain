@@ -13,6 +13,7 @@ pub mod functions;
 pub mod inflation;
 #[cfg(test)]
 mod tests;
+pub mod migration;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -126,7 +127,11 @@ pub mod pallet {
         type TreasuryAccount: Get<Self::AccountId>;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
