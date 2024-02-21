@@ -73,6 +73,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     }
 
     /// number of `EraStake` chunks
+    #[cfg(test)]
     pub(crate) fn len(&self) -> u32 {
         self.stakes.len() as u32
     }
