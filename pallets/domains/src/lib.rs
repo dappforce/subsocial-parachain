@@ -44,7 +44,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
-    use subsocial_support::ensure_content_is_valid;
+    use subsocial_support::{ensure_content_is_valid, remove_from_bounded_vec};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -172,6 +172,10 @@ pub mod pallet {
     pub(super) type PaymentBeneficiary<T: Config> =
         StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
 
+    #[pallet::storage]
+    pub type PendingOwnershipTransfers<T: Config> =
+        StorageMap<_, Blake2_128Concat, DomainName<T>, T::AccountId>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -183,6 +187,19 @@ pub mod pallet {
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
+        DomainOwnershipTransferCreated {
+            current_owner: T::AccountId,
+            domain: DomainName<T>,
+            new_owner: T::AccountId,
+        },
+        DomainOwnershipTransferAccepted {
+            account: T::AccountId,
+            domain: DomainName<T>,
+        },
+        DomainOwnershipTransferRejected {
+            account: T::AccountId,
+            domain: DomainName<T>,
+        },
     }
 
     #[pallet::error]
@@ -226,6 +243,11 @@ pub mod pallet {
         InsufficientBalanceToReserveDeposit,
         /// There are insufficient funds to pay for the domain and reserve the deposit on it.
         InsufficientBalanceToRegisterDomain,
+        CannotTransferToCurrentOwner,
+        AlreadyDomainOwner,
+        NoPendingTransferOnDomain,
+        NotAllowedToAcceptOwnershipTransfer,
+        NotAllowedToRejectOwnershipTransfer,
     }
 
     #[pallet::call]
@@ -426,6 +448,109 @@ pub mod pallet {
 
             Ok(Pays::No.into())
         }
+
+        #[pallet::call_index(9)]
+        #[pallet::weight(
+            T::DbWeight::get().reads_writes(1, 1) +
+            Weight::from_parts(36_000_000, 0)
+        )]
+        pub fn transfer_domain_ownership(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+            transfer_to: T::AccountId,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            ensure!(who != transfer_to, Error::<T>::CannotTransferToCurrentOwner);
+
+            let meta = Self::require_domain(domain.clone())?;
+            Self::ensure_allowed_to_update_domain(&meta, &who)?;
+
+            let domain_lc = Self::lower_domain_then_bound(&domain);
+            PendingOwnershipTransfers::<T>::insert(&domain_lc, transfer_to.clone());
+
+            Self::deposit_event(Event::DomainOwnershipTransferCreated {
+                current_owner: who,
+                domain: domain_lc,
+                new_owner: transfer_to,
+            });
+            Ok(())
+        }
+
+        #[pallet::call_index(10)]
+        #[pallet::weight(
+            T::DbWeight::get().reads_writes(1, 1) +
+            Weight::from_parts(60_000_000, 0)
+        )]
+        pub fn accept_pending_ownership_transfer(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+        ) -> DispatchResult {
+            let new_owner = ensure_signed(origin)?;
+
+            let meta = Self::require_domain(domain.clone())?;
+            ensure!(meta.owner != new_owner, Error::<T>::AlreadyDomainOwner);
+
+            let domain_lc = Self::lower_domain_then_bound(&domain);
+            let transfer_to =
+                PendingOwnershipTransfers::<T>::get(&domain_lc).ok_or(Error::<T>::NoPendingTransferOnDomain)?;
+
+            ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
+
+            Self::ensure_domains_limit_not_reached(&transfer_to)?;
+            Self::ensure_can_pay_for_domain(&new_owner, Zero::zero(), meta.domain_deposit.deposit)?;
+
+            // Here we know that the origin is eligible to become a new owner of this domain.
+            PendingOwnershipTransfers::<T>::remove(&domain_lc);
+
+            DomainsByOwner::<T>::mutate(&meta.owner, |domains| {
+                remove_from_bounded_vec(domains, domain_lc.clone())
+            });
+
+            DomainsByOwner::<T>::mutate(&new_owner, |domains| {
+                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+            });
+
+            RegisteredDomains::<T>::mutate(&domain_lc, |stored_meta_opt| {
+                if let Some(stored_meta) = stored_meta_opt {
+                    stored_meta.owner = new_owner.clone();
+                }
+            });
+            
+            Self::deposit_event(Event::DomainOwnershipTransferAccepted {
+                account: new_owner,
+                domain: domain_lc,
+            });
+            Ok(())
+        }
+        
+        #[pallet::call_index(11)]
+        #[pallet::weight(
+            T::DbWeight::get().reads_writes(1, 1) +
+            Weight::from_parts(40_000_000, 0)
+        )]
+        pub fn reject_pending_ownership_transfer(
+            origin: OriginFor<T>,
+            domain: DomainName<T>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            let meta = Self::require_domain(domain.clone())?;
+
+            let domain_lc = Self::lower_domain_then_bound(&domain);
+            let transfer_to =
+                PendingOwnershipTransfers::<T>::get(&domain_lc).ok_or(Error::<T>::NoPendingTransferOnDomain)?;
+
+            ensure!(
+                who == transfer_to || who == meta.owner,
+                Error::<T>::NotAllowedToRejectOwnershipTransfer
+            );
+        
+            PendingOwnershipTransfers::<T>::remove(&domain_lc);
+        
+            Self::deposit_event(Event::DomainOwnershipTransferRejected { account: who, domain: domain_lc });
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -468,11 +593,7 @@ pub mod pallet {
                 Error::<T>::DomainAlreadyOwned,
             );
 
-            let recipient_domains_count = Self::domains_by_owner(&recipient).len();
-            ensure!(
-                recipient_domains_count < T::MaxDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
-            );
+            Self::ensure_domains_limit_not_reached(&recipient)?;
 
             let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
                 (caller.clone(), T::BaseDomainDeposit::get()).into();
@@ -716,6 +837,15 @@ pub mod pallet {
             T::Currency::ensure_can_withdraw(
                 &owner, price, WithdrawReasons::TRANSFER, owner_balance.saturating_sub(total_price)
             )
+        }
+
+        fn ensure_domains_limit_not_reached(account: &T::AccountId) -> DispatchResult {
+            let domains_count = Self::domains_by_owner(account).len();
+            ensure!(
+                domains_count < T::MaxDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+            Ok(())
         }
     }
 }
