@@ -28,7 +28,7 @@ frame_support::construct_runtime!(
         Roles: pallet_roles,
         Profiles: pallet_profiles,
         SpaceFollows: pallet_space_follows,
-        SpaceOwnership: pallet_space_ownership,
+        SpaceOwnership: pallet_ownership,
         Spaces: pallet_spaces,
     }
 );
@@ -136,7 +136,7 @@ impl pallet_space_follows::Config for Test {
     type WeightInfo = ();
 }
 
-impl pallet_space_ownership::Config for Test {
+impl pallet_ownership::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
     type CreatorStakingProvider = ();

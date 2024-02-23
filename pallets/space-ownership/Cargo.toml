@@ -1,12 +1,12 @@
 [package]
-name = 'pallet-space-ownership'
+name = 'pallet-ownership'
 version = '0.2.2'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
-description = 'Pallet to manage space ownership: transfer, accept, reject'
+description = 'Pallet to manage spaces/posts/domains ownership: transfer, accept, reject'
 keywords = ['blockchain', 'cryptocurrency', 'social-network', 'news-feed', 'marketplace']
 categories = ['cryptography::cryptocurrencies']
 

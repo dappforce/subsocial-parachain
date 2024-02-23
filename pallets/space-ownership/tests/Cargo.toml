@@ -1,5 +1,5 @@
 [package]
-name = 'pallet-space-ownership-tests'
+name = 'pallet-ownership-tests'
 version = '0.2.2'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
@@ -21,7 +21,7 @@ scale-info = { version = "2.2.0", default-features = false, features = ["derive"
 # Local dependencies
 subsocial-support = { default-features = false, path = '../../support' }
 pallet-permissions = { default-features = false, path = '../../permissions' }
-pallet-space-ownership = { default-features = false, path = '..' }
+pallet-ownership = { default-features = false, path = '..' }
 
 # Substrate dependencies
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }

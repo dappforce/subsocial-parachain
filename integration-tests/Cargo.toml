@@ -28,7 +28,7 @@ std = [
     'pallet-reactions/std',
     'pallet-roles/std',
     'pallet-space-follows/std',
-    'pallet-space-ownership/std',
+    'pallet-ownership/std',
     'pallet-spaces/std',
     'subsocial-support/std',
 ]
@@ -53,7 +53,7 @@ pallet-profiles = { path = '../pallets/profiles', default-features = false }
 pallet-reactions = { path = '../pallets/reactions', default-features = false }
 pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
-pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
+pallet-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
 subsocial-support = { path = '../pallets/support', default-features = false }
 

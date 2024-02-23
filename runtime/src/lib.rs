@@ -770,11 +770,11 @@ impl pallet_spaces::Config for Runtime {
 	type WeightInfo = pallet_spaces::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_space_ownership::Config for Runtime {
+impl pallet_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
 	type CreatorStakingProvider = CreatorStaking;
-	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_ownership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_account_follows::Config for Runtime {
@@ -906,7 +906,7 @@ construct_runtime!(
 		AccountFollows: pallet_account_follows = 72,
 		Profiles: pallet_profiles = 73,
 		SpaceFollows: pallet_space_follows = 74,
-		SpaceOwnership: pallet_space_ownership = 75,
+		SpaceOwnership: pallet_ownership = 75,
 		Spaces: pallet_spaces = 76,
 		PostFollows: pallet_post_follows = 77,
 		Posts: pallet_posts = 78,
@@ -937,7 +937,7 @@ mod benches {
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
-		[pallet_space_ownership, SpaceOwnership]
+		[pallet_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
 		[pallet_post_follows, PostFollows]
 		[pallet_posts, Posts]

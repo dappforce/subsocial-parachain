@@ -7,7 +7,7 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::traits::Zero;
 
-use pallet_space_ownership::Error as SpaceOwnershipError;
+use pallet_ownership::Error as SpaceOwnershipError;
 use pallet_spaces::Error as SpacesError;
 
 use crate::{mock::*, tests_utils::*};
