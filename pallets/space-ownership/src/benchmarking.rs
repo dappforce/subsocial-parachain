@@ -45,7 +45,7 @@ benchmarks! {
         let acc2 = account::<T::AccountId>("Acc2", 2, 0);
 
         let space = create_dummy_space::<T>(RawOrigin::Signed(acc1.clone()))?;
-        Pallet::<T>::transfer_space_ownership(
+        Pallet::<T>::transfer_ownership(
             RawOrigin::Signed(acc1.clone()).into(),
             space.id,
             acc2.clone(),
@@ -64,7 +64,7 @@ benchmarks! {
         let acc2 = account::<T::AccountId>("Acc2", 2, 0);
 
         let space = create_dummy_space::<T>(RawOrigin::Signed(acc1.clone()))?;
-        Pallet::<T>::transfer_space_ownership(
+        Pallet::<T>::transfer_ownership(
             RawOrigin::Signed(acc1.clone()).into(),
             space.id,
             acc2.clone(),

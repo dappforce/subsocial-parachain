@@ -20,7 +20,7 @@ pub(crate) fn _transfer_space_ownership(
     space_id: Option<SpaceId>,
     transfer_to: Option<AccountId>,
 ) -> DispatchResult {
-    SpaceOwnership::transfer_space_ownership(
+    SpaceOwnership::transfer_ownership(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
         space_id.unwrap_or(SPACE1),
         transfer_to.unwrap_or(ACCOUNT2),

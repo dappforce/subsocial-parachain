@@ -96,7 +96,7 @@ fn accept_pending_ownership_should_fail_when_no_pending_transfer_for_space() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _accept_default_pending_ownership(),
-            SpaceOwnershipError::<TestRuntime>::NoPendingTransferOnSpace
+            SpaceOwnershipError::<TestRuntime>::NoPendingTransfer
         );
     });
 }
@@ -108,7 +108,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_already_an_owner() {
 
         assert_noop!(
             _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None),
-            SpaceOwnershipError::<TestRuntime>::AlreadyASpaceOwner
+            SpaceOwnershipError::<TestRuntime>::AlreadyOwner
         );
     });
 }
@@ -172,7 +172,7 @@ fn reject_pending_ownership_should_fail_when_no_pending_transfer_on_space() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _reject_default_pending_ownership(),
-            SpaceOwnershipError::<TestRuntime>::NoPendingTransferOnSpace
+            SpaceOwnershipError::<TestRuntime>::NoPendingTransfer
         ); // Rejecting a transfer from ACCOUNT2
     });
 }

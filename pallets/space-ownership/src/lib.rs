@@ -9,7 +9,6 @@
 use frame_system::ensure_signed;
 use sp_std::prelude::*;
 
-use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
 use subsocial_support::{
     remove_from_bounded_vec, traits::IsAccountBlocked, ModerationError, SpaceId,
 };
@@ -45,14 +44,14 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The current space owner cannot transfer ownership to themself.
+        /// The current entity owner cannot transfer ownership to themselves.
         CannotTransferToCurrentOwner,
-        /// Account is already an owner of a space.
-        AlreadyASpaceOwner,
+        /// Account is already an owner of an entity.
+        AlreadyOwner,
         /// Cannot transfer ownership, because a space is registered as an active creator.
         ActiveCreatorCannotTransferOwnership,
-        /// There is no pending ownership transfer for a given space.
-        NoPendingTransferOnSpace,
+        /// There is no pending ownership transfer for a given entity.
+        NoPendingTransfer,
         /// Account is not allowed to accept ownership transfer.
         NotAllowedToAcceptOwnershipTransfer,
         /// Account is not allowed to reject ownership transfer.
@@ -66,18 +65,18 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceOwnershipTransferCreated {
+        OwnershipTransferCreated {
             current_owner: T::AccountId,
-            space_id: SpaceId,
+            entity: SocialEntities,
             new_owner: T::AccountId,
         },
-        SpaceOwnershipTransferAccepted {
+        OwnershipTransferAccepted {
             account: T::AccountId,
-            space_id: SpaceId,
+            entity: SocialEntities,
         },
-        SpaceOwnershipTransferRejected {
+        OwnershipTransferRejected {
             account: T::AccountId,
-            space_id: SpaceId,
+            entity: SocialEntities,
         },
     }
 
@@ -85,9 +84,9 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
         #[pallet::weight(<T as Config>::WeightInfo::transfer_space_ownership())]
-        pub fn transfer_space_ownership(
+        pub fn transfer_ownership(
             origin: OriginFor<T>,
-            space_id: SpaceId,
+            entity: SocialEntities,
             transfer_to: T::AccountId,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
@@ -105,9 +104,9 @@ pub mod pallet {
 
             PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
 
-            Self::deposit_event(Event::SpaceOwnershipTransferCreated {
+            Self::deposit_event(Event::OwnershipTransferCreated {
                 current_owner: who,
-                space_id,
+                entity,
                 new_owner: transfer_to,
             });
             Ok(())
