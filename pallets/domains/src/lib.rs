@@ -44,7 +44,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
-    use subsocial_support::{ensure_content_is_valid, remove_from_bounded_vec};
+    use subsocial_support::{ensure_content_is_valid, remove_from_bounded_vec, traits::DomainsProvider};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -210,9 +210,10 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain name length must be within the limits defined by
-        /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
+        /// This domain name length must be greater or equal the [`Config::MinDomainLength`] limit.
         DomainIsTooShort,
+        /// This domain name length must be below or equal the [`Config::MaxDomainLength`] limit.
+        DomainIsTooLong,
         /// This domain has expired.
         DomainHasExpired,
         /// Domain was not found by the domain name.
@@ -243,11 +244,6 @@ pub mod pallet {
         InsufficientBalanceToReserveDeposit,
         /// There are insufficient funds to pay for the domain and reserve the deposit on it.
         InsufficientBalanceToRegisterDomain,
-        CannotTransferToCurrentOwner,
-        AlreadyDomainOwner,
-        NoPendingTransferOnDomain,
-        NotAllowedToAcceptOwnershipTransfer,
-        NotAllowedToRejectOwnershipTransfer,
     }
 
     #[pallet::call]
@@ -447,109 +443,6 @@ pub mod pallet {
             PricesConfig::<T>::set(new_prices_config);
 
             Ok(Pays::No.into())
-        }
-
-        #[pallet::call_index(9)]
-        #[pallet::weight(
-            T::DbWeight::get().reads_writes(1, 1) +
-            Weight::from_parts(36_000_000, 0)
-        )]
-        pub fn transfer_domain_ownership(
-            origin: OriginFor<T>,
-            domain: DomainName<T>,
-            transfer_to: T::AccountId,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            ensure!(who != transfer_to, Error::<T>::CannotTransferToCurrentOwner);
-
-            let meta = Self::require_domain(domain.clone())?;
-            Self::ensure_allowed_to_update_domain(&meta, &who)?;
-
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            PendingOwnershipTransfers::<T>::insert(&domain_lc, transfer_to.clone());
-
-            Self::deposit_event(Event::DomainOwnershipTransferCreated {
-                current_owner: who,
-                domain: domain_lc,
-                new_owner: transfer_to,
-            });
-            Ok(())
-        }
-
-        #[pallet::call_index(10)]
-        #[pallet::weight(
-            T::DbWeight::get().reads_writes(1, 1) +
-            Weight::from_parts(60_000_000, 0)
-        )]
-        pub fn accept_pending_ownership_transfer(
-            origin: OriginFor<T>,
-            domain: DomainName<T>,
-        ) -> DispatchResult {
-            let new_owner = ensure_signed(origin)?;
-
-            let meta = Self::require_domain(domain.clone())?;
-            ensure!(meta.owner != new_owner, Error::<T>::AlreadyDomainOwner);
-
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let transfer_to =
-                PendingOwnershipTransfers::<T>::get(&domain_lc).ok_or(Error::<T>::NoPendingTransferOnDomain)?;
-
-            ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
-
-            Self::ensure_domains_limit_not_reached(&transfer_to)?;
-            Self::ensure_can_pay_for_domain(&new_owner, Zero::zero(), meta.domain_deposit.deposit)?;
-
-            // Here we know that the origin is eligible to become a new owner of this domain.
-            PendingOwnershipTransfers::<T>::remove(&domain_lc);
-
-            DomainsByOwner::<T>::mutate(&meta.owner, |domains| {
-                remove_from_bounded_vec(domains, domain_lc.clone())
-            });
-
-            DomainsByOwner::<T>::mutate(&new_owner, |domains| {
-                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
-            });
-
-            RegisteredDomains::<T>::mutate(&domain_lc, |stored_meta_opt| {
-                if let Some(stored_meta) = stored_meta_opt {
-                    stored_meta.owner = new_owner.clone();
-                }
-            });
-            
-            Self::deposit_event(Event::DomainOwnershipTransferAccepted {
-                account: new_owner,
-                domain: domain_lc,
-            });
-            Ok(())
-        }
-        
-        #[pallet::call_index(11)]
-        #[pallet::weight(
-            T::DbWeight::get().reads_writes(1, 1) +
-            Weight::from_parts(40_000_000, 0)
-        )]
-        pub fn reject_pending_ownership_transfer(
-            origin: OriginFor<T>,
-            domain: DomainName<T>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            let meta = Self::require_domain(domain.clone())?;
-
-            let domain_lc = Self::lower_domain_then_bound(&domain);
-            let transfer_to =
-                PendingOwnershipTransfers::<T>::get(&domain_lc).ok_or(Error::<T>::NoPendingTransferOnDomain)?;
-
-            ensure!(
-                who == transfer_to || who == meta.owner,
-                Error::<T>::NotAllowedToRejectOwnershipTransfer
-            );
-        
-            PendingOwnershipTransfers::<T>::remove(&domain_lc);
-        
-            Self::deposit_event(Event::DomainOwnershipTransferRejected { account: who, domain: domain_lc });
-            Ok(())
         }
     }
 
@@ -758,9 +651,18 @@ pub mod pallet {
             Ok(domains.len() as u32)
         }
 
-        /// Try to get domain meta by it's custom and top-level domain names.
+        /// Try to get domain meta by its custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
             Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
+        }
+
+        /// Try to get domain meta by its custom and top-level domain names.
+        /// This function pre-validates the passed argument.
+        pub fn require_domain_from_ref(domain: &[u8]) -> Result<DomainMeta<T>, DispatchError> {
+            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            let domain_lc = Self::lower_domain_then_bound(domain);
+
+            Self::require_domain(domain_lc)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -845,6 +747,40 @@ pub mod pallet {
                 domains_count < T::MaxDomainsPerAccount::get() as usize,
                 Error::<T>::TooManyDomainsPerAccount,
             );
+            Ok(())
+        }
+    }
+    
+    impl<T: Config> DomainsProvider<T::AccountId> for Pallet<T> {
+        fn ensure_allowed_to_update_domain(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
+            let meta = Self::require_domain_from_ref(domain)?;
+            Self::ensure_allowed_to_update_domain(&meta, account)
+        }
+
+        fn change_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
+            let meta = Self::require_domain_from_ref(domain)?;
+            let domain_lc = Self::lower_domain_then_bound(domain);
+            
+            Self::ensure_domains_limit_not_reached(&new_owner)?;
+            Self::ensure_can_pay_for_domain(&new_owner, Zero::zero(), meta.domain_deposit.deposit)?;
+
+            // Here we know that the origin is eligible to become a new owner of this domain.
+            PendingOwnershipTransfers::<T>::remove(&domain_lc);
+
+            DomainsByOwner::<T>::mutate(&meta.owner, |domains| {
+                remove_from_bounded_vec(domains, domain_lc.clone())
+            });
+
+            DomainsByOwner::<T>::mutate(&new_owner, |domains| {
+                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+            });
+
+            RegisteredDomains::<T>::mutate(&domain_lc, |stored_meta_opt| {
+                if let Some(stored_meta) = stored_meta_opt {
+                    stored_meta.owner = new_owner.clone();
+                }
+            });
+            
             Ok(())
         }
     }

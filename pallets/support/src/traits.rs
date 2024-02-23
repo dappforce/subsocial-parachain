@@ -5,7 +5,7 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 pub use common::{
-    CreatorStakingProvider, ProfileManager, SpaceFollowsProvider, SpacePermissionsProvider,
+    CreatorStakingProvider, DomainsProvider, ProfileManager, SpaceFollowsProvider, SpacePermissionsProvider,
     SpacesInterface, PostFollowsProvider,
 };
 pub use moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};

@@ -32,8 +32,12 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId);
 }
 
+// TODO: rename to `SpacesProvider`
 pub trait SpacesInterface<AccountId, SpaceId> {
+    
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
+    
+    fn change_space_owner(space_id: SpaceId, new_owner: AccountId) -> DispatchResult;
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
@@ -50,4 +54,10 @@ impl<AccountId> CreatorStakingProvider<AccountId> for () {
     ) -> bool {
         false
     }
+}
+
+pub trait DomainsProvider<AccountId> {
+    fn ensure_allowed_to_update_domain(account: &AccountId, domain: &[u8]) -> DispatchResult;
+    
+    fn change_domain_owner(domain: &[u8], new_owner: &AccountId) -> DispatchResult;
 }
