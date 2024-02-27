@@ -172,10 +172,6 @@ pub mod pallet {
     pub(super) type PaymentBeneficiary<T: Config> =
         StorageValue<_, T::AccountId, ValueQuery, DefaultPaymentBeneficiary<T>>;
 
-    #[pallet::storage]
-    pub type PendingOwnershipTransfers<T: Config> =
-        StorageMap<_, Blake2_128Concat, DomainName<T>, T::AccountId>;
-
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -187,19 +183,6 @@ pub mod pallet {
         NewWordsReserved { count: u32 },
         /// Added support for new TLDs (top-level domains).
         NewTldsSupported { count: u32 },
-        DomainOwnershipTransferCreated {
-            current_owner: T::AccountId,
-            domain: DomainName<T>,
-            new_owner: T::AccountId,
-        },
-        DomainOwnershipTransferAccepted {
-            account: T::AccountId,
-            domain: DomainName<T>,
-        },
-        DomainOwnershipTransferRejected {
-            account: T::AccountId,
-            domain: DomainName<T>,
-        },
     }
 
     #[pallet::error]
