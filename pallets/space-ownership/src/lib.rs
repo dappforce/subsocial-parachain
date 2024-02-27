@@ -14,6 +14,7 @@ pub use pallet::*;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod weights;
+pub mod migration;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -58,7 +59,11 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::error]

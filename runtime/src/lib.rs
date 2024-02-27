@@ -121,7 +121,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	pallet_creator_staking::migration::MigrateToV1<Runtime>,
+	(
+		pallet_creator_staking::migration::MigrateToV1<Runtime>, 
+		pallet_ownership::migration::v1::MigrateToV1<Runtime>,
+	),
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -773,7 +776,11 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type SpacesInterface = Spaces;
+	type SpacePermissionsProvider = Spaces;
 	type CreatorStakingProvider = CreatorStaking;
+	type DomainsProvider = Domains;
+	type PostsProvider = Posts;
 	type WeightInfo = pallet_ownership::weights::SubstrateWeight<Runtime>;
 }
 
