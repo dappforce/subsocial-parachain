@@ -5,7 +5,9 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 use frame_support::{log, traits::OnRuntimeUpgrade};
-use sp_runtime::{Saturating, traits::Zero};
+use sp_runtime::Saturating;
+#[cfg(feature = "try-runtime")]
+use sp_runtime::traits::Zero;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
@@ -15,12 +17,13 @@ const LOG_TARGET: &'static str = "runtime::ownership";
 
 pub mod v1 {
     use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
+
     use subsocial_support::SpaceId;
 
     use super::*;
-    
+
     #[storage_alias]
-    pub type PendingSpaceOwner<T: Config> = 
+    pub type PendingSpaceOwner<T: Config> =
         StorageMap<Pallet<T>, Twox64Concat, SpaceId, <T as frame_system::Config>::AccountId>;
 
     pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
@@ -31,34 +34,37 @@ pub mod v1 {
             let onchain_version = Pallet::<T>::on_chain_storage_version();
 
             log::info!(
-				target: LOG_TARGET,
-				"Running migration with current storage version {:?} / onchain {:?}",
-				current_version,
-				onchain_version
-			);
+                target: LOG_TARGET,
+                "Running migration with current storage version {:?} / onchain {:?}",
+                current_version,
+                onchain_version
+            );
 
             if onchain_version == 0 && current_version == 1 {
                 let mut migrated = 0u64;
-                
+
                 for (space_id, account) in PendingSpaceOwner::<T>::drain() {
-                    PendingOwnershipTransfers::<T>::insert(EntityWithOwnership::Space(space_id), account);
+                    PendingOwnershipTransfers::<T>::insert(
+                        EntityWithOwnership::Space(space_id),
+                        account,
+                    );
                     migrated.saturating_inc();
                 }
 
                 current_version.put::<Pallet<T>>();
 
                 log::info!(
-					target: LOG_TARGET,
-					"Upgraded {} records, storage to version {:?}",
-					migrated,
-					current_version
-				);
+                    target: LOG_TARGET,
+                    "Upgraded {} records, storage to version {:?}",
+                    migrated,
+                    current_version
+                );
                 T::DbWeight::get().reads_writes(migrated + 1, migrated + 1)
             } else {
                 log::info!(
-					target: LOG_TARGET,
-					"Migration did not execute. This probably should be removed"
-				);
+                    target: LOG_TARGET,
+                    "Migration did not execute. This probably should be removed"
+                );
                 T::DbWeight::get().reads(1)
             }
         }
@@ -79,11 +85,11 @@ pub mod v1 {
             );
             let post_count = PendingOwnershipTransfers::<T>::iter().count() as u32;
             let old_storage_count = PendingSpaceOwner::<T>::iter().count();
-            
+
             ensure!(
-				prev_count == post_count,
-				"the records count before and after the migration should be the same"
-			);
+                prev_count == post_count,
+                "the records count before and after the migration should be the same"
+            );
             ensure!(old_storage_count.is_zero(), "all records should be migrated");
 
             ensure!(Pallet::<T>::on_chain_storage_version() == 1, "wrong storage version");
@@ -92,4 +98,3 @@ pub mod v1 {
         }
     }
 }
-
