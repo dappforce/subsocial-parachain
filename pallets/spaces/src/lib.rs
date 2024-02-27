@@ -432,7 +432,7 @@ pub mod pallet {
             Ok(space.owner)
         }
         
-        fn change_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
+        fn update_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
             Self::ensure_space_limit_not_reached(&new_owner)?;
             let space = Pallet::<T>::require_space(space_id)?;
 

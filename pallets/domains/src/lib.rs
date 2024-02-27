@@ -750,22 +750,31 @@ pub mod pallet {
             Ok(())
         }
     }
-    
+
     impl<T: Config> DomainsProvider<T::AccountId> for Pallet<T> {
+        type DomainLength = T::MaxDomainLength;
+        
+        fn get_domain_owner(domain: &[u8]) -> Result<T::AccountId, DispatchError> {
+            let meta = Self::require_domain_from_ref(domain)?;
+            Ok(meta.owner)
+        }
+        
         fn ensure_allowed_to_update_domain(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
             let meta = Self::require_domain_from_ref(domain)?;
             Self::ensure_allowed_to_update_domain(&meta, account)
         }
 
-        fn change_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
+        fn update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
             let meta = Self::require_domain_from_ref(domain)?;
             let domain_lc = Self::lower_domain_then_bound(domain);
-            
+
             Self::ensure_domains_limit_not_reached(&new_owner)?;
             Self::ensure_can_pay_for_domain(&new_owner, Zero::zero(), meta.domain_deposit.deposit)?;
-
-            // Here we know that the origin is eligible to become a new owner of this domain.
-            PendingOwnershipTransfers::<T>::remove(&domain_lc);
+            
+            if !meta.domain_deposit.deposit.is_zero() {
+                T::Currency::reserve(&new_owner, meta.domain_deposit.deposit)?;
+                T::Currency::unreserve(&meta.domain_deposit.depositor, meta.domain_deposit.deposit);
+            }
 
             DomainsByOwner::<T>::mutate(&meta.owner, |domains| {
                 remove_from_bounded_vec(domains, domain_lc.clone())
@@ -780,7 +789,7 @@ pub mod pallet {
                     stored_meta.owner = new_owner.clone();
                 }
             });
-            
+
             Ok(())
         }
     }

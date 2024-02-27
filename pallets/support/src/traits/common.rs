@@ -37,7 +37,7 @@ pub trait SpacesInterface<AccountId, SpaceId> {
     
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
     
-    fn change_space_owner(space_id: SpaceId, new_owner: AccountId) -> DispatchResult;
+    fn update_space_owner(space_id: SpaceId, new_owner: AccountId) -> DispatchResult;
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
@@ -57,7 +57,19 @@ impl<AccountId> CreatorStakingProvider<AccountId> for () {
 }
 
 pub trait DomainsProvider<AccountId> {
+    type DomainLength: frame_support::traits::Get<u32>;
+    
+    fn get_domain_owner(domain: &[u8]) -> Result<AccountId, DispatchError>;
+    
     fn ensure_allowed_to_update_domain(account: &AccountId, domain: &[u8]) -> DispatchResult;
     
-    fn change_domain_owner(domain: &[u8], new_owner: &AccountId) -> DispatchResult;
+    fn update_domain_owner(domain: &[u8], new_owner: &AccountId) -> DispatchResult;
+}
+
+pub trait PostsProvider<AccountId> {
+    fn get_post_owner(post_id: PostId) -> Result<AccountId, DispatchError>;
+    
+    fn ensure_allowed_to_update_post(account: &AccountId, post_id: PostId) -> DispatchResult;
+    
+    fn update_post_owner(post_id: PostId, new_owner: &AccountId) -> DispatchResult;
 }

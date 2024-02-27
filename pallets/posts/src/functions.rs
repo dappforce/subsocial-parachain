@@ -8,6 +8,7 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::Saturating;
 
 use subsocial_support::{remove_from_vec, SpaceId};
+use subsocial_support::traits::PostsProvider;
 
 use super::*;
 
@@ -450,6 +451,29 @@ impl<T: Config> Pallet<T> {
             Self::ensure_can_reply_to_parent(parent_id)?;
         }
 
+        Ok(())
+    }
+}
+
+impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
+    fn get_post_owner(post_id: PostId) -> Result<T::AccountId, DispatchError> {
+        let post = Self::require_post(post_id)?;
+        Ok(post.owner)
+    }
+
+    fn ensure_allowed_to_update_post(account: &T::AccountId, post_id: PostId) -> DispatchResult {
+        let post = Self::require_post(post_id)?;
+        let space = post.get_space()?;
+        Self::ensure_account_can_update_post(account, &post, &space)
+    }
+
+    fn update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        
+        PostById::<T>::mutate(post_id, |stored_post_opt| {
+            if let Some(stored_post) = stored_post_opt {
+                stored_post.owner = new_owner.clone();
+            }
+        });
+        
         Ok(())
     }
 }
