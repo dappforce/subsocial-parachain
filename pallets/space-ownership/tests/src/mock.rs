@@ -30,12 +30,16 @@ frame_support::construct_runtime!(
         SpaceFollows: pallet_space_follows,
         SpaceOwnership: pallet_ownership,
         Spaces: pallet_spaces,
+        Domains: pallet_domains,
+        Posts: pallet_posts,
     }
 );
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
 pub(super) type BlockNumber = u64;
+
+pub(crate) const DOMAIN_DEPOSIT: Balance = 10;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -136,9 +140,44 @@ impl pallet_space_follows::Config for Test {
     type WeightInfo = ();
 }
 
+impl pallet_posts::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type MaxCommentDepth = ConstU32<10>;
+    type IsPostBlocked = ();
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const BaseDomainDeposit: Balance = DOMAIN_DEPOSIT;
+    pub const OuterValueByteDeposit: Balance = 5;
+    pub const RegistrationPeriodLimit: BlockNumber = 5;
+    pub const InitialPaymentBeneficiary: AccountId = 1;
+    pub InitialPricesConfig: pallet_domains::types::PricesConfigVec<Test> = Vec::new();
+}
+
+impl pallet_domains::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type MinDomainLength = ConstU32<1>;
+    type MaxDomainLength = ConstU32<64>;
+    type MaxDomainsPerAccount = ConstU32<5>;
+    type DomainsInsertLimit = ConstU32<5>;
+    type RegistrationPeriodLimit = RegistrationPeriodLimit;
+    type MaxOuterValueLength = ConstU32<64>;
+    type BaseDomainDeposit = BaseDomainDeposit;
+    type OuterValueByteDeposit = OuterValueByteDeposit;
+    type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+    type InitialPricesConfig = InitialPricesConfig;
+    type WeightInfo = ();
+}
+
 impl pallet_ownership::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type SpacesInterface = Spaces;
+    type SpacePermissionsProvider = Spaces;
     type CreatorStakingProvider = ();
+    type DomainsProvider = Domains;
+    type PostsProvider = Posts;
     type WeightInfo = ();
 }

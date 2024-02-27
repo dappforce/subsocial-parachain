@@ -3557,13 +3557,13 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
  "pallet-reactions",
  "pallet-roles",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -6077,6 +6077,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ownership"
+version = "0.2.2"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-permissions",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-ownership-tests"
+version = "0.2.2"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "pallet-domains",
+ "pallet-ownership",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-permissions"
 version = "0.2.2"
 dependencies = [
@@ -6156,12 +6197,12 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
  "pallet-roles",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -6457,44 +6498,6 @@ dependencies = [
  "pallet-profiles",
  "pallet-roles",
  "pallet-space-follows",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership"
-version = "0.2.2"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-spaces",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership-tests"
-version = "0.2.2"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-permissions",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -11755,6 +11758,7 @@ dependencies = [
  "pallet-free-proxy",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-post-follows",
  "pallet-posts",
@@ -11766,7 +11770,6 @@ dependencies = [
  "pallet-roles",
  "pallet-session",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-sudo",
  "pallet-timestamp",
