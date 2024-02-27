@@ -3557,6 +3557,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-domains",
  "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",

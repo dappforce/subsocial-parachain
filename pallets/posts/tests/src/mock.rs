@@ -5,12 +5,11 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::Everything};
+use frame_support::dispatch::DispatchResult;
 use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
+use sp_runtime::{DispatchError, testing::Header, traits::{BlakeTwo256, IdentityLookup}};
 use sp_std::convert::{TryFrom, TryInto};
+use subsocial_support::traits::DomainsProvider;
 
 use crate::tests_utils::*;
 
@@ -32,7 +31,7 @@ frame_support::construct_runtime!(
         SpaceFollows: pallet_space_follows,
         Posts: pallet_posts,
         Spaces: pallet_spaces,
-        SpaceOwnership: pallet_ownership,
+        Ownership: pallet_ownership,
     }
 );
 
@@ -150,9 +149,33 @@ impl pallet_space_follows::Config for Test {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const MaxDomainLength: u32 = 64;
+}
+pub struct MockEmptyDomainsProvider;
+impl DomainsProvider<AccountId> for MockEmptyDomainsProvider {
+    type DomainLength = MaxDomainLength;
+
+    fn get_domain_owner(_domain: &[u8]) -> Result<AccountId, DispatchError> {
+        Ok(ACCOUNT1)
+    }
+
+    fn ensure_allowed_to_update_domain(_account: &AccountId, _domain: &[u8]) -> DispatchResult {
+        Ok(())
+    }
+
+    fn update_domain_owner(_domain: &[u8], _new_owner: &AccountId) -> DispatchResult {
+        Ok(())
+    }
+}
+
 impl pallet_ownership::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type SpacesInterface = Spaces;
+    type SpacePermissionsProvider = Spaces;
     type CreatorStakingProvider = ();
+    type DomainsProvider = MockEmptyDomainsProvider;
+    type PostsProvider = Posts;
     type WeightInfo = ();
 }

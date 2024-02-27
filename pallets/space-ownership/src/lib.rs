@@ -70,8 +70,6 @@ pub mod pallet {
     pub enum Error<T> {
         /// The current entity owner cannot transfer ownership to themselves.
         CannotTransferToCurrentOwner,
-        /// Account is already an owner of an entity.
-        AlreadyOwner,
         /// Cannot transfer ownership, because a space is registered as an active creator.
         ActiveCreatorCannotTransferOwnership,
         /// There is no pending ownership transfer for a given entity.
