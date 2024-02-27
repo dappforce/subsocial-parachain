@@ -6098,6 +6098,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
+ "lazy_static",
+ "mockall",
  "pallet-balances",
  "pallet-domains",
  "pallet-ownership",
