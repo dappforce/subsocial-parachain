@@ -19,6 +19,7 @@ std = [
     'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
+    'sp-runtime/std',
     'sp-std/std',
     'pallet-permissions/std',
     'subsocial-support/std',
@@ -37,4 +38,5 @@ subsocial-support = { default-features = false, path = '../support' }
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
