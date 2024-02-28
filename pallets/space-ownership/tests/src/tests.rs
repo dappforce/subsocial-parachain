@@ -89,7 +89,7 @@ fn transfer_ownership_should_not_allow_transfer_to_current_owner() {
 }
 
 #[test]
-fn transfer_ownership_should_not_allow_active_creator_to_transfer_ownership() {
+fn transfer_ownership_should_not_allow_active_creator_to_transfer_space_ownership() {
     ExtBuilder::build_with_all_enitities().execute_with(|| {
         let _m = use_static_mock();
         let creator_staking_ctx = MockCreatorStaking::is_creator_active_context();
