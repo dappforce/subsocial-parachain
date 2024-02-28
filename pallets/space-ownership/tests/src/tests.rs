@@ -165,7 +165,7 @@ fn reject_pending_ownership_should_fail_if_no_pending_transfer() {
 }
 
 #[test]
-fn reject_pending_ownership_should_not_allow_non_owner_to_reject() {
+fn reject_pending_ownership_should_not_allow_ineligible_account_to_reject() {
     ExtBuilder::build_with_pending_transfers().execute_with(|| {
         // Mock rejecting ownership transfer for a space entity by a non-owner
         assert_noop!(
@@ -176,6 +176,7 @@ fn reject_pending_ownership_should_not_allow_non_owner_to_reject() {
             OwnershipError::<Test>::NotAllowedToRejectOwnershipTransfer
         );
 
+        // Mock rejecting ownership transfer for a space entity by the owner
         assert_ok!(
             Ownership::reject_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT1),
