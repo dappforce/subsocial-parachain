@@ -56,6 +56,9 @@ pub mod pallet {
         
         type PostsProvider: PostsProvider<Self::AccountId>;
 
+        #[cfg(feature = "runtime-benchmarks")]
+        type Currency: frame_support::traits::Currency<Self::AccountId>;
+
         type WeightInfo: WeightInfo;
     }
 
@@ -106,7 +109,13 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(<T as Config>::WeightInfo::transfer_space_ownership())]
+        #[pallet::weight(
+            match entity {
+                EntityWithOwnership::Space(_) => T::WeightInfo::transfer_space_ownership(),
+                EntityWithOwnership::Post(_) => T::WeightInfo::transfer_post_ownership(),
+                EntityWithOwnership::Domain(_) => T::WeightInfo::transfer_domain_ownership(),
+            }
+        )]
         pub fn transfer_ownership(
             origin: OriginFor<T>,
             entity: EntityWithOwnership<T>,
@@ -144,7 +153,13 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(<T as Config>::WeightInfo::accept_pending_ownership())]
+        #[pallet::weight(
+            match entity {
+                EntityWithOwnership::Space(_) => T::WeightInfo::accept_pending_space_ownership_transfer(),
+                EntityWithOwnership::Post(_) => T::WeightInfo::accept_pending_post_ownership_transfer(),
+                EntityWithOwnership::Domain(_) => T::WeightInfo::accept_pending_domain_ownership_transfer(),
+            }
+        )]
         pub fn accept_pending_ownership(origin: OriginFor<T>, entity: EntityWithOwnership<T>) -> DispatchResult {
             let new_owner = ensure_signed(origin)?;
 
