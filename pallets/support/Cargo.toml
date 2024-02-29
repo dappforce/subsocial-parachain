@@ -12,11 +12,13 @@ categories = ["cryptography::cryptocurrencies"]
 
 [features]
 default = ["std"]
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
     "serde/std",
     "strum/std",
     "codec/std",
     "scale-info/std",
+    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "pallet-timestamp/std",
@@ -31,6 +33,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }

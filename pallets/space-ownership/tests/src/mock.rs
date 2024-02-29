@@ -210,5 +210,6 @@ impl pallet_ownership::Config for Test {
     type CreatorStakingProvider = MockCreatorStaking;
     type DomainsProvider = Domains;
     type PostsProvider = Posts;
+    type Currency = Balances;
     type WeightInfo = ();
 }

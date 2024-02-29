@@ -6084,6 +6084,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "pallet-permissions",
  "parity-scale-codec",
  "scale-info",
@@ -6197,6 +6198,7 @@ dependencies = [
 name = "pallet-posts-tests"
 version = "0.2.2"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -11811,6 +11813,7 @@ dependencies = [
 name = "subsocial-support"
 version = "0.2.2"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-timestamp",

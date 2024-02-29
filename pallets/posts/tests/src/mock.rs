@@ -167,6 +167,11 @@ impl DomainsProvider<AccountId> for MockEmptyDomainsProvider {
     fn update_domain_owner(_domain: &[u8], _new_owner: &AccountId) -> DispatchResult {
         Ok(())
     }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn register_domain(_owner: &AccountId, _domain: &[u8]) -> Result<Vec<u8>, DispatchError> {
+        Ok(Vec::new())
+    }
 }
 
 impl pallet_ownership::Config for Test {
@@ -177,5 +182,7 @@ impl pallet_ownership::Config for Test {
     type CreatorStakingProvider = ();
     type DomainsProvider = MockEmptyDomainsProvider;
     type PostsProvider = Posts;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Currency = Balances;
     type WeightInfo = ();
 }

@@ -778,6 +778,7 @@ impl pallet_ownership::Config for Runtime {
 	type CreatorStakingProvider = CreatorStaking;
 	type DomainsProvider = Domains;
 	type PostsProvider = Posts;
+	type Currency = Balances;
 	type WeightInfo = pallet_ownership::weights::SubstrateWeight<Runtime>;
 }
 

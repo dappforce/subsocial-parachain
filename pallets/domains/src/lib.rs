@@ -775,5 +775,21 @@ pub mod pallet {
 
             Ok(())
         }
+
+        #[cfg(feature = "runtime-benchmarks")]
+        fn register_domain(owner: &T::AccountId, domain: &[u8]) -> Result<Vec<u8>, DispatchError> {
+            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            let domain_lc = Self::lower_domain_then_bound(domain);
+            
+            Self::do_register_domain(
+                owner.clone(),
+                owner.clone(),
+                domain_lc.clone(),
+                Content::None,
+                T::RegistrationPeriodLimit::get(),
+            )?;
+            
+            Ok(domain_lc.into())
+        }
     }
 }
