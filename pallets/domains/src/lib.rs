@@ -44,7 +44,7 @@ pub mod pallet {
     use sp_runtime::traits::{Saturating, StaticLookup, Zero};
     use sp_std::{cmp::Ordering, convert::TryInto, vec::Vec};
 
-    use subsocial_support::ensure_content_is_valid;
+    use subsocial_support::{ensure_content_is_valid, remove_from_bounded_vec, traits::DomainsProvider};
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -193,9 +193,10 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain name length must be within the limits defined by
-        /// [`Config::MinDomainLength`] and [`Config::MaxDomainLength`] characters, inclusive.
+        /// This domain name length must be greater or equal the [`Config::MinDomainLength`] limit.
         DomainIsTooShort,
+        /// This domain name length must be below or equal the [`Config::MaxDomainLength`] limit.
+        DomainIsTooLong,
         /// This domain has expired.
         DomainHasExpired,
         /// Domain was not found by the domain name.
@@ -468,11 +469,7 @@ pub mod pallet {
                 Error::<T>::DomainAlreadyOwned,
             );
 
-            let recipient_domains_count = Self::domains_by_owner(&recipient).len();
-            ensure!(
-                recipient_domains_count < T::MaxDomainsPerAccount::get() as usize,
-                Error::<T>::TooManyDomainsPerAccount,
-            );
+            Self::ensure_domains_limit_not_reached(&recipient)?;
 
             let deposit_info: DomainDeposit<T::AccountId, BalanceOf<T>> =
                 (caller.clone(), T::BaseDomainDeposit::get()).into();
@@ -637,9 +634,18 @@ pub mod pallet {
             Ok(domains.len() as u32)
         }
 
-        /// Try to get domain meta by it's custom and top-level domain names.
+        /// Try to get domain meta by its custom and top-level domain names.
         pub fn require_domain(domain: DomainName<T>) -> Result<DomainMeta<T>, DispatchError> {
             Ok(Self::registered_domain(domain).ok_or(Error::<T>::DomainNotFound)?)
+        }
+
+        /// Try to get domain meta by its custom and top-level domain names.
+        /// This function pre-validates the passed argument.
+        pub fn require_domain_from_ref(domain: &[u8]) -> Result<DomainMeta<T>, DispatchError> {
+            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            let domain_lc = Self::lower_domain_then_bound(domain);
+
+            Self::require_domain(domain_lc)
         }
 
         /// Check that the domain is not expired and [sender] is the current owner.
@@ -716,6 +722,74 @@ pub mod pallet {
             T::Currency::ensure_can_withdraw(
                 &owner, price, WithdrawReasons::TRANSFER, owner_balance.saturating_sub(total_price)
             )
+        }
+
+        fn ensure_domains_limit_not_reached(account: &T::AccountId) -> DispatchResult {
+            let domains_count = Self::domains_by_owner(account).len();
+            ensure!(
+                domains_count < T::MaxDomainsPerAccount::get() as usize,
+                Error::<T>::TooManyDomainsPerAccount,
+            );
+            Ok(())
+        }
+    }
+
+    impl<T: Config> DomainsProvider<T::AccountId> for Pallet<T> {
+        type DomainLength = T::MaxDomainLength;
+        
+        fn get_domain_owner(domain: &[u8]) -> Result<T::AccountId, DispatchError> {
+            let meta = Self::require_domain_from_ref(domain)?;
+            Ok(meta.owner)
+        }
+        
+        fn ensure_allowed_to_update_domain(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
+            let meta = Self::require_domain_from_ref(domain)?;
+            Self::ensure_allowed_to_update_domain(&meta, account)
+        }
+
+        fn update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
+            let meta = Self::require_domain_from_ref(domain)?;
+            let domain_lc = Self::lower_domain_then_bound(domain);
+
+            Self::ensure_domains_limit_not_reached(&new_owner)?;
+            Self::ensure_can_pay_for_domain(&new_owner, Zero::zero(), meta.domain_deposit.deposit)?;
+            
+            if !meta.domain_deposit.deposit.is_zero() {
+                T::Currency::reserve(&new_owner, meta.domain_deposit.deposit)?;
+                T::Currency::unreserve(&meta.domain_deposit.depositor, meta.domain_deposit.deposit);
+            }
+
+            DomainsByOwner::<T>::mutate(&meta.owner, |domains| {
+                remove_from_bounded_vec(domains, domain_lc.clone())
+            });
+
+            DomainsByOwner::<T>::mutate(&new_owner, |domains| {
+                domains.try_push(domain_lc.clone()).expect("qed; too many domains per account")
+            });
+
+            RegisteredDomains::<T>::mutate(&domain_lc, |stored_meta_opt| {
+                if let Some(stored_meta) = stored_meta_opt {
+                    stored_meta.owner = new_owner.clone();
+                }
+            });
+
+            Ok(())
+        }
+
+        #[cfg(feature = "runtime-benchmarks")]
+        fn register_domain(owner: &T::AccountId, domain: &[u8]) -> Result<Vec<u8>, DispatchError> {
+            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            let domain_lc = Self::lower_domain_then_bound(domain);
+            
+            Self::do_register_domain(
+                owner.clone(),
+                owner.clone(),
+                domain_lc.clone(),
+                Content::None,
+                T::RegistrationPeriodLimit::get(),
+            )?;
+            
+            Ok(domain_lc.into())
         }
     }
 }

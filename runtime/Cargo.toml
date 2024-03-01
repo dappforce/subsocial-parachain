@@ -1,6 +1,6 @@
 [package]
 name = "subsocial-parachain-runtime"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["DappForce <dappforce@pm.me>"]
 edition = "2021"
 license = "GPL-3.0-only"
@@ -36,7 +36,7 @@ pallet-reactions = { path = '../pallets/reactions', default-features = false }
 pallet-resource-discussions = { path = '../pallets/resource-discussions', default-features = false }
 pallet-roles = { path = '../pallets/roles', default-features = false }
 pallet-space-follows = { path = '../pallets/space-follows', default-features = false }
-pallet-space-ownership = { path = '../pallets/space-ownership', default-features = false }
+pallet-ownership = { path = '../pallets/space-ownership', default-features = false }
 pallet-spaces = { path = '../pallets/spaces', default-features = false }
 subsocial-support = { path = '../pallets/support', default-features = false }
 pallet-free-proxy = { path = "../pallets/free-proxy", default-features = false }
@@ -102,6 +102,7 @@ parachain-info = { git = "https://github.com/paritytech/cumulus", default-featur
 # Custom Runtime API
 pallet-creator-staking-rpc-runtime-api = { path = "../pallets/creator-staking/rpc/runtime-api", default-features = false }
 pallet-domains-rpc-runtime-api = { path = "../pallets/domains/rpc/runtime-api", default-features = false }
+pallet-posts-rpc-runtime-api = { path = "../pallets/posts/rpc/runtime-api", default-features = false }
 
 [features]
 default = [
@@ -170,7 +171,7 @@ std = [
 	"pallet-resource-discussions/std",
 	"pallet-roles/std",
 	"pallet-space-follows/std",
-	"pallet-space-ownership/std",
+	"pallet-ownership/std",
 	"pallet-spaces/std",
 	"subsocial-support/std",
 	"pallet-free-proxy/std",
@@ -178,6 +179,7 @@ std = [
 	#---------------
 	"pallet-creator-staking-rpc-runtime-api/std",
 	"pallet-domains-rpc-runtime-api/std",
+	"pallet-posts-rpc-runtime-api/std",
 ]
 
 runtime-benchmarks = [
@@ -206,7 +208,7 @@ runtime-benchmarks = [
 	"pallet-resource-discussions/runtime-benchmarks",
 	"pallet-roles/runtime-benchmarks",
 	"pallet-space-follows/runtime-benchmarks",
-	"pallet-space-ownership/runtime-benchmarks",
+	"pallet-ownership/runtime-benchmarks",
 	"pallet-spaces/runtime-benchmarks",
 	"pallet-post-follows/runtime-benchmarks",
 	"pallet-posts/runtime-benchmarks",
@@ -253,7 +255,7 @@ try-runtime = [
 	"pallet-resource-discussions/try-runtime",
 	"pallet-roles/try-runtime",
 	"pallet-space-follows/try-runtime",
-	"pallet-space-ownership/try-runtime",
+	"pallet-ownership/try-runtime",
 	"pallet-spaces/try-runtime",
 	"pallet-evm-addresses/try-runtime",
 ]

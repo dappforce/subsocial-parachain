@@ -1,6 +1,6 @@
 [package]
-name = 'pallet-space-ownership-tests'
-version = '0.2.1'
+name = 'pallet-ownership-tests'
+version = '0.2.2'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
@@ -21,7 +21,7 @@ scale-info = { version = "2.2.0", default-features = false, features = ["derive"
 # Local dependencies
 subsocial-support = { default-features = false, path = '../../support' }
 pallet-permissions = { default-features = false, path = '../../permissions' }
-pallet-space-ownership = { default-features = false, path = '..' }
+pallet-ownership = { default-features = false, path = '..' }
 
 # Substrate dependencies
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
@@ -31,11 +31,16 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkad
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 
 [dev-dependencies]
+mockall = '0.11.3'
+lazy_static = '1.4.0'
+
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }
-pallet-roles = { default-features = false, path = '../../roles' }
+pallet-domains = { default-features = false, path = '../../domains' }
+pallet-posts = { default-features = false, path = '../../posts' }
 pallet-profiles = { default-features = false, path = '../../profiles' }
+pallet-roles = { default-features = false, path = '../../roles' }
 pallet-spaces = { default-features = false, path = '../../spaces' }
 pallet-space-follows = { default-features = false, path = '../../space-follows' }
 
@@ -51,8 +56,8 @@ std = [
     'sp-std/std',
     'pallet-permissions/std',
     'pallet-balances/std',
+    'pallet-profiles/std',
     'pallet-roles/std',
     'pallet-space-follows/std',
-    'pallet-profiles/std',
 ]
 try-runtime = ["frame-support/try-runtime"]

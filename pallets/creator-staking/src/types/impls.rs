@@ -36,6 +36,10 @@ impl<Balance, MaxUnbondingChunks> BackerLocks<Balance, MaxUnbondingChunks>
     pub fn is_empty(&self) -> bool {
         self.total_locked.is_zero() && self.unbonding_info.is_empty()
     }
+
+    pub fn total_staked(&self) -> Balance {
+        self.total_locked.saturating_sub(self.unbonding_info.sum())
+    }
 }
 
 impl<Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen> EraStake<Balance> {
@@ -53,6 +57,7 @@ impl<Balance, MaxEraStakeItems> Default for StakesInfo<Balance, MaxEraStakeItems
     fn default() -> Self {
         Self {
             stakes: BoundedVec::<EraStake<Balance>, MaxEraStakeItems>::default(),
+            staked: Zero::zero(),
         }
     }
 }
@@ -68,6 +73,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     }
 
     /// number of `EraStake` chunks
+    #[cfg(test)]
     pub(crate) fn len(&self) -> u32 {
         self.stakes.len() as u32
     }
@@ -76,6 +82,7 @@ impl<Balance, MaxEraStakeItems> StakesInfo<Balance, MaxEraStakeItems>
     pub(crate) fn clone(&self) -> Self {
         Self {
             stakes: self.stakes.clone(),
+            staked: self.staked,
         }
     }
 

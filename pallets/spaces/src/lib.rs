@@ -431,6 +431,27 @@ pub mod pallet {
             let space = Pallet::<T>::require_space(space_id)?;
             Ok(space.owner)
         }
+        
+        fn update_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
+            Self::ensure_space_limit_not_reached(&new_owner)?;
+            let space = Pallet::<T>::require_space(space_id)?;
+
+            // TODO: reuse copy-pasted parts of code
+            SpaceIdsByOwner::<T>::mutate(&space.owner, |ids| {
+                remove_from_bounded_vec(ids, space_id)
+            });
+
+            SpaceIdsByOwner::<T>::mutate(&new_owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
+            
+            SpaceById::<T>::mutate(space_id, |stored_space_opt| {
+                if let Some(stored_space) = stored_space_opt {
+                    stored_space.owner = new_owner;
+                }
+            });
+            Ok(())
+        }
 
         fn create_space(owner: &T::AccountId, content: Content) -> Result<SpaceId, DispatchError> {
             Self::do_create_space(owner, content, None)

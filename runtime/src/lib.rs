@@ -41,11 +41,13 @@ use frame_system::{
 	EnsureRoot, EnsureWithSuccess,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber};
+pub use sp_runtime::{MultiAddress, Perbill, Percent, Permill, FixedI64, FixedPointNumber, DispatchResult};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use pallet_creator_staking::{CreatorId, EraIndex};
 use pallet_domains::types::PricesConfigVec;
+
+use subsocial_support::{Content, PostId, SpaceId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -118,7 +120,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(),
+	pallet_ownership::migration::v1::MigrateToV1<Runtime>,
 >;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -768,11 +770,16 @@ impl pallet_spaces::Config for Runtime {
 	type WeightInfo = pallet_spaces::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_space_ownership::Config for Runtime {
+impl pallet_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type SpacesInterface = Spaces;
+	type SpacePermissionsProvider = Spaces;
 	type CreatorStakingProvider = CreatorStaking;
-	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
+	type DomainsProvider = Domains;
+	type PostsProvider = Posts;
+	type Currency = Balances;
+	type WeightInfo = pallet_ownership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_account_follows::Config for Runtime {
@@ -814,14 +821,13 @@ parameter_types! {
 	pub const UnbondingPeriodInEras: EraIndex = 2;
 
 	pub const CreatorStakingPalletId: PalletId = PalletId(*b"df/crtst");
-	pub const RegistrationDeposit: Balance = 1000 * UNIT;
-	pub const MinimumStakingAmount: Balance = 100 * UNIT;
-	pub const MinimumRemainingAmount: Balance = 10 * UNIT;
+	pub const CreatorRegistrationDeposit: Balance = 10 * UNIT;
+	pub const MinimumTotalStake: Balance = 2000 * UNIT;
+	pub const MinimumRemainingFreeBalance: Balance = 10 * UNIT;
 
 	pub const InitialRewardPerBlock: Balance = 6 * UNIT;
 	pub const BlocksPerYear: BlockNumber = 365 * DAYS;
-	pub TreasuryAccount: AccountId = pallet_sudo::Pallet::<Runtime>::key()
-		.unwrap_or(CreatorStakingPalletId::get().into_account_truncating());
+	pub TreasuryAccount: AccountId = pallet_treasury::Pallet::<Runtime>::account_id();
 }
 
 impl pallet_creator_staking::Config for Runtime {
@@ -831,9 +837,9 @@ impl pallet_creator_staking::Config for Runtime {
 	type Currency = Balances;
 	type SpacesInterface = Spaces;
 	type SpacePermissionsProvider = Spaces;
-	type CreatorRegistrationDeposit = RegistrationDeposit;
-	type MinimumStake = MinimumStakingAmount;
-	type MinimumRemainingFreeBalance = MinimumRemainingAmount;
+	type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
+	type MinimumTotalStake = MinimumTotalStake;
+	type MinimumRemainingFreeBalance = MinimumRemainingFreeBalance;
 	type MaxNumberOfBackersPerCreator = ConstU32<8000>;
 	type MaxEraStakeItems = ConstU32<10>;
 	type StakeExpirationInEras = StakeExpirationInEras;
@@ -905,7 +911,7 @@ construct_runtime!(
 		AccountFollows: pallet_account_follows = 72,
 		Profiles: pallet_profiles = 73,
 		SpaceFollows: pallet_space_follows = 74,
-		SpaceOwnership: pallet_space_ownership = 75,
+		SpaceOwnership: pallet_ownership = 75,
 		Spaces: pallet_spaces = 76,
 		PostFollows: pallet_post_follows = 77,
 		Posts: pallet_posts = 78,
@@ -936,7 +942,7 @@ mod benches {
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
-		[pallet_space_ownership, SpaceOwnership]
+		[pallet_ownership, SpaceOwnership]
 		[pallet_spaces, Spaces]
 		[pallet_post_follows, PostFollows]
 		[pallet_posts, Posts]
@@ -1119,6 +1125,25 @@ impl_runtime_apis! {
 	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
 		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
 			Domains::calculate_price(&subdomain)
+		}
+	}
+
+	impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
+		fn can_create_post(
+			account: AccountId,
+			space_id: SpaceId,
+			content_opt: Option<Content>,
+		) -> DispatchResult {
+			Posts::can_create_regular_post(account, space_id, content_opt)
+		}
+
+		fn can_create_comment(
+			account: AccountId,
+			root_post_id: PostId,
+			parent_id_opt: Option<PostId>,
+			content_opt: Option<Content>
+		) -> DispatchResult {
+			Posts::can_create_comment(account, root_post_id, parent_id_opt, content_opt)
 		}
 	}
 

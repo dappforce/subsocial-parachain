@@ -3552,18 +3552,19 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-domains",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
  "pallet-reactions",
  "pallet-roles",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -5342,7 +5343,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-follows"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5593,7 +5594,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5618,7 +5619,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking-rpc"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "jsonrpsee",
  "pallet-creator-staking",
@@ -5633,7 +5634,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-creator-staking-rpc-runtime-api"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "pallet-creator-staking",
  "parity-scale-codec",
@@ -5662,7 +5663,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5680,7 +5681,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains-rpc"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "jsonrpsee",
  "pallet-domains-rpc-runtime-api",
@@ -5694,7 +5695,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-domains-rpc-runtime-api"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -5758,7 +5759,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-energy"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5776,7 +5777,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-addresses"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5815,7 +5816,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-free-proxy"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6077,8 +6078,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ownership"
+version = "0.2.2"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-permissions",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-ownership-tests"
+version = "0.2.2"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "lazy_static",
+ "mockall",
+ "pallet-balances",
+ "pallet-domains",
+ "pallet-ownership",
+ "pallet-permissions",
+ "pallet-posts",
+ "pallet-profiles",
+ "pallet-roles",
+ "pallet-space-follows",
+ "pallet-spaces",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "subsocial-support",
+]
+
+[[package]]
 name = "pallet-permissions"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6092,7 +6137,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-post-follows"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6107,7 +6152,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-posts"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6125,18 +6170,44 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-posts-tests"
-version = "0.2.1"
+name = "pallet-posts-rpc"
+version = "0.2.2"
 dependencies = [
+ "jsonrpsee",
+ "pallet-posts-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-posts-rpc-runtime-api"
+version = "0.2.2"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "subsocial-support",
+]
+
+[[package]]
+name = "pallet-posts-tests"
+version = "0.2.2"
+dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",
  "pallet-profiles",
  "pallet-roles",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -6167,7 +6238,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-profiles"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6219,7 +6290,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-reactions"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6238,7 +6309,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-reactions-tests"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6296,7 +6367,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-resource-discussions"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6319,7 +6390,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-roles"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6408,7 +6479,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-follows"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6422,7 +6493,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-space-follows-tests"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6444,46 +6515,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-space-ownership"
-version = "0.2.1"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-spaces",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
-name = "pallet-space-ownership-tests"
-version = "0.2.1"
-dependencies = [
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-permissions",
- "pallet-profiles",
- "pallet-roles",
- "pallet-space-follows",
- "pallet-space-ownership",
- "pallet-spaces",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "subsocial-support",
-]
-
-[[package]]
 name = "pallet-spaces"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6500,7 +6533,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-spaces-tests"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -11639,7 +11672,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-collator"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -11656,6 +11689,7 @@ dependencies = [
  "log",
  "pallet-creator-staking-rpc",
  "pallet-domains-rpc",
+ "pallet-posts-rpc",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -11695,7 +11729,7 @@ dependencies = [
 
 [[package]]
 name = "subsocial-parachain-runtime"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -11729,9 +11763,11 @@ dependencies = [
  "pallet-free-proxy",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
+ "pallet-ownership",
  "pallet-permissions",
  "pallet-post-follows",
  "pallet-posts",
+ "pallet-posts-rpc-runtime-api",
  "pallet-profiles",
  "pallet-proxy",
  "pallet-reactions",
@@ -11739,7 +11775,6 @@ dependencies = [
  "pallet-roles",
  "pallet-session",
  "pallet-space-follows",
- "pallet-space-ownership",
  "pallet-spaces",
  "pallet-sudo",
  "pallet-timestamp",
@@ -11776,13 +11811,15 @@ dependencies = [
 
 [[package]]
 name = "subsocial-support"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-std",
  "strum",
 ]

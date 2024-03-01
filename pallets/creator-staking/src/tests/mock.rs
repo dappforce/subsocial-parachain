@@ -35,7 +35,7 @@ pub(super) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(super) const REGISTER_DEPOSIT: Balance = 10;
 pub(super) const MAX_NUMBER_OF_BACKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
-pub(super) const MINIMUM_STAKING_AMOUNT: Balance = 10;
+pub(super) const MINIMUM_TOTAL_STAKE: Balance = 10;
 pub(super) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
 pub(super) const MAX_UNBONDING_CHUNKS: u32 = 5;
 pub(super) const UNBONDING_PERIOD_IN_ERAS: EraIndex = 3;
@@ -137,7 +137,7 @@ parameter_types! {
     pub const CreatorRegistrationDeposit: Balance = REGISTER_DEPOSIT;
     pub const BlockPerEra: BlockNumber = BLOCKS_PER_ERA;
     pub const MaxNumberOfBackersPerCreator: u32 = MAX_NUMBER_OF_BACKERS;
-    pub const MinimumStake: Balance = MINIMUM_STAKING_AMOUNT;
+    pub const MinimumTotalStake: Balance = MINIMUM_TOTAL_STAKE;
     pub const CreatorStakingPalletId: PalletId = PalletId(*b"mokcrstk");
     pub const MinimumRemainingFreeBalance: Balance = MINIMUM_REMAINING_AMOUNT;
     #[derive(PartialEq)]
@@ -160,6 +160,8 @@ mock! {
 
     impl SpacesInterface<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
+        
+        fn update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
 
         fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError>;
     }
@@ -185,7 +187,7 @@ impl pallet_creator_staking::Config for TestRuntime {
     type SpacesInterface = MockSpaces;
     type SpacePermissionsProvider = MockSpaces;
     type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
-    type MinimumStake = MinimumStake;
+    type MinimumTotalStake = MinimumTotalStake;
     type MinimumRemainingFreeBalance = MinimumRemainingFreeBalance;
     type MaxNumberOfBackersPerCreator = MaxNumberOfBackersPerCreator;
     type MaxEraStakeItems = MaxEraStakeItems;

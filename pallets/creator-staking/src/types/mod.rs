@@ -130,7 +130,9 @@ pub struct StakesInfo<
     Balance: AtLeast32BitUnsigned + Copy + MaxEncodedLen,
     MaxEraStakeItems: Get<u32>,
 > {
+    #[deprecated(note = "This field is deprecated and will be removed in the future.")]
     pub(crate) stakes: BoundedVec<EraStake<Balance>, MaxEraStakeItems>,
+    pub(crate) staked: Balance,
 }
 
 /// Represents a balance amount that is currently unbonding.

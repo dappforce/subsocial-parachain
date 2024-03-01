@@ -157,7 +157,7 @@ pub(super) fn assert_withdraw_from_inactive_creator(
         panic!("Creator should be unregistered.")
     };
 
-    let staked_value = init_state.backer_stakes.current_stake();
+    let staked_value = init_state.backer_stakes.staked;
     assert!(staked_value > 0);
 
     // Op with verification
@@ -194,7 +194,7 @@ pub(super) fn assert_withdraw_from_inactive_creator(
         final_state.backer_locks.unbonding_info.vec(),
     );
 
-    assert!(final_state.backer_stakes.current_stake().is_zero());
+    assert!(final_state.backer_stakes.staked.is_zero());
     assert!(!BackerStakesByCreator::<TestRuntime>::contains_key(
         &backer,
         creator_id
@@ -232,7 +232,7 @@ pub(super) fn assert_stake(
     let final_state = MemorySnapshot::all(current_era, creator_id, backer);
 
     // In case backer hasn't been staking this creator until now
-    if init_state.backer_stakes.current_stake() == 0 {
+    if init_state.backer_stakes.staked == 0 {
         assert!(BackerStakesByCreator::<TestRuntime>::contains_key(
             &backer,
             creator_id
@@ -257,8 +257,8 @@ pub(super) fn assert_stake(
         init_state.creator_stakes_info.total_staked + staking_value
     );
     assert_eq!(
-        final_state.backer_stakes.current_stake(),
-        init_state.backer_stakes.current_stake() + staking_value
+        final_state.backer_stakes.staked,
+        init_state.backer_stakes.staked + staking_value
     );
     assert_eq!(
         final_state.backer_locks.total_locked,
@@ -279,14 +279,14 @@ pub(super) fn assert_unstake(
     // Calculate the expected resulting unbonding amount
     let remaining_staked = init_state
         .backer_stakes
-        .current_stake()
+        .staked
         .saturating_sub(value);
-    let expected_unbond_amount = if remaining_staked < MINIMUM_STAKING_AMOUNT {
-        init_state.backer_stakes.current_stake()
+    let expected_unbond_amount = if remaining_staked < MINIMUM_TOTAL_STAKE {
+        init_state.backer_stakes.staked
     } else {
         value
     };
-    let remaining_staked = init_state.backer_stakes.current_stake() - expected_unbond_amount;
+    let remaining_staked = init_state.backer_stakes.staked.saturating_sub(expected_unbond_amount);
 
     // Ensure call executed successfully and event is emitted
     assert_ok!(CreatorStaking::unstake(
@@ -345,8 +345,8 @@ pub(super) fn assert_unstake(
         final_state.creator_stakes_info.total_staked
     );
     assert_eq!(
-        init_state.backer_stakes.current_stake() - expected_unbond_amount,
-        final_state.backer_stakes.current_stake()
+        init_state.backer_stakes.staked.saturating_sub(expected_unbond_amount),
+        final_state.backer_stakes.staked
     );
 
     // Ensure that the number of backers is as expected
@@ -414,7 +414,7 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     System::reset_events();
 
     let init_state_claim_era = MemorySnapshot::all(claim_era, creator_id, claimer);
-    let mut init_state_current_era = MemorySnapshot::all(current_era, creator_id, claimer);
+    let init_state_current_era = MemorySnapshot::all(current_era, creator_id, claimer);
 
     // Calculate backer's portion of the reward
     let (claim_era, staked) = init_state_claim_era.backer_stakes.clone().claim();
@@ -442,20 +442,17 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
     // assert staked and free balances depending on restake check,
     assert_restake_reward(
         restake,
-        current_era,
         &init_state_current_era,
         &final_state_current_era,
         calculated_reward,
     );
 
     // check for stake event if restaking is performed
-    if CreatorStaking::ensure_can_restake_reward(
+    if CreatorStaking::can_restake_reward(
         restake,
         init_state_current_era.creator_info.status,
-        &mut init_state_current_era.backer_stakes,
-        current_era,
-        calculated_reward,
-    ).map_or(false, |should_restake| should_restake) {
+        init_state_current_era.backer_stakes.staked,
+    ) {
         // There should be at least 2 events, Reward and BondAndStake.
         // if there's less, panic is acceptable
         let events = creator_staking_events();
@@ -506,23 +503,19 @@ pub(super) fn assert_claim_backer(claimer: AccountId, creator_id: SpaceId, resta
 // returns should_restake_reward result so further checks can be made
 fn assert_restake_reward(
     restake: bool,
-    current_era: EraIndex,
     init_state_current_era: &MemorySnapshot,
     final_state_current_era: &MemorySnapshot,
     reward: Balance,
 ) {
-    let mut init_backer_stakes = init_state_current_era.backer_stakes.clone();
-    if CreatorStaking::ensure_can_restake_reward(
+    if CreatorStaking::can_restake_reward(
         restake,
         init_state_current_era.clone().creator_info.status,
-        &mut init_backer_stakes,
-        current_era,
-        reward,
-    ).map_or(false, |should_restake| should_restake) {
+        init_state_current_era.backer_stakes.staked,
+    ) {
         // staked values should increase
         assert_eq!(
-            init_state_current_era.backer_stakes.current_stake() + reward,
-            final_state_current_era.backer_stakes.current_stake()
+            init_state_current_era.backer_stakes.staked + reward,
+            final_state_current_era.backer_stakes.staked
         );
         assert_eq!(
             init_state_current_era.era_info.staked + reward,
@@ -610,9 +603,9 @@ pub(crate) fn assert_move_stake(
     let source_creator_init_state = MemorySnapshot::all(current_era, from_creator_id, backer);
     let target_creator_init_state = MemorySnapshot::all(current_era, to_creator_id, backer);
 
-    // Calculate value which will actually be transfered
-    let source_creator_init_stake_amount = source_creator_init_state.backer_stakes.current_stake();
-    let expected_amount_to_move = if source_creator_init_stake_amount - amount >= MINIMUM_STAKING_AMOUNT {
+    // Calculate value which will actually be transferred
+    let source_creator_init_stake_amount = source_creator_init_state.backer_stakes.staked;
+    let expected_amount_to_move = if amount < source_creator_init_stake_amount {
         amount
     } else {
         source_creator_init_stake_amount
@@ -637,12 +630,12 @@ pub(crate) fn assert_move_stake(
 
     // Ensure backer stakes has increased/decreased staked amount
     assert_eq!(
-        source_creator_final_state.backer_stakes.current_stake(),
+        source_creator_final_state.backer_stakes.staked,
         source_creator_init_stake_amount - expected_amount_to_move
     );
     assert_eq!(
-        target_creator_final_state.backer_stakes.current_stake(),
-        target_creator_init_state.backer_stakes.current_stake() + expected_amount_to_move
+        target_creator_final_state.backer_stakes.staked,
+        target_creator_init_state.backer_stakes.staked + expected_amount_to_move
     );
 
     // Ensure total value staked on creators has appropriately increased/decreased
@@ -668,7 +661,7 @@ pub(crate) fn assert_move_stake(
     // if it is first stake by the backer
     let no_init_stake_on_target_creator = target_creator_init_state
         .backer_stakes
-        .current_stake()
+        .staked
         .is_zero();
     if no_init_stake_on_target_creator {
         assert_eq!(

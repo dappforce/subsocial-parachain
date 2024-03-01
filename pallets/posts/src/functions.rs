@@ -8,6 +8,7 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::Saturating;
 
 use subsocial_support::{remove_from_vec, SpaceId};
+use subsocial_support::traits::PostsProvider;
 
 use super::*;
 
@@ -237,17 +238,7 @@ impl<T: Config> Pallet<T> {
         let mut commented_post_id = root_post_id;
 
         if let Some(parent_id) = comment_ext.parent_id {
-            let parent_comment =
-                Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
-
-            ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
-
-            let ancestors = Self::get_post_ancestors(parent_id);
-            ensure!(
-                ancestors.len() < T::MaxCommentDepth::get() as usize,
-                Error::<T>::MaxCommentDepthReached
-            );
-
+            Self::ensure_can_reply_to_parent(parent_id)?;
             commented_post_id = parent_id;
         }
 
@@ -339,5 +330,163 @@ impl<T: Config> Pallet<T> {
         PostById::insert(post.id, post);
 
         Ok(())
+    }
+
+    /// This function performs validation checks to determine if an account can create or reply
+    /// to a post in a specific space.
+    pub(super) fn ensure_can_create_post(
+        account: T::AccountId,
+        new_post: &Post<T>,
+        content_opt: Option<Content>,
+        space_permission_to_check: SpacePermission,
+        error_on_permission_failed: DispatchError,
+    ) -> DispatchResult {
+        let space = &new_post.get_space()?;
+        ensure!(!space.hidden, Error::<T>::CannotCreateInHiddenScope);
+
+        ensure!(
+            T::IsAccountBlocked::is_allowed_account(account.clone(), space.id),
+            ModerationError::AccountIsBlocked
+        );
+
+        if let Some(content) = content_opt {
+            ensure!(
+                T::IsContentBlocked::is_allowed_content(content.clone(), space.id),
+                ModerationError::ContentIsBlocked
+            );
+            ensure_content_is_valid(content)?;
+        }
+
+        let root_post = &mut new_post.get_root_post()?;
+        ensure!(!root_post.hidden, Error::<T>::CannotCreateInHiddenScope);
+
+        Spaces::ensure_account_has_space_permission(
+            account.clone(),
+            space,
+            space_permission_to_check,
+            error_on_permission_failed.into(),
+        )
+    }
+
+    pub fn ensure_can_reply_to_parent(parent_id: PostId) -> DispatchResult {
+        let parent_comment =
+            Self::post_by_id(parent_id).ok_or(Error::<T>::UnknownParentComment)?;
+
+        ensure!(parent_comment.is_comment(), Error::<T>::NotACommentByParentId);
+
+        let ancestors = Self::get_post_ancestors(parent_id);
+        ensure!(
+            ancestors.len() < T::MaxCommentDepth::get() as usize,
+            Error::<T>::MaxCommentDepthReached,
+        );
+
+        Ok(())
+    }
+
+    /// Function to check whether account can create a post in the given space.
+    /// Returns `Ok(())` if account can create a post in the given space.
+    ///
+    /// # Arguments
+    /// `account` - account that wants to create a post
+    /// `space_id` - id of the space where the post will be created
+    /// `content_opt` - optional content of the post. Content checks are skipped if `None`.
+    pub fn can_create_regular_post(
+        account: T::AccountId,
+        space_id: SpaceId,
+        content_opt: Option<Content>,
+    ) -> DispatchResult {
+        let new_post_id = Self::next_post_id();
+        let new_post: Post<T> = Post::new(
+            new_post_id,
+            account.clone(),
+            Some(space_id),
+            PostExtension::RegularPost,
+            content_opt.clone().unwrap_or_default(),
+        );
+
+        Self::ensure_can_create_post(
+            account,
+            &new_post,
+            content_opt,
+            SpacePermission::CreatePosts,
+            Error::<T>::NoPermissionToCreatePosts.into(),
+        )
+    }
+
+    /// Function to check whether account can create a comment in the given space.
+    /// Returns `Ok(())` if account can create a comment in the given space.
+    ///
+    /// # Arguments
+    /// `account` - account that wants to create a comment
+    /// `root_post_id` - id of the root post of the comment
+    /// `parent_id_opt` - optional id of the parent comment
+    /// `content_opt` - optional content of the comment. Content checks are skipped if `None`.
+    pub fn can_create_comment(
+        account: T::AccountId,
+        root_post_id: PostId,
+        parent_id_opt: Option<PostId>,
+        content_opt: Option<Content>,
+    ) -> DispatchResult {
+        let new_post_id = Self::next_post_id();
+        let new_post: Post<T> = Post::new(
+            new_post_id,
+            account.clone(),
+            None,
+            PostExtension::Comment(Comment {
+                root_post_id,
+                parent_id: parent_id_opt,
+            }),
+            content_opt.clone().unwrap_or_default(),
+        );
+
+        Self::ensure_can_create_post(
+            account,
+            &new_post,
+            content_opt,
+            SpacePermission::CreateComments,
+            Error::<T>::NoPermissionToCreateComments.into(),
+        )?;
+
+        if let Some(parent_id) = parent_id_opt {
+            Self::ensure_can_reply_to_parent(parent_id)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
+    fn get_post_owner(post_id: PostId) -> Result<T::AccountId, DispatchError> {
+        let post = Self::require_post(post_id)?;
+        Ok(post.owner)
+    }
+
+    fn ensure_allowed_to_update_post(account: &T::AccountId, post_id: PostId) -> DispatchResult {
+        let post = Self::require_post(post_id)?;
+        let space = post.get_space()?;
+        Self::ensure_account_can_update_post(account, &post, &space)
+    }
+
+    fn update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        
+        PostById::<T>::mutate(post_id, |stored_post_opt| {
+            if let Some(stored_post) = stored_post_opt {
+                stored_post.owner = new_owner.clone();
+            }
+        });
+        
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn create_post(owner: &T::AccountId, space_id: SpaceId, content: Content) -> Result<PostId, DispatchError> {
+        let new_post_id = Self::next_post_id();
+        let new_post: Post<T> =
+            Post::new(new_post_id, owner.clone(), Some(space_id), PostExtension::RegularPost, content.clone());
+
+        PostById::insert(new_post_id, new_post);
+        PostIdsBySpaceId::<T>::mutate(space_id, |ids| ids.push(new_post_id));
+        NextPostId::<T>::mutate(|n| n.saturating_inc());
+        
+        Ok(new_post_id)
     }
 }

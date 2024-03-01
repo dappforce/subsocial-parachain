@@ -171,7 +171,7 @@ fn stakes_info_unstake_ops() {
 
     // Save this for later
     let stakes = backer_stakes.stakes.clone();
-    let temp_backer_stakes = StakesInfo { stakes };
+    let temp_backer_stakes = StakesInfo { stakes, staked: backer_stakes.staked };
 
     // Fully unstake existing EraStake
     assert_ok!(backer_stakes.decrease_stake(second_unstake_era, total_staked));

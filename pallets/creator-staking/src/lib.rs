@@ -13,6 +13,7 @@ pub mod functions;
 pub mod inflation;
 #[cfg(test)]
 mod tests;
+pub mod migration;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -35,7 +36,7 @@ pub mod pallet {
 
     /// An identifier for the locks made in this pallet.
     /// Used to determine the locks in this pallet so that they can be replaced or removed.
-    pub(crate) const STAKING_ID: LockIdentifier = *b"crestake";
+    pub(crate) const STAKING_LOCK_ID: LockIdentifier = *b"crestake";
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_permissions::Config {
@@ -68,11 +69,10 @@ pub mod pallet {
         #[pallet::constant]
         type CreatorRegistrationDeposit: Get<BalanceOf<Self>>;
 
-        /// The minimum amount that can be staked to the creator.
-        /// User can stake less if they already have the minimum staking amount staked to that
-        /// particular creator.
+        /// The minimum amount that should be staked in the creator staking system.
+        /// User can stake less if they already have the minimum stake staked in the system.
         #[pallet::constant]
-        type MinimumStake: Get<BalanceOf<Self>>;
+        type MinimumTotalStake: Get<BalanceOf<Self>>;
 
         // TODO: make it MinimumRemainingRatio
         //  (e.g. 0.1 = 10%, so that account can lock only 90% of its balance)
@@ -127,7 +127,11 @@ pub mod pallet {
         type TreasuryAccount: Get<Self::AccountId>;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
@@ -259,9 +263,7 @@ pub mod pallet {
         InactiveCreator,
         CannotStakeZero,
         CannotUnstakeZero,
-        MaxNumberOfBackersExceeded,
         CannotChangeStakeInPastEra,
-        TooManyEraStakeValues,
         InsufficientStakingAmount,
         NotStakedCreator,
         TooManyUnbondingChunks,
@@ -409,10 +411,10 @@ pub mod pallet {
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
+                &backer,
                 &mut backer_stakes,
                 &mut staking_info,
                 amount_to_stake,
-                current_era,
             )?;
 
             backer_locks.total_locked = backer_locks.total_locked.saturating_add(amount_to_stake);
@@ -461,14 +463,21 @@ pub mod pallet {
 
             let current_era = Self::current_era();
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
-            let mut stake_info =
+            let mut creator_stake_info =
                 Self::creator_stake_info(creator_id, current_era).unwrap_or_default();
 
             let amount_to_unstake =
-                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut stake_info, amount, current_era)?;
+                Self::calculate_and_apply_stake_decrease(&mut backer_stakes, &mut creator_stake_info, amount)?;
 
             // Update the chunks and write them to storage
             let mut backer_locks = Self::backer_locks(&backer);
+
+            let total_stake_remaining = backer_locks.total_staked().saturating_sub(amount_to_unstake);
+            ensure!(
+                total_stake_remaining.is_zero() || total_stake_remaining >= T::MinimumTotalStake::get(),
+                Error::<T>::InsufficientStakingAmount,
+            );
+
             backer_locks.unbonding_info.add(UnbondingChunk {
                 amount: amount_to_unstake,
                 unlock_era: current_era + T::UnbondingPeriodInEras::get(),
@@ -483,7 +492,7 @@ pub mod pallet {
                 }
             });
             Self::update_backer_stakes(&backer, creator_id, backer_stakes);
-            CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, stake_info);
+            CreatorStakeInfoByEra::<T>::insert(creator_id, current_era, creator_stake_info);
 
             Self::deposit_event(Event::<T>::Unstaked {
                 who: backer,
@@ -548,7 +557,7 @@ pub mod pallet {
 
             // There should be some leftover staked amount
             let mut backer_stakes = Self::backer_stakes(&backer, creator_id);
-            let staked_value = backer_stakes.current_stake();
+            let staked_value = backer_stakes.staked;
             ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedCreator);
 
             // Don't allow withdrawal until all rewards have been claimed.
@@ -624,7 +633,6 @@ pub mod pallet {
                 &mut backer_stakes_by_source_creator,
                 &mut source_creator_info,
                 amount,
-                current_era,
             )?;
 
             // Validate and update target creator related data
@@ -633,10 +641,10 @@ pub mod pallet {
                 Self::creator_stake_info(to_creator_id, current_era).unwrap_or_default();
 
             Self::stake_to_creator(
+                &backer,
                 &mut backer_stakes_by_target_creator,
                 &mut target_creator_info,
                 stake_amount_to_move,
-                current_era,
             )?;
 
             CreatorStakeInfoByEra::<T>::insert(from_creator_id, current_era, source_creator_info);
@@ -684,11 +692,6 @@ pub mod pallet {
             let backer_reward =
                 Perbill::from_rational(backer_staked, reward_and_stake.staked) * reward_and_stake.rewards.backers;
 
-            // FIXME: we mustn't modify `backer_stakes` here!
-            let can_restake_reward = Self::ensure_can_restake_reward(
-                restake, creator_info.status, &mut backer_stakes, current_era, backer_reward
-            )?;
-
             // Withdraw reward funds from the rewards holding account
             let reward_imbalance = T::Currency::withdraw(
                 &Self::rewards_pot_account(),
@@ -699,8 +702,9 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&backer, reward_imbalance);
 
-            if can_restake_reward {
+            if Self::can_restake_reward(restake, creator_info.status, backer_stakes.staked) {
                 Self::do_restake_reward(&backer, backer_reward, creator_id, current_era);
+                backer_stakes.staked.saturating_accrue(backer_reward);
             }
 
             Self::update_backer_stakes(&backer, creator_id, backer_stakes);
