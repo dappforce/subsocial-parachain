@@ -564,6 +564,7 @@ pub enum ProxyType {
 	Any,
 	DomainRegistrar,
 	SocialActions,
+	// TODO: maybe rename to `SocialAccountControl`
 	Management,
 	SocialActionsProxy,
 }
@@ -576,40 +577,42 @@ impl Default for ProxyType {
 
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
+		let is_social_action = matches!(
+			c,
+			RuntimeCall::AccountFollows(..)
+				| RuntimeCall::Domains(..)
+				| RuntimeCall::PostFollows(..)
+				| RuntimeCall::Posts(..)
+				| RuntimeCall::Profiles(..)
+				| RuntimeCall::Reactions(..)
+				| RuntimeCall::Roles(..)
+				| RuntimeCall::SpaceFollows(..)
+				| RuntimeCall::Spaces(..)
+		);
+
 		match self {
 			ProxyType::Any => true,
-			ProxyType::DomainRegistrar => false,
-			ProxyType::SocialActions => matches!(
+			ProxyType::SocialActions => is_social_action,
+			ProxyType::Management => is_social_action || matches!(
 				c,
-				RuntimeCall::Posts(..)
-					| RuntimeCall::Reactions(..)
-					| RuntimeCall::AccountFollows(..)
-					| RuntimeCall::SpaceFollows(..)
-					| RuntimeCall::Spaces(..)
-					| RuntimeCall::Profiles(..)
-			),
-			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it.
-			ProxyType::Management => matches!(
-				c,
-				RuntimeCall::Spaces(..)
-					| RuntimeCall::SpaceOwnership(..)
-					| RuntimeCall::Roles(..)
-					| RuntimeCall::Profiles(..)
-					| RuntimeCall::Domains(..)
+				RuntimeCall::SpaceOwnership(..)
+					| RuntimeCall::Energy(..),
 			),
 			ProxyType::SocialActionsProxy => {
 				matches!(
 					c,
 					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
-					if ProxyType::SocialActions.filter(call),
+					if ProxyType::SocialActions.filter(call) || ProxyType::Management.filter(call),
 				)
 			},
+			_ => false,
 		}
 	}
 
 	fn is_superset(&self, o: &Self) -> bool {
 		match (self, o) {
 			(ProxyType::Any, _) => true,
+			(ProxyType::Management, ProxyType::SocialActions) => true,
 			(_, ProxyType::Any) => false,
 			_ => false,
 		}
