@@ -5,7 +5,6 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 use frame_support::{log, traits::OnRuntimeUpgrade};
-use sp_runtime::Saturating;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::traits::Zero;
 #[cfg(feature = "try-runtime")]
@@ -16,7 +15,14 @@ use super::*;
 const LOG_TARGET: &'static str = "runtime::ownership";
 
 pub mod v1 {
-    use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
+    use frame_support::{
+        migration::move_pallet, pallet_prelude::*, storage_alias, weights::Weight,
+    };
+    #[cfg(feature = "try-runtime")]
+    use frame_support::migration::storage_key_iter;
+    #[cfg(feature = "try-runtime")]
+    use sp_io::hashing::twox_128;
+    use sp_runtime::Saturating;
 
     use subsocial_support::SpaceId;
 
@@ -26,12 +32,17 @@ pub mod v1 {
     pub type PendingSpaceOwner<T: Config> =
         StorageMap<Pallet<T>, Twox64Concat, SpaceId, <T as frame_system::Config>::AccountId>;
 
-    pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
+    pub struct MigrateToV1<T, P, N>(sp_std::marker::PhantomData<(T, P, N)>);
 
-    impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
+    impl<T: Config, P: GetStorageVersion + PalletInfoAccess, N: Get<&'static str>> OnRuntimeUpgrade
+        for MigrateToV1<T, P, N>
+    {
         fn on_runtime_upgrade() -> Weight {
             let current_version = Pallet::<T>::current_storage_version();
             let onchain_version = Pallet::<T>::on_chain_storage_version();
+
+            let old_pallet_name = N::get();
+            let new_pallet_name = <P as PalletInfoAccess>::name();
 
             log::info!(
                 target: LOG_TARGET,
@@ -41,6 +52,18 @@ pub mod v1 {
             );
 
             if onchain_version == 0 && current_version == 1 {
+                current_version.put::<Pallet<T>>();
+
+                if new_pallet_name == old_pallet_name {
+                    log::warn!(
+                        target: LOG_TARGET,
+                        "new ownership name is equal to the old one, only bumping the version"
+                    );
+                    return T::DbWeight::get().reads_writes(1, 1)
+                }
+
+                move_pallet(old_pallet_name.as_bytes(), new_pallet_name.as_bytes());
+
                 let mut migrated = 0u64;
 
                 for (space_id, account) in PendingSpaceOwner::<T>::drain() {
@@ -51,19 +74,18 @@ pub mod v1 {
                     migrated.saturating_inc();
                 }
 
-                current_version.put::<Pallet<T>>();
-
                 log::info!(
                     target: LOG_TARGET,
                     "Upgraded {} records, storage to version {:?}",
                     migrated,
                     current_version
                 );
-                T::DbWeight::get().reads_writes(migrated + 1, migrated + 1)
+
+                <T as frame_system::Config>::BlockWeights::get().max_block
             } else {
                 log::info!(
                     target: LOG_TARGET,
-                    "Migration did not execute. This probably should be removed"
+                    "Migration did not execute. v1 upgrade should be removed"
                 );
                 T::DbWeight::get().reads(1)
             }
@@ -73,8 +95,17 @@ pub mod v1 {
         fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
             let current_version = Pallet::<T>::current_storage_version();
             let onchain_version = Pallet::<T>::on_chain_storage_version();
+            let old_pallet_name = N::get().as_bytes();
+            let old_pallet_prefix = twox_128(old_pallet_name);
             ensure!(onchain_version == 0 && current_version == 1, "migration from version 0 to 1.");
-            let prev_count = PendingSpaceOwner::<T>::iter().count();
+
+            ensure!(
+                sp_io::storage::next_key(&old_pallet_prefix).is_some(),
+                "no data for the old pallet name has been detected"
+            );
+
+            // let prev_count = PendingSpaceOwner::<T>::iter().count();
+            let prev_count = storage_key_iter::<SpaceId, T::AccountId, Twox64Concat>(old_pallet_name, b"PendingSpaceOwner").count();
             Ok((prev_count as u32).encode())
         }
 
@@ -86,6 +117,9 @@ pub mod v1 {
             let post_count = PendingOwnershipTransfers::<T>::iter().count() as u32;
             let old_storage_count = PendingSpaceOwner::<T>::iter().count();
 
+            let old_pallet_name = N::get();
+            let new_pallet_name = <P as PalletInfoAccess>::name();
+
             ensure!(
                 prev_count == post_count,
                 "the records count before and after the migration should be the same"
@@ -93,6 +127,32 @@ pub mod v1 {
             ensure!(old_storage_count.is_zero(), "all records should be migrated");
 
             ensure!(Pallet::<T>::on_chain_storage_version() == 1, "wrong storage version");
+
+            // skip storage prefix checks for the same pallet names
+            if new_pallet_name == old_pallet_name {
+                return Ok(());
+            }
+
+            // Assert that nothing remains at the old prefix.
+            let old_pallet_prefix = twox_128(N::get().as_bytes());
+            let old_pallet_prefix_iter = frame_support::storage::KeyPrefixIterator::new(
+                old_pallet_prefix.to_vec(),
+                old_pallet_prefix.to_vec(),
+                |_| Ok(()),
+            );
+            ensure!(
+                old_pallet_prefix_iter.count().is_zero(),
+                "old pallet data hasn't been removed"
+            );
+
+            // NOTE: storage_version_key is already in the new prefix.
+            let new_pallet_prefix = twox_128(new_pallet_name.as_bytes());
+            let new_pallet_prefix_iter = frame_support::storage::KeyPrefixIterator::new(
+                new_pallet_prefix.to_vec(),
+                new_pallet_prefix.to_vec(),
+                |_| Ok(()),
+            );
+            assert_eq!(new_pallet_prefix_iter.count(), (prev_count + 1) as usize);
 
             Ok(())
         }
