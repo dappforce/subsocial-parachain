@@ -182,7 +182,6 @@ impl pallet_ownership::Config for Test {
     type CreatorStakingProvider = ();
     type DomainsProvider = MockEmptyDomainsProvider;
     type PostsProvider = Posts;
-    #[cfg(feature = "runtime-benchmarks")]
     type Currency = Balances;
     type WeightInfo = ();
 }

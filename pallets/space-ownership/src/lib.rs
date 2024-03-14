@@ -56,7 +56,6 @@ pub mod pallet {
         
         type PostsProvider: PostsProvider<Self::AccountId>;
 
-        #[cfg(feature = "runtime-benchmarks")]
         type Currency: frame_support::traits::Currency<Self::AccountId>;
 
         type WeightInfo: WeightInfo;
