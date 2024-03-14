@@ -56,6 +56,8 @@ pub mod pallet {
         
         type PostsProvider: PostsProvider<Self::AccountId>;
 
+        type Currency: frame_support::traits::Currency<Self::AccountId>;
+
         type WeightInfo: WeightInfo;
     }
 
@@ -70,8 +72,6 @@ pub mod pallet {
     pub enum Error<T> {
         /// The current entity owner cannot transfer ownership to themselves.
         CannotTransferToCurrentOwner,
-        /// Account is already an owner of an entity.
-        AlreadyOwner,
         /// Cannot transfer ownership, because a space is registered as an active creator.
         ActiveCreatorCannotTransferOwnership,
         /// There is no pending ownership transfer for a given entity.
@@ -108,7 +108,13 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(<T as Config>::WeightInfo::transfer_space_ownership())]
+        #[pallet::weight(
+            match entity {
+                EntityWithOwnership::Space(_) => T::WeightInfo::transfer_space_ownership(),
+                EntityWithOwnership::Post(_) => T::WeightInfo::transfer_post_ownership(),
+                EntityWithOwnership::Domain(_) => T::WeightInfo::transfer_domain_ownership(),
+            }
+        )]
         pub fn transfer_ownership(
             origin: OriginFor<T>,
             entity: EntityWithOwnership<T>,
@@ -146,7 +152,13 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(<T as Config>::WeightInfo::accept_pending_ownership())]
+        #[pallet::weight(
+            match entity {
+                EntityWithOwnership::Space(_) => T::WeightInfo::accept_pending_space_ownership_transfer(),
+                EntityWithOwnership::Post(_) => T::WeightInfo::accept_pending_post_ownership_transfer(),
+                EntityWithOwnership::Domain(_) => T::WeightInfo::accept_pending_domain_ownership_transfer(),
+            }
+        )]
         pub fn accept_pending_ownership(origin: OriginFor<T>, entity: EntityWithOwnership<T>) -> DispatchResult {
             let new_owner = ensure_signed(origin)?;
 

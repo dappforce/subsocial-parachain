@@ -3557,6 +3557,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-domains",
  "pallet-ownership",
  "pallet-permissions",
  "pallet-posts",
@@ -6083,6 +6084,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "pallet-permissions",
  "parity-scale-codec",
  "scale-info",
@@ -6098,6 +6100,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
+ "lazy_static",
+ "mockall",
  "pallet-balances",
  "pallet-domains",
  "pallet-ownership",
@@ -6194,6 +6198,7 @@ dependencies = [
 name = "pallet-posts-tests"
 version = "0.2.2"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -11808,6 +11813,7 @@ dependencies = [
 name = "subsocial-support"
 version = "0.2.2"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-timestamp",

@@ -22,6 +22,7 @@ std = [
     'pallet-timestamp/std',
     'frame-support/std',
     'frame-system/std',
+    'pallet-domains/std',
     'pallet-permissions/std',
     'pallet-posts/std',
     'pallet-profiles/std',
@@ -47,6 +48,7 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkad
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 
 [dev-dependencies]
+pallet-domains = { path = '../pallets/domains', default-features = false }
 pallet-permissions = { path = '../pallets/permissions', default-features = false }
 pallet-posts = { path = '../pallets/posts', default-features = false }
 pallet-profiles = { path = '../pallets/profiles', default-features = false }

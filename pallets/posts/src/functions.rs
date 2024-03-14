@@ -476,4 +476,17 @@ impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
         
         Ok(())
     }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn create_post(owner: &T::AccountId, space_id: SpaceId, content: Content) -> Result<PostId, DispatchError> {
+        let new_post_id = Self::next_post_id();
+        let new_post: Post<T> =
+            Post::new(new_post_id, owner.clone(), Some(space_id), PostExtension::RegularPost, content.clone());
+
+        PostById::insert(new_post_id, new_post);
+        PostIdsBySpaceId::<T>::mutate(space_id, |ids| ids.push(new_post_id));
+        NextPostId::<T>::mutate(|n| n.saturating_inc());
+        
+        Ok(new_post_id)
+    }
 }

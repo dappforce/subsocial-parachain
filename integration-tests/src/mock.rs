@@ -50,6 +50,7 @@ frame_support::construct_runtime!(
             SpaceFollows: pallet_space_follows,
             SpaceOwnership: pallet_ownership,
             Spaces: pallet_spaces,
+            Domains: pallet_domains,
         }
     );
 
@@ -163,7 +164,12 @@ impl pallet_space_follows::Config for TestRuntime {
 impl pallet_ownership::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
+    type SpacesInterface = Spaces;
+    type SpacePermissionsProvider = Spaces;
     type CreatorStakingProvider = ();
+    type DomainsProvider = Domains;
+    type PostsProvider = Posts;
+    type Currency = Balances;
     type WeightInfo = ();
 }
 
@@ -174,6 +180,30 @@ impl pallet_spaces::Config for TestRuntime {
     type IsAccountBlocked = MockModeration;
     type IsContentBlocked = MockModeration;
     type MaxSpacesPerAccount = ConstU32<100>;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const RegistrationPeriodLimit: BlockNumber = 100;
+    pub const BaseDomainDeposit: u64 = 10;
+    pub const OuterValueByteDeposit: u64 = 1;
+    pub const InitialPaymentBeneficiary: AccountId = ACCOUNT1;
+    pub InitialPricesConfig: pallet_domains::types::PricesConfigVec<TestRuntime> = vec![(1, 100)];
+}
+
+impl pallet_domains::Config for TestRuntime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type MinDomainLength = ConstU32<1>;
+    type MaxDomainLength = ConstU32<64>;
+    type MaxDomainsPerAccount = ConstU32<10>;
+    type DomainsInsertLimit = ConstU32<10>;
+    type RegistrationPeriodLimit = RegistrationPeriodLimit;
+    type MaxOuterValueLength = ConstU32<64>;
+    type BaseDomainDeposit = BaseDomainDeposit;
+    type OuterValueByteDeposit = OuterValueByteDeposit;
+    type InitialPaymentBeneficiary = InitialPaymentBeneficiary;
+    type InitialPricesConfig = InitialPricesConfig;
     type WeightInfo = ();
 }
 

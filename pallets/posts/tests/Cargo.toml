@@ -29,6 +29,7 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkad
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 
 [dev-dependencies]
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }
@@ -41,10 +42,12 @@ pallet-spaces = { default-features = false, path = '../../spaces' }
 
 [features]
 default = ['std']
+runtime-benchmarks = ['subsocial-support/runtime-benchmarks']
 std = [
     'codec/std',
     'scale-info/std',
     'pallet-timestamp/std',
+    'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
     'sp-runtime/std',
