@@ -562,10 +562,12 @@ parameter_types! {
 )]
 pub enum ProxyType {
 	Any,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove as it's not used
 	DomainRegistrar,
 	SocialActions,
-	// TODO: maybe rename to `SocialAccountControl`
 	Management,
+	#[deprecated(note = "Use just `SocialActions` or `Management` instead")]
 	SocialActionsProxy,
 }
 
@@ -589,14 +591,20 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				| RuntimeCall::SpaceFollows(..)
 				| RuntimeCall::Spaces(..)
 		);
+		
+		let is_proxy_wrapped = |guard: Option<ProxyType>| matches!(
+			c,
+			RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
+			if guard.map_or(true, |g| g.filter(call)),
+		);
 
 		match self {
 			ProxyType::Any => true,
+			ProxyType::SocialActions | ProxyType::Management if is_proxy_wrapped(Some(*self)) => true,
 			ProxyType::SocialActions => is_social_action,
 			ProxyType::Management => is_social_action || matches!(
 				c,
-				RuntimeCall::SpaceOwnership(..)
-					| RuntimeCall::Energy(..),
+				RuntimeCall::Energy(..) | RuntimeCall::SpaceOwnership(..),
 			),
 			ProxyType::SocialActionsProxy => {
 				matches!(
@@ -612,7 +620,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn is_superset(&self, o: &Self) -> bool {
 		match (self, o) {
 			(ProxyType::Any, _) => true,
-			(ProxyType::Management, ProxyType::SocialActions) => true,
 			(_, ProxyType::Any) => false,
 			_ => false,
 		}
