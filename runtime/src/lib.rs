@@ -582,25 +582,18 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 		let is_social_action = matches!(
 			c,
 			RuntimeCall::AccountFollows(..)
-				| RuntimeCall::Domains(..)
-				| RuntimeCall::PostFollows(..)
-				| RuntimeCall::Posts(..)
-				| RuntimeCall::Profiles(..)
-				| RuntimeCall::Reactions(..)
-				| RuntimeCall::Roles(..)
-				| RuntimeCall::SpaceFollows(..)
-				| RuntimeCall::Spaces(..)
-		);
-		
-		let is_proxy_wrapped = |guard: Option<ProxyType>| matches!(
-			c,
-			RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
-			if guard.map_or(true, |g| g.filter(call)),
+			| RuntimeCall::Domains(..)
+			| RuntimeCall::PostFollows(..)
+			| RuntimeCall::Posts(..)
+			| RuntimeCall::Profiles(..)
+			| RuntimeCall::Reactions(..)
+			| RuntimeCall::Roles(..)
+			| RuntimeCall::SpaceFollows(..)
+			| RuntimeCall::Spaces(..)
 		);
 
 		match self {
 			ProxyType::Any => true,
-			ProxyType::SocialActions | ProxyType::Management if is_proxy_wrapped(Some(*self)) => true,
 			ProxyType::SocialActions => is_social_action,
 			ProxyType::Management => is_social_action || matches!(
 				c,
@@ -610,7 +603,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				matches!(
 					c,
 					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
-					if ProxyType::SocialActions.filter(call) || ProxyType::Management.filter(call),
+					if ProxyType::SocialActions.filter(call),
 				)
 			},
 			_ => false,
