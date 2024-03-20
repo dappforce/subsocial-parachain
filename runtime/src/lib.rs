@@ -566,8 +566,9 @@ pub enum ProxyType {
 	// TODO: remove as it's not used
 	DomainRegistrar,
 	SocialActions,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove or either replace as it's not used
 	Management,
-	#[deprecated(note = "Use just `SocialActions` or `Management` instead")]
 	SocialActionsProxy,
 }
 
@@ -595,10 +596,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 		match self {
 			ProxyType::Any => true,
 			ProxyType::SocialActions => is_social_action,
-			ProxyType::Management => is_social_action || matches!(
-				c,
-				RuntimeCall::Energy(..) | RuntimeCall::SpaceOwnership(..),
-			),
 			ProxyType::SocialActionsProxy => {
 				matches!(
 					c,
