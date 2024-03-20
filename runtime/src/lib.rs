@@ -569,6 +569,8 @@ pub enum ProxyType {
 	#[deprecated(note = "Will be removed in the next release")]
 	// TODO: remove or either replace as it's not used
 	Management,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove or either replace (if we have use-cases for it) as it's not used
 	SocialActionsProxy,
 }
 
@@ -596,13 +598,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 		match self {
 			ProxyType::Any => true,
 			ProxyType::SocialActions => is_social_action,
-			ProxyType::SocialActionsProxy => {
-				matches!(
-					c,
-					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
-					if ProxyType::SocialActions.filter(call),
-				)
-			},
 			_ => false,
 		}
 	}
