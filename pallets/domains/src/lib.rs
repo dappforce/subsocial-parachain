@@ -193,9 +193,9 @@ pub mod pallet {
         TooManyDomainsPerAccount,
         /// This domain label may contain only a-z, 0-9 and hyphen characters.
         DomainContainsInvalidChar,
-        /// This domain name length must be greater or equal the [`Config::MinDomainLength`] limit.
+        /// The length of this domain name must be greater than or equal to the [`Config::MinDomainLength`] limit.
         DomainIsTooShort,
-        /// This domain name length must be below or equal the [`Config::MaxDomainLength`] limit.
+        /// The length of this domain name must be less than or equal to the [`Config::MaxDomainLength`] limit.
         DomainIsTooLong,
         /// This domain has expired.
         DomainHasExpired,

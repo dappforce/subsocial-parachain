@@ -124,7 +124,7 @@ fn accept_pending_ownership_should_fail_if_no_pending_transfer() {
 }
 
 #[test]
-fn accept_pending_ownership_should_not_allow_non_target_to_accept() {
+fn accept_pending_ownership_should_not_allow_non_target_account_to_accept() {
     ExtBuilder::build_with_pending_transfers().execute_with(|| {
         let _m = use_static_mock();
         let creator_staking_ctx = MockCreatorStaking::is_creator_active_context();

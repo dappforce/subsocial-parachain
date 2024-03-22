@@ -436,7 +436,6 @@ pub mod pallet {
             Self::ensure_space_limit_not_reached(&new_owner)?;
             let space = Pallet::<T>::require_space(space_id)?;
 
-            // TODO: reuse copy-pasted parts of code
             SpaceIdsByOwner::<T>::mutate(&space.owner, |ids| {
                 remove_from_bounded_vec(ids, space_id)
             });
