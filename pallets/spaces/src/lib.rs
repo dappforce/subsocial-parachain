@@ -49,7 +49,7 @@ pub mod pallet {
     };
     use subsocial_support::{
         ensure_content_is_valid, remove_from_bounded_vec,
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface},
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesProvider},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
     use types::*;
@@ -426,7 +426,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> SpacesInterface<T::AccountId, SpaceId> for Pallet<T> {
+    impl<T: Config> SpacesProvider<T::AccountId, SpaceId> for Pallet<T> {
         fn get_space_owner(space_id: SpaceId) -> Result<T::AccountId, DispatchError> {
             let space = Pallet::<T>::require_space(space_id)?;
             Ok(space.owner)

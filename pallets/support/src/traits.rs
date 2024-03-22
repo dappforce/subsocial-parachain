@@ -6,7 +6,7 @@
 
 pub use common::{
     CreatorStakingProvider, DomainsProvider, PostFollowsProvider, PostsProvider, ProfileManager,
-    SpaceFollowsProvider, SpacePermissionsProvider, SpacesInterface,
+    SpaceFollowsProvider, SpacePermissionsProvider, SpacesProvider,
 };
 pub use moderation::{IsAccountBlocked, IsContentBlocked, IsPostBlocked, IsSpaceBlocked};
 

@@ -13,7 +13,7 @@ use std::{
 use frame_support::{assert_ok, pallet_prelude::*};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
-use pallet_ownership::EntityWithOwnership;
+use pallet_ownership::OwnableEntity;
 
 use pallet_permissions::{SpacePermission as SP, SpacePermission, SpacePermissions};
 use pallet_posts::{Comment, PostExtension, PostUpdate};
@@ -489,7 +489,7 @@ pub(crate) fn _transfer_space_ownership(
 ) -> DispatchResult {
     Ownership::transfer_ownership(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),
-        space_id.map_or(EntityWithOwnership::Space(SPACE1), |id| EntityWithOwnership::Space(id)),
+        space_id.map_or(OwnableEntity::Space(SPACE1), |id| OwnableEntity::Space(id)),
         transfer_to.unwrap_or(ACCOUNT2),
     )
 }

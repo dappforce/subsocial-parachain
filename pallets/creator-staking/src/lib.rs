@@ -30,7 +30,7 @@ pub mod pallet {
     use sp_runtime::{traits::Zero, Perbill, Saturating};
 
     use pallet_permissions::SpacePermissionsInfoOf;
-    use subsocial_support::{traits::{SpacesInterface, SpacePermissionsProvider}, SpaceId};
+    use subsocial_support::{traits::{SpacesProvider, SpacePermissionsProvider}, SpaceId};
 
     pub use crate::types::*;
 
@@ -54,7 +54,7 @@ pub mod pallet {
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
             + ReservableCurrency<Self::AccountId>;
 
-        type SpacesInterface: SpacesInterface<Self::AccountId, SpaceId>;
+        type SpacesProvider: SpacesProvider<Self::AccountId, SpaceId>;
 
         type SpacePermissionsProvider: SpacePermissionsProvider<
             Self::AccountId,
@@ -341,7 +341,7 @@ pub mod pallet {
                 Error::<T>::CreatorAlreadyRegistered,
             );
 
-            let space_owner = T::SpacesInterface::get_space_owner(space_id)?;
+            let space_owner = T::SpacesProvider::get_space_owner(space_id)?;
             T::Currency::reserve(&space_owner, T::CreatorRegistrationDeposit::get())?;
 
             RegisteredCreators::<T>::insert(space_id, CreatorInfo::new(space_owner.clone()));

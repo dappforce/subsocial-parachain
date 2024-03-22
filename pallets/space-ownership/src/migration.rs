@@ -68,7 +68,7 @@ pub mod v1 {
 
                 for (space_id, account) in PendingSpaceOwner::<T>::drain() {
                     PendingOwnershipTransfers::<T>::insert(
-                        EntityWithOwnership::Space(space_id),
+                        OwnableEntity::Space(space_id),
                         account,
                     );
                     migrated.saturating_inc();

@@ -275,10 +275,6 @@ pub mod pallet {
             let space_opt = &post.try_get_space();
 
             if let Some(space) = space_opt {
-                ensure!(
-                    T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
-                    ModerationError::AccountIsBlocked
-                );
                 Self::ensure_account_can_update_post(&editor, &post, space)?;
             }
 

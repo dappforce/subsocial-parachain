@@ -19,7 +19,7 @@ use sp_runtime::{
 };
 use sp_std::sync::{Mutex, MutexGuard};
 use subsocial_support::{
-    traits::{SpacePermissionsProvider, SpacesInterface},
+    traits::{SpacePermissionsProvider, SpacesProvider},
     Content, SpaceId,
 };
 
@@ -86,7 +86,7 @@ mock! {
         fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult;
     }
 
-    impl SpacesInterface<AccountId, SpaceId> for Spaces {
+    impl SpacesProvider<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
         
         fn update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
@@ -98,7 +98,7 @@ mock! {
 impl pallet_profiles::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = MockSpaces;
-    type SpacesInterface = MockSpaces;
+    type SpacesProvider = MockSpaces;
     type WeightInfo = ();
 }
 

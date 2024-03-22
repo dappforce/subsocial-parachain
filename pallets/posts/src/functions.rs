@@ -144,6 +144,11 @@ impl<T: Config> Pallet<T> {
         post: &Post<T>,
         space: &Space<T>,
     ) -> DispatchResult {
+        ensure!(
+            T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
+            ModerationError::AccountIsBlocked
+        );
+        
         let is_owner = post.is_owner(editor);
         let is_comment = post.is_comment();
 

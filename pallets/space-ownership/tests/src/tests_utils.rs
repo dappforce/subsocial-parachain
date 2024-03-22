@@ -7,7 +7,7 @@
 use frame_support::{assert_ok, pallet_prelude::*};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
-use pallet_ownership::{EntityWithOwnership, Event as OwnershipEvent};
+use pallet_ownership::{OwnableEntity, Event as OwnershipEvent};
 
 use pallet_posts::PostExtension;
 use pallet_spaces::*;
@@ -100,16 +100,16 @@ pub(crate) fn default_domain() -> BoundedVec<u8, MaxDomainLength> {
     "dappforce.sub".as_bytes().to_vec().try_into().unwrap()
 }
 
-pub(crate) fn default_domain_entity() -> EntityWithOwnership<Test> {
-    EntityWithOwnership::Domain(default_domain())
+pub(crate) fn default_domain_entity() -> OwnableEntity<Test> {
+    OwnableEntity::Domain(default_domain())
 }
 
-pub(crate) const fn default_space_entity() -> EntityWithOwnership<Test> {
-    EntityWithOwnership::Space(SPACE1)
+pub(crate) const fn default_space_entity() -> OwnableEntity<Test> {
+    OwnableEntity::Space(SPACE1)
 }
 
-pub(crate) const fn default_post_entity() -> EntityWithOwnership<Test> {
-    EntityWithOwnership::Post(POST1)
+pub(crate) const fn default_post_entity() -> OwnableEntity<Test> {
+    OwnableEntity::Post(POST1)
 }
 
 // Extrinsics
@@ -145,7 +145,7 @@ pub(crate) fn _create_default_domain() -> DispatchResult {
 
 pub(crate) fn _transfer_ownership(
     account: AccountId,
-    entity: EntityWithOwnership<Test>,
+    entity: OwnableEntity<Test>,
     transfer_to: AccountId,
 ) -> DispatchResult {
     Ownership::transfer_ownership(
@@ -157,7 +157,7 @@ pub(crate) fn _transfer_ownership(
 
 pub(crate) fn _accept_pending_ownership(
     account: AccountId,
-    entity: EntityWithOwnership<Test>,
+    entity: OwnableEntity<Test>,
 ) -> DispatchResult {
     Ownership::accept_pending_ownership(
         RuntimeOrigin::signed(account),
@@ -167,7 +167,7 @@ pub(crate) fn _accept_pending_ownership(
 
 pub(crate) fn _reject_pending_ownership(
     account: AccountId,
-    entity: EntityWithOwnership<Test>,
+    entity: OwnableEntity<Test>,
 ) -> DispatchResult {
     Ownership::reject_pending_ownership(
         RuntimeOrigin::signed(account),
@@ -184,21 +184,21 @@ pub(crate) fn assert_create_transfers_ok() {
     // Mock a transfer from account 1 to account 2 for a space entity
     assert_ok!(Ownership::transfer_ownership(
         RuntimeOrigin::signed(ACCOUNT1),
-        EntityWithOwnership::Space(SPACE1),
+        OwnableEntity::Space(SPACE1),
         ACCOUNT2
     ));
 
     // Mock a transfer from account 1 to account 2 for a post entity
     assert_ok!(Ownership::transfer_ownership(
         RuntimeOrigin::signed(ACCOUNT1),
-        EntityWithOwnership::Post(POST1),
+        OwnableEntity::Post(POST1),
         ACCOUNT2
     ));
 
     // Mock a transfer from account 1 to account 2 for a domain entity
     assert_ok!(Ownership::transfer_ownership(
         RuntimeOrigin::signed(ACCOUNT1),
-        EntityWithOwnership::Domain(default_domain()),
+        OwnableEntity::Domain(default_domain()),
         ACCOUNT2
     ));
 

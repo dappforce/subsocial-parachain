@@ -739,7 +739,7 @@ impl pallet_reactions::Config for Runtime {
 impl pallet_profiles::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SpacePermissionsProvider = Spaces;
-	type SpacesInterface = Spaces;
+	type SpacesProvider = Spaces;
 	type WeightInfo = pallet_profiles::weights::SubstrateWeight<Runtime>;
 }
 
@@ -779,7 +779,7 @@ impl pallet_spaces::Config for Runtime {
 impl pallet_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
-	type SpacesInterface = Spaces;
+	type SpacesProvider = Spaces;
 	type SpacePermissionsProvider = Spaces;
 	type CreatorStakingProvider = CreatorStaking;
 	type DomainsProvider = Domains;
@@ -841,7 +841,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type PalletId = CreatorStakingPalletId;
 	type BlockPerEra = BlockPerEra;
 	type Currency = Balances;
-	type SpacesInterface = Spaces;
+	type SpacesProvider = Spaces;
 	type SpacePermissionsProvider = Spaces;
 	type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
 	type MinimumTotalStake = MinimumTotalStake;

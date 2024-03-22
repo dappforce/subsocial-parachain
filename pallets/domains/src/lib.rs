@@ -641,7 +641,7 @@ pub mod pallet {
 
         /// Try to get domain meta by its custom and top-level domain names.
         /// This function pre-validates the passed argument.
-        pub fn require_domain_from_ref(domain: &[u8]) -> Result<DomainMeta<T>, DispatchError> {
+        pub fn require_domain_by_ref(domain: &[u8]) -> Result<DomainMeta<T>, DispatchError> {
             ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
             let domain_lc = Self::lower_domain_then_bound(domain);
 
@@ -738,17 +738,17 @@ pub mod pallet {
         type DomainLength = T::MaxDomainLength;
         
         fn get_domain_owner(domain: &[u8]) -> Result<T::AccountId, DispatchError> {
-            let meta = Self::require_domain_from_ref(domain)?;
+            let meta = Self::require_domain_by_ref(domain)?;
             Ok(meta.owner)
         }
         
         fn ensure_allowed_to_update_domain(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
-            let meta = Self::require_domain_from_ref(domain)?;
+            let meta = Self::require_domain_by_ref(domain)?;
             Self::ensure_allowed_to_update_domain(&meta, account)
         }
 
         fn update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
-            let meta = Self::require_domain_from_ref(domain)?;
+            let meta = Self::require_domain_by_ref(domain)?;
             let domain_lc = Self::lower_domain_then_bound(domain);
 
             Self::ensure_domains_limit_not_reached(&new_owner)?;

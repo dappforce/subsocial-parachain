@@ -151,7 +151,7 @@ impl pallet_roles::Config for Test {
 impl pallet_profiles::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = Spaces;
-    type SpacesInterface = Spaces;
+    type SpacesProvider = Spaces;
     type WeightInfo = ();
 }
 
@@ -205,7 +205,7 @@ impl pallet_domains::Config for Test {
 impl pallet_ownership::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
-    type SpacesInterface = Spaces;
+    type SpacesProvider = Spaces;
     type SpacePermissionsProvider = Spaces;
     type CreatorStakingProvider = MockCreatorStaking;
     type DomainsProvider = Domains;

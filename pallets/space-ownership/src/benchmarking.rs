@@ -14,7 +14,7 @@ use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
 
 use subsocial_support::{
-    traits::{DomainsProvider, PostsProvider, SpacesInterface},
+    traits::{DomainsProvider, PostsProvider, SpacesProvider},
     Content,
 };
 
@@ -33,25 +33,25 @@ fn grab_accounts<T: Config>() -> (T::AccountId, T::AccountId) {
 
 fn create_dummy_space<T: Config>(
     owner: &T::AccountId,
-) -> Result<EntityWithOwnership<T>, DispatchError> {
-    let space_id = T::SpacesInterface::create_space(owner, Content::None)?;
-    Ok(EntityWithOwnership::Space(space_id))
+) -> Result<OwnableEntity<T>, DispatchError> {
+    let space_id = T::SpacesProvider::create_space(owner, Content::None)?;
+    Ok(OwnableEntity::Space(space_id))
 }
 
 fn create_dummy_post<T: Config>(
     owner: &T::AccountId,
-) -> Result<EntityWithOwnership<T>, DispatchError> {
-    let space_id = T::SpacesInterface::create_space(owner, Content::None)?;
+) -> Result<OwnableEntity<T>, DispatchError> {
+    let space_id = T::SpacesProvider::create_space(owner, Content::None)?;
     let post_id = T::PostsProvider::create_post(owner, space_id, Content::None)?;
-    Ok(EntityWithOwnership::Post(post_id))
+    Ok(OwnableEntity::Post(post_id))
 }
 
 fn create_dummy_domain<T: Config>(
     owner: &T::AccountId,
-) -> Result<EntityWithOwnership<T>, DispatchError> {
+) -> Result<OwnableEntity<T>, DispatchError> {
     let domain = T::DomainsProvider::register_domain(owner, "dappforce.sub".as_bytes())?;
     let domain_bounded = domain.try_into().unwrap();
-    Ok(EntityWithOwnership::Domain(domain_bounded))
+    Ok(OwnableEntity::Domain(domain_bounded))
 }
 
 benchmarks! {

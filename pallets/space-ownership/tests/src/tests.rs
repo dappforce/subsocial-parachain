@@ -6,7 +6,7 @@
 
 use frame_support::{assert_noop, assert_ok};
 
-use pallet_ownership::{EntityWithOwnership, Error as OwnershipError, Event as OwnershipEvent};
+use pallet_ownership::{OwnableEntity, Error as OwnershipError, Event as OwnershipEvent};
 
 use crate::{mock::*, tests_utils::*};
 
@@ -80,7 +80,7 @@ fn transfer_ownership_should_not_allow_transfer_to_current_owner() {
         assert_noop!(
             Ownership::transfer_ownership(
                 RuntimeOrigin::signed(ACCOUNT1),
-                EntityWithOwnership::Space(SPACE1),
+                OwnableEntity::Space(SPACE1),
                 ACCOUNT1
             ),
             OwnershipError::<Test>::CannotTransferToCurrentOwner
@@ -101,7 +101,7 @@ fn transfer_ownership_should_not_allow_active_creator_to_transfer_space_ownershi
         assert_noop!(
             Ownership::transfer_ownership(
                 RuntimeOrigin::signed(ACCOUNT1),
-                EntityWithOwnership::Space(SPACE1),
+                OwnableEntity::Space(SPACE1),
                 ACCOUNT2
             ),
             OwnershipError::<Test>::ActiveCreatorCannotTransferOwnership
@@ -116,7 +116,7 @@ fn accept_pending_ownership_should_fail_if_no_pending_transfer() {
         assert_noop!(
             Ownership::accept_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT2),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             ),
             OwnershipError::<Test>::NoPendingTransfer
         );
@@ -136,15 +136,15 @@ fn accept_pending_ownership_should_not_allow_non_target_to_accept() {
         assert_noop!(
             Ownership::accept_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT3),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             ),
-            OwnershipError::<Test>::NotAllowedToAcceptOwnershipTransfer
+            OwnershipError::<Test>::CurrentOwnerCannotAcceptOwnershipTransfer
         );
 
         assert_ok!(
             Ownership::accept_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT2),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             )
         );
     });
@@ -157,7 +157,7 @@ fn reject_pending_ownership_should_fail_if_no_pending_transfer() {
         assert_noop!(
             Ownership::reject_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT1),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             ),
             OwnershipError::<Test>::NoPendingTransfer
         );
@@ -171,7 +171,7 @@ fn reject_pending_ownership_should_not_allow_ineligible_account_to_reject() {
         assert_noop!(
             Ownership::reject_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT3),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             ),
             OwnershipError::<Test>::NotAllowedToRejectOwnershipTransfer
         );
@@ -180,7 +180,7 @@ fn reject_pending_ownership_should_not_allow_ineligible_account_to_reject() {
         assert_ok!(
             Ownership::reject_pending_ownership(
                 RuntimeOrigin::signed(ACCOUNT1),
-                EntityWithOwnership::Space(SPACE1)
+                OwnableEntity::Space(SPACE1)
             )
         );
     });

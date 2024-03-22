@@ -133,7 +133,7 @@ impl pallet_posts::Config for TestRuntime {
 impl pallet_profiles::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = Spaces;
-    type SpacesInterface = Spaces;
+    type SpacesProvider = Spaces;
     type WeightInfo = ();
 }
 
@@ -164,7 +164,7 @@ impl pallet_space_follows::Config for TestRuntime {
 impl pallet_ownership::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type ProfileManager = Profiles;
-    type SpacesInterface = Spaces;
+    type SpacesProvider = Spaces;
     type SpacePermissionsProvider = Spaces;
     type CreatorStakingProvider = ();
     type DomainsProvider = Domains;

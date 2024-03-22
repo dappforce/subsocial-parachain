@@ -32,8 +32,7 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId);
 }
 
-// TODO: rename to `SpacesProvider`
-pub trait SpacesInterface<AccountId, SpaceId> {
+pub trait SpacesProvider<AccountId, SpaceId> {
     
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
     

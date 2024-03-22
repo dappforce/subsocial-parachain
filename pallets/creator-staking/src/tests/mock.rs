@@ -126,7 +126,7 @@ impl pallet_timestamp::Config for TestRuntime {
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
 use pallet_permissions::SpacePermissionsInfoOf;
 use subsocial_support::{Content, SpaceId};
-use subsocial_support::traits::{SpacePermissionsProvider, SpacesInterface};
+use subsocial_support::traits::{SpacePermissionsProvider, SpacesProvider};
 use crate::tests::tests::Rewards;
 
 impl pallet_permissions::Config for TestRuntime {
@@ -158,7 +158,7 @@ mock! {
         fn ensure_space_owner(id: SpaceId, account: &AccountId) -> DispatchResult;
     }
 
-    impl SpacesInterface<AccountId, SpaceId> for Spaces {
+    impl SpacesProvider<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
         
         fn update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
@@ -184,7 +184,7 @@ impl pallet_creator_staking::Config for TestRuntime {
     type PalletId = CreatorStakingPalletId;
     type BlockPerEra = BlockPerEra;
     type Currency = Balances;
-    type SpacesInterface = MockSpaces;
+    type SpacesProvider = MockSpaces;
     type SpacePermissionsProvider = MockSpaces;
     type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
     type MinimumTotalStake = MinimumTotalStake;
