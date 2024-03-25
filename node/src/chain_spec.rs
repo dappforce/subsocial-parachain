@@ -311,6 +311,17 @@ fn parachain_genesis(
 		},
 		transaction_payment: Default::default(),
 		treasury: Default::default(),
+		phragmen_election: Default::default(),
+		democracy: Default::default(),
+		council: subsocial_parachain_runtime::CouncilConfig {
+			members: vec![],
+			phantom: Default::default(),
+		},
+		technical_committee: subsocial_parachain_runtime::TechnicalCommitteeConfig {
+			members: vec![],
+			phantom: Default::default(),
+		},
+		technical_membership: Default::default(),
 	}
 }
 
