@@ -120,11 +120,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	pallet_ownership::migration::v1::MigrateToV1<
-		Runtime,
-		Ownership,
-		OwnershipMigrationV1OldPallet,
-	>,
+	(),
 >;
 
 pub struct OwnershipMigrationV1OldPallet;
@@ -148,8 +144,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// Extrinsic base weight (smallest non-zero weight) is mapped to 10 MILLIUNIT
-		let p = 10 * MILLIUNIT;
+		// Extrinsic base weight (smallest non-zero weight) is mapped to 100 MILLIUNIT
+		let p = 100 * MILLIUNIT;
 		let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
@@ -188,7 +184,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("soonsocial-parachain"),
 	impl_name: create_runtime_str!("soonsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 4001,
+	spec_version: 4100,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 12,
@@ -573,9 +569,15 @@ parameter_types! {
 )]
 pub enum ProxyType {
 	Any,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove as it's not used
 	DomainRegistrar,
 	SocialActions,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove or either replace as it's not used
 	Management,
+	#[deprecated(note = "Will be removed in the next release")]
+	// TODO: remove or either replace (if we have use-cases for it) as it's not used
 	SocialActionsProxy,
 }
 
@@ -587,34 +589,23 @@ impl Default for ProxyType {
 
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
+		let is_social_action = matches!(
+			c,
+			RuntimeCall::AccountFollows(..)
+			| RuntimeCall::Domains(..)
+			| RuntimeCall::PostFollows(..)
+			| RuntimeCall::Posts(..)
+			| RuntimeCall::Profiles(..)
+			| RuntimeCall::Reactions(..)
+			| RuntimeCall::Roles(..)
+			| RuntimeCall::SpaceFollows(..)
+			| RuntimeCall::Spaces(..)
+		);
+
 		match self {
 			ProxyType::Any => true,
-			ProxyType::DomainRegistrar => false,
-			ProxyType::SocialActions => matches!(
-				c,
-				RuntimeCall::Posts(..)
-					| RuntimeCall::Reactions(..)
-					| RuntimeCall::AccountFollows(..)
-					| RuntimeCall::SpaceFollows(..)
-					| RuntimeCall::Spaces(..)
-					| RuntimeCall::Profiles(..)
-			),
-			// TODO: Think on this proxy type. We probably need this to extend `SocialActions` or either replace it.
-			ProxyType::Management => matches!(
-				c,
-				RuntimeCall::Spaces(..)
-					| RuntimeCall::Ownership(..)
-					| RuntimeCall::Roles(..)
-					| RuntimeCall::Profiles(..)
-					| RuntimeCall::Domains(..)
-			),
-			ProxyType::SocialActionsProxy => {
-				matches!(
-					c,
-					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. })
-					if ProxyType::SocialActions.filter(call),
-				)
-			},
+			ProxyType::SocialActions => is_social_action,
+			_ => false,
 		}
 	}
 
