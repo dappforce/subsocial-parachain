@@ -16,13 +16,10 @@ const LOG_TARGET: &'static str = "runtime::ownership";
 
 pub mod v1 {
     use frame_support::{
-        migration::move_pallet, pallet_prelude::*, storage_alias, weights::Weight,
+        pallet_prelude::*, storage_alias, weights::Weight,
     };
-    #[cfg(feature = "try-runtime")]
-    use frame_support::migration::storage_key_iter;
-    #[cfg(feature = "try-runtime")]
     use sp_io::hashing::twox_128;
-    use sp_runtime::Saturating;
+    use sp_io::KillStorageResult;
 
     use subsocial_support::SpaceId;
 
@@ -39,47 +36,48 @@ pub mod v1 {
     {
         fn on_runtime_upgrade() -> Weight {
             let current_version = Pallet::<T>::current_storage_version();
-            let onchain_version = Pallet::<T>::on_chain_storage_version();
 
             let old_pallet_name = N::get();
+            let old_pallet_prefix = twox_128(old_pallet_name.as_bytes());
+            let old_pallet_has_data = sp_io::storage::next_key(&old_pallet_prefix).is_some();
+
             let new_pallet_name = <P as PalletInfoAccess>::name();
 
             log::info!(
                 target: LOG_TARGET,
-                "Running migration with current storage version {:?} / onchain {:?}",
-                current_version,
-                onchain_version
+                "Running migration to clean-up the old pallet name {}",
+                old_pallet_name,
             );
 
-            if onchain_version == 0 && current_version == 1 {
-                current_version.put::<Pallet<T>>();
-
+            if old_pallet_has_data {
                 if new_pallet_name == old_pallet_name {
                     log::warn!(
                         target: LOG_TARGET,
-                        "new ownership name is equal to the old one, only bumping the version"
+                        "new ownership name is equal to the old one, migration won't run"
                     );
-                    return T::DbWeight::get().reads_writes(1, 1)
+                    return T::DbWeight::get().reads(1)
                 }
 
-                move_pallet(old_pallet_name.as_bytes(), new_pallet_name.as_bytes());
+                current_version.put::<Pallet<T>>();
 
-                let mut migrated = 0u64;
-
-                for (space_id, account) in PendingSpaceOwner::<T>::drain() {
-                    PendingOwnershipTransfers::<T>::insert(
-                        OwnableEntity::Space(space_id),
-                        account,
-                    );
-                    migrated.saturating_inc();
+                match sp_io::storage::clear_prefix(&old_pallet_prefix, None) {
+                    KillStorageResult::SomeRemaining(remaining) => {
+                        log::warn!(
+                            target: LOG_TARGET,
+                            "Some records from the old pallet {} have not been removed: {:?}",
+                            old_pallet_name,
+                            remaining
+                        );
+                    }
+                    KillStorageResult::AllRemoved(removed) => {
+                        log::info!(
+                            target: LOG_TARGET,
+                            "Removed {} records from the old pallet {}",
+                            removed,
+                            old_pallet_name
+                        );
+                    },
                 }
-
-                log::info!(
-                    target: LOG_TARGET,
-                    "Upgraded {} records, storage to version {:?}",
-                    migrated,
-                    current_version
-                );
 
                 <T as frame_system::Config>::BlockWeights::get().max_block
             } else {
@@ -93,40 +91,21 @@ pub mod v1 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-            let current_version = Pallet::<T>::current_storage_version();
-            let onchain_version = Pallet::<T>::on_chain_storage_version();
             let old_pallet_name = N::get().as_bytes();
             let old_pallet_prefix = twox_128(old_pallet_name);
-            ensure!(onchain_version == 0 && current_version == 1, "migration from version 0 to 1.");
 
             ensure!(
                 sp_io::storage::next_key(&old_pallet_prefix).is_some(),
-                "no data for the old pallet name has been detected"
+                "no data for the old pallet name has been detected; consider removing the migration"
             );
 
-            // let prev_count = PendingSpaceOwner::<T>::iter().count();
-            let prev_count = storage_key_iter::<SpaceId, T::AccountId, Twox64Concat>(old_pallet_name, b"PendingSpaceOwner").count();
-            Ok((prev_count as u32).encode())
+            Ok(Vec::new())
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(prev_count: Vec<u8>) -> Result<(), &'static str> {
-            let prev_count: u32 = Decode::decode(&mut prev_count.as_slice()).expect(
-                "the state parameter should be something that was generated by pre_upgrade",
-            );
-            let post_count = PendingOwnershipTransfers::<T>::iter().count() as u32;
-            let old_storage_count = PendingSpaceOwner::<T>::iter().count();
-
+        fn post_upgrade(_: Vec<u8>) -> Result<(), &'static str> {
             let old_pallet_name = N::get();
             let new_pallet_name = <P as PalletInfoAccess>::name();
-
-            ensure!(
-                prev_count == post_count,
-                "the records count before and after the migration should be the same"
-            );
-            ensure!(old_storage_count.is_zero(), "all records should be migrated");
-
-            ensure!(Pallet::<T>::on_chain_storage_version() == 1, "wrong storage version");
 
             // skip storage prefix checks for the same pallet names
             if new_pallet_name == old_pallet_name {
@@ -145,6 +124,7 @@ pub mod v1 {
                 "old pallet data hasn't been removed"
             );
 
+            // Assert nothing redundant is left in the new prefix.
             // NOTE: storage_version_key is already in the new prefix.
             let new_pallet_prefix = twox_128(new_pallet_name.as_bytes());
             let new_pallet_prefix_iter = frame_support::storage::KeyPrefixIterator::new(
@@ -152,7 +132,7 @@ pub mod v1 {
                 new_pallet_prefix.to_vec(),
                 |_| Ok(()),
             );
-            assert_eq!(new_pallet_prefix_iter.count(), (prev_count + 1) as usize);
+            assert_eq!(new_pallet_prefix_iter.count(), 1);
 
             Ok(())
         }
