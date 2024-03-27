@@ -482,7 +482,7 @@ impl<T: Config> Pallet<T> {
 
 /// Implementation of `CreatorStakingProvider` for `creator-staking` pallet.
 ///
-/// This is used in space-ownership pallet to forbid ownership transfer for spaces, which
+/// This is used in ownership pallet to forbid ownership transfer for spaces, which
 /// are registered as creators.
 impl<T: Config> CreatorStakingProvider<T::AccountId> for Pallet<T> {
     fn is_creator_active(

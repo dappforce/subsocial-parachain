@@ -15,4 +15,4 @@ mod spaces;
 
 mod space_follows;
 
-mod space_ownership;
+mod ownership;

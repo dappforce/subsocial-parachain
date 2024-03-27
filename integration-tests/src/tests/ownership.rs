@@ -7,12 +7,12 @@
 use frame_support::{assert_ok, assert_noop};
 use sp_runtime::traits::Zero;
 
-use pallet_ownership::{OwnableEntity, Error as SpaceOwnershipError};
+use pallet_ownership::{OwnableEntity, Error as OwnershipError};
 use pallet_spaces::Error as SpacesError;
 
 use crate::mock::*;
 use crate::utils::*;
-use crate::utils::space_ownership_utils::*;
+use crate::utils::ownership_utils::*;
 
 #[test]
 fn transfer_space_ownership_should_work() {
@@ -20,7 +20,7 @@ fn transfer_space_ownership_should_work() {
         assert_ok!(_transfer_default_space_ownership()); // Transfer SpaceId 1 owned by ACCOUNT1 to ACCOUNT2
 
         assert_eq!(
-            SpaceOwnership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).unwrap(),
+            Ownership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).unwrap(),
             ACCOUNT2
         );
     });
@@ -51,7 +51,7 @@ fn transfer_space_ownership_should_fail_when_trying_to_transfer_to_current_owner
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _transfer_space_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None, Some(ACCOUNT1)),
-            SpaceOwnershipError::<TestRuntime>::CannotTransferToCurrentOwner
+            OwnershipError::<TestRuntime>::CannotTransferToCurrentOwner
         );
     });
 }
@@ -70,7 +70,7 @@ fn accept_pending_ownership_should_work() {
         assert_eq!(space.owner, ACCOUNT2);
 
         // Check that pending storage is cleared:
-        assert!(SpaceOwnership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
+        assert!(Ownership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
 
         assert!(Balances::reserved_balance(ACCOUNT1).is_zero());
 
@@ -96,7 +96,7 @@ fn accept_pending_ownership_should_fail_when_no_pending_transfer_for_space() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _accept_default_pending_ownership(),
-            SpaceOwnershipError::<TestRuntime>::NoPendingTransfer
+            OwnershipError::<TestRuntime>::NoPendingTransfer
         );
     });
 }
@@ -108,7 +108,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_already_an_owner() {
 
         assert_noop!(
             _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None),
-            SpaceOwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer,
+            OwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer,
         );
     });
 }
@@ -120,7 +120,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_not_equal_to_pending_accoun
 
         assert_noop!(
             _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT3)), None),
-            SpaceOwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer
+            OwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer
         );
     });
 }
@@ -137,7 +137,7 @@ fn reject_pending_ownership_should_work() {
         assert_eq!(space.owner, ACCOUNT1);
 
         // Check whether storage state is correct
-        assert!(SpaceOwnership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
+        assert!(Ownership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
     });
 }
 
@@ -153,7 +153,7 @@ fn reject_pending_ownership_should_work_when_proposal_rejected_by_current_space_
         assert_eq!(space.owner, ACCOUNT1);
 
         // Check whether storage state is correct
-        assert!(SpaceOwnership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
+        assert!(Ownership::pending_ownership_transfer(OwnableEntity::Space(SPACE1)).is_none());
     });
 }
 
@@ -172,7 +172,7 @@ fn reject_pending_ownership_should_fail_when_no_pending_transfer_on_space() {
     ExtBuilder::build_with_space().execute_with(|| {
         assert_noop!(
             _reject_default_pending_ownership(),
-            SpaceOwnershipError::<TestRuntime>::NoPendingTransfer
+            OwnershipError::<TestRuntime>::NoPendingTransfer
         ); // Rejecting a transfer from ACCOUNT2
     });
 }
@@ -184,7 +184,7 @@ fn reject_pending_ownership_should_fail_when_account_is_not_allowed_to_reject() 
 
         assert_noop!(
             _reject_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT3)), None),
-            SpaceOwnershipError::<TestRuntime>::NotAllowedToRejectOwnershipTransfer
+            OwnershipError::<TestRuntime>::NotAllowedToRejectOwnershipTransfer
         ); // Rejecting a transfer from ACCOUNT2
     });
 }
