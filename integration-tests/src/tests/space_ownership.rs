@@ -108,7 +108,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_already_an_owner() {
 
         assert_noop!(
             _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT1)), None),
-            SpaceOwnershipError::<TestRuntime>::CurrentOwnerCannotAcceptOwnershipTransfer,
+            SpaceOwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer,
         );
     });
 }
@@ -120,7 +120,7 @@ fn accept_pending_ownership_should_fail_if_origin_is_not_equal_to_pending_accoun
 
         assert_noop!(
             _accept_pending_ownership(Some(RuntimeOrigin::signed(ACCOUNT3)), None),
-            SpaceOwnershipError::<TestRuntime>::CurrentOwnerCannotAcceptOwnershipTransfer
+            SpaceOwnershipError::<TestRuntime>::NotAllowedToAcceptOwnershipTransfer
         );
     });
 }

@@ -436,6 +436,11 @@ pub mod pallet {
             Self::ensure_space_limit_not_reached(&new_owner)?;
             let space = Pallet::<T>::require_space(space_id)?;
 
+            ensure!(
+                T::IsAccountBlocked::is_allowed_account(new_owner.clone(), space_id),
+                ModerationError::AccountIsBlocked
+            );
+
             SpaceIdsByOwner::<T>::mutate(&space.owner, |ids| {
                 remove_from_bounded_vec(ids, space_id)
             });

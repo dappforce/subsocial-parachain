@@ -81,7 +81,7 @@ pub mod pallet {
         /// There is no pending ownership transfer for a given entity.
         NoPendingTransfer,
         /// Account is not allowed to accept ownership transfer.
-        CurrentOwnerCannotAcceptOwnershipTransfer,
+        NotAllowedToAcceptOwnershipTransfer,
         /// Account is not allowed to reject ownership transfer.
         NotAllowedToRejectOwnershipTransfer,
     }
@@ -122,35 +122,29 @@ pub mod pallet {
         pub fn transfer_ownership(
             origin: OriginFor<T>,
             entity: OwnableEntity<T>,
-            transfer_to: T::AccountId,
+            new_owner: T::AccountId,
         ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+            let current_owner = ensure_signed(origin)?;
+
+            ensure!(current_owner != new_owner, Error::<T>::CannotTransferToCurrentOwner);
 
             match entity.clone() {
                 OwnableEntity::Space(space_id) => {
-                    ensure!(who != transfer_to, Error::<T>::CannotTransferToCurrentOwner);
-
-                    T::SpacePermissionsProvider::ensure_space_owner(space_id, &who)?;
-                    // TODO: ensure we need this kind of moderation checks
-                    //  ensure!(
-                    //      T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
-                    //      ModerationError::AccountIsBlocked
-                    //  );
-
+                    T::SpacePermissionsProvider::ensure_space_owner(space_id, &current_owner)?;
                     Self::ensure_not_active_creator(space_id)?;
                 }
                 OwnableEntity::Post(post_id) =>
-                    T::PostsProvider::ensure_allowed_to_update_post(&who, post_id)?,
+                    T::PostsProvider::ensure_post_owner(&current_owner, post_id)?,
                 OwnableEntity::Domain(domain) =>
-                    T::DomainsProvider::ensure_allowed_to_update_domain(&who, &domain)?,
+                    T::DomainsProvider::ensure_domain_owner(&current_owner, &domain)?,
             }
 
-            PendingOwnershipTransfers::<T>::insert(&entity, transfer_to.clone());
+            PendingOwnershipTransfers::<T>::insert(&entity, new_owner.clone());
 
             Self::deposit_event(Event::OwnershipTransferCreated {
-                current_owner: who,
+                current_owner,
                 entity,
-                new_owner: transfer_to,
+                new_owner,
             });
             Ok(())
         }
@@ -164,31 +158,32 @@ pub mod pallet {
             }
         )]
         pub fn accept_pending_ownership(origin: OriginFor<T>, entity: OwnableEntity<T>) -> DispatchResult {
-            let new_owner = ensure_signed(origin)?;
+            let ownership_claimant = ensure_signed(origin)?;
 
-            let transfer_to =
+            let pending_owner =
                 Self::pending_ownership_transfer(&entity).ok_or(Error::<T>::NoPendingTransfer)?;
 
-            ensure!(new_owner == transfer_to, Error::<T>::CurrentOwnerCannotAcceptOwnershipTransfer);
+            ensure!(ownership_claimant == pending_owner, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
 
             match entity.clone() {
                 OwnableEntity::Space(space_id) => {
-                    let old_space_owner = Self::get_entity_owner(&entity)?;
+                    let previous_space_owner = T::SpacesProvider::get_space_owner(space_id)?;
 
                     Self::ensure_not_active_creator(space_id)?;
-                    T::SpacesProvider::update_space_owner(space_id, transfer_to.clone())?;
-                    T::ProfileManager::unlink_space_from_profile(&old_space_owner, space_id);
+                    
+                    T::SpacesProvider::update_space_owner(space_id, pending_owner.clone())?;
+                    T::ProfileManager::unlink_space_from_profile(&previous_space_owner, space_id);
                 }
                 OwnableEntity::Post(post_id) =>
-                    T::PostsProvider::update_post_owner(post_id, &new_owner)?,
+                    T::PostsProvider::update_post_owner(post_id, &ownership_claimant)?,
                 OwnableEntity::Domain(domain) =>
-                    T::DomainsProvider::update_domain_owner(&domain, &new_owner)?,
+                    T::DomainsProvider::update_domain_owner(&domain, &ownership_claimant)?,
             }
 
             PendingOwnershipTransfers::<T>::remove(&entity);
 
             Self::deposit_event(Event::OwnershipTransferAccepted {
-                account: new_owner,
+                account: ownership_claimant,
                 entity,
             });
             Ok(())
@@ -199,12 +194,16 @@ pub mod pallet {
         pub fn reject_pending_ownership(origin: OriginFor<T>, entity: OwnableEntity<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let transfer_to =
+            let pending_owner =
                 Self::pending_ownership_transfer(&entity).ok_or(Error::<T>::NoPendingTransfer)?;
-            let entity_owner = Self::get_entity_owner(&entity)?;
+            let current_owner = match entity.clone() {
+                OwnableEntity::Space(space_id) => T::SpacesProvider::get_space_owner(space_id),
+                OwnableEntity::Post(post_id) => T::PostsProvider::get_post_owner(post_id),
+                OwnableEntity::Domain(domain) => T::DomainsProvider::get_domain_owner(&domain),
+            }?;
 
             ensure!(
-                who == transfer_to || who == entity_owner,
+                who == pending_owner || who == current_owner,
                 Error::<T>::NotAllowedToRejectOwnershipTransfer
             );
 
@@ -223,14 +222,6 @@ pub mod pallet {
             );
 
             Ok(())
-        }
-
-        fn get_entity_owner(entity: &OwnableEntity<T>) -> Result<T::AccountId, DispatchError> {
-            match entity {
-                OwnableEntity::Space(space_id) => T::SpacesProvider::get_space_owner(*space_id),
-                OwnableEntity::Post(post_id) => T::PostsProvider::get_post_owner(*post_id),
-                OwnableEntity::Domain(domain) => T::DomainsProvider::get_domain_owner(domain),
-            }
         }
     }
 }

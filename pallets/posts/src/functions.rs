@@ -466,10 +466,10 @@ impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
         Ok(post.owner)
     }
 
-    fn ensure_allowed_to_update_post(account: &T::AccountId, post_id: PostId) -> DispatchResult {
+    fn ensure_post_owner(account: &T::AccountId, post_id: PostId) -> DispatchResult {
         let post = Self::require_post(post_id)?;
-        let space = post.get_space()?;
-        Self::ensure_account_can_update_post(account, &post, &space)
+        ensure!(post.is_owner(account), Error::<T>::NotAPostOwner);
+        Ok(())
     }
 
     fn update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        

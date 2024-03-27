@@ -653,11 +653,10 @@ pub mod pallet {
             domain_meta: &DomainMeta<T>,
             sender: &T::AccountId,
         ) -> DispatchResult {
-            let DomainMeta { owner, .. } = domain_meta;
-
             // FIXME: this is hotfix, handle expired domains correctly!
             // ensure!(&System::<T>::block_number() < expires_at, Error::<T>::DomainHasExpired);
-            ensure!(sender == owner, Error::<T>::NotDomainOwner);
+            
+            ensure!(domain_meta.is_owner(sender), Error::<T>::NotDomainOwner);
             Ok(())
         }
 
@@ -742,9 +741,10 @@ pub mod pallet {
             Ok(meta.owner)
         }
         
-        fn ensure_allowed_to_update_domain(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
+        fn ensure_domain_owner(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
             let meta = Self::require_domain_by_ref(domain)?;
-            Self::ensure_allowed_to_update_domain(&meta, account)
+            ensure!(meta.is_owner(account), Error::<T>::NotDomainOwner);
+            Ok(())
         }
 
         fn update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {

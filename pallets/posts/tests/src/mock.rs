@@ -160,7 +160,7 @@ impl DomainsProvider<AccountId> for MockEmptyDomainsProvider {
         Ok(ACCOUNT1)
     }
 
-    fn ensure_allowed_to_update_domain(_account: &AccountId, _domain: &[u8]) -> DispatchResult {
+    fn ensure_domain_owner(_account: &AccountId, _domain: &[u8]) -> DispatchResult {
         Ok(())
     }
 

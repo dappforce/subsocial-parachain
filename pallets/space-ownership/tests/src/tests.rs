@@ -138,7 +138,7 @@ fn accept_pending_ownership_should_not_allow_non_target_account_to_accept() {
                 RuntimeOrigin::signed(ACCOUNT3),
                 OwnableEntity::Space(SPACE1)
             ),
-            OwnershipError::<Test>::CurrentOwnerCannotAcceptOwnershipTransfer
+            OwnershipError::<Test>::NotAllowedToAcceptOwnershipTransfer
         );
 
         assert_ok!(
