@@ -60,7 +60,7 @@ pub trait DomainsProvider<AccountId> {
     
     fn get_domain_owner(domain: &[u8]) -> Result<AccountId, DispatchError>;
     
-    fn ensure_domain_owner(account: &AccountId, domain: &[u8]) -> DispatchResult;
+    fn ensure_domain_owner(domain: &[u8], account: &AccountId) -> DispatchResult;
     
     fn update_domain_owner(domain: &[u8], new_owner: &AccountId) -> DispatchResult;
 
@@ -71,7 +71,7 @@ pub trait DomainsProvider<AccountId> {
 pub trait PostsProvider<AccountId> {
     fn get_post_owner(post_id: PostId) -> Result<AccountId, DispatchError>;
     
-    fn ensure_post_owner(account: &AccountId, post_id: PostId) -> DispatchResult;
+    fn ensure_post_owner(post_id: PostId, account: &AccountId) -> DispatchResult;
     
     fn update_post_owner(post_id: PostId, new_owner: &AccountId) -> DispatchResult;
 

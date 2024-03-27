@@ -741,7 +741,7 @@ pub mod pallet {
             Ok(meta.owner)
         }
         
-        fn ensure_domain_owner(account: &T::AccountId, domain: &[u8]) -> DispatchResult {
+        fn ensure_domain_owner(domain: &[u8], account: &T::AccountId) -> DispatchResult {
             let meta = Self::require_domain_by_ref(domain)?;
             ensure!(meta.is_owner(account), Error::<T>::NotDomainOwner);
             Ok(())

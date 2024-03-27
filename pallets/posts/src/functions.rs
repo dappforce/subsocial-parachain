@@ -466,7 +466,7 @@ impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
         Ok(post.owner)
     }
 
-    fn ensure_post_owner(account: &T::AccountId, post_id: PostId) -> DispatchResult {
+    fn ensure_post_owner(post_id: PostId, account: &T::AccountId) -> DispatchResult {
         let post = Self::require_post(post_id)?;
         ensure!(post.is_owner(account), Error::<T>::NotAPostOwner);
         Ok(())

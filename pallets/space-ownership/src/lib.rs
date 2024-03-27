@@ -134,9 +134,9 @@ pub mod pallet {
                     Self::ensure_not_active_creator(space_id)?;
                 }
                 OwnableEntity::Post(post_id) =>
-                    T::PostsProvider::ensure_post_owner(&current_owner, post_id)?,
+                    T::PostsProvider::ensure_post_owner(post_id, &current_owner)?,
                 OwnableEntity::Domain(domain) =>
-                    T::DomainsProvider::ensure_domain_owner(&current_owner, &domain)?,
+                    T::DomainsProvider::ensure_domain_owner(&domain, &current_owner)?,
             }
 
             PendingOwnershipTransfers::<T>::insert(&entity, new_owner.clone());
@@ -167,23 +167,23 @@ pub mod pallet {
 
             match entity.clone() {
                 OwnableEntity::Space(space_id) => {
-                    let previous_space_owner = T::SpacesProvider::get_space_owner(space_id)?;
+                    let previous_owner = T::SpacesProvider::get_space_owner(space_id)?;
 
                     Self::ensure_not_active_creator(space_id)?;
                     
                     T::SpacesProvider::update_space_owner(space_id, pending_owner.clone())?;
-                    T::ProfileManager::unlink_space_from_profile(&previous_space_owner, space_id);
+                    T::ProfileManager::unlink_space_from_profile(&previous_owner, space_id);
                 }
                 OwnableEntity::Post(post_id) =>
-                    T::PostsProvider::update_post_owner(post_id, &ownership_claimant)?,
+                    T::PostsProvider::update_post_owner(post_id, &pending_owner)?,
                 OwnableEntity::Domain(domain) =>
-                    T::DomainsProvider::update_domain_owner(&domain, &ownership_claimant)?,
+                    T::DomainsProvider::update_domain_owner(&domain, &pending_owner)?,
             }
 
             PendingOwnershipTransfers::<T>::remove(&entity);
 
             Self::deposit_event(Event::OwnershipTransferAccepted {
-                account: ownership_claimant,
+                account: pending_owner,
                 entity,
             });
             Ok(())
