@@ -32,8 +32,11 @@ pub trait ProfileManager<AccountId> {
     fn unlink_space_from_profile(account: &AccountId, space_id: SpaceId);
 }
 
-pub trait SpacesInterface<AccountId, SpaceId> {
+pub trait SpacesProvider<AccountId, SpaceId> {
+    
     fn get_space_owner(space_id: SpaceId) -> Result<AccountId, DispatchError>;
+    
+    fn do_update_space_owner(space_id: SpaceId, new_owner: AccountId) -> DispatchResult;
 
     fn create_space(owner: &AccountId, content: Content) -> Result<SpaceId, DispatchError>;
 }
@@ -50,4 +53,28 @@ impl<AccountId> CreatorStakingProvider<AccountId> for () {
     ) -> bool {
         false
     }
+}
+
+pub trait DomainsProvider<AccountId> {
+    type MaxDomainLength: frame_support::traits::Get<u32>;
+    
+    fn get_domain_owner(domain: &[u8]) -> Result<AccountId, DispatchError>;
+    
+    fn ensure_domain_owner(domain: &[u8], account: &AccountId) -> DispatchResult;
+    
+    fn do_update_domain_owner(domain: &[u8], new_owner: &AccountId) -> DispatchResult;
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn register_domain(owner: &AccountId, domain: &[u8]) -> Result<sp_std::vec::Vec<u8>, DispatchError>;
+}
+
+pub trait PostsProvider<AccountId> {
+    fn get_post_owner(post_id: PostId) -> Result<AccountId, DispatchError>;
+    
+    fn ensure_post_owner(post_id: PostId, account: &AccountId) -> DispatchResult;
+    
+    fn do_update_post_owner(post_id: PostId, new_owner: &AccountId) -> DispatchResult;
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn create_post(owner: &AccountId, space_id: SpaceId, content: Content) -> Result<PostId, DispatchError>;
 }

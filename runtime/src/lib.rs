@@ -121,8 +121,19 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(),
+	pallet_ownership::migration::v1::MigrateToV1<
+		Runtime,
+		Ownership,
+		OwnershipMigrationV1OldPallet,
+	>,
 >;
+
+pub struct OwnershipMigrationV1OldPallet;
+impl frame_support::traits::Get<&'static str> for OwnershipMigrationV1OldPallet {
+	fn get() -> &'static str {
+		"SpaceOwnership"
+	}
+}
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -178,10 +189,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 41,
+	spec_version: 42,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 8,
+	transaction_version: 9,
 	state_version: 0,
 };
 
@@ -728,7 +739,7 @@ impl pallet_reactions::Config for Runtime {
 impl pallet_profiles::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SpacePermissionsProvider = Spaces;
-	type SpacesInterface = Spaces;
+	type SpacesProvider = Spaces;
 	type WeightInfo = pallet_profiles::weights::SubstrateWeight<Runtime>;
 }
 
@@ -765,11 +776,16 @@ impl pallet_spaces::Config for Runtime {
 	type WeightInfo = pallet_spaces::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_space_ownership::Config for Runtime {
+impl pallet_ownership::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ProfileManager = Profiles;
+	type SpacesProvider = Spaces;
+	type SpacePermissionsProvider = Spaces;
 	type CreatorStakingProvider = CreatorStaking;
-	type WeightInfo = pallet_space_ownership::weights::SubstrateWeight<Runtime>;
+	type DomainsProvider = Domains;
+	type PostsProvider = Posts;
+	type Currency = Balances;
+	type WeightInfo = pallet_ownership::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_account_follows::Config for Runtime {
@@ -825,7 +841,7 @@ impl pallet_creator_staking::Config for Runtime {
 	type PalletId = CreatorStakingPalletId;
 	type BlockPerEra = BlockPerEra;
 	type Currency = Balances;
-	type SpacesInterface = Spaces;
+	type SpacesProvider = Spaces;
 	type SpacePermissionsProvider = Spaces;
 	type CreatorRegistrationDeposit = CreatorRegistrationDeposit;
 	type MinimumTotalStake = MinimumTotalStake;
@@ -901,7 +917,7 @@ construct_runtime!(
 		AccountFollows: pallet_account_follows = 72,
 		Profiles: pallet_profiles = 73,
 		SpaceFollows: pallet_space_follows = 74,
-		SpaceOwnership: pallet_space_ownership = 75,
+		Ownership: pallet_ownership = 75,
 		Spaces: pallet_spaces = 76,
 		PostFollows: pallet_post_follows = 77,
 		Posts: pallet_posts = 78,
@@ -932,7 +948,7 @@ mod benches {
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
-		[pallet_space_ownership, SpaceOwnership]
+		[pallet_ownership, Ownership]
 		[pallet_spaces, Spaces]
 		[pallet_post_follows, PostFollows]
 		[pallet_posts, Posts]

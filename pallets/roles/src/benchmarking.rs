@@ -8,7 +8,7 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-// FIXME: refactor once SpacesInterface is added.
+// FIXME: refactor once SpacesProvider is added.
 
 use super::*;
 use frame_benchmarking::{account, benchmarks};

@@ -1,24 +1,24 @@
-#![cfg_attr(not(feature = "std"), no_std)]
 // Copyright (C) DAPPFORCE PTE. LTD.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0.
 //
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
+//! # Ownership Module
+//!
+//! This module allows the transfer of ownership of entities such as spaces, posts, and domains.
+
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_system::ensure_signed;
 use sp_std::prelude::*;
-
-use pallet_spaces::{Pallet as Spaces, SpaceById, SpaceIdsByOwner};
-use subsocial_support::{
-    remove_from_bounded_vec, traits::IsAccountBlocked, ModerationError, SpaceId,
-};
 
 pub use pallet::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod weights;
+pub mod migration;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -26,33 +26,60 @@ pub mod pallet {
     use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use pallet_permissions::SpacePermissions;
 
-    use subsocial_support::traits::{CreatorStakingProvider, ProfileManager};
+    use subsocial_support::{PostId, SpaceId, SpacePermissionsInfo, traits::{CreatorStakingProvider, DomainsProvider, ProfileManager, SpacesProvider, PostsProvider, SpacePermissionsProvider}};
+
+    pub(crate) type DomainLengthOf<T> = 
+        <<T as Config>::DomainsProvider as DomainsProvider<<T as frame_system::Config>::AccountId>>::MaxDomainLength;
+    
+    #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebugNoBound, TypeInfo, MaxEncodedLen)]
+    #[scale_info(skip_type_params(T))]
+    pub enum OwnableEntity<T: Config> {
+        Space(SpaceId),
+        Post(PostId),
+        Domain(BoundedVec<u8, DomainLengthOf<T>>),
+    }
+    
+    pub(crate) type SpacePermissionsInfoOf<T> =
+        SpacePermissionsInfo<<T as frame_system::Config>::AccountId, SpacePermissions>;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_spaces::Config {
+    pub trait Config: frame_system::Config + pallet_permissions::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type ProfileManager: ProfileManager<Self::AccountId>;
 
+        type SpacesProvider: SpacesProvider<Self::AccountId, SpaceId>;
+
+        type SpacePermissionsProvider: SpacePermissionsProvider<Self::AccountId, SpacePermissionsInfoOf<Self>>;
+
         type CreatorStakingProvider: CreatorStakingProvider<Self::AccountId>;
+
+        type DomainsProvider: DomainsProvider<Self::AccountId>;
+        
+        type PostsProvider: PostsProvider<Self::AccountId>;
+
+        type Currency: frame_support::traits::Currency<Self::AccountId>;
 
         type WeightInfo: WeightInfo;
     }
 
+    /// The current storage version
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The current space owner cannot transfer ownership to themself.
+        /// The current entity owner cannot transfer ownership to themselves.
         CannotTransferToCurrentOwner,
-        /// Account is already an owner of a space.
-        AlreadyASpaceOwner,
         /// Cannot transfer ownership, because a space is registered as an active creator.
         ActiveCreatorCannotTransferOwnership,
-        /// There is no pending ownership transfer for a given space.
-        NoPendingTransferOnSpace,
+        /// There is no pending ownership transfer for a given entity.
+        NoPendingTransfer,
         /// Account is not allowed to accept ownership transfer.
         NotAllowedToAcceptOwnershipTransfer,
         /// Account is not allowed to reject ownership transfer.
@@ -60,121 +87,129 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn pending_space_owner)]
-    pub type PendingSpaceOwner<T: Config> = StorageMap<_, Twox64Concat, SpaceId, T::AccountId>;
+    #[pallet::getter(fn pending_ownership_transfer)]
+    pub type PendingOwnershipTransfers<T: Config> =
+        StorageMap<_, Twox64Concat, OwnableEntity<T>, T::AccountId>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SpaceOwnershipTransferCreated {
+        OwnershipTransferCreated {
             current_owner: T::AccountId,
-            space_id: SpaceId,
+            entity: OwnableEntity<T>,
             new_owner: T::AccountId,
         },
-        SpaceOwnershipTransferAccepted {
+        OwnershipTransferAccepted {
             account: T::AccountId,
-            space_id: SpaceId,
+            entity: OwnableEntity<T>,
         },
-        SpaceOwnershipTransferRejected {
+        OwnershipTransferRejected {
             account: T::AccountId,
-            space_id: SpaceId,
+            entity: OwnableEntity<T>,
         },
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(<T as Config>::WeightInfo::transfer_space_ownership())]
-        pub fn transfer_space_ownership(
+        #[pallet::weight(
+            match entity {
+                OwnableEntity::Space(_) => T::WeightInfo::transfer_space_ownership(),
+                OwnableEntity::Post(_) => T::WeightInfo::transfer_post_ownership(),
+                OwnableEntity::Domain(_) => T::WeightInfo::transfer_domain_ownership(),
+            }
+        )]
+        pub fn transfer_ownership(
             origin: OriginFor<T>,
-            space_id: SpaceId,
-            transfer_to: T::AccountId,
+            entity: OwnableEntity<T>,
+            new_owner: T::AccountId,
         ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+            let current_owner = ensure_signed(origin)?;
 
-            let space = Spaces::<T>::require_space(space_id)?;
-            space.ensure_space_owner(who.clone())?;
+            ensure!(current_owner != new_owner, Error::<T>::CannotTransferToCurrentOwner);
 
-            ensure!(who != transfer_to, Error::<T>::CannotTransferToCurrentOwner);
-            ensure!(
-                T::IsAccountBlocked::is_allowed_account(transfer_to.clone(), space_id),
-                ModerationError::AccountIsBlocked
-            );
+            match entity.clone() {
+                OwnableEntity::Space(space_id) => {
+                    T::SpacePermissionsProvider::ensure_space_owner(space_id, &current_owner)?;
+                    Self::ensure_not_active_creator(space_id)?;
+                }
+                OwnableEntity::Post(post_id) =>
+                    T::PostsProvider::ensure_post_owner(post_id, &current_owner)?,
+                OwnableEntity::Domain(domain) =>
+                    T::DomainsProvider::ensure_domain_owner(&domain, &current_owner)?,
+            }
 
-            Self::ensure_not_active_creator(space_id)?;
+            PendingOwnershipTransfers::<T>::insert(&entity, new_owner.clone());
 
-            PendingSpaceOwner::<T>::insert(space_id, transfer_to.clone());
-
-            Self::deposit_event(Event::SpaceOwnershipTransferCreated {
-                current_owner: who,
-                space_id,
-                new_owner: transfer_to,
+            Self::deposit_event(Event::OwnershipTransferCreated {
+                current_owner,
+                entity,
+                new_owner,
             });
             Ok(())
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(<T as Config>::WeightInfo::accept_pending_ownership())]
-        pub fn accept_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
-            let new_owner = ensure_signed(origin)?;
+        #[pallet::weight(
+            match entity {
+                OwnableEntity::Space(_) => T::WeightInfo::accept_pending_space_ownership_transfer(),
+                OwnableEntity::Post(_) => T::WeightInfo::accept_pending_post_ownership_transfer(),
+                OwnableEntity::Domain(_) => T::WeightInfo::accept_pending_domain_ownership_transfer(),
+            }
+        )]
+        pub fn accept_pending_ownership(origin: OriginFor<T>, entity: OwnableEntity<T>) -> DispatchResult {
+            let ownership_claimant = ensure_signed(origin)?;
 
-            let mut space = Spaces::require_space(space_id)?;
-            ensure!(!space.is_owner(&new_owner), Error::<T>::AlreadyASpaceOwner);
+            let pending_owner =
+                Self::pending_ownership_transfer(&entity).ok_or(Error::<T>::NoPendingTransfer)?;
 
-            let transfer_to =
-                Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
+            ensure!(ownership_claimant == pending_owner, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
 
-            ensure!(new_owner == transfer_to, Error::<T>::NotAllowedToAcceptOwnershipTransfer);
+            match entity.clone() {
+                OwnableEntity::Space(space_id) => {
+                    let previous_owner = T::SpacesProvider::get_space_owner(space_id)?;
 
-            Self::ensure_not_active_creator(space_id)?;
+                    Self::ensure_not_active_creator(space_id)?;
 
-            Spaces::<T>::ensure_space_limit_not_reached(&transfer_to)?;
+                    T::SpacesProvider::do_update_space_owner(space_id, pending_owner.clone())?;
+                    T::ProfileManager::unlink_space_from_profile(&previous_owner, space_id);
+                }
+                OwnableEntity::Post(post_id) =>
+                    T::PostsProvider::do_update_post_owner(post_id, &pending_owner)?,
+                OwnableEntity::Domain(domain) =>
+                    T::DomainsProvider::do_update_domain_owner(&domain, &pending_owner)?,
+            }
 
-            // Here we know that the origin is eligible to become a new owner of this space.
-            PendingSpaceOwner::<T>::remove(space_id);
+            PendingOwnershipTransfers::<T>::remove(&entity);
 
-            let old_owner = space.owner;
-            space.owner = new_owner.clone();
-            SpaceById::<T>::insert(space_id, space);
-
-            T::ProfileManager::unlink_space_from_profile(&old_owner, space_id);
-
-            // Remove space id from the list of spaces by old owner
-            SpaceIdsByOwner::<T>::mutate(old_owner, |space_ids| {
-                remove_from_bounded_vec(space_ids, space_id)
-            });
-
-            // Add space id to the list of spaces by new owner
-            SpaceIdsByOwner::<T>::mutate(new_owner.clone(), |ids| {
-                ids.try_push(space_id).expect("qed; too many spaces per account")
-            });
-
-            // TODO add a new owner as a space follower? See
-            // T::BeforeSpaceCreated::before_space_created(new_owner.clone(), space)?;
-
-            Self::deposit_event(Event::SpaceOwnershipTransferAccepted {
-                account: new_owner,
-                space_id,
+            Self::deposit_event(Event::OwnershipTransferAccepted {
+                account: pending_owner,
+                entity,
             });
             Ok(())
         }
 
         #[pallet::call_index(2)]
         #[pallet::weight(<T as Config>::WeightInfo::reject_pending_ownership())]
-        pub fn reject_pending_ownership(origin: OriginFor<T>, space_id: SpaceId) -> DispatchResult {
+        pub fn reject_pending_ownership(origin: OriginFor<T>, entity: OwnableEntity<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let space = Spaces::<T>::require_space(space_id)?;
-            let transfer_to =
-                Self::pending_space_owner(space_id).ok_or(Error::<T>::NoPendingTransferOnSpace)?;
+            let pending_owner =
+                Self::pending_ownership_transfer(&entity).ok_or(Error::<T>::NoPendingTransfer)?;
+            let current_owner = match entity.clone() {
+                OwnableEntity::Space(space_id) => T::SpacesProvider::get_space_owner(space_id),
+                OwnableEntity::Post(post_id) => T::PostsProvider::get_post_owner(post_id),
+                OwnableEntity::Domain(domain) => T::DomainsProvider::get_domain_owner(&domain),
+            }?;
+
             ensure!(
-                who == transfer_to || who == space.owner,
+                who == pending_owner || who == current_owner,
                 Error::<T>::NotAllowedToRejectOwnershipTransfer
             );
 
-            PendingSpaceOwner::<T>::remove(space_id);
+            PendingOwnershipTransfers::<T>::remove(&entity);
 
-            Self::deposit_event(Event::SpaceOwnershipTransferRejected { account: who, space_id });
+            Self::deposit_event(Event::OwnershipTransferRejected { account: who, entity });
             Ok(())
         }
     }
@@ -185,6 +220,7 @@ pub mod pallet {
                 !T::CreatorStakingProvider::is_creator_active(creator_id),
                 Error::<T>::ActiveCreatorCannotTransferOwnership,
             );
+
             Ok(())
         }
     }

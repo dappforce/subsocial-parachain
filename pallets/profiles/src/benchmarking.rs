@@ -10,13 +10,13 @@ use crate::Pallet as Profiles;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
-use subsocial_support::{traits::SpacesInterface, Content, SpaceId};
+use subsocial_support::{traits::SpacesProvider, Content, SpaceId};
 
 fn create_space<T: Config>(
     owner: &T::AccountId,
     content: Content,
 ) -> Result<SpaceId, DispatchError> {
-    let space_id = T::SpacesInterface::create_space(owner, content)?;
+    let space_id = T::SpacesProvider::create_space(owner, content)?;
     Ok(space_id)
 }
 

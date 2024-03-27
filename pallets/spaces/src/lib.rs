@@ -49,7 +49,7 @@ pub mod pallet {
     };
     use subsocial_support::{
         ensure_content_is_valid, remove_from_bounded_vec,
-        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesInterface},
+        traits::{IsAccountBlocked, IsContentBlocked, SpacePermissionsProvider, SpacesProvider},
         ModerationError, SpacePermissionsInfo, WhoAndWhen, WhoAndWhenOf,
     };
     use types::*;
@@ -426,10 +426,39 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> SpacesInterface<T::AccountId, SpaceId> for Pallet<T> {
+    impl<T: Config> SpacesProvider<T::AccountId, SpaceId> for Pallet<T> {
         fn get_space_owner(space_id: SpaceId) -> Result<T::AccountId, DispatchError> {
             let space = Pallet::<T>::require_space(space_id)?;
             Ok(space.owner)
+        }
+        
+        fn do_update_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
+            let space = Pallet::<T>::require_space(space_id)?;
+            if space.is_owner(&new_owner) {
+                return Ok(());
+            }
+            
+            Self::ensure_space_limit_not_reached(&new_owner)?;
+
+            ensure!(
+                T::IsAccountBlocked::is_allowed_account(new_owner.clone(), space_id),
+                ModerationError::AccountIsBlocked
+            );
+
+            SpaceIdsByOwner::<T>::mutate(&space.owner, |ids| {
+                remove_from_bounded_vec(ids, space_id)
+            });
+
+            SpaceIdsByOwner::<T>::mutate(&new_owner, |ids| {
+                ids.try_push(space_id).expect("qed; too many spaces per account")
+            });
+            
+            SpaceById::<T>::mutate(space_id, |stored_space_opt| {
+                if let Some(stored_space) = stored_space_opt {
+                    stored_space.owner = new_owner;
+                }
+            });
+            Ok(())
         }
 
         fn create_space(owner: &T::AccountId, content: Content) -> Result<SpaceId, DispatchError> {

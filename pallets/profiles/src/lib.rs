@@ -29,7 +29,7 @@ pub mod pallet {
 
     use pallet_permissions::SpacePermissions;
     use subsocial_support::{
-        traits::{ProfileManager, SpacePermissionsProvider, SpacesInterface},
+        traits::{ProfileManager, SpacePermissionsProvider, SpacesProvider},
         Content, SpaceId, SpacePermissionsInfo,
     };
 
@@ -46,7 +46,7 @@ pub mod pallet {
             SpacePermissionsInfoOf<Self>,
         >;
 
-        type SpacesInterface: SpacesInterface<Self::AccountId, SpaceId>;
+        type SpacesProvider: SpacesProvider<Self::AccountId, SpaceId>;
 
         type WeightInfo: WeightInfo;
     }
@@ -104,7 +104,7 @@ pub mod pallet {
         pub fn create_space_as_profile(origin: OriginFor<T>, content: Content) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            let space_id = T::SpacesInterface::create_space(&sender, content)?;
+            let space_id = T::SpacesProvider::create_space(&sender, content)?;
 
             Self::do_set_profile(&sender, space_id)?;
 

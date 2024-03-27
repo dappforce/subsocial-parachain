@@ -103,6 +103,10 @@ impl<T: Config> DomainMeta<T> {
             outer_value_deposit: Zero::zero(),
         }
     }
+
+    pub fn is_owner(&self, account: &T::AccountId) -> bool {
+        self.owner == *account
+    }
 }
 
 impl<AccountId, Balance> From<(AccountId, Balance)> for DomainDeposit<AccountId, Balance> {

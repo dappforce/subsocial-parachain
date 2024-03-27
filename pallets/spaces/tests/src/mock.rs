@@ -130,7 +130,7 @@ impl pallet_roles::Config for Test {
 impl pallet_profiles::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type SpacePermissionsProvider = Spaces;
-    type SpacesInterface = Spaces;
+    type SpacesProvider = Spaces;
     type WeightInfo = ();
 }
 

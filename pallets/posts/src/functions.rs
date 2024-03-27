@@ -8,6 +8,7 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::Saturating;
 
 use subsocial_support::{remove_from_vec, SpaceId};
+use subsocial_support::traits::PostsProvider;
 
 use super::*;
 
@@ -143,6 +144,11 @@ impl<T: Config> Pallet<T> {
         post: &Post<T>,
         space: &Space<T>,
     ) -> DispatchResult {
+        ensure!(
+            T::IsAccountBlocked::is_allowed_account(editor.clone(), space.id),
+            ModerationError::AccountIsBlocked
+        );
+        
         let is_owner = post.is_owner(editor);
         let is_comment = post.is_comment();
 
@@ -451,5 +457,46 @@ impl<T: Config> Pallet<T> {
         }
 
         Ok(())
+    }
+}
+
+impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
+    fn get_post_owner(post_id: PostId) -> Result<T::AccountId, DispatchError> {
+        let post = Self::require_post(post_id)?;
+        Ok(post.owner)
+    }
+
+    fn ensure_post_owner(post_id: PostId, account: &T::AccountId) -> DispatchResult {
+        let post = Self::require_post(post_id)?;
+        ensure!(post.is_owner(account), Error::<T>::NotAPostOwner);
+        Ok(())
+    }
+
+    fn do_update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        
+        let post = Self::require_post(post_id)?;
+        if post.is_owner(new_owner) {
+            return Ok(())
+        }
+        
+        PostById::<T>::mutate(post_id, |stored_post_opt| {
+            if let Some(stored_post) = stored_post_opt {
+                stored_post.owner = new_owner.clone();
+            }
+        });
+        
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn create_post(owner: &T::AccountId, space_id: SpaceId, content: Content) -> Result<PostId, DispatchError> {
+        let new_post_id = Self::next_post_id();
+        let new_post: Post<T> =
+            Post::new(new_post_id, owner.clone(), Some(space_id), PostExtension::RegularPost, content.clone());
+
+        PostById::insert(new_post_id, new_post);
+        PostIdsBySpaceId::<T>::mutate(space_id, |ids| ids.push(new_post_id));
+        NextPostId::<T>::mutate(|n| n.saturating_inc());
+        
+        Ok(new_post_id)
     }
 }
