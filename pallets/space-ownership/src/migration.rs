@@ -16,18 +16,12 @@ const LOG_TARGET: &'static str = "runtime::ownership";
 
 pub mod v1 {
     use frame_support::{
-        pallet_prelude::*, storage_alias, weights::Weight,
+        pallet_prelude::*, weights::Weight,
     };
     use sp_io::hashing::twox_128;
     use sp_io::KillStorageResult;
 
-    use subsocial_support::SpaceId;
-
     use super::*;
-
-    #[storage_alias]
-    pub type PendingSpaceOwner<T: Config> =
-        StorageMap<Pallet<T>, Twox64Concat, SpaceId, <T as frame_system::Config>::AccountId>;
 
     pub struct MigrateToV1<T, P, N>(sp_std::marker::PhantomData<(T, P, N)>);
 
@@ -72,7 +66,7 @@ pub mod v1 {
                     KillStorageResult::AllRemoved(removed) => {
                         log::info!(
                             target: LOG_TARGET,
-                            "Removed {} records from the old pallet {}",
+                            "Removed all the {} records from the old pallet {}",
                             removed,
                             old_pallet_name
                         );
