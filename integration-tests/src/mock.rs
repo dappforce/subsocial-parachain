@@ -48,7 +48,7 @@ frame_support::construct_runtime!(
             Reactions: pallet_reactions,
             Roles: pallet_roles,
             SpaceFollows: pallet_space_follows,
-            SpaceOwnership: pallet_ownership,
+            Ownership: pallet_ownership,
             Spaces: pallet_spaces,
             Domains: pallet_domains,
         }
@@ -217,7 +217,7 @@ pub struct ExtBuilder;
 use crate::utils::posts_utils::*;
 use crate::utils::spaces_utils::*;
 use crate::utils::roles_utils::*;
-use crate::utils::space_ownership_utils::*;
+use crate::utils::ownership_utils::*;
 use crate::utils::reactions_utils::*;
 use crate::utils::space_follows_utils::*;
 
