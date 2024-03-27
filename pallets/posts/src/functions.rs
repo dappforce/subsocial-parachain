@@ -472,7 +472,12 @@ impl<T: Config> PostsProvider<T::AccountId> for Pallet<T> {
         Ok(())
     }
 
-    fn update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        
+    fn do_update_post_owner(post_id: PostId, new_owner: &T::AccountId) -> DispatchResult {        
+        let post = Self::require_post(post_id)?;
+        if post.is_owner(new_owner) {
+            return Ok(())
+        }
+        
         PostById::<T>::mutate(post_id, |stored_post_opt| {
             if let Some(stored_post) = stored_post_opt {
                 stored_post.owner = new_owner.clone();

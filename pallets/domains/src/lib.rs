@@ -552,6 +552,15 @@ pub mod pallet {
             );
             Ok(())
         }
+        
+        /// Throws an error if domain length exceeds the `DomainName` BoundedVec size limit.
+        fn ensure_valid_domain_length(domain: &[u8]) -> DispatchResult {
+            ensure!(
+                domain.len() <= T::MaxDomainLength::get() as usize,
+                Error::<T>::DomainIsTooLong,
+            );
+            Ok(())
+        }
 
         /// Throws an error if domain contains invalid character.
         fn ensure_domain_contains_valid_chars(domain: &[u8]) -> DispatchResult {
@@ -642,7 +651,10 @@ pub mod pallet {
         /// Try to get domain meta by its custom and top-level domain names.
         /// This function pre-validates the passed argument.
         pub fn require_domain_by_ref(domain: &[u8]) -> Result<DomainMeta<T>, DispatchError> {
-            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            // Because of BoundedVec implementation speicifics, we need to
+            // check that the domain length does not exceed the BoundedVec size
+            // before converting from &[u8] to DomainName<T> in `lower_domain_then_bound`,
+            Self::ensure_valid_domain_length(domain)?;
             let domain_lc = Self::lower_domain_then_bound(domain);
 
             Self::require_domain(domain_lc)
@@ -734,7 +746,7 @@ pub mod pallet {
     }
 
     impl<T: Config> DomainsProvider<T::AccountId> for Pallet<T> {
-        type DomainLength = T::MaxDomainLength;
+        type MaxDomainLength = T::MaxDomainLength;
         
         fn get_domain_owner(domain: &[u8]) -> Result<T::AccountId, DispatchError> {
             let meta = Self::require_domain_by_ref(domain)?;
@@ -747,8 +759,12 @@ pub mod pallet {
             Ok(())
         }
 
-        fn update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
+        fn do_update_domain_owner(domain: &[u8], new_owner: &T::AccountId) -> DispatchResult {
             let meta = Self::require_domain_by_ref(domain)?;
+            if meta.is_owner(new_owner) {
+                return Ok(());
+            }
+            
             let domain_lc = Self::lower_domain_then_bound(domain);
 
             Self::ensure_domains_limit_not_reached(&new_owner)?;
@@ -778,7 +794,7 @@ pub mod pallet {
 
         #[cfg(feature = "runtime-benchmarks")]
         fn register_domain(owner: &T::AccountId, domain: &[u8]) -> Result<Vec<u8>, DispatchError> {
-            ensure!(domain.len() <= T::MaxDomainLength::get() as usize, Error::<T>::DomainIsTooLong);
+            Self::ensure_valid_domain_length(domain)?;
             let domain_lc = Self::lower_domain_then_bound(domain);
             
             Self::do_register_domain(

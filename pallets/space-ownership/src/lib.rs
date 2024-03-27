@@ -31,7 +31,7 @@ pub mod pallet {
     use subsocial_support::{PostId, SpaceId, SpacePermissionsInfo, traits::{CreatorStakingProvider, DomainsProvider, ProfileManager, SpacesProvider, PostsProvider, SpacePermissionsProvider}};
 
     pub(crate) type DomainLengthOf<T> = 
-        <<T as Config>::DomainsProvider as DomainsProvider<<T as frame_system::Config>::AccountId>>::DomainLength;
+        <<T as Config>::DomainsProvider as DomainsProvider<<T as frame_system::Config>::AccountId>>::MaxDomainLength;
     
     #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebugNoBound, TypeInfo, MaxEncodedLen)]
     #[scale_info(skip_type_params(T))]
@@ -66,7 +66,7 @@ pub mod pallet {
     }
 
     /// The current storage version
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -170,14 +170,14 @@ pub mod pallet {
                     let previous_owner = T::SpacesProvider::get_space_owner(space_id)?;
 
                     Self::ensure_not_active_creator(space_id)?;
-                    
-                    T::SpacesProvider::update_space_owner(space_id, pending_owner.clone())?;
+
+                    T::SpacesProvider::do_update_space_owner(space_id, pending_owner.clone())?;
                     T::ProfileManager::unlink_space_from_profile(&previous_owner, space_id);
                 }
                 OwnableEntity::Post(post_id) =>
-                    T::PostsProvider::update_post_owner(post_id, &pending_owner)?,
+                    T::PostsProvider::do_update_post_owner(post_id, &pending_owner)?,
                 OwnableEntity::Domain(domain) =>
-                    T::DomainsProvider::update_domain_owner(&domain, &pending_owner)?,
+                    T::DomainsProvider::do_update_domain_owner(&domain, &pending_owner)?,
             }
 
             PendingOwnershipTransfers::<T>::remove(&entity);

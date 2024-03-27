@@ -161,7 +161,7 @@ mock! {
     impl SpacesProvider<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
         
-        fn update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
+        fn do_update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
 
         fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError>;
     }

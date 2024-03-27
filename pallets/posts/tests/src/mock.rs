@@ -154,7 +154,7 @@ parameter_types! {
 }
 pub struct MockEmptyDomainsProvider;
 impl DomainsProvider<AccountId> for MockEmptyDomainsProvider {
-    type DomainLength = MaxDomainLength;
+    type MaxDomainLength = MaxDomainLength;
 
     fn get_domain_owner(_domain: &[u8]) -> Result<AccountId, DispatchError> {
         Ok(ACCOUNT1)
@@ -164,7 +164,7 @@ impl DomainsProvider<AccountId> for MockEmptyDomainsProvider {
         Ok(())
     }
 
-    fn update_domain_owner(_domain: &[u8], _new_owner: &AccountId) -> DispatchResult {
+    fn do_update_domain_owner(_domain: &[u8], _new_owner: &AccountId) -> DispatchResult {
         Ok(())
     }
 

@@ -432,9 +432,13 @@ pub mod pallet {
             Ok(space.owner)
         }
         
-        fn update_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
-            Self::ensure_space_limit_not_reached(&new_owner)?;
+        fn do_update_space_owner(space_id: SpaceId, new_owner: T::AccountId) -> DispatchResult {
             let space = Pallet::<T>::require_space(space_id)?;
+            if space.is_owner(&new_owner) {
+                return Ok(());
+            }
+            
+            Self::ensure_space_limit_not_reached(&new_owner)?;
 
             ensure!(
                 T::IsAccountBlocked::is_allowed_account(new_owner.clone(), space_id),
