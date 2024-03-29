@@ -812,6 +812,7 @@ parameter_types! {
 
 impl pallet_energy::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type Balance = Balance;
 	type DefaultValueCoefficient = DefaultValueCoefficient;
