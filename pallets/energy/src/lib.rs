@@ -371,11 +371,15 @@ pub mod pallet {
 
             let fee_without_tip = fee.saturating_sub(tip);
             let energy_fee = Self::native_token_to_energy(fee_without_tip);
-
-            let energy_consumer = match <T as Config>::RuntimeCall::from_ref(call).is_sub_type() {
+            
+            let maybe_proxy_call = <T as Config>::RuntimeCall::from_ref(call).is_sub_type();
+            
+            let energy_provider = match maybe_proxy_call {
                 Some(pallet_proxy::Call::proxy { real, .. }) => {
                     let real_account = T::Lookup::lookup(real.clone())?;
-                    if pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).is_ok() {
+                    let is_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).is_ok();
+                    
+                    if is_who_a_proxy {
                         real_account
                     } else {
                         who.clone()
@@ -385,7 +389,7 @@ pub mod pallet {
             };
 
             // if we don't have enough energy then fallback to paying with native token.
-            if Self::energy_balance(&energy_consumer) < energy_fee/* && real_account_energy < energy_fee*/ {
+            if Self::energy_balance(&energy_provider) < energy_fee {
                 return T::NativeOnChargeTransaction::withdraw_fee(
                     who,
                     call,
@@ -407,9 +411,9 @@ pub mod pallet {
                 .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment })?;
             }
 
-            match Self::ensure_can_consume_energy(&energy_consumer, energy_fee) {
+            match Self::ensure_can_consume_energy(&energy_provider, energy_fee) {
                 Ok(()) => {
-                    Self::consume_energy(&energy_consumer, energy_fee);
+                    Self::consume_energy(&energy_provider, energy_fee);
                     Ok(LiquidityInfo::Energy(energy_fee))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
