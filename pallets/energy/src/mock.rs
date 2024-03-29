@@ -4,7 +4,8 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::Decode;
+use scale_info::TypeInfo;
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     dispatch::{RawOrigin, DispatchInfo},
     pallet_prelude::{DispatchClass, Pays, Weight},
@@ -15,17 +16,14 @@ use frame_support::{
         WeightToFeePolynomial,
     },
 };
+use frame_support::traits::InstanceFilter;
 use pallet_balances::NegativeImbalance;
 use pallet_transaction_payment::{CurrencyAdapter, OnChargeTransaction};
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf},
-    transaction_validity::TransactionValidityError,
-    FixedI64, Perbill,
-};
+use sp_runtime::{testing::Header, traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf}, transaction_validity::TransactionValidityError, FixedI64, Perbill, RuntimeDebug};
+use sp_runtime::traits::{ConstU32, ConstU64};
 use sp_std::{
     cell::RefCell,
     convert::{TryFrom, TryInto},
@@ -52,6 +50,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
         Energy: pallet_energy,
+        Proxy: pallet_proxy,
     }
 );
 
@@ -106,6 +105,35 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+}
+
+#[derive(Encode, Decode, Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo, MaxEncodedLen, RuntimeDebug, Default)]
+pub enum MockProxyType {
+    #[default]
+    Any,
+}
+
+impl InstanceFilter<RuntimeCall> for MockProxyType {
+    fn filter(&self, _call: &RuntimeCall) -> bool {
+        match self {
+            Self::Any => true,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = MockProxyType;
+    type ProxyDepositBase = ConstU64<0>;
+    type ProxyDepositFactor = ConstU64<0>;
+    type MaxProxies = ConstU32<10>;
+    type WeightInfo = ();
+    type MaxPending = ConstU32<0>;
+    type CallHasher = BlakeTwo256;
+    type AnnouncementDepositBase = ConstU64<0>;
+    type AnnouncementDepositFactor = ConstU64<0>;
 }
 
 /// It returns the input weight as the result.
@@ -217,6 +245,7 @@ where
 
 impl pallet_energy::Config for Test {
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type Balance = <Test as pallet_balances::Config>::Balance;
     type DefaultValueCoefficient = ValueCoefficient;
