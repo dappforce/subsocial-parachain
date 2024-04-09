@@ -338,18 +338,12 @@ pub mod pallet {
         }
     }
 
-    /// Keeps track of whether transaction was paid using proxy's real account energy.
-    pub enum IsProxy<AccountId> {
-        Yes(AccountId),
-        No,
-    }
-
     /// Keeps track of how the user paid for the transaction.
     pub enum LiquidityInfo<T: Config> {
         /// Nothing have been paid.
         Nothing,
         /// Transaction have been paid using energy.
-        Energy(BalanceOf<T>, IsProxy<T::AccountId>),
+        Energy(BalanceOf<T>, Option<T::AccountId>),
         /// Transaction have been paid using the native method.
         Native(<T::NativeOnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo),
     }
@@ -380,13 +374,13 @@ pub mod pallet {
             
             let maybe_proxy_call = <T as Config>::RuntimeCall::from_ref(call).is_sub_type();
 
-            let mut is_who_a_proxy = false;
+            let mut maybe_who_a_proxy = None;
             let energy_provider = match maybe_proxy_call {
                 Some(pallet_proxy::Call::proxy { real, .. }) => {
                     let real_account = T::Lookup::lookup(real.clone())?;
-                    is_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).is_ok();
+                    maybe_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).ok();
                     
-                    if is_who_a_proxy {
+                    if maybe_who_a_proxy.is_some() {
                         real_account
                     } else {
                         who.clone()
@@ -423,11 +417,7 @@ pub mod pallet {
                     Self::consume_energy(&energy_provider, energy_fee);
                     Ok(LiquidityInfo::Energy(
                         energy_fee,
-                        if is_who_a_proxy {
-                            IsProxy::Yes(energy_provider)
-                        } else {
-                            IsProxy::No
-                        },
+                        maybe_who_a_proxy.map(|_| energy_provider)
                     ))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
@@ -453,21 +443,21 @@ pub mod pallet {
                         tip,
                         fallback_info,
                     ),
-                LiquidityInfo::Energy(paid, proxy) => {
+                LiquidityInfo::Energy(paid, maybe_proxy) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
                     let corrected_energy_fee =
                         Self::native_token_to_energy(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
-                    let refund_destination = match proxy {
-                        IsProxy::Yes(ref account) => account,
-                        IsProxy::No => who,
+                    let refund_destination = match maybe_proxy {
+                        Some(ref energy_provider) => energy_provider,
+                        None => who,
                     };
 
                     Self::capture_energy(refund_destination, refund_amount);
 
                     Ok(())
-                },
+                }
             }
         }
     }
