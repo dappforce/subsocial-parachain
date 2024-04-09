@@ -401,7 +401,7 @@ fn charge_transaction_should_pay_with_energy_if_proxy_caller() {
 }
 
 #[test]
-fn charge_transaction_with_proxy_should_pay_with_native_tokens_if_not_real_proxy() {
+fn charge_transaction_with_proxy_should_pay_with_native_token_of_caller_if_not_real_proxy() {
     ExtBuilder::default().value_coefficient(3.36f64).build().execute_with(|| {
         let real_account = account(1);
         let proxy_account = account(2);
