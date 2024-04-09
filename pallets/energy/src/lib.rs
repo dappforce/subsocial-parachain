@@ -374,13 +374,13 @@ pub mod pallet {
             
             let maybe_proxy_call = <T as Config>::RuntimeCall::from_ref(call).is_sub_type();
 
-            let mut maybe_who_a_proxy = None;
+            let mut maybe_who_is_proxy = None;
             let energy_provider = match maybe_proxy_call {
                 Some(pallet_proxy::Call::proxy { real, .. }) => {
                     let real_account = T::Lookup::lookup(real.clone())?;
-                    maybe_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).ok();
+                    maybe_who_is_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).ok();
                     
-                    if maybe_who_a_proxy.is_some() {
+                    if maybe_who_is_proxy.is_some() {
                         real_account
                     } else {
                         who.clone()
@@ -417,7 +417,7 @@ pub mod pallet {
                     Self::consume_energy(&energy_provider, energy_fee);
                     Ok(LiquidityInfo::Energy(
                         energy_fee,
-                        maybe_who_a_proxy.map(|_| energy_provider)
+                        maybe_who_is_proxy.map(|_| energy_provider)
                     ))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
