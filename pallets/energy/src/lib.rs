@@ -453,21 +453,21 @@ pub mod pallet {
                         tip,
                         fallback_info,
                     ),
-                LiquidityInfo::Energy(paid, proxy) => {
+                LiquidityInfo::Energy(paid, maybe_proxy) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
                     let corrected_energy_fee =
                         Self::native_token_to_energy(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
-                    let refund_destination = match proxy {
-                        IsProxy::Yes(ref account) => account,
+                    let refund_destination = match maybe_proxy {
+                        IsProxy::Yes(ref energy_provider) => energy_provider,
                         IsProxy::No => who,
                     };
 
                     Self::capture_energy(refund_destination, refund_amount);
 
                     Ok(())
-                },
+                }
             }
         }
     }
