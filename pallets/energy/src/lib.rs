@@ -26,14 +26,15 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{
+        dispatch::GetDispatchInfo,
         pallet_prelude::*,
-        traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons},
+        traits::{tokens::Balance, Currency, ExistenceRequirement, WithdrawReasons, IsSubType},
     };
     use frame_system::pallet_prelude::*;
     use pallet_transaction_payment::OnChargeTransaction;
     use sp_runtime::{
         traits::{
-            CheckedAdd, CheckedSub, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup,
+            CheckedAdd, CheckedSub, Dispatchable, DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup,
             Zero,
         },
         ArithmeticError, FixedI64, FixedPointNumber, FixedPointOperand,
@@ -45,9 +46,17 @@ pub mod pallet {
     pub(crate) type BalanceOf<T> = <T as Config>::Balance;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+    pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_proxy::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// The overarching call type.
+        type RuntimeCall: Parameter
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+            + GetDispatchInfo
+            + From<pallet_proxy::Call<Self>>
+            + IsSubType<pallet_proxy::Call<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeCall>;
 
         /// The currency type.
         type Currency: Currency<Self::AccountId, Balance = Self::Balance>;
@@ -166,13 +175,13 @@ pub mod pallet {
             let caller = ensure_signed(origin)?;
             let target = T::Lookup::lookup(target)?;
 
-            let caller_balance = T::Currency::free_balance(&caller);
+            let caller_balance = <T as Config>::Currency::free_balance(&caller);
             let caller_balance_after_burn =
                 caller_balance.checked_sub(&burn_amount).ok_or(Error::<T>::NotEnoughBalance)?;
 
             let withdraw_reason = WithdrawReasons::all();
 
-            T::Currency::ensure_can_withdraw(
+            <T as Config>::Currency::ensure_can_withdraw(
                 &caller,
                 burn_amount,
                 withdraw_reason,
@@ -192,7 +201,7 @@ pub mod pallet {
 
             Self::ensure_can_capture_energy(&target, captured_energy_amount)?;
 
-            let _ = T::Currency::withdraw(
+            let _ = <T as Config>::Currency::withdraw(
                 &caller,
                 burn_amount,
                 withdraw_reason,
@@ -329,12 +338,18 @@ pub mod pallet {
         }
     }
 
+    /// Keeps track of whether transaction was paid using proxy's real account energy.
+    pub enum IsProxy<AccountId> {
+        Yes(AccountId),
+        No,
+    }
+
     /// Keeps track of how the user paid for the transaction.
     pub enum LiquidityInfo<T: Config> {
         /// Nothing have been paid.
         Nothing,
         /// Transaction have been paid using energy.
-        Energy(BalanceOf<T>),
+        Energy(BalanceOf<T>, IsProxy<T::AccountId>),
         /// Transaction have been paid using the native method.
         Native(<T::NativeOnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo),
     }
@@ -351,8 +366,8 @@ pub mod pallet {
 
         fn withdraw_fee(
             who: &T::AccountId,
-            call: &T::RuntimeCall,
-            dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+            call: &<T as frame_system::Config>::RuntimeCall,
+            dispatch_info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
             fee: Self::Balance,
             tip: Self::Balance,
         ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
@@ -362,9 +377,26 @@ pub mod pallet {
 
             let fee_without_tip = fee.saturating_sub(tip);
             let energy_fee = Self::native_token_to_energy(fee_without_tip);
+            
+            let maybe_proxy_call = <T as Config>::RuntimeCall::from_ref(call).is_sub_type();
+
+            let mut is_who_a_proxy = false;
+            let energy_provider = match maybe_proxy_call {
+                Some(pallet_proxy::Call::proxy { real, .. }) => {
+                    let real_account = T::Lookup::lookup(real.clone())?;
+                    is_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).is_ok();
+                    
+                    if is_who_a_proxy {
+                        real_account
+                    } else {
+                        who.clone()
+                    }
+                }
+                _ => who.clone(),
+            };
 
             // if we don't have enough energy then fallback to paying with native token.
-            if Self::energy_balance(&who) < energy_fee {
+            if Self::energy_balance(&energy_provider) < energy_fee {
                 return T::NativeOnChargeTransaction::withdraw_fee(
                     who,
                     call,
@@ -377,7 +409,7 @@ pub mod pallet {
 
             if !tip.is_zero() {
                 // TODO: maybe do something with tip?
-                let _ = T::Currency::withdraw(
+                let _ = <T as Config>::Currency::withdraw(
                     who,
                     tip,
                     WithdrawReasons::TIP,
@@ -386,10 +418,17 @@ pub mod pallet {
                 .map_err(|_| -> InvalidTransaction { InvalidTransaction::Payment })?;
             }
 
-            match Self::ensure_can_consume_energy(who, energy_fee) {
+            match Self::ensure_can_consume_energy(&energy_provider, energy_fee) {
                 Ok(()) => {
-                    Self::consume_energy(who, energy_fee);
-                    Ok(LiquidityInfo::Energy(energy_fee))
+                    Self::consume_energy(&energy_provider, energy_fee);
+                    Ok(LiquidityInfo::Energy(
+                        energy_fee,
+                        if is_who_a_proxy {
+                            IsProxy::Yes(energy_provider)
+                        } else {
+                            IsProxy::No
+                        },
+                    ))
                 },
                 Err(_) => Err(InvalidTransaction::Payment.into()),
             }
@@ -397,8 +436,8 @@ pub mod pallet {
 
         fn correct_and_deposit_fee(
             who: &T::AccountId,
-            dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-            post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+            dispatch_info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+            post_info: &PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
             corrected_fee: Self::Balance,
             tip: Self::Balance,
             already_withdrawn: Self::LiquidityInfo,
@@ -414,17 +453,21 @@ pub mod pallet {
                         tip,
                         fallback_info,
                     ),
-                LiquidityInfo::Energy(paid) => {
+                LiquidityInfo::Energy(paid, maybe_proxy) => {
                     let corrected_fee_without_tip = corrected_fee.saturating_sub(tip);
                     let corrected_energy_fee =
                         Self::native_token_to_energy(corrected_fee_without_tip);
 
                     let refund_amount = paid.saturating_sub(corrected_energy_fee);
+                    let refund_destination = match maybe_proxy {
+                        IsProxy::Yes(ref energy_provider) => energy_provider,
+                        IsProxy::No => who,
+                    };
 
-                    Self::capture_energy(who, refund_amount);
+                    Self::capture_energy(refund_destination, refund_amount);
 
                     Ok(())
-                },
+                }
             }
         }
     }

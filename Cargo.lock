@@ -5765,6 +5765,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-proxy",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",

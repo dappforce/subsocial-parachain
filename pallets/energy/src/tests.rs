@@ -11,7 +11,7 @@ use frame_support::{
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
-    traits::{Dispatchable, SignedExtension},
+    traits::{Dispatchable, SignedExtension, Zero},
     transaction_validity::{InvalidTransaction, TransactionValidityError},
     DispatchError, FixedI64, FixedPointNumber,
 };
@@ -265,7 +265,31 @@ fn charge_transaction<PreValidator: FnOnce()>(
     tip: Balance,
     pre_validator: PreValidator,
 ) -> Result<(), ChargeTransactionError> {
-    let call = frame_system::Call::<Test>::remark { remark: vec![] }.into();
+    do_charge_transaction(caller, fee, actual_fee, tip, pre_validator, None)
+}
+
+fn charge_transaction_with_proxy<PreValidator: FnOnce()>(
+    caller: &AccountId,
+    real: AccountId,
+    fee: Balance,
+    actual_fee: Balance,
+    tip: Balance,
+    pre_validator: PreValidator,
+) -> Result<(), ChargeTransactionError> {
+    let call = Box::new(frame_system::Call::<Test>::remark { remark: vec![] }.into());
+    let proxy_call = pallet_proxy::Call::<Test>::proxy { real, force_proxy_type: None, call };
+    do_charge_transaction(caller, fee, actual_fee, tip, pre_validator, Some(proxy_call.into()))
+}
+
+fn do_charge_transaction<PreValidator: FnOnce()>(
+    caller: &AccountId,
+    fee: Balance,
+    actual_fee: Balance,
+    tip: Balance,
+    pre_validator: PreValidator,
+    call: Option<RuntimeCall>,
+) -> Result<(), ChargeTransactionError> {
+    let call = call.unwrap_or_else(|| frame_system::Call::<Test>::remark { remark: vec![] }.into());
     let info = DispatchInfo { weight: Weight::from_parts(fee, 0), class: DispatchClass::Normal, pays_fee: Pays::Yes };
     let post_info = PostDispatchInfo { actual_weight: Some(Weight::from_parts(actual_fee, 0)), pays_fee: Pays::Yes };
 
@@ -334,6 +358,76 @@ fn charge_transaction_should_pay_with_energy_if_enough() {
             get_corrected_and_deposit_fee_args().is_none(),
             "Shouldn't go through the fallback OnChargeTransaction"
         );
+    });
+}
+
+#[test]
+fn charge_transaction_should_pay_with_energy_if_proxy_caller() {
+    ExtBuilder::default().value_coefficient(2f64).build().execute_with(|| {
+        let real_account = account(1);
+        let proxy_account = account(2);
+
+        assert_ok!(pallet_proxy::Pallet::<Test>::add_proxy_delegate(
+            &real_account,
+            proxy_account,
+            MockProxyType::Any,
+            Zero::zero(),
+        ));
+
+        set_native_balance(proxy_account, 1000);
+        set_energy_balance(real_account, 1000);
+
+        assert_ok!(charge_transaction_with_proxy(&proxy_account, real_account, 150, 100, 20, || {
+            // subtract the expected fees / coefficient from real account
+            assert_energy_balance!(real_account, 1000 - div_coeff!(150, 2));
+            // tip subtracted from the native balance of proxy account
+            assert_balance!(proxy_account, 1000 - 20);
+
+            assert!(
+                get_captured_withdraw_fee_args().is_none(),
+                "Shouldn't go through the fallback OnChargeTransaction"
+            );
+        },),);
+
+        assert_energy_balance!(real_account, 1000 - div_coeff!(100, 2));
+
+        // subtract the actual (fees + tip) / coefficient
+        assert_balance!(proxy_account, 1000 - 20); // tip subtracted from the native balance
+        assert!(
+            get_corrected_and_deposit_fee_args().is_none(),
+            "Shouldn't go through the fallback OnChargeTransaction"
+        );
+    });
+}
+
+#[test]
+fn charge_transaction_with_proxy_should_pay_with_native_token_of_caller_if_not_real_proxy() {
+    ExtBuilder::default().value_coefficient(3.36f64).build().execute_with(|| {
+        let real_account = account(1);
+        let proxy_account = account(2);
+        
+        set_native_balance(proxy_account, 1000);
+        set_energy_balance(real_account, 1000);
+
+        assert_ok!(charge_transaction_with_proxy(&proxy_account, real_account, 200, 50, 13, || {
+            assert_energy_balance!(real_account, 1000); // no change
+            assert_balance!(proxy_account, 1000 - 200 - 13); // subtract the expected fees + tip
+            assert_eq!(
+                get_captured_withdraw_fee_args().unwrap(),
+                WithdrawFeeArgs { who: proxy_account, fee_with_tip: 200 + 13, tip: 13 }
+            );
+        },),);
+        
+        assert_energy_balance!(real_account, 1000); // no change
+        assert_balance!(proxy_account, 1000 - 50 - 13); // subtract the actual fees + tip
+        assert!(matches!(
+            get_corrected_and_deposit_fee_args().unwrap(),
+            CorrectAndDepositFeeArgs {
+                who: _proxy_account,
+                corrected_fee_with_tip: 63, // 50 + 13
+                already_withdrawn: _,       // ignored
+            }
+        ));
     });
 }
 
