@@ -375,6 +375,45 @@ fn charge_transaction_should_pay_with_energy_if_proxy_caller() {
         ));
 
         set_native_balance(proxy_account, 1000);
+        set_energy_balance(proxy_account, 1000);
+
+        assert_ok!(charge_transaction_with_proxy(&proxy_account, real_account, 150, 100, 20, || {
+            // subtract the expected fees / coefficient from real account
+            assert_energy_balance!(proxy_account, 1000 - div_coeff!(150, 2));
+            // tip subtracted from the native balance of proxy account
+            assert_balance!(proxy_account, 1000 - 20);
+
+            assert!(
+                get_captured_withdraw_fee_args().is_none(),
+                "Shouldn't go through the fallback OnChargeTransaction"
+            );
+        },),);
+
+        assert_energy_balance!(proxy_account, 1000 - div_coeff!(100, 2));
+
+        // subtract the actual (fees + tip) / coefficient
+        assert_balance!(proxy_account, 1000 - 20); // tip subtracted from the native balance
+        assert!(
+            get_corrected_and_deposit_fee_args().is_none(),
+            "Shouldn't go through the fallback OnChargeTransaction"
+        );
+    });
+}
+
+#[test]
+fn charge_transaction_should_pay_with_real_account_energy_if_proxy_balance_low() {
+    ExtBuilder::default().value_coefficient(2f64).build().execute_with(|| {
+        let real_account = account(1);
+        let proxy_account = account(2);
+
+        assert_ok!(pallet_proxy::Pallet::<Test>::add_proxy_delegate(
+            &real_account,
+            proxy_account,
+            MockProxyType::Any,
+            Zero::zero(),
+        ));
+
+        set_native_balance(proxy_account, 1000);
         set_energy_balance(real_account, 1000);
 
         assert_ok!(charge_transaction_with_proxy(&proxy_account, real_account, 150, 100, 20, || {

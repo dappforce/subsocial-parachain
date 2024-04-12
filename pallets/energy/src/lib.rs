@@ -386,10 +386,10 @@ pub mod pallet {
                     let real_account = T::Lookup::lookup(real.clone())?;
                     is_who_a_proxy = pallet_proxy::Pallet::<T>::find_proxy(&real_account, who, None).is_ok();
                     
-                    if is_who_a_proxy {
-                        real_account
-                    } else {
-                        who.clone()
+                    match is_who_a_proxy {
+                        true if Self::energy_balance(&who) >= energy_fee => who.clone(),
+                        true => real_account,
+                        false => who.clone(),
                     }
                 }
                 _ => who.clone(),
