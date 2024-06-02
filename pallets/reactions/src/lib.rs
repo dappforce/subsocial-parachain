@@ -39,6 +39,7 @@ pub type ReactionId = u64;
 pub enum ReactionKind {
     Upvote,
     Downvote,
+    Custom(u32),
 }
 
 impl Default for ReactionKind {
@@ -206,6 +207,7 @@ pub mod pallet {
                     )?;
                     post.inc_downvotes();
                 },
+                _ => {},
             }
 
             PostById::<T>::insert(post_id, post.clone());
@@ -261,6 +263,7 @@ pub mod pallet {
                     post.inc_downvotes();
                     post.dec_upvotes();
                 },
+                _ => {},
             }
 
             ReactionById::<T>::insert(reaction_id, reaction);
@@ -304,6 +307,7 @@ pub mod pallet {
             match reaction.kind {
                 ReactionKind::Upvote => post.dec_upvotes(),
                 ReactionKind::Downvote => post.dec_downvotes(),
+                _ => {},
             }
 
             PostById::<T>::insert(post_id, post.clone());
