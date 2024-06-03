@@ -33,6 +33,7 @@ try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+cfg-if = "1.0.0"
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Local dependencies

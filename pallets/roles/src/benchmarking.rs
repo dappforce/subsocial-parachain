@@ -10,27 +10,48 @@
 
 // FIXME: refactor once SpacesProvider is added.
 
-use super::*;
+use cfg_if::cfg_if;
 use frame_benchmarking::{account, benchmarks};
-use frame_support::dispatch::DispatchError;
+use frame_support::{dispatch::DispatchError, traits::Get};
 use frame_system::RawOrigin;
-use pallet_permissions::SpacePermission as SP;
-use pallet_spaces::types::Space;
 use sp_std::{prelude::Vec, vec};
-use subsocial_support::{Content, User};
-use subsocial_support::mock_functions::{valid_content_ipfs, another_valid_content_ipfs};
 
-fn create_dummy_space<T: Config + pallet_spaces::Config>(
-    origin: RawOrigin<T::AccountId>,
-) -> Result<Space<T>, DispatchError> {
-    let space_id = pallet_spaces::NextSpaceId::<T>::get();
+use pallet_permissions::SpacePermission as SP;
+use subsocial_support::{
+    mock_functions::{another_valid_content_ipfs, valid_content_ipfs},
+    Content, User,
+};
 
-    pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)?;
+use super::*;
 
-    let space = pallet_spaces::SpaceById::<T>::get(space_id)
-        .ok_or(DispatchError::Other("Space not found"))?;
+fn get_dummy_space_id<T: Config + pallet_spaces::Config>(
+    #[allow(unused_variables)] origin: RawOrigin<T::AccountId>,
+) -> Result<SpaceId, DispatchError> {
+    cfg_if! {
+        if #[cfg(test)] {
+            Ok(crate::mock::SPACE1)
+        } else {
+            let space_id = pallet_spaces::NextSpaceId::<T>::get();
 
-    Ok(space)
+            pallet_spaces::Pallet::<T>::create_space(origin.into(), Content::None, None)?;
+
+            let space = pallet_spaces::SpaceById::<T>::get(space_id)
+                .ok_or(DispatchError::Other("Space not found"))?;
+
+            Ok(space.id)
+        }
+    }
+}
+
+fn get_caller_account<T: Config>() -> T::AccountId {
+    cfg_if! {
+        if #[cfg(test)] {
+            let mut bytes: &[u8] = &crate::mock::ACCOUNT1.to_le_bytes();
+            T::AccountId::decode(&mut bytes).expect("failed to get caller_account")
+        } else {
+            account::<T::AccountId>("Acc1", 1, 0)
+        }
+    }
 }
 
 fn dummy_list_of_users<T: Config>(num_of_users: u32) -> Vec<User<T::AccountId>> {
@@ -74,25 +95,25 @@ benchmarks! {
     where_clause { where T: pallet_spaces::Config }
 
     create_role {
-        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
-        let space = create_dummy_space::<T>(caller_origin.clone())?;
+        let caller_origin = RawOrigin::Signed(get_caller_account::<T>());
+        let space_id = get_dummy_space_id::<T>(caller_origin.clone())?;
         let time_to_live: Option<T::BlockNumber> = Some(100u32.into());
         let content = valid_content_ipfs();
         let perms = vec![SP::ManageRoles];
         let role_id = NextRoleId::<T>::get();
-    }: _(caller_origin, space.id, time_to_live, content, perms)
+    }: _(caller_origin, space_id, time_to_live, content, perms)
     verify {
         let role = RoleById::<T>::get(role_id).unwrap();
-        let space_roles_ids = RoleIdsBySpaceId::<T>::get(space.id);
+        let space_roles_ids = RoleIdsBySpaceId::<T>::get(space_id);
 
         ensure!(role.id == role_id, "Role id doesn't match");
         ensure!(space_roles_ids.contains(&role_id), "Role id not in space roles");
     }
 
     update_role {
-        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
-        let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, 10)?;
+        let caller_origin = RawOrigin::Signed(get_caller_account::<T>());
+        let space_id = get_dummy_space_id::<T>(caller_origin.clone())?;
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space_id, 10)?;
 
         ensure!(!role.disabled, "Role should be enabled");
 
@@ -109,9 +130,9 @@ benchmarks! {
 
     delete_role {
         let x in 0..T::MaxUsersToProcessPerDeleteRole::get().into();
-        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
-        let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, x)?;
+        let caller_origin = RawOrigin::Signed(get_caller_account::<T>());
+        let space_id = get_dummy_space_id::<T>(caller_origin.clone())?;
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space_id, x)?;
     }: _(caller_origin, role.id, x)
     verify {
         let deleted = RoleById::<T>::get(role.id).is_none();
@@ -120,9 +141,9 @@ benchmarks! {
 
     grant_role {
         let x in 1..500;
-        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
-        let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space.id, 0)?;
+        let caller_origin = RawOrigin::Signed(get_caller_account::<T>());
+        let space_id = get_dummy_space_id::<T>(caller_origin.clone())?;
+        let (role, _) = create_dummy_role::<T>(caller_origin.clone(), space_id, 0)?;
 
         let users_to_grant = dummy_list_of_users::<T>(x);
     }: _(caller_origin, role.id, users_to_grant.clone())
@@ -135,9 +156,9 @@ benchmarks! {
 
     revoke_role {
         let x in 1..500;
-        let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
-        let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let (role, users_to_revoke) = create_dummy_role::<T>(caller_origin.clone(), space.id, x)?;
+        let caller_origin = RawOrigin::Signed(get_caller_account::<T>());
+        let space_id = get_dummy_space_id::<T>(caller_origin.clone())?;
+        let (role, users_to_revoke) = create_dummy_role::<T>(caller_origin.clone(), space_id, x)?;
     }: _(caller_origin, role.id, users_to_revoke)
     verify {
         let granted_users = UsersByRoleId::<T>::get(role.id);

@@ -6394,6 +6394,7 @@ dependencies = [
 name = "pallet-roles"
 version = "0.2.2"
 dependencies = [
+ "cfg-if",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
