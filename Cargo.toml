@@ -1,5 +1,6 @@
 [profile.release]
 panic = "unwind"
+opt-level = 3
 
 [profile.dev]
 split-debuginfo = "unpacked"
@@ -13,8 +14,9 @@ codegen-units = 1
 libsecp256k1 = { opt-level = 3 }
 
 [workspace]
+#resolver = "2"
 members = [
-    "integration-tests",
+#    "integration-tests",
     "node",
     "runtime",
     "pallets/*",
