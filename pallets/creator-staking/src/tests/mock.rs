@@ -4,12 +4,13 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use crate::{self as pallet_creator_staking, PalletDisabled};
+use crate::PalletDisabled;
 
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{Currency, OnFinalize, OnInitialize},
+    construct_runtime,
     dispatch::DispatchResult,
+    parameter_types,
+    traits::{Currency, OnFinalize, OnInitialize},
     weights::Weight,
     PalletId,
 };
@@ -19,7 +20,10 @@ use mockall::mock;
 
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{DispatchError, testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}};
+use sp_runtime::{
+    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    BuildStorage, DispatchError,
+};
 use sp_std::sync::{Mutex, MutexGuard};
 
 pub(super) type AccountId = u64;
@@ -27,21 +31,23 @@ pub(super) type BlockNumber = u64;
 pub(super) type Balance = u128;
 pub(super) type EraIndex = u32;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
-/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
+/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner
+/// cases.
 pub(super) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(super) const REGISTER_DEPOSIT: Balance = 10;
 pub(super) const MAX_NUMBER_OF_BACKERS: u32 = 4;
-/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
+/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner
+/// cases.
 pub(super) const MINIMUM_TOTAL_STAKE: Balance = 10;
 pub(super) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
 pub(super) const MAX_UNBONDING_CHUNKS: u32 = 5;
 pub(super) const UNBONDING_PERIOD_IN_ERAS: EraIndex = 3;
 pub(super) const MAX_ERA_STAKE_ITEMS: u32 = 8;
 
-// Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
+// Do note that this needs to at least be 3 for tests to be valid. It can be greater but not
+// smaller.
 pub(super) const BLOCKS_PER_ERA: BlockNumber = 3;
 pub(super) const BLOCKS_PER_YEAR: BlockNumber = 2628000;
 pub(super) const BLOCK_REWARD: Balance = 100;
@@ -49,16 +55,11 @@ pub(super) const BLOCK_REWARD: Balance = 100;
 pub(super) const TREASURY_ACCOUNT: BlockNumber = 42;
 
 construct_runtime!(
-    pub struct TestRuntime
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct TestRuntime {
         System: frame_system,
         Balances: pallet_balances,
         Timestamp: pallet_timestamp,
-        CreatorStaking: pallet_creator_staking,
+        CreatorStaking: crate,
     }
 );
 
@@ -73,14 +74,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -110,6 +110,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
+    type FreezeIdentifier = ();
+    type RuntimeHoldReason = ();
 }
 
 parameter_types! {
@@ -123,11 +127,12 @@ impl pallet_timestamp::Config for TestRuntime {
     type WeightInfo = ();
 }
 
-use pallet_permissions::default_permissions::DefaultSpacePermissions;
-use pallet_permissions::SpacePermissionsInfoOf;
-use subsocial_support::{Content, SpaceId};
-use subsocial_support::traits::{SpacePermissionsProvider, SpacesProvider};
 use crate::tests::tests::Rewards;
+use pallet_permissions::{default_permissions::DefaultSpacePermissions, SpacePermissionsInfoOf};
+use subsocial_support::{
+    traits::{SpacePermissionsProvider, SpacesProvider},
+    Content, SpaceId,
+};
 
 impl pallet_permissions::Config for TestRuntime {
     type DefaultSpacePermissions = DefaultSpacePermissions;
@@ -160,7 +165,7 @@ mock! {
 
     impl SpacesProvider<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
-        
+
         fn do_update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
 
         fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError>;
@@ -179,7 +184,7 @@ pub(super) fn use_static_mock() -> MutexGuard<'static, ()> {
     }
 }
 
-impl pallet_creator_staking::Config for TestRuntime {
+impl crate::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type PalletId = CreatorStakingPalletId;
     type BlockPerEra = BlockPerEra;
@@ -205,9 +210,7 @@ pub struct ExternalityBuilder;
 
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
-            .unwrap();
+        let mut storage = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
         pallet_balances::GenesisConfig::<TestRuntime> {
             balances: vec![
@@ -230,7 +233,7 @@ impl ExternalityBuilder {
         .assimilate_storage(&mut storage)
         .ok();
 
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities = storage.into();
         ext.execute_with(|| {
             System::set_block_number(1);
             // TODO: revert when default PalletDisabled changed back to false
@@ -266,7 +269,8 @@ pub fn advance_to_era(n: EraIndex) {
 }
 
 /// Initialize first block.
-/// This method should only be called once in a UT otherwise the first block will get initialized multiple times.
+/// This method should only be called once in a UT otherwise the first block will get initialized
+/// multiple times.
 pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
@@ -294,12 +298,14 @@ pub fn creator_staking_events() -> Vec<crate::Event<TestRuntime>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| {
-            if let RuntimeEvent::CreatorStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
+        .filter_map(
+            |e| {
+                if let RuntimeEvent::CreatorStaking(inner) = e {
+                    Some(inner)
+                } else {
+                    None
+                }
+            },
+        )
         .collect()
 }

@@ -11,9 +11,11 @@ use std::{
 };
 
 use frame_support::{assert_ok, pallet_prelude::*};
+use frame_system::pallet_prelude::BlockNumberFor;
+use pallet_ownership::OwnableEntity;
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
-use pallet_ownership::OwnableEntity;
+use sp_runtime::BuildStorage;
 
 use pallet_permissions::{SpacePermission as SP, SpacePermission, SpacePermissions};
 use pallet_posts::{Comment, PostExtension, PostUpdate};
@@ -45,11 +47,11 @@ impl ExtBuilder {
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let mut storage = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
         Self::configure_storages(&mut storage);
 
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities = storage.into();
         ext.execute_with(|| System::set_block_number(1));
 
         ext
@@ -432,7 +434,7 @@ pub fn _create_default_role() -> DispatchResult {
 pub fn _create_role(
     origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
-    time_to_live: Option<Option<BlockNumber>>,
+    time_to_live: Option<Option<BlockNumberFor<Test>>>,
     content: Option<Content>,
     permissions: Option<Vec<SpacePermission>>,
 ) -> DispatchResult {

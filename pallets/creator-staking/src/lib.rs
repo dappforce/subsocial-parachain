@@ -51,7 +51,7 @@ pub mod pallet {
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
         /// The currency trait.
-        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
+        type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>
             + ReservableCurrency<Self::AccountId>;
 
         type SpacesProvider: SpacesProvider<Self::AccountId, SpaceId>;
@@ -116,7 +116,7 @@ pub mod pallet {
 
         /// Represents the estimated number of blocks that are generated within the span of one year.
         #[pallet::constant]
-        type BlocksPerYear: Get<Self::BlockNumber>;
+        type BlocksPerYear: Get<BlockNumberFor<Self>>;
 
         /// The chain's treasury account, where we deposit leftover tokens after distributing rewards,
         /// not to make any extra tokens left on a rewards holding account.
@@ -164,7 +164,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::whitelist_storage]
     #[pallet::getter(fn next_era_starting_block)]
-    pub type NextEraStartingBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+    pub type NextEraStartingBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn registered_creator)]

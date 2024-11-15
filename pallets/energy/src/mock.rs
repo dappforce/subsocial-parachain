@@ -4,52 +4,48 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use scale_info::TypeInfo;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-    dispatch::{RawOrigin, DispatchInfo},
+    dispatch::{DispatchInfo, RawOrigin},
     pallet_prelude::{DispatchClass, Pays, Weight},
     parameter_types,
-    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, IsType},
+    traits::{ConstU8, Currency, EnsureOrigin, Everything, Get, Imbalance, InstanceFilter, IsType},
     weights::{
-        WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        WeightToFee, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
-use frame_support::traits::InstanceFilter;
 use pallet_balances::NegativeImbalance;
 use pallet_transaction_payment::{CurrencyAdapter, OnChargeTransaction};
+use scale_info::TypeInfo;
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{testing::Header, traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf}, transaction_validity::TransactionValidityError, FixedI64, Perbill, RuntimeDebug};
-use sp_runtime::traits::{ConstU32, ConstU64};
+use sp_runtime::{
+    traits::{
+        BlakeTwo256, ConstU32, ConstU64, DispatchInfoOf, IdentityLookup, One, PostDispatchInfoOf,
+    },
+    transaction_validity::TransactionValidityError,
+    BuildStorage, FixedI64, Perbill, RuntimeDebug,
+};
 use sp_std::{
     cell::RefCell,
     convert::{TryFrom, TryInto},
     marker::PhantomData,
 };
 
-pub(crate) use crate as pallet_energy;
 use crate::{EnergyBalance, TotalEnergy};
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
-type BlockNumber = u64;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub enum Test {
         System: frame_system,
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
-        Energy: pallet_energy,
+        Energy: crate,
         Proxy: pallet_proxy,
     }
 );
@@ -58,10 +54,10 @@ parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
     pub MockBlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(
-			frame_support::weights::Weight::from_parts(1_000_000, 0)
+        frame_system::limits::BlockWeights::simple_max(
+            frame_support::weights::Weight::from_parts(1_000_000, 0)
                 .set_proof_size(u64::MAX)
-		);
+        );
 }
 
 impl frame_system::Config for Test {
@@ -70,13 +66,12 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -105,9 +100,25 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
 }
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo, MaxEncodedLen, RuntimeDebug, Default)]
+#[derive(
+    Encode,
+    Decode,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    TypeInfo,
+    MaxEncodedLen,
+    RuntimeDebug,
+    Default,
+)]
 pub enum MockProxyType {
     #[default]
     Any,
@@ -243,7 +254,7 @@ where
     }
 }
 
-impl pallet_energy::Config for Test {
+impl crate::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type Currency = Balances;
@@ -427,9 +438,8 @@ impl ExtBuilder {
         clear_withdraw_fee_args();
         clear_corrected_and_deposit_fee_args();
 
-        let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let mut ext: TestExternalities = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 
-        let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
             System::set_block_number(1);
         });

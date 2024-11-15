@@ -4,6 +4,7 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
+use frame_system::pallet_prelude::BlockNumberFor;
 use super::*;
 
 pub type RoleId = u64;
@@ -30,7 +31,7 @@ pub struct Role<T: Config> {
     /// An optional block number at which this role will expire. If `expires_at` is `Some`
     /// and the current block is greater or equal to its value, the permissions associated
     /// with a given role will have no affect.
-    pub expires_at: Option<T::BlockNumber>,
+    pub expires_at: Option<BlockNumberFor<T>>,
 
     /// Content can optionally contain additional information associated with a role,
     /// such as a name, description, and image for a role. This may be useful for end users.

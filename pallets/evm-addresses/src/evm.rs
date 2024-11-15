@@ -25,7 +25,7 @@ impl<T: Config> Pallet<T> {
     pub(crate) fn verify_evm_signature(
         sig: &EcdsaSignature,
         sub_address: &T::AccountId,
-        sub_nonce: T::Index,
+        sub_nonce: T::Nonce,
     ) -> Option<EvmAddress> {
         let msg = keccak_256(&Self::eth_signable_message(sub_address, sub_nonce));
 
@@ -37,7 +37,7 @@ impl<T: Config> Pallet<T> {
 
     /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
     /// In accordance with https://eips.ethereum.org/EIPS/eip-191
-    pub(super) fn eth_signable_message(sub_address: &T::AccountId, sub_nonce: T::Index) -> Vec<u8> {
+    pub(super) fn eth_signable_message(sub_address: &T::AccountId, sub_nonce: T::Nonce) -> Vec<u8> {
         let addr = hex::encode(sub_address.encode());
         let nonce = format!("{:?}", sub_nonce);
 

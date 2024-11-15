@@ -16,7 +16,7 @@ use sp_runtime::{
     DispatchError, FixedI64, FixedPointNumber,
 };
 
-use pallet_energy::{Call as EnergyCall, EnergyBalance, Event as EnergyEvent};
+use crate::{Call as EnergyCall, EnergyBalance, Event as EnergyEvent};
 
 use crate::{mock::*, Error, WeightInfo};
 
@@ -111,7 +111,7 @@ fn update_value_coefficient_should_have_correct_weight() {
 
             assert_eq!(
                 extract_actual_weight(&result, &info),
-                <Test as pallet_energy::Config>::WeightInfo::update_value_coefficient(),
+                <Test as crate::Config>::WeightInfo::update_value_coefficient(),
             );
         });
 }
@@ -238,7 +238,7 @@ fn generate_energy_should_have_correct_weight() {
 
         assert_eq!(
             extract_actual_weight(&result, &info),
-            <Test as pallet_energy::Config>::WeightInfo::generate_energy(),
+            <Test as crate::Config>::WeightInfo::generate_energy(),
         );
     });
 }
@@ -564,7 +564,7 @@ fn update_value_coefficient_should_reflect_on_future_charge_transactions() {
             };
 
             assert_eq!(
-                <Test as pallet_energy::Config>::DefaultValueCoefficient::get().to_float(),
+                <Test as crate::Config>::DefaultValueCoefficient::get().to_float(),
                 1.25,
                 "Default value coefficient should be 1.25",
             );
@@ -718,22 +718,22 @@ fn existential_deposit_and_providers() {
 #[test]
 fn native_token_to_energy() {
     ExtBuilder::default().value_coefficient(1.25).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(100), 80);
+        assert_eq!(crate::Pallet::<Test>::native_token_to_energy(100), 80);
     });
 
     ExtBuilder::default().value_coefficient(1.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(200), 133);
+        assert_eq!(crate::Pallet::<Test>::native_token_to_energy(200), 133);
     });
 
     ExtBuilder::default().value_coefficient(10.0).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(500), 50);
+        assert_eq!(crate::Pallet::<Test>::native_token_to_energy(500), 50);
     });
 
     ExtBuilder::default().value_coefficient(0.5).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(33), 66);
+        assert_eq!(crate::Pallet::<Test>::native_token_to_energy(33), 66);
     });
 
     ExtBuilder::default().value_coefficient(0.1).build().execute_with(|| {
-        assert_eq!(pallet_energy::Pallet::<Test>::native_token_to_energy(33), 330);
+        assert_eq!(crate::Pallet::<Test>::native_token_to_energy(33), 330);
     });
 }

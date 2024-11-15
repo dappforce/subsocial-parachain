@@ -7,6 +7,7 @@
 use frame_support::{assert_ok, pallet_prelude::*};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
+use sp_runtime::BuildStorage;
 use pallet_ownership::{OwnableEntity, Event as OwnershipEvent};
 
 use pallet_posts::PostExtension;
@@ -35,11 +36,11 @@ impl ExtBuilder {
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let mut storage = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
         Self::configure_storages(&mut storage);
 
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities = storage.into();
         ext.execute_with(|| {
             let _m = use_static_mock();
             System::set_block_number(1);

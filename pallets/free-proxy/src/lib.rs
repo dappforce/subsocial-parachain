@@ -66,7 +66,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             delegate: AccountIdLookupOf<T>,
             proxy_type: T::ProxyType,
-            delay: T::BlockNumber,
+            delay: BlockNumberFor<T>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
