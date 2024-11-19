@@ -1,6 +1,6 @@
 [package]
 name = 'pallet-ownership-tests'
-version = '0.2.2'
+version = '0.3.0'
 authors = ['DappForce <dappforce@pm.me>']
 edition = '2021'
 license = 'GPL-3.0-only'
@@ -24,19 +24,19 @@ pallet-permissions = { default-features = false, path = '../../permissions' }
 pallet-ownership = { default-features = false, path = '..' }
 
 # Substrate dependencies
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
 
 [dev-dependencies]
 mockall = '0.11.3'
 lazy_static = '1.4.0'
 
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.40', default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40", default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
 pallet-domains = { default-features = false, path = '../../domains' }
 pallet-posts = { default-features = false, path = '../../posts' }
 pallet-profiles = { default-features = false, path = '../../profiles' }
