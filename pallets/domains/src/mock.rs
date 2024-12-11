@@ -326,6 +326,10 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
     <Test as pallet_domains::Config>::Currency::reserved_balance(who)
 }
 
+pub(crate) fn existential_deposit() -> Balance {
+    <Test as pallet_balances::Config>::ExistentialDeposit::get()
+}
+
 #[derive(Clone)]
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
@@ -420,7 +424,7 @@ impl ExtBuilder {
 
             let domain_price = pallet_domains::Pallet::<Test>::calculate_price(&subdomain).unwrap();
 
-            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit + domain_price);
+            let _ = account_with_balance(DOMAIN_OWNER, self.base_domain_deposit + domain_price + existential_deposit());
             assert_ok!(_register_default_domain());
         });
         ext

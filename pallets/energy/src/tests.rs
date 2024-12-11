@@ -168,21 +168,21 @@ fn generate_energy_should_work_when_energy_balance_equal_to_existential_deposit(
 #[test]
 fn generate_energy_should_work_when_caller_have_enough_balance() {
     ExtBuilder::default()
-        .native_existential_deposit(0)
+        .native_existential_deposit(1)
         .value_coefficient(10f64)
         .build()
         .execute_with(|| {
-            let caller = account_with_balance(1, 100);
+            let caller = account_with_balance(1, 101);
             let receiver = account(10);
 
-            assert_balance!(caller, 100);
-            assert_total_issuance!(100);
+            assert_balance!(caller, 101);
+            assert_total_issuance!(101);
             assert_energy_balance!(receiver, 0);
             assert_total_energy!(0);
 
             assert_ok!(Energy::generate_energy(RuntimeOrigin::signed(caller), receiver, 100,),);
-            assert_balance!(caller, 0);
-            assert_total_issuance!(0);
+            assert_balance!(caller, 1);
+            assert_total_issuance!(1);
             assert_energy_balance!(receiver, 100);
             assert_total_energy!(100);
 
