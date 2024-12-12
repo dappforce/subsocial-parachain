@@ -121,20 +121,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	// FIXME: remove if unnecessary
-	pallet_ownership::migration::v1::MigrateToV1<
-		Runtime,
-		Ownership,
-		OwnershipMigrationV1OldPallet,
-	>,
 >;
-
-pub struct OwnershipMigrationV1OldPallet;
-impl frame_support::traits::Get<&'static str> for OwnershipMigrationV1OldPallet {
-	fn get() -> &'static str {
-		"SpaceOwnership"
-	}
-}
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
