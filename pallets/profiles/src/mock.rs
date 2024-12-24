@@ -13,9 +13,8 @@ use pallet_permissions::{default_permissions::DefaultSpacePermissions, SpacePerm
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    DispatchError,
+    BuildStorage, DispatchError,
 };
 use sp_std::sync::{Mutex, MutexGuard};
 use subsocial_support::{
@@ -23,16 +22,11 @@ use subsocial_support::{
     Content, SpaceId,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub enum Test {
         System: frame_system,
         Permissions: pallet_permissions,
         Profiles: pallet_profiles,
@@ -53,13 +47,12 @@ impl system::Config for Test {
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -88,7 +81,7 @@ mock! {
 
     impl SpacesProvider<AccountId, SpaceId> for Spaces {
         fn get_space_owner(_space_id: SpaceId) -> Result<AccountId, DispatchError>;
-        
+
         fn do_update_space_owner(_space_id: SpaceId, _new_owner: AccountId) -> DispatchResult;
 
         fn create_space(_owner: &AccountId, _content: Content) -> Result<SpaceId, DispatchError>;
@@ -118,9 +111,8 @@ pub(super) struct ExtBuilder;
 impl ExtBuilder {
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities =
+            frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
         ext.execute_with(|| System::set_block_number(1));
 
         ext

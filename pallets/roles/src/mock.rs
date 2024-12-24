@@ -16,9 +16,10 @@ use frame_support::{
     parameter_types,
     traits::{ConstU32, Everything},
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 
 use pallet_permissions::{SpacePermission, SpacePermission as SP, SpacePermissions};
@@ -27,28 +28,20 @@ use subsocial_support::{
     Content, SpaceId, SpacePermissionsInfo, User,
 };
 
-use crate as roles;
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Roles: roles::{Pallet, Call, Storage, Event<T>},
-        Spaces: pallet_spaces::{Pallet, Call, Storage, Event<T>},
+    pub enum Test {
+        System: frame_system,
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        Roles: crate,
+        Spaces: pallet_spaces,
     }
 );
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
-type BlockNumber = u64;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -61,13 +54,12 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -107,6 +99,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
@@ -180,18 +176,16 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub fn build() -> TestExternalities {
-        let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities =
+            system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
         ext.execute_with(|| System::set_block_number(1));
 
         ext
     }
 
     pub fn build_with_a_few_roles_granted_to_account2() -> TestExternalities {
-        let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities =
+            system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
         ext.execute_with(|| {
             System::set_block_number(1);
             let user = User::Account(ACCOUNT2);
@@ -270,7 +264,7 @@ pub(crate) fn _create_default_role() -> DispatchResult {
 pub(crate) fn _create_role(
     origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
-    time_to_live: Option<Option<BlockNumber>>,
+    time_to_live: Option<Option<BlockNumberFor<Test>>>,
     content: Option<Content>,
     permissions: Option<Vec<SpacePermission>>,
 ) -> DispatchResult {
@@ -341,7 +335,10 @@ pub(crate) fn _delete_default_role() -> DispatchResult {
     _delete_role(None, None)
 }
 
-pub(crate) fn _delete_role(origin: Option<RuntimeOrigin>, role_id: Option<RoleId>) -> DispatchResult {
+pub(crate) fn _delete_role(
+    origin: Option<RuntimeOrigin>,
+    role_id: Option<RoleId>,
+) -> DispatchResult {
     let role_id = role_id.unwrap_or(ROLE1);
     Roles::delete_role(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT1)),

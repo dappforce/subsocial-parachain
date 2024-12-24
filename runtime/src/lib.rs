@@ -29,7 +29,7 @@ use sp_version::RuntimeVersion;
 use frame_support::{
 	construct_runtime, parameter_types,
 	dispatch::DispatchClass,
-	traits::{ConstU32, ConstU64, ConstU8, Contains, Currency, OnUnbalanced, WithdrawReasons},
+	traits::{ConstBool, ConstU32, ConstU64, ConstU8, Contains, Currency, OnUnbalanced, WithdrawReasons},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -73,7 +73,7 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 pub type Balance = u128;
 
 /// Index of a transaction in the chain.
-pub type Index = u32;
+pub type Nonce = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
@@ -121,6 +121,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	// FIXME: remove if unnecessary
 	pallet_ownership::migration::v1::MigrateToV1<
 		Runtime,
 		Ownership,
@@ -242,7 +243,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 	WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-	polkadot_primitives::v2::MAX_POV_SIZE as u64,
+	polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 /// The version information used to identify this runtime when compiled natively.
@@ -286,8 +287,11 @@ parameter_types! {
 pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
 	fn contains(c: &RuntimeCall) -> bool {
-		let is_set_balance =
-			matches!(c, RuntimeCall::Balances(pallet_balances::Call::set_balance { .. }));
+		let is_set_balance = matches!(
+			c,
+			RuntimeCall::Balances(pallet_balances::Call::set_balance_deprecated { .. })
+			| RuntimeCall::Balances(pallet_balances::Call::force_set_balance { .. })
+		);
 		let is_force_transfer =
 			matches!(c, RuntimeCall::Balances(pallet_balances::Call::force_transfer { .. }));
 
@@ -312,15 +316,13 @@ impl frame_system::Config for Runtime {
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
-	type Index = Index;
-	/// The index type for blocks.
-	type BlockNumber = BlockNumber;
+	type Nonce = Nonce;
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
-	/// The header type.
-	type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	/// The block type.
+	type Block = Block;
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
@@ -383,6 +385,10 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -492,14 +498,15 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
+	pub const MinEligibleCollators: u32 = 3;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
+	pub const MaxInvulnerables: u32 = 20;
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
@@ -512,7 +519,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
+	type MinEligibleCollators = MinEligibleCollators;
 	type MaxInvulnerables = MaxInvulnerables;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
@@ -525,6 +532,7 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -651,7 +659,7 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
 	pub const DepositFactor: Balance = deposit(0, 32);
@@ -870,11 +878,7 @@ impl pallet_resource_discussions::Config for Runtime {
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = opaque::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub enum Runtime {
 		// System support stuff.
 		System: frame_system = 0,
 		ParachainSystem: cumulus_pallet_parachain_system = 1,
@@ -940,12 +944,12 @@ mod benches {
 		[pallet_proxy, Proxy]
 		[pallet_utility, Utility]
 		[pallet_collator_selection, CollatorSelection]
+		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_xcm, PolkadotXcm]
 		[pallet_domains, Domains]
 		[pallet_energy, Energy]
 		[pallet_evm_addresses, EvmAddresses]
 		[pallet_profiles, Profiles]
-		[cumulus_pallet_xcmp_queue, XcmpQueue]
-		[pallet_xcm, PolkadotXcm]
 		[pallet_reactions, Reactions]
 		[pallet_roles, Roles]
 		[pallet_space_follows, SpaceFollows]
@@ -986,6 +990,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 
@@ -1038,8 +1050,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		fn account_nonce(account: AccountId) -> Index {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
 			System::account_nonce(account)
 		}
 	}
@@ -1094,65 +1106,65 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
-		for Runtime
-	{
-		fn estimated_backer_rewards_by_creators(
-			backer: AccountId,
-			creators: Vec<CreatorId>,
-		) -> Vec<(CreatorId, Balance)> {
-			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
-		}
-
-		fn withdrawable_amounts_from_inactive_creators(
-			backer: AccountId,
-		) -> Vec<(CreatorId, Balance)> {
-			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
-		}
-
-		fn available_claims_by_backer(
-			backer: AccountId,
-		) -> Vec<(CreatorId, u32)> {
-			CreatorStaking::available_claims_by_backer(backer)
-		}
-
-		fn estimated_creator_rewards(
-			creator: CreatorId,
-		) -> Balance {
-			CreatorStaking::estimated_creator_rewards(creator)
-		}
-
-		fn available_claims_by_creator(
-			creator: CreatorId,
-		) -> Vec<EraIndex> {
-			CreatorStaking::available_claims_by_creator(creator)
-		}
-	}
-
-	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
-		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
-			Domains::calculate_price(&subdomain)
-		}
-	}
-
-	impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
-		fn can_create_post(
-			account: AccountId,
-			space_id: SpaceId,
-			content_opt: Option<Content>,
-		) -> DispatchResult {
-			Posts::can_create_regular_post(account, space_id, content_opt)
-		}
-
-		fn can_create_comment(
-			account: AccountId,
-			root_post_id: PostId,
-			parent_id_opt: Option<PostId>,
-			content_opt: Option<Content>
-		) -> DispatchResult {
-			Posts::can_create_comment(account, root_post_id, parent_id_opt, content_opt)
-		}
-	}
+	// impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+	// 	for Runtime
+	// {
+	// 	fn estimated_backer_rewards_by_creators(
+	// 		backer: AccountId,
+	// 		creators: Vec<CreatorId>,
+	// 	) -> Vec<(CreatorId, Balance)> {
+	// 		CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
+	// 	}
+	//
+	// 	fn withdrawable_amounts_from_inactive_creators(
+	// 		backer: AccountId,
+	// 	) -> Vec<(CreatorId, Balance)> {
+	// 		CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
+	// 	}
+	//
+	// 	fn available_claims_by_backer(
+	// 		backer: AccountId,
+	// 	) -> Vec<(CreatorId, u32)> {
+	// 		CreatorStaking::available_claims_by_backer(backer)
+	// 	}
+	//
+	// 	fn estimated_creator_rewards(
+	// 		creator: CreatorId,
+	// 	) -> Balance {
+	// 		CreatorStaking::estimated_creator_rewards(creator)
+	// 	}
+	//
+	// 	fn available_claims_by_creator(
+	// 		creator: CreatorId,
+	// 	) -> Vec<EraIndex> {
+	// 		CreatorStaking::available_claims_by_creator(creator)
+	// 	}
+	// }
+	//
+	// impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
+	// 	fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
+	// 		Domains::calculate_price(&subdomain)
+	// 	}
+	// }
+	//
+	// impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
+	// 	fn can_create_post(
+	// 		account: AccountId,
+	// 		space_id: SpaceId,
+	// 		content_opt: Option<Content>,
+	// 	) -> DispatchResult {
+	// 		Posts::can_create_regular_post(account, space_id, content_opt)
+	// 	}
+	//
+	// 	fn can_create_comment(
+	// 		account: AccountId,
+	// 		root_post_id: PostId,
+	// 		parent_id_opt: Option<PostId>,
+	// 		content_opt: Option<Content>
+	// 	) -> DispatchResult {
+	// 		Posts::can_create_comment(account, root_post_id, parent_id_opt, content_opt)
+	// 	}
+	// }
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
@@ -1188,32 +1200,31 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::{BenchmarkError, Benchmarking, BenchmarkBatch};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-			let whitelist: Vec<TrackedStorageKey> = vec![
-				// Block Number
-				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
-				// Total Issuance
-				hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
-				// Execution Phase
-				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
-				// Event Count
-				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
-				// System Events
-				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
-			];
+			use frame_support::traits::WhitelistedStorageKeys;
+			let whitelist = AllPalletsWithSystem::whitelisted_storage_keys();
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);

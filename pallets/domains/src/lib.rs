@@ -72,7 +72,7 @@ pub mod pallet {
 
         /// The maximum period of time the domain may be held for.
         #[pallet::constant]
-        type RegistrationPeriodLimit: Get<Self::BlockNumber>;
+        type RegistrationPeriodLimit: Get<BlockNumberFor<Self>>;
 
         /// The maximum length of the domain's outer value.
         #[pallet::constant]
@@ -242,7 +242,7 @@ pub mod pallet {
             alt_recipient: Option<<T::Lookup as StaticLookup>::Source>,
             full_domain: DomainName<T>,
             content: Content,
-            expires_in: T::BlockNumber,
+            expires_in: BlockNumberFor<T>,
         ) -> DispatchResult {
             let caller = ensure_signed(origin)?;
             let recipient = alt_recipient
@@ -435,7 +435,7 @@ pub mod pallet {
             recipient: T::AccountId,
             full_domain: DomainName<T>,
             content: Content,
-            expires_in: T::BlockNumber,
+            expires_in: BlockNumberFor<T>,
         ) -> DispatchResult {
             ensure!(!expires_in.is_zero(), Error::<T>::ZeroReservationPeriod);
             ensure!(
