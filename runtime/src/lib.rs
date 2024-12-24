@@ -121,20 +121,13 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	// FIXME: remove if unnecessary
-	pallet_ownership::migration::v1::MigrateToV1<
-		Runtime,
-		Ownership,
-		OwnershipMigrationV1OldPallet,
-	>,
+	(
+		pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+		pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+		pallet_xcm::migration::v1::MigrateToV1<Runtime>,
+		pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckAccount>,
+	),
 >;
-
-pub struct OwnershipMigrationV1OldPallet;
-impl frame_support::traits::Get<&'static str> for OwnershipMigrationV1OldPallet {
-	fn get() -> &'static str {
-		"SpaceOwnership"
-	}
-}
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -190,10 +183,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("subsocial-parachain"),
 	impl_name: create_runtime_str!("subsocial-parachain"),
 	authoring_version: 1,
-	spec_version: 44,
+	spec_version: 45,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 9,
+	transaction_version: 10,
 	state_version: 0,
 };
 

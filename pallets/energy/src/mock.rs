@@ -98,7 +98,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type WeightInfo = ();
     type MaxLocks = ();
-    type MaxReserves = ();
+    type MaxReserves = ConstU32<2>;
     type ReserveIdentifier = ();
     type RuntimeHoldReason = ();
     type FreezeIdentifier = ();
@@ -370,7 +370,7 @@ pub(crate) fn account_with_balance(id: AccountId, balance: Balance) -> AccountId
 }
 
 pub(crate) fn set_native_balance(id: AccountId, balance: Balance) {
-    let _ = pallet_balances::Pallet::<Test>::make_free_balance_be(&id, balance);
+    let _ = Balances::make_free_balance_be(&id, balance);
 }
 
 pub(crate) fn set_energy_balance(id: AccountId, new_balance: Balance) {
@@ -438,12 +438,12 @@ impl ExtBuilder {
         clear_withdraw_fee_args();
         clear_corrected_and_deposit_fee_args();
 
-        let mut ext: TestExternalities = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
+        let mut ext: TestExternalities = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
+            .expect("Frame system builds valid default genesis config")
+            .into();
 
-        ext.execute_with(|| {
-            System::set_block_number(1);
-        });
-
+        ext.execute_with(|| System::set_block_number(1));
         ext
     }
 }
