@@ -100,9 +100,9 @@ pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", def
 parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false,  branch = "polkadot-v1.0.0" }
 
 # Custom Runtime API
-#pallet-creator-staking-rpc-runtime-api = { path = "../pallets/creator-staking/rpc/runtime-api", default-features = false }
-#pallet-domains-rpc-runtime-api = { path = "../pallets/domains/rpc/runtime-api", default-features = false }
-#pallet-posts-rpc-runtime-api = { path = "../pallets/posts/rpc/runtime-api", default-features = false }
+pallet-creator-staking-rpc-runtime-api = { path = "../pallets/creator-staking/rpc/runtime-api", default-features = false }
+pallet-domains-rpc-runtime-api = { path = "../pallets/domains/rpc/runtime-api", default-features = false }
+pallet-posts-rpc-runtime-api = { path = "../pallets/posts/rpc/runtime-api", default-features = false }
 
 [features]
 default = [
