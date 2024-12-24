@@ -20,7 +20,6 @@ OUTPUT_FILE="$2"
   --repeat=20 \
   --pallet "$PALLET_NAME" \
   --extrinsic '*' \
-  --execution=wasm \
   --wasm-execution=Compiled \
   --heap-pages=4096 \
   --output="$OUTPUT_FILE" \

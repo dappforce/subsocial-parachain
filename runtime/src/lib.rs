@@ -124,6 +124,7 @@ pub type Executive = frame_executive::Executive<
 	(
 		pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
 		pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+		pallet_xcm::migration::v1::MigrateToV1<Runtime>,
 		pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckAccount>,
 	),
 >;
