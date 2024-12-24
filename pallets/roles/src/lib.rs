@@ -190,7 +190,7 @@ pub mod pallet {
         pub fn create_role(
             origin: OriginFor<T>,
             space_id: SpaceId,
-            time_to_live: Option<T::BlockNumber>,
+            time_to_live: Option<BlockNumberFor<T>>,
             content: Content,
             permissions: Vec<SpacePermission>,
         ) -> DispatchResult {

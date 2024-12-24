@@ -9,6 +9,7 @@ use pallet_permissions::SpacePermissions;
 use pallet_spaces::{types::SpaceUpdate, SpaceById};
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
+use sp_runtime::BuildStorage;
 use subsocial_support::{Content, SpaceId};
 
 use crate::mock::*;
@@ -32,11 +33,11 @@ impl ExtBuilder {
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let mut storage = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
         Self::configure_storages(&mut storage);
 
-        let mut ext = TestExternalities::from(storage);
+        let mut ext: TestExternalities = storage.into();
         ext.execute_with(|| System::set_block_number(1));
 
         ext
@@ -102,7 +103,6 @@ pub(crate) fn _create_space(
     )
 }
 
-
 pub(crate) fn _update_space(
     origin: Option<RuntimeOrigin>,
     space_id: Option<SpaceId>,
@@ -121,7 +121,10 @@ pub(crate) fn _default_follow_space() -> DispatchResult {
     _follow_space(None, None)
 }
 
-pub(crate) fn _follow_space(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _follow_space(
+    origin: Option<RuntimeOrigin>,
+    space_id: Option<SpaceId>,
+) -> DispatchResult {
     SpaceFollows::follow_space(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),
@@ -132,7 +135,10 @@ pub(crate) fn _default_unfollow_space() -> DispatchResult {
     _unfollow_space(None, None)
 }
 
-pub(crate) fn _unfollow_space(origin: Option<RuntimeOrigin>, space_id: Option<SpaceId>) -> DispatchResult {
+pub(crate) fn _unfollow_space(
+    origin: Option<RuntimeOrigin>,
+    space_id: Option<SpaceId>,
+) -> DispatchResult {
     SpaceFollows::unfollow_space(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(ACCOUNT2)),
         space_id.unwrap_or(SPACE1),

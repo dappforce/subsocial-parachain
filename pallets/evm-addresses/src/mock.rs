@@ -15,12 +15,7 @@ use frame_support::{
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    generic,
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
-};
+use sp_runtime::{generic, traits::{BlakeTwo256, IdentityLookup}, BuildStorage, Perbill};
 use sp_std::convert::{TryFrom, TryInto};
 
 pub(crate) use crate as pallet_evm_accounts;
@@ -32,18 +27,13 @@ type SignedExtra = (
 type Signature = ();
 type UncheckedExtrinsic =
     generic::UncheckedExtrinsic<AccountId, RuntimeCall, Signature, SignedExtra>;
-type Block = generic::Block<generic::Header<BlockNumber, BlakeTwo256>, UncheckedExtrinsic>;
+type Block = generic::Block<generic::Header<u64, BlakeTwo256>, UncheckedExtrinsic>;
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
-type BlockNumber = u64;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub enum Test {
         System: frame_system,
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
@@ -62,13 +52,12 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -112,6 +101,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
 }
 
 parameter_types! {
@@ -146,9 +139,7 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub(crate) fn build(self) -> TestExternalities {
-        let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-
-        let mut ext = TestExternalities::from(storage.clone());
+        let mut ext: TestExternalities = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
         ext.execute_with(|| {
             System::set_block_number(1);
         });

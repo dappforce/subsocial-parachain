@@ -13,7 +13,7 @@
 
 use std::sync::Arc;
 
-use subsocial_parachain_runtime::{opaque::Block, AccountId, Balance, Index as Nonce};
+use subsocial_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -48,17 +48,17 @@ where
 		+ Sync
 		+ 'static,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: pallet_creator_staking_rpc::CreatorStakingRuntimeApi<Block, AccountId, Balance>,
-	C::Api: pallet_domains_rpc::DomainsRuntimeApi<Block, Balance>,
-	C::Api: pallet_posts_rpc::PostsRuntimeApi<Block, AccountId>,
+	// C::Api: pallet_creator_staking_rpc::CreatorStakingRuntimeApi<Block, AccountId, Balance>,
+	// C::Api: pallet_domains_rpc::DomainsRuntimeApi<Block, Balance>,
+	// C::Api: pallet_posts_rpc::PostsRuntimeApi<Block, AccountId>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-	use pallet_creator_staking_rpc::{CreatorStaking, CreatorStakingApiServer};
-	use pallet_domains_rpc::{Domains, DomainsApiServer};
-	use pallet_posts_rpc::{Posts, PostsApiServer};
+	// use pallet_creator_staking_rpc::{CreatorStaking, CreatorStakingApiServer};
+	// use pallet_domains_rpc::{Domains, DomainsApiServer};
+	// use pallet_posts_rpc::{Posts, PostsApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut module = RpcExtension::new(());
@@ -66,9 +66,9 @@ where
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-	module.merge(CreatorStaking::new(client.clone()).into_rpc())?;
-	module.merge(Domains::new(client.clone()).into_rpc())?;
-	module.merge(Posts::new(client).into_rpc())?;
+	// module.merge(CreatorStaking::new(client.clone()).into_rpc())?;
+	// module.merge(Domains::new(client.clone()).into_rpc())?;
+	// module.merge(Posts::new(client).into_rpc())?;
 
 	Ok(module)
 }

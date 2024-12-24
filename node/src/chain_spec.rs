@@ -23,7 +23,7 @@ const TESTNET_DEFAULT_ENDOWMENT: Balance = 1_000_000;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<subsocial_parachain_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<subsocial_parachain_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -44,7 +44,7 @@ pub struct Extensions {
 	/// The id of the Parachain.
 	pub para_id: u32,
 	/// Known bad block hashes.
-	pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::v2::Block>,
+	pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::Block>,
 }
 
 impl Extensions {
@@ -263,19 +263,23 @@ fn parachain_genesis(
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	id: ParaId,
 	root_key: AccountId,
-) -> subsocial_parachain_runtime::GenesisConfig {
-	subsocial_parachain_runtime::GenesisConfig {
+) -> subsocial_parachain_runtime::RuntimeGenesisConfig {
+	subsocial_parachain_runtime::RuntimeGenesisConfig {
 		system: subsocial_parachain_runtime::SystemConfig {
 			code: subsocial_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: subsocial_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|(account, balance)| {
 				(account, balance.saturating_mul(UNIT))
 			}).collect(),
 		},
-		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: subsocial_parachain_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: subsocial_parachain_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
@@ -302,6 +306,7 @@ fn parachain_genesis(
 		vesting: subsocial_parachain_runtime::VestingConfig { vesting: vec![] },
 		polkadot_xcm: subsocial_parachain_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 		sudo: subsocial_parachain_runtime::SudoConfig {
 			key: Some(root_key.clone()),

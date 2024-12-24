@@ -8,30 +8,22 @@ use frame_support::{parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-pub(crate) use crate as pallet_free_proxy;
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
-type BlockNumber = u64;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub enum Test {
         System: frame_system,
         Balances: pallet_balances,
         Proxy: pallet_proxy,
-        FreeProxy: pallet_free_proxy,
+        FreeProxy: crate,
     }
 );
 
@@ -46,13 +38,12 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -81,6 +72,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
+    type RuntimeHoldReason = ();
 }
 
 parameter_types! {
@@ -92,7 +87,7 @@ parameter_types! {
     pub const MaxPending: u16 = 32;
 }
 
-impl pallet_free_proxy::Config for Test {
+impl crate::Config for Test {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
     type WeightInfo = ();
@@ -103,8 +98,8 @@ impl pallet_proxy::Config for Test {
     type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type ProxyType = ();
-    type ProxyDepositBase = pallet_free_proxy::AdjustedProxyDepositBase<Test>;
-    type ProxyDepositFactor = pallet_free_proxy::AdjustedProxyDepositFactor<Test>;
+    type ProxyDepositBase = crate::AdjustedProxyDepositBase<Test>;
+    type ProxyDepositFactor = crate::AdjustedProxyDepositFactor<Test>;
     type MaxProxies = MaxProxies;
     type WeightInfo = ();
     type MaxPending = MaxPending;
@@ -143,9 +138,9 @@ impl ExtBuilder {
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
 
-        let storage = &mut frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        let mut ext: TestExternalities =
+            frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 
-        let mut ext = TestExternalities::from(storage.clone());
         ext.execute_with(|| {
             System::set_block_number(1);
         });

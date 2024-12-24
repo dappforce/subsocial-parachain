@@ -13,6 +13,7 @@
 use super::*;
 use frame_benchmarking::{account, benchmarks};
 use frame_support::dispatch::DispatchError;
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use pallet_permissions::SpacePermission as SP;
 use pallet_spaces::types::Space;
@@ -76,7 +77,7 @@ benchmarks! {
     create_role {
         let caller_origin = RawOrigin::Signed(account::<T::AccountId>("Acc1", 1, 0));
         let space = create_dummy_space::<T>(caller_origin.clone())?;
-        let time_to_live: Option<T::BlockNumber> = Some(100u32.into());
+        let time_to_live: Option<BlockNumberFor<T>> = Some(100u32.into());
         let content = valid_content_ipfs();
         let perms = vec![SP::ManageRoles];
         let role_id = NextRoleId::<T>::get();

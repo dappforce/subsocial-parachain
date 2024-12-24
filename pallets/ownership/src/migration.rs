@@ -84,7 +84,7 @@ pub mod v1 {
         }
 
         #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+        fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
             let old_pallet_name = N::get().as_bytes();
             let old_pallet_prefix = twox_128(old_pallet_name);
 
@@ -97,7 +97,7 @@ pub mod v1 {
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_: Vec<u8>) -> Result<(), &'static str> {
+        fn post_upgrade(_: Vec<u8>) -> Result<(), DispatchError> {
             let old_pallet_name = N::get();
             let new_pallet_name = <P as PalletInfoAccess>::name();
 

@@ -7,6 +7,7 @@
 use super::*;
 
 use frame_support::dispatch::DispatchError;
+use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_permissions::SpacePermissionsContext;
 
 impl<T: Config> Pallet<T> {
@@ -121,13 +122,13 @@ impl<T: Config> Role<T> {
     pub fn new(
         created_by: T::AccountId,
         space_id: SpaceId,
-        time_to_live: Option<T::BlockNumber>,
+        time_to_live: Option<BlockNumberFor<T>>,
         content: Content,
         permissions: BTreeSet<SpacePermission>,
     ) -> Result<Self, DispatchError> {
         let role_id = Pallet::<T>::next_role_id();
 
-        let mut expires_at: Option<T::BlockNumber> = None;
+        let mut expires_at: Option<BlockNumberFor<T>> = None;
         if let Some(ttl) = time_to_live {
             expires_at = Some(ttl + <system::Pallet<T>>::block_number());
         }

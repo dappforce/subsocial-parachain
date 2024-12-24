@@ -6,11 +6,11 @@
 
 use frame_support::pallet_prelude::*;
 use frame_support::traits::Currency;
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
 
 use subsocial_support::{WhoAndWhenOf, new_who_and_when};
-
 use super::*;
 
 pub(crate) type DomainName<T> = BoundedVec<u8, <T as Config>::MaxDomainLength>;
@@ -63,7 +63,7 @@ pub struct DomainMeta<T: Config> {
     pub(super) updated: Option<WhoAndWhenOf<T>>,
 
     /// Specific block, when the domain will become unavailable.
-    pub(super) expires_at: T::BlockNumber,
+    pub(super) expires_at: BlockNumberFor<T>,
 
     /// The domain owner.
     pub(super) owner: T::AccountId,
@@ -87,7 +87,7 @@ impl<T: Config> DomainMeta<T> {
     pub fn new(
         caller: T::AccountId,
         owner: T::AccountId,
-        expires_at: T::BlockNumber,
+        expires_at: BlockNumberFor<T>,
         content: Content,
         domain_deposit: DomainDepositOf<T>,
     ) -> Self {

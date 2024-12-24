@@ -509,7 +509,7 @@ fn assert_restake_reward(
 ) {
     if CreatorStaking::can_restake_reward(
         restake,
-        init_state_current_era.clone().creator_info.status,
+        init_state_current_era.creator_info.status,
         init_state_current_era.backer_stakes.staked,
     ) {
         // staked values should increase

@@ -8,11 +8,10 @@ use frame_support::{
     assert_ok, dispatch::DispatchResult, parameter_types,
     traits::{Currency, Everything},
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    testing::Header, traits::{BlakeTwo256, IdentityLookup},
-};
+use sp_runtime::{traits::{BlakeTwo256, IdentityLookup}, BuildStorage};
 use sp_std::convert::{TryInto, TryFrom};
 
 use subsocial_support::Content;
@@ -21,15 +20,10 @@ use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_conten
 pub(crate) use crate as pallet_domains;
 use crate::types::*;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub enum Test {
 		System: frame_system,
         Timestamp: pallet_timestamp,
         Balances: pallet_balances,
@@ -39,7 +33,6 @@ frame_support::construct_runtime!(
 
 pub(super) type AccountId = u64;
 pub(super) type Balance = u64;
-type BlockNumber = u64;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -52,13 +45,12 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -98,6 +90,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
 }
 
 pub(super) const DEFAULT_DOMAIN_DEPOSIT: Balance = 10;
@@ -109,7 +105,7 @@ parameter_types! {
     pub static MaxDomainsPerAccount: u32 = 0;
 
     pub const DomainsInsertLimit: u32 = 2860;
-    pub static ReservationPeriodLimit: BlockNumber = 0;
+    pub static ReservationPeriodLimit: BlockNumberFor<Test> = 0;
     pub const MaxOuterValueLength: u16 = 256;
 
     pub static BaseDomainDeposit: Balance = DEFAULT_DOMAIN_DEPOSIT;
@@ -217,7 +213,7 @@ pub(crate) fn _force_register_domain_with_origin(origin: RuntimeOrigin) -> Dispa
     _register_domain(Some(origin), None, None, None, None)
 }
 
-pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumber) -> DispatchResult {
+pub(crate) fn _force_register_domain_with_expires_in(expires_in: BlockNumberFor<Test>) -> DispatchResult {
     _register_domain(domain_registrar_origin(), None, None, None, Some(expires_in))
 }
 
@@ -234,7 +230,7 @@ pub(crate) fn _register_domain(
     recipient: Option<Option<AccountId>>,
     domain: Option<DomainName<Test>>,
     content: Option<Content>,
-    expires_in: Option<BlockNumber>,
+    expires_in: Option<BlockNumberFor<Test>>,
 ) -> DispatchResult {
     Domains::register_domain(
         origin.unwrap_or_else(|| RuntimeOrigin::signed(DOMAIN_OWNER)),
@@ -334,7 +330,7 @@ pub(crate) fn get_reserved_balance(who: &AccountId) -> BalanceOf<Test> {
 pub struct ExtBuilder {
     pub(crate) min_domain_length: u32,
     pub(crate) max_domains_per_account: u32,
-    pub(crate) reservation_period_limit: BlockNumber,
+    pub(crate) reservation_period_limit: BlockNumberFor<Test>,
     pub(crate) base_domain_deposit: Balance,
     pub(crate) outer_value_byte_deposit: Balance,
     pub(crate) initial_prices_config: PricesConfigVec<Test>,
@@ -368,7 +364,7 @@ impl ExtBuilder {
         self
     }
 
-    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumber) -> Self {
+    pub(crate) fn reservation_period_limit(mut self, reservation_period_limit: BlockNumberFor<Test>) -> Self {
         self.reservation_period_limit = reservation_period_limit;
         self
     }
@@ -400,11 +396,7 @@ impl ExtBuilder {
     pub(crate) fn build(self) -> TestExternalities {
         self.set_configs();
 
-        let storage = &mut frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
-
-        let mut ext = TestExternalities::from(storage.clone());
+        let mut ext: TestExternalities = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
         ext.execute_with(|| {
             System::set_block_number(1);
             assert_ok!(

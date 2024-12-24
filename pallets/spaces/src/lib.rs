@@ -132,20 +132,21 @@ pub mod pallet {
     pub type SpaceIdsByOwner<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, SpacesByAccount<T>, ValueQuery>;
 
+    #[derive(scale_info::TypeInfo, Debug)]
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub endowed_account: Option<T::AccountId>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
+        #[inline]
         fn default() -> Self {
             Self { endowed_account: None }
         }
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             Pallet::<T>::init_pallet(self.endowed_account.as_ref());
         }

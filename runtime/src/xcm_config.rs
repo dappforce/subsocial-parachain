@@ -11,17 +11,21 @@ use super::{
 use frame_support::{
     parameter_types,
     traits::{ConstU32, Everything, Nothing},
+    weights::Weight,
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
-use xcm::{prelude::*, v3::Weight as XCMWeight};
+use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    AccountId32Aliases, AllowTopLevelPaidExecutionFrom,
+    CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+    UsingComponents, WithUniqueTopic, AllowKnownQueryResponses,
+    AllowSubscriptionsFrom,
 };
 use xcm_executor::XcmExecutor;
 
@@ -82,12 +86,12 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
     // TODO: change when possible
 	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: XCMWeight = XCMWeight::from_parts(200_000_000u64, 0);
+	pub UnitWeightCost: Weight = Weight::from_parts(200_000_000u64, 0);
 	pub const MaxInstructions: u32 = 100;
 }
 
 /// Additional filters that specify whether the XCM instruction should be executed at all.
-pub type Barrier = (
+pub type Barrier = TrailingSetTopicAsId<(
     // Execution barrier that just takes max_weight from weight_credit
     TakeWeightCredit,
     // Ensures that execution time is bought with BuyExecution instruction
@@ -96,7 +100,7 @@ pub type Barrier = (
     AllowKnownQueryResponses<PolkadotXcm>,
     // Subscriptions for version tracking are OK.
     AllowSubscriptionsFrom<Everything>,
-);
+)>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -126,6 +130,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Nothing;
+    type Aliasers = Nothing;
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -133,12 +138,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
     // Two routers - use UMP to communicate with the relay chain:
     cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -170,9 +175,12 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = ();
     type MaxLockers = ConstU32<8>;
-    type WeightInfo = crate::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_xcm::TestWeightInfo/*crate::weights::pallet_xcm::SubstrateWeight<Runtime>*/;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
