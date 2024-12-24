@@ -14,7 +14,6 @@ categories = ["cryptography::cryptocurrencies"]
 [dependencies]
 clap = { version = "4.3.12", features = ["derive"] }
 log = "0.4.19"
-codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.171", features = ["derive"] }
 hex-literal = "0.4.1"
 jsonrpsee = { version = "0.16.2", features = ["server"] }

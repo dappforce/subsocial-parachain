@@ -1099,65 +1099,65 @@ impl_runtime_apis! {
 		}
 	}
 
-	// impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
-	// 	for Runtime
-	// {
-	// 	fn estimated_backer_rewards_by_creators(
-	// 		backer: AccountId,
-	// 		creators: Vec<CreatorId>,
-	// 	) -> Vec<(CreatorId, Balance)> {
-	// 		CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
-	// 	}
-	//
-	// 	fn withdrawable_amounts_from_inactive_creators(
-	// 		backer: AccountId,
-	// 	) -> Vec<(CreatorId, Balance)> {
-	// 		CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
-	// 	}
-	//
-	// 	fn available_claims_by_backer(
-	// 		backer: AccountId,
-	// 	) -> Vec<(CreatorId, u32)> {
-	// 		CreatorStaking::available_claims_by_backer(backer)
-	// 	}
-	//
-	// 	fn estimated_creator_rewards(
-	// 		creator: CreatorId,
-	// 	) -> Balance {
-	// 		CreatorStaking::estimated_creator_rewards(creator)
-	// 	}
-	//
-	// 	fn available_claims_by_creator(
-	// 		creator: CreatorId,
-	// 	) -> Vec<EraIndex> {
-	// 		CreatorStaking::available_claims_by_creator(creator)
-	// 	}
-	// }
-	//
-	// impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
-	// 	fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
-	// 		Domains::calculate_price(&subdomain)
-	// 	}
-	// }
-	//
-	// impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
-	// 	fn can_create_post(
-	// 		account: AccountId,
-	// 		space_id: SpaceId,
-	// 		content_opt: Option<Content>,
-	// 	) -> DispatchResult {
-	// 		Posts::can_create_regular_post(account, space_id, content_opt)
-	// 	}
-	//
-	// 	fn can_create_comment(
-	// 		account: AccountId,
-	// 		root_post_id: PostId,
-	// 		parent_id_opt: Option<PostId>,
-	// 		content_opt: Option<Content>
-	// 	) -> DispatchResult {
-	// 		Posts::can_create_comment(account, root_post_id, parent_id_opt, content_opt)
-	// 	}
-	// }
+	impl pallet_creator_staking_rpc_runtime_api::CreatorStakingApi<Block, AccountId, Balance>
+		for Runtime
+	{
+		fn estimated_backer_rewards_by_creators(
+			backer: AccountId,
+			creators: Vec<CreatorId>,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::estimated_backer_rewards_by_creators(backer, creators)
+		}
+
+		fn withdrawable_amounts_from_inactive_creators(
+			backer: AccountId,
+		) -> Vec<(CreatorId, Balance)> {
+			CreatorStaking::withdrawable_amounts_from_inactive_creators(backer)
+		}
+
+		fn available_claims_by_backer(
+			backer: AccountId,
+		) -> Vec<(CreatorId, u32)> {
+			CreatorStaking::available_claims_by_backer(backer)
+		}
+
+		fn estimated_creator_rewards(
+			creator: CreatorId,
+		) -> Balance {
+			CreatorStaking::estimated_creator_rewards(creator)
+		}
+
+		fn available_claims_by_creator(
+			creator: CreatorId,
+		) -> Vec<EraIndex> {
+			CreatorStaking::available_claims_by_creator(creator)
+		}
+	}
+
+	impl pallet_domains_rpc_runtime_api::DomainsApi<Block, Balance> for Runtime {
+		fn calculate_price(subdomain: Vec<u8>) -> Option<Balance> {
+			Domains::calculate_price(&subdomain)
+		}
+	}
+
+	impl pallet_posts_rpc_runtime_api::PostsApi<Block, AccountId> for Runtime {
+		fn can_create_post(
+			account: AccountId,
+			space_id: SpaceId,
+			content_opt: Option<Content>,
+		) -> DispatchResult {
+			Posts::can_create_regular_post(account, space_id, content_opt)
+		}
+
+		fn can_create_comment(
+			account: AccountId,
+			root_post_id: PostId,
+			parent_id_opt: Option<PostId>,
+			content_opt: Option<Content>
+		) -> DispatchResult {
+			Posts::can_create_comment(account, root_post_id, parent_id_opt, content_opt)
+		}
+	}
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
