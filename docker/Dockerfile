@@ -22,7 +22,8 @@ FROM phusion/baseimage:jammy-1.0.1
 RUN mv /usr/share/ca* /tmp && \
     rm -rf /usr/share/* && \
     mv /tmp/ca-certificates /usr/share/ && \
-    useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial
+    useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial && \
+    mkdir -p /data && chown -R subsocial:subsocial /data
 
 COPY --from=builder /subsocial/target/release/subsocial-collator /usr/local/bin
 
@@ -34,8 +35,6 @@ RUN ldd /usr/local/bin/subsocial-collator && \
 RUN rm -rf /usr/lib/python* && rm -rf /usr/share/man
 
 USER subsocial
-RUN mkdir -p /data
-
 VOLUME ["/data"]
 
 ENTRYPOINT ["/usr/local/bin/subsocial-collator"]
