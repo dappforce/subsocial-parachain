@@ -4,6 +4,21 @@ set -e
 
 echo "*** Initializing WASM build environment"
 
+if [ "$1" == "nosudo" ]; then
+   apt-get update && \
+   apt-get install -y build-essential clang curl libssl-dev protobuf-compiler
+else
+   sudo apt-get update && \
+   sudo apt-get install -y build-essential clang curl libssl-dev protobuf-compiler
+fi
+
+type rustup >/dev/null 2>&1 || {
+  echo >&2 "rustup is required, but it's not installed. Installing.";
+  curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
+   rustup show;
+}
+
 CDIR=`dirname "$0"`
 export RUSTC_VERSION=`cat $CDIR/../RUSTC_VERSION`
 

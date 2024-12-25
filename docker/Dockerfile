@@ -1,33 +1,40 @@
-FROM dappforce/cargo-chef:latest  AS chef
+FROM phusion/baseimage:jammy-1.0.1 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
 WORKDIR /subsocial
 
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
+COPY . /subsocial
 
-FROM chef AS builder
-COPY --from=planner /subsocial/recipe.json recipe.json
+RUN apt-get update && \
+    apt-get upgrade -y -o Dpkg::Options::="--force-confold"
+    
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN ./scripts/init.sh nosudo
 
-# Build dependencies - this is the caching Docker layer!
-RUN cargo chef cook --release --recipe-path recipe.json
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN . "$HOME/.cargo/env" && cargo build --release
 
-# Build application
-COPY . .
-RUN cargo build --release
+# ==== SECOND STAGE ====
 
-FROM debian:buster-slim
+FROM phusion/baseimage:jammy-1.0.1
+
+RUN mv /usr/share/ca* /tmp && \
+    rm -rf /usr/share/* && \
+    mv /tmp/ca-certificates /usr/share/ && \
+    useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial && \
+    mkdir -p /data && chown -R subsocial:subsocial /data
+
 COPY --from=builder /subsocial/target/release/subsocial-collator /usr/local/bin
 
-RUN useradd -m -u 1000 -U -s /bin/sh -d /subsocial subsocial && \
-        apt update && apt install curl -y && \
-	mkdir -p /subsocial/.local/share && \
-	mkdir /data && \
-	chown -R subsocial:subsocial /data && \
-        chown -R subsocial:subsocial /bin && \
-	ln -s /data /subsocial/.local/share/subsocial-collator
+# checks
+RUN ldd /usr/local/bin/subsocial-collator && \
+    /usr/local/bin/subsocial-collator --version
+
+# Shrinking
+RUN rm -rf /usr/lib/python* && rm -rf /usr/share/man
 
 USER subsocial
-EXPOSE 40333 8833 8844
 VOLUME ["/data"]
 
 ENTRYPOINT ["/usr/local/bin/subsocial-collator"]
