@@ -1,0 +1,52 @@
+name: Check and Test Code
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-code:
+    runs-on: public-runners
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update &&
+          sudo apt-get install build-essential git clang curl libssl-dev protobuf-compiler wget unzip -y
+
+      - name: Get rustc version from file
+        run: |
+          echo "rustc_version=$(cat RUSTC_VERSION)" >> $GITHUB_ENV
+
+      # Steps taken from https://github.com/actions/cache/blob/master/examples.md#rust---cargo
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: ${{ env.rustc_version }}
+          components: rustfmt
+          target: wasm32-unknown-unknown
+
+      - name: Build runtime
+        run: scripts/build-runtime.sh
+
+      - name: Upload release wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: subsocial_parachain_runtime.compact.compressed.wasm
+          path: target/release/wbuild/subsocial-parachain-runtime/subsocial_parachain_runtime.compact.compressed.wasm

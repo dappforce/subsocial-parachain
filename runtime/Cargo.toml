@@ -178,9 +178,9 @@ std = [
 	"pallet-free-proxy/std",
 	"pallet-evm-addresses/std",
 #	#---------------
-#	"pallet-creator-staking-rpc-runtime-api/std",
-#	"pallet-domains-rpc-runtime-api/std",
-#	"pallet-posts-rpc-runtime-api/std",
+	"pallet-creator-staking-rpc-runtime-api/std",
+	"pallet-domains-rpc-runtime-api/std",
+	"pallet-posts-rpc-runtime-api/std",
 ]
 
 runtime-benchmarks = [
