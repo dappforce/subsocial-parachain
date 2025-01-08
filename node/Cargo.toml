@@ -73,8 +73,10 @@ xcm = { workspace = true }
 
 # Cumulus
 cumulus-client-cli = { workspace = true }
+cumulus-client-collator = { workspace = true }
 cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
+cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-service = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["default"] }
 cumulus-primitives-parachain-inherent = { workspace = true }
@@ -93,5 +95,6 @@ runtime-benchmarks = [
 ]
 try-runtime = [
     "subsocial-parachain-runtime/try-runtime",
+    "polkadot-cli/try-runtime",
     "try-runtime-cli/try-runtime",
 ]
