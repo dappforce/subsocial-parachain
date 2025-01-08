@@ -6,7 +6,7 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 
-use codec::Codec;
+use parity_scale_codec::Codec;
 use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {

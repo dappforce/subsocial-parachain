@@ -8,7 +8,7 @@
 
 use std::{convert::TryInto, fmt::Display, sync::Arc, vec::Vec};
 
-use codec::Codec;
+use parity_scale_codec::Codec;
 use jsonrpsee::{
     core::RpcResult,
     proc_macros::rpc,

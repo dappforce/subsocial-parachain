@@ -2,7 +2,7 @@
 name = "pallet-evm-addresses"
 version = "0.3.0"
 authors = ["DappForce <dappforce@pm.me>"]
-edition = "2021"
+edition.workspace = true
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
@@ -14,24 +14,24 @@ categories = ["cryptography::cryptocurrencies"]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-libsecp256k1 = { version = "0.7.1", default-features = false, features = ["hmac", "static-context"] }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
+libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
+scale-info = { workspace = true, features = ["derive"] }
+hex = { workspace = true, features = ["alloc"] }
 
-frame-benchmarking = { optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-sp-core-hashing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
+frame-benchmarking = { optional = true, workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+sp-core = { workspace = true }
+sp-core-hashing = { workspace = true }
+sp-io = { workspace = true }
 
 [dev-dependencies]
-smallvec = "1.11.0"
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
+smallvec = { workspace = true }
+pallet-balances = { workspace = true }
 
 [features]
 default = ["std"]
@@ -40,7 +40,7 @@ runtime-benchmarks = [
 ]
 std = [
     "libsecp256k1/std",
-    "codec/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "frame-benchmarking/std",
     "frame-support/std",

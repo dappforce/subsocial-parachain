@@ -4,7 +4,7 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use frame_support::{
     ensure, log,
     pallet_prelude::{Get, GetStorageVersion},
@@ -20,7 +20,7 @@ use crate::{migration::old::OldStakesInfo, types::BalanceOf, Config, Pallet, Sta
 const LOG_TARGET: &'static str = "runtime::creator-staking";
 
 mod old {
-    use codec::MaxEncodedLen;
+    use parity_scale_codec::MaxEncodedLen;
     use frame_support::{
         dispatch::TypeInfo, pallet_prelude::ValueQuery, storage_alias, Blake2_128Concat,
         BoundedVec, RuntimeDebug,

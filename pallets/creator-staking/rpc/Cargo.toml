@@ -14,14 +14,13 @@ categories = ["cryptography::cryptocurrencies"]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0" }
-jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+parity-scale-codec = { workspace = true }
+jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
 
-pallet-creator-staking-rpc-runtime-api = { path = "./runtime-api" }
-pallet-creator-staking = { path = ".." }
+pallet-creator-staking-rpc-runtime-api = { workspace = true, features = ["default"] }
+pallet-creator-staking = { workspace = true, features = ["default"] }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-rpc = { workspace = true }
+sp-runtime = { workspace = true }

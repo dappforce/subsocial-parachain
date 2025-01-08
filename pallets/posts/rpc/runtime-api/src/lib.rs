@@ -8,7 +8,7 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 
-use codec::Codec;
+use parity_scale_codec::Codec;
 use sp_runtime::DispatchResult;
 use sp_runtime::traits::MaybeDisplay;
 

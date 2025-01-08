@@ -2,7 +2,7 @@
 name = 'pallet-profiles'
 version = '0.3.0'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2021'
+edition.workspace = true
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
@@ -14,7 +14,7 @@ categories = ['cryptography::cryptocurrencies']
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
-    'codec/std',
+    'parity-scale-codec/std',
     'scale-info/std',
     'frame-benchmarking/std',
     'frame-support/std',
@@ -27,24 +27,24 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
-codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
-scale-info = { version = '2.3.1', default-features = false, features = ['derive'] }
+parity-scale-codec = { workspace = true, features = ['derive'] }
+scale-info = { workspace = true, features = ['derive'] }
 
 # Local dependencies
 pallet-permissions = { default-features = false, path = '../permissions' }
 subsocial-support = { default-features = false, path = '../support' }
 
 # Substrate dependencies
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate', default-features = false, optional = true, branch = 'polkadot-v1.0.0' }
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-mockall = '0.11.3'
-lazy_static = '1.4.0'
+mockall = { workspace = true }
+lazy_static = { workspace = true }
 
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
