@@ -4,7 +4,7 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::Zero;

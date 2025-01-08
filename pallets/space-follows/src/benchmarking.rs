@@ -10,8 +10,9 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks};
-use frame_support::{dispatch::DispatchError, ensure};
+use frame_support::{ensure, sp_runtime};
 use frame_system::RawOrigin;
+use sp_runtime::DispatchError;
 use pallet_spaces::types::Space;
 use subsocial_support::Content;
 

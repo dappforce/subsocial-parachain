@@ -6,11 +6,11 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 
-use frame_benchmarking::{account, benchmarks, Zero};
+use frame_benchmarking::{account, benchmarks};
 use frame_support::ensure;
 use frame_system::RawOrigin;
 use pallet_proxy::ProxyDefinition;
-use sp_runtime::traits::StaticLookup;
+use sp_runtime::traits::{StaticLookup, Zero};
 
 use super::*;
 

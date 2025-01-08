@@ -5,7 +5,7 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 use std::{sync::Arc, collections::BTreeMap};
-use codec::Codec;
+use parity_scale_codec::Codec;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use jsonrpc_core::Result;

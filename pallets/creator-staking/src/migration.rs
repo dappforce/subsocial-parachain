@@ -4,28 +4,29 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use frame_support::{
-    ensure, log,
-    pallet_prelude::{Get, GetStorageVersion},
+    ensure, pallet_prelude::{Get, GetStorageVersion},
     traits::OnRuntimeUpgrade,
     weights::Weight,
 };
-use sp_runtime::DispatchError;
+use sp_runtime::{DispatchError, RuntimeDebug};
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
+use log;
 
 use crate::{migration::old::OldStakesInfo, types::BalanceOf, Config, Pallet, StakesInfo};
 
 const LOG_TARGET: &'static str = "runtime::creator-staking";
 
 mod old {
-    use codec::MaxEncodedLen;
+    use parity_scale_codec::MaxEncodedLen;
     use frame_support::{
-        dispatch::TypeInfo, pallet_prelude::ValueQuery, storage_alias, Blake2_128Concat,
-        BoundedVec, RuntimeDebug,
+        pallet_prelude::ValueQuery, storage_alias, Blake2_128Concat,
+        BoundedVec,
     };
     use sp_arithmetic::traits::AtLeast32BitUnsigned;
+    use scale_info::TypeInfo;
 
     use crate::{CreatorId, EraStake};
 

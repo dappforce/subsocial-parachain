@@ -4,7 +4,8 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use frame_support::{log, traits::OnRuntimeUpgrade};
+use frame_support::traits::OnRuntimeUpgrade;
+use log;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::traits::Zero;
 #[cfg(feature = "try-runtime")]

@@ -9,9 +9,9 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use frame_benchmarking::{account, benchmarks};
-use frame_support::{dispatch::DispatchError, ensure, traits::Currency};
+use frame_support::{ensure, traits::Currency};
 use frame_system::RawOrigin;
-use sp_runtime::traits::Bounded;
+use sp_runtime::{DispatchError, traits::Bounded};
 
 use subsocial_support::{
     traits::{DomainsProvider, PostsProvider, SpacesProvider},

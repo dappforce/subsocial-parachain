@@ -4,10 +4,10 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchError, DispatchResult};
+use parity_scale_codec::{Decode, Encode};
+use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{DispatchError, RuntimeDebug};
 
 use subsocial_support::{SpaceId, SpacePermissionsInfo, User};
 

@@ -2,7 +2,7 @@
 name = 'pallet-reactions-tests'
 version = '0.3.0'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2021'
+edition.workspace = true
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
@@ -14,35 +14,34 @@ categories = ['cryptography::cryptocurrencies']
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-impl-trait-for-tuples = '0.2.2'
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
 
 # Local dependencies
-subsocial-support = { default-features = false, path = '../../support' }
-pallet-permissions = { default-features = false, path = '../../permissions' }
+subsocial-support = { workspace = true }
+pallet-permissions = { workspace = true }
 
 # Substrate dependencies
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+pallet-timestamp = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
-pallet-roles = { default-features = false, path = '../../roles' }
-pallet-space-follows = { default-features = false, path = '../../space-follows' }
-pallet-posts = { default-features = false, path = '../../posts' }
-pallet-reactions = { default-features = false, path = '..' }
-pallet-spaces = { default-features = false, path = '../../spaces' }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-roles = { workspace = true }
+pallet-space-follows = { workspace = true }
+pallet-posts = { workspace = true }
+pallet-reactions = { workspace = true }
+pallet-spaces = { workspace = true }
 
 [features]
 default = ['std']
 std = [
-    'codec/std',
+    'parity-scale-codec/std',
     'scale-info/std',
     'pallet-timestamp/std',
     'frame-support/std',

@@ -4,7 +4,7 @@
 // Full notice is available at https://github.com/dappforce/subsocial-parachain/blob/main/COPYRIGHT
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
-use codec::Encode;
+use parity_scale_codec::Encode;
 use scale_info::prelude::format;
 use sp_core_hashing::keccak_256;
 use sp_io::crypto::secp256k1_ecdsa_recover;
