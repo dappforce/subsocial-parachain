@@ -33,6 +33,7 @@ try-runtime = ['frame-support/try-runtime']
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
 scale-info = { workspace = true, features = ["derive"] }
+log = { workspace = true }
 
 # Local dependencies
 pallet-permissions = { workspace = true }

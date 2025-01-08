@@ -13,12 +13,12 @@ use crate::Pallet as Pallet;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::{
 	ensure, assert_ok,
-	dispatch::{DispatchError, DispatchErrorWithPostInfo},
+	dispatch::DispatchErrorWithPostInfo,
 	traits::{Currency, Get},
 };
 use frame_system::RawOrigin;
 
-use sp_runtime::traits::{Bounded, StaticLookup};
+use sp_runtime::{DispatchError, traits::{Bounded, StaticLookup}};
 use sp_std::{convert::TryInto, vec};
 
 use subsocial_support::mock_functions::{another_valid_content_ipfs, valid_content_ipfs};

@@ -6,8 +6,9 @@
 
 use frame_support::{
     assert_noop, assert_ok,
-    dispatch::{DispatchInfo, GetDispatchInfo, extract_actual_weight, PostDispatchInfo, Weight},
+    dispatch::{DispatchInfo, GetDispatchInfo, extract_actual_weight, PostDispatchInfo},
     pallet_prelude::{DispatchClass, Pays},
+    weights::Weight,
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{

@@ -20,6 +20,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'sp-std/std',
+    'sp-runtime/std',
     'pallet-spaces/std',
     'subsocial-support/std',
 ]
@@ -38,3 +39,4 @@ frame-benchmarking = { optional = true, workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-std = { workspace = true }
+sp-runtime = { workspace = true }

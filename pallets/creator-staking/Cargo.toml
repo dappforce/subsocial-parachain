@@ -15,6 +15,7 @@ parity-scale-codec = { workspace = true, default-features = false, features = ["
 num-traits = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { features = ['derive'], optional = true, workspace = true }
+log = { workspace = true }
 
 pallet-permissions = { workspace = true }
 subsocial-support = { workspace = true }

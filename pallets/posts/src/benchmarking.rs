@@ -8,8 +8,8 @@
 
 use super::*;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
+use sp_runtime::DispatchError;
 use pallet_spaces::types::Space;
 use subsocial_support::Content;
 

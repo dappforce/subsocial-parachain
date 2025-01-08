@@ -6,8 +6,8 @@
 
 use super::*;
 
-use frame_support::dispatch::DispatchError;
 use frame_system::pallet_prelude::BlockNumberFor;
+use sp_runtime::DispatchError;
 use pallet_permissions::SpacePermissionsContext;
 
 impl<T: Config> Pallet<T> {

@@ -6,7 +6,8 @@
 // Full license is available at https://github.com/dappforce/subsocial-parachain/blob/main/LICENSE
 
 
-use frame_support::dispatch::{DispatchError, DispatchResult};
+use frame_support::dispatch::DispatchResult;
+use sp_runtime::DispatchError;
 
 use crate::{Content, PostId, SpaceId};
 

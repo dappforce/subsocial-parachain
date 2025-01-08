@@ -8,8 +8,8 @@ use super::*;
 
 use crate::Pallet as Profiles;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::dispatch::DispatchError;
 use frame_system::RawOrigin;
+use sp_runtime::DispatchError;
 use subsocial_support::{traits::SpacesProvider, Content, SpaceId};
 
 fn create_space<T: Config>(
