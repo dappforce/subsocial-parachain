@@ -8,14 +8,14 @@ repository = "https://github.com/dappforce/subsocial-parachain"
 [workspace]
 resolver = "2"
 default-members = [
-#    "integration-tests",
+    "integration-tests",
     "node",
     "runtime",
     "pallets/*",
     "pallets/*/tests",
 ]
 members = [
-#    "integration-tests",
+    "integration-tests",
     "node",
     "runtime",
     "pallets/*",

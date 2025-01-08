@@ -9,8 +9,7 @@ use sp_io::TestExternalities;
 
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    testing::Header,
-    Storage,
+    Storage, BuildStorage,
 };
 
 use frame_support::{
@@ -30,14 +29,10 @@ pub use subsocial_support::{ModerationError, ContentError};
 use subsocial_support::User;
 use crate::utils::*;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-        pub enum TestRuntime where
-            Block = Block,
-            NodeBlock = Block,
-            UncheckedExtrinsic = UncheckedExtrinsic,
+        pub enum TestRuntime
         {
             System: system,
             Balances: pallet_balances,
@@ -64,13 +59,12 @@ impl system::Config for TestRuntime {
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -110,6 +104,10 @@ impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
 }
 
 use pallet_permissions::default_permissions::DefaultSpacePermissions;
@@ -237,8 +235,8 @@ impl ExtBuilder {
 
     /// Default ext configuration with BlockNumber 1
     pub fn build() -> TestExternalities {
-        let mut storage = system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        let mut storage = system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .unwrap();
 
         Self::configure_storages(&mut storage);
