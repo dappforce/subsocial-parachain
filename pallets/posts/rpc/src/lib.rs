@@ -8,7 +8,7 @@
 
 use std::{fmt::Display, sync::Arc};
 
-use codec::Codec;
+use parity_scale_codec::Codec;
 use jsonrpsee::{
     core::RpcResult,
     proc_macros::rpc,

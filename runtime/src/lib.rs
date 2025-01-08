@@ -566,10 +566,10 @@ parameter_types! {
 	PartialEq,
 	Ord,
 	PartialOrd,
-	codec::Encode,
-	codec::Decode,
+	parity_scale_codec::Encode,
+	parity_scale_codec::Decode,
 	sp_runtime::RuntimeDebug,
-	codec::MaxEncodedLen,
+	parity_scale_codec::MaxEncodedLen,
 	scale_info::TypeInfo,
 )]
 pub enum ProxyType {

@@ -2,7 +2,7 @@
 name = "pallet-domains-rpc"
 version = "0.3.0"
 authors = ["DappForce <dappforce@pm.me>"]
-edition = "2021"
+edition.workspace = true
 license = "GPL-3.0-only"
 homepage = "https://subsocial.network"
 repository = "https://github.com/dappforce/subsocial-parachain"
@@ -14,10 +14,10 @@ categories = ["cryptography::cryptocurrencies"]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0" }
-jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
-pallet-domains-rpc-runtime-api = { path = "./runtime-api" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+parity-scale-codec = { workspace = true, features = ["default"] }
+jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
+pallet-domains-rpc-runtime-api = { workspace = true }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-rpc = { workspace = true }
+sp-runtime = { workspace = true }

@@ -2,7 +2,7 @@
 name = 'pallet-account-follows'
 version = '0.3.0'
 authors = ['DappForce <dappforce@pm.me>']
-edition = '2021'
+edition.workspace = true
 license = 'GPL-3.0-only'
 homepage = 'https://subsocial.network'
 repository = 'https://github.com/dappforce/subsocial-parachain'
@@ -13,7 +13,7 @@ categories = ['cryptography::cryptocurrencies']
 [features]
 default = ['std']
 std = [
-    'codec/std',
+    'parity-scale-codec/std',
     'scale-info/std',
     'frame-support/std',
     'frame-system/std',
@@ -24,14 +24,14 @@ std = [
 try-runtime = [ "frame-support/try-runtime" ]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
 
 # Local dependencies
-pallet-profiles = { default-features = false, path = '../profiles' }
-subsocial-support = { default-features = false, path = '../support' }
+pallet-profiles = { workspace = true }
+subsocial-support = { workspace = true }
 
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-std = { workspace = true }
